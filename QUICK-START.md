@@ -10,7 +10,7 @@ git clone https://github.com/groeimetai/Snow-flow.git
 cd Snow-flow
 npm install && npm run build
 
-# 2. Installeer globaal (optioneel maar handig)
+# 2. Installeer globaal (AANBEVOLEN - voor dagelijks gebruik)
 npm install -g .
 
 # 3. Configureer ServiceNow credentials

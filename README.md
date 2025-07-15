@@ -50,7 +50,7 @@ npm install
 npm run build
 ```
 
-4. **Installeer globaal (optioneel maar handig)**
+4. **Installeer globaal (AANBEVOLEN)**
 ```bash
 npm install -g .
 ```
@@ -59,6 +59,42 @@ npm install -g .
 ```bash
 cp .env.example .env
 # Edit .env met je ServiceNow credentials
+```
+
+## 🌍 Globale Installatie
+
+### **Voor dagelijks gebruik (AANBEVOLEN)**
+
+Na het builden van het project, installeer Snow-flow globaal:
+
+```bash
+# Vanuit de Snow-flow directory
+npm install -g .
+
+# Test de installatie
+snow-flow --help
+snow-flow status
+```
+
+### **Voordelen van globale installatie:**
+- ✅ **Geen npm run** - Direct `snow-flow` gebruiken
+- ✅ **Vanuit elke directory** - Werkt overal
+- ✅ **Sneller** - Geen TypeScript compilation needed
+- ✅ **Eenvoudiger** - Gewoon `snow-flow widget "My Widget"`
+
+### **Troubleshooting globale installatie:**
+
+```bash
+# Als je permission errors krijgt (macOS/Linux)
+sudo npm install -g .
+
+# Als je nog steeds problemen hebt
+npm config set prefix '~/.npm-global'
+export PATH=~/.npm-global/bin:$PATH
+
+# Check of het werkt
+which snow-flow
+snow-flow --version
 ```
 
 ## ⚡ Quick Start
