@@ -20,7 +20,8 @@
     "claude-interactive": "ts-node src/cli/cli-local.ts claude-interactive",
     "claude-cleanup": "ts-node src/cli/cli-local.ts claude-cleanup",
     "cost-comparison": "ts-node src/cli/cli-local.ts cost-comparison",
-    "snow-flow": "ts-node src/cli/unified-cli.ts"
+    "snow-flow": "ts-node src/cli/unified-cli.ts",
+    "test-install": "node bin/snow-flow.js --help"
   },
   "bin": {
     "servicenow-app-builder": "./bin/cli.js",

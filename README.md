@@ -50,7 +50,12 @@ npm install
 npm run build
 ```
 
-4. **Setup configuratie**
+4. **Installeer globaal (optioneel maar handig)**
+```bash
+npm install -g .
+```
+
+5. **Setup configuratie**
 ```bash
 cp .env.example .env
 # Edit .env met je ServiceNow credentials
@@ -549,13 +554,16 @@ snow-flow status
 
 ### **Common Issues**
 
-#### **1. Command Not Found**
+#### **1. Command Not Found: snow-flow**
 ```bash
-# Make sure you're in the right directory
-cd Snow-flow
+# Optie 1: Installeer globaal
+npm install -g .
 
-# Use npm run if global install fails
+# Optie 2: Use npm run
 npm run snow-flow widget "My Widget"
+
+# Optie 3: Use npx
+npx snow-flow widget "My Widget"
 ```
 
 #### **2. ServiceNow Connection Issues**
@@ -673,8 +681,15 @@ Voor vragen of problemen:
 
 **Quick Commands Cheat Sheet:**
 ```bash
+# Na global install (npm install -g .):
 snow-flow widget "My Widget" --type counter    # Widget maken
 snow-flow app "My App" --template basic-crud   # App maken  
 snow-flow status                               # Status check
 snow-flow templates                            # Templates bekijken
+
+# Of gebruik npm run:
+npm run snow-flow widget "My Widget" --type counter
+npm run snow-flow app "My App" --template basic-crud
+npm run snow-flow status
+npm run snow-flow templates
 ```

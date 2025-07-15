@@ -10,14 +10,17 @@ git clone https://github.com/groeimetai/Snow-flow.git
 cd Snow-flow
 npm install && npm run build
 
-# 2. Configureer ServiceNow credentials
+# 2. Installeer globaal (optioneel maar handig)
+npm install -g .
+
+# 3. Configureer ServiceNow credentials
 cp .env.example .env
 # Edit .env met jouw ServiceNow gegevens
 
-# 3. Maak je eerste widget!
+# 4. Maak je eerste widget!
 snow-flow widget "Task Counter" --type counter --table task
 
-# 4. Of maak complete applicatie
+# 5. Of maak complete applicatie
 snow-flow app "My App" --template task-management
 ```
 
@@ -134,16 +137,23 @@ snow-flow app "Project Manager" --template task-management --scope x_project_mgm
 
 ### **Common Issues**
 
-1. **Command not found**
+1. **Command not found: snow-flow**
    ```bash
-   # Use npm run if global install fails
+   # Optie 1: Installeer globaal
+   npm install -g .
+   
+   # Optie 2: Use npm run
    npm run snow-flow widget "My Widget"
+   
+   # Optie 3: Use npx
+   npx snow-flow widget "My Widget"
    ```
 
 2. **ServiceNow connection issues**
    ```bash
    # Check credentials
    snow-flow status
+   # of: npm run snow-flow status
    ```
 
 3. **Build issues**
