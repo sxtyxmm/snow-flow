@@ -1,0 +1,93 @@
+{
+  "requirements": {
+    "tables": [
+      {
+        "name": "x_basic_crud_record",
+        "label": "Basic Record",
+        "description": "Basic CRUD record table",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Name",
+            "type": "string",
+            "maxLength": 255,
+            "mandatory": true
+          },
+          {
+            "name": "description",
+            "label": "Description",
+            "type": "text",
+            "maxLength": 4000
+          },
+          {
+            "name": "status",
+            "label": "Status",
+            "type": "choice",
+            "choices": ["Draft", "Active", "Inactive"],
+            "defaultValue": "Draft"
+          },
+          {
+            "name": "priority",
+            "label": "Priority",
+            "type": "choice",
+            "choices": ["Low", "Medium", "High"],
+            "defaultValue": "Medium"
+          },
+          {
+            "name": "assigned_to",
+            "label": "Assigned To",
+            "type": "reference",
+            "reference": "sys_user"
+          }
+        ]
+      }
+    ],
+    "ui": [
+      {
+        "type": "form",
+        "name": "Basic Record Form",
+        "table": "x_basic_crud_record",
+        "fields": ["name", "description", "status", "priority", "assigned_to"],
+        "layout": "standard"
+      },
+      {
+        "type": "list",
+        "name": "Basic Record List",
+        "table": "x_basic_crud_record",
+        "fields": ["name", "status", "priority", "assigned_to", "sys_created_on"]
+      }
+    ],
+    "businessRules": [
+      {
+        "name": "Status Change Notification",
+        "table": "x_basic_crud_record",
+        "when": "after",
+        "actions": ["update"],
+        "description": "Send notification when status changes"
+      }
+    ],
+    "security": [
+      {
+        "type": "acl",
+        "name": "Basic Record Read",
+        "table": "x_basic_crud_record",
+        "operation": "read",
+        "roles": ["basic_crud_user"]
+      },
+      {
+        "type": "acl",
+        "name": "Basic Record Write",
+        "table": "x_basic_crud_record",
+        "operation": "write",
+        "roles": ["basic_crud_admin"]
+      }
+    ]
+  },
+  "preferences": {
+    "useModernUI": true,
+    "includeMobileSupport": true,
+    "generateTests": true,
+    "includeDocumentation": true,
+    "followBestPractices": true
+  }
+}
