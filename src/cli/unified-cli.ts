@@ -34,12 +34,20 @@ async function createHandler(type: string, options: any): Promise<void> {
     try {
       console.log('🚀 Snow-flow: Creating ServiceNow components...');
       
-      // Validate environment
-      validateConfig();
+      // Demo mode bypasses ServiceNow validation
+      if (options.demo) {
+        console.log('🎯 Demo Mode: Generating template without ServiceNow connection');
+        const result = await executeDemoMode(type, options);
+        await showResults(result, options);
+        return;
+      }
       
       // Auto-detect best mode based on environment
       const mode = autoDetectMode(options.mode);
       console.log(`💡 Using ${mode} mode`);
+      
+      // Validate environment based on mode
+      validateConfig(mode as 'local' | 'api' | 'interactive');
       
       // Create request based on type
       const request = await createRequestFromType(type, options);
@@ -77,6 +85,7 @@ program
   .option('--table <table>', 'Data source table')
   .option('--scope <scope>', 'ServiceNow scope')
   .option('--mode <mode>', 'Generation mode', 'local')
+  .option('--demo', 'Demo mode: Generate without ServiceNow connection')
   .action(async (name, options) => {
     const type = 'widget';
     const mergedOptions = {
@@ -135,10 +144,16 @@ program
     console.log('================');
     
     // Check environment
-    const hasServiceNow = !!(process.env.SERVICENOW_INSTANCE_URL && process.env.SERVICENOW_USERNAME);
+    const hasServiceNowInstance = !!process.env.SERVICENOW_INSTANCE_URL;
+    const hasOAuth = !!(process.env.SERVICENOW_CLIENT_ID && process.env.SERVICENOW_CLIENT_SECRET);
+    const hasBasicAuth = !!(process.env.SERVICENOW_USERNAME && process.env.SERVICENOW_PASSWORD);
+    const hasServiceNow = hasServiceNowInstance && (hasOAuth || hasBasicAuth);
     const hasClaudeAPI = !!process.env.ANTHROPIC_API_KEY;
     
     console.log(`🔗 ServiceNow Connection: ${hasServiceNow ? '✅ Configured' : '❌ Not configured'}`);
+    if (hasServiceNow) {
+      console.log(`   Authentication: ${hasOAuth ? '🔐 OAuth2' : '🔐 Basic Auth'}`);
+    }
     console.log(`🤖 Claude API: ${hasClaudeAPI ? '✅ Available' : '💡 Using Local Mode'}`);
     console.log(`💰 Recommended Mode: ${hasClaudeAPI ? 'API (costs money)' : 'Local (free)'}`);
     
@@ -238,13 +253,9 @@ function autoDetectMode(requestedMode: string): string {
   if (requestedMode !== 'local') return requestedMode;
   
   const hasClaudeAPI = !!process.env.ANTHROPIC_API_KEY;
-  const hasServiceNow = !!(process.env.SERVICENOW_INSTANCE_URL && process.env.SERVICENOW_USERNAME);
   
-  if (!hasServiceNow) {
-    throw new Error('ServiceNow credentials not configured. Please set SERVICENOW_INSTANCE_URL and SERVICENOW_USERNAME in .env');
-  }
-  
-  // Default to local mode (free) unless API key is available and user specifically wants API
+  // ServiceNow validation is handled by validateConfig
+  // Just return the requested mode
   return 'local';
 }
 
@@ -428,6 +439,409 @@ async function loadTemplate(templateName: string): Promise<any> {
   }
   
   return JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+}
+
+async function executeDemoMode(type: string, options: any): Promise<any> {
+  console.log('🎯 Demo mode: Generating template code for demonstration');
+  
+  // Generate demo widget code based on type
+  const demoWidget = {
+    name: options.name,
+    type: options.type || 'counter',
+    table: options.table || 'task',
+    scope: options.scope || 'x_demo_widget',
+    
+    // Generate demo ServiceNow widget files
+    files: {
+      'widget.html': generateDemoWidgetHTML(options),
+      'widget.js': generateDemoWidgetJS(options),
+      'widget.css': generateDemoWidgetCSS(options),
+      'widget.server.js': generateDemoWidgetServer(options),
+      'widget.option_schema.json': generateDemoWidgetOptions(options)
+    }
+  };
+  
+  // Save demo files to local directory
+  const demoDir = path.join(process.cwd(), 'demo-widget-output');
+  if (!fs.existsSync(demoDir)) {
+    fs.mkdirSync(demoDir, { recursive: true });
+  }
+  
+  Object.entries(demoWidget.files).forEach(([filename, content]) => {
+    fs.writeFileSync(path.join(demoDir, filename), content);
+  });
+  
+  return {
+    success: true,
+    demo: true,
+    widgetName: options.name,
+    widgetType: options.type || 'counter',
+    filesGenerated: Object.keys(demoWidget.files).length,
+    outputDir: demoDir
+  };
+}
+
+function generateDemoWidgetHTML(options: any): string {
+  const widgetType = options.type || 'counter';
+  const tableName = options.table || 'task';
+  
+  return `<div class="widget-${widgetType}">
+  <h3>{{data.title || '${options.name}'}}</h3>
+  <div class="widget-content">
+    ${widgetType === 'counter' ? `
+    <div class="counter-display">
+      <span class="counter-value">{{data.count}}</span>
+      <span class="counter-label">${tableName} Records</span>
+    </div>
+    ` : ''}
+    ${widgetType === 'dashboard' ? `
+    <div class="dashboard-grid">
+      <div class="dashboard-item" ng-repeat="item in data.items">
+        <h4>{{item.title}}</h4>
+        <p>{{item.value}}</p>
+      </div>
+    </div>
+    ` : ''}
+    ${widgetType === 'form' ? `
+    <form ng-submit="c.submitForm()">
+      <div class="form-field">
+        <label>Title:</label>
+        <input type="text" ng-model="c.formData.title" />
+      </div>
+      <div class="form-field">
+        <label>Description:</label>
+        <textarea ng-model="c.formData.description"></textarea>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+    ` : ''}
+  </div>
+</div>`;
+}
+
+function generateDemoWidgetJS(options: any): string {
+  const widgetType = options.type || 'counter';
+  const tableName = options.table || 'task';
+  
+  return `function(spUtil) {
+  var c = this;
+  
+  // Initialize widget
+  c.init = function() {
+    c.data = c.data || {};
+    c.data.title = c.options.title || '${options.name}';
+    ${widgetType === 'counter' ? `c.loadCount();` : ''}
+    ${widgetType === 'dashboard' ? `c.loadDashboardData();` : ''}
+    ${widgetType === 'form' ? `c.initForm();` : ''}
+  };
+  
+  ${widgetType === 'counter' ? `
+  // Load record count
+  c.loadCount = function() {
+    c.server.get({
+      table: '${tableName}',
+      action: 'count'
+    }).then(function(response) {
+      c.data.count = response.data.count || 0;
+    });
+  };
+  ` : ''}
+  
+  ${widgetType === 'dashboard' ? `
+  // Load dashboard data
+  c.loadDashboardData = function() {
+    c.server.get({
+      table: '${tableName}',
+      action: 'dashboard'
+    }).then(function(response) {
+      c.data.items = response.data.items || [];
+    });
+  };
+  ` : ''}
+  
+  ${widgetType === 'form' ? `
+  // Initialize form
+  c.initForm = function() {
+    c.formData = {
+      title: '',
+      description: ''
+    };
+  };
+  
+  // Submit form
+  c.submitForm = function() {
+    c.server.post({
+      table: '${tableName}',
+      action: 'create',
+      data: c.formData
+    }).then(function(response) {
+      if (response.data.success) {
+        spUtil.addInfoMessage('Record created successfully');
+        c.initForm(); // Reset form
+      }
+    });
+  };
+  ` : ''}
+  
+  // Initialize widget on load
+  c.init();
+}`;
+}
+
+function generateDemoWidgetCSS(options: any): string {
+  const widgetType = options.type || 'counter';
+  
+  return `.widget-${widgetType} {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  margin: 10px 0;
+}
+
+.widget-${widgetType} h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.2em;
+}
+
+.widget-content {
+  margin-top: 15px;
+}
+
+${widgetType === 'counter' ? `
+.counter-display {
+  text-align: center;
+  padding: 20px;
+}
+
+.counter-value {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #0066cc;
+  display: block;
+}
+
+.counter-label {
+  font-size: 0.9em;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+` : ''}
+
+${widgetType === 'dashboard' ? `
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.dashboard-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #0066cc;
+}
+
+.dashboard-item h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.dashboard-item p {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #0066cc;
+}
+` : ''}
+
+${widgetType === 'form' ? `
+.form-field {
+  margin-bottom: 15px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-field textarea {
+  height: 80px;
+  resize: vertical;
+}
+
+button[type="submit"] {
+  background: #0066cc;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button[type="submit"]:hover {
+  background: #0052a3;
+}
+` : ''}`;
+}
+
+function generateDemoWidgetServer(options: any): string {
+  const widgetType = options.type || 'counter';
+  const tableName = options.table || 'task';
+  
+  return `(function() {
+  var action = input.action || 'load';
+  var table = input.table || '${tableName}';
+  
+  // Initialize data object
+  data.title = options.title || '${options.name}';
+  data.widget_type = '${widgetType}';
+  
+  switch(action) {
+    ${widgetType === 'counter' ? `
+    case 'count':
+      var gr = new GlideRecord(table);
+      gr.addActiveQuery();
+      gr.query();
+      data.count = gr.getRowCount();
+      break;
+    ` : ''}
+    
+    ${widgetType === 'dashboard' ? `
+    case 'dashboard':
+      var items = [];
+      var gr = new GlideRecord(table);
+      gr.addActiveQuery();
+      gr.orderByDesc('sys_created_on');
+      gr.setLimit(10);
+      gr.query();
+      
+      while (gr.next()) {
+        items.push({
+          title: gr.getDisplayValue('number') || gr.getDisplayValue('sys_id'),
+          value: gr.getDisplayValue('state') || gr.getDisplayValue('active'),
+          sys_id: gr.getUniqueValue()
+        });
+      }
+      
+      data.items = items;
+      break;
+    ` : ''}
+    
+    ${widgetType === 'form' ? `
+    case 'create':
+      var gr = new GlideRecord(table);
+      gr.initialize();
+      gr.setValue('short_description', input.data.title);
+      gr.setValue('description', input.data.description);
+      var sys_id = gr.insert();
+      
+      data.success = !!sys_id;
+      data.sys_id = sys_id;
+      break;
+    ` : ''}
+    
+    default:
+      // Default load action
+      data.initialized = true;
+      break;
+  }
+  
+  // Add metadata
+  data.table = table;
+  data.generated_by = 'Snow-flow Demo Mode';
+  data.generated_at = new GlideDateTime().getDisplayValue();
+})();`;
+}
+
+function generateDemoWidgetOptions(options: any): string {
+  const widgetType = options.type || 'counter';
+  
+  return JSON.stringify({
+    "title": {
+      "name": "Title",
+      "section": "Presentation",
+      "default_value": options.name,
+      "label": "Widget Title",
+      "type": "string"
+    },
+    "table": {
+      "name": "Table",
+      "section": "Data",
+      "default_value": options.table || "task",
+      "label": "Source Table",
+      "type": "string"
+    },
+    ...(widgetType === 'counter' && {
+      "show_chart": {
+        "name": "Show Chart",
+        "section": "Display",
+        "default_value": "true",
+        "label": "Show Chart Visualization",
+        "type": "boolean"
+      },
+      "auto_refresh": {
+        "name": "Auto Refresh",
+        "section": "Behavior",
+        "default_value": "true",
+        "label": "Auto Refresh Data",
+        "type": "boolean"
+      },
+      "refresh_interval": {
+        "name": "Refresh Interval",
+        "section": "Behavior",
+        "default_value": "30",
+        "label": "Refresh Interval (seconds)",
+        "type": "integer"
+      }
+    }),
+    ...(widgetType === 'dashboard' && {
+      "max_items": {
+        "name": "Max Items",
+        "section": "Display",
+        "default_value": "10",
+        "label": "Maximum Items to Show",
+        "type": "integer"
+      },
+      "show_filters": {
+        "name": "Show Filters",
+        "section": "Display",
+        "default_value": "true",
+        "label": "Show Filter Controls",
+        "type": "boolean"
+      }
+    }),
+    ...(widgetType === 'form' && {
+      "redirect_after_submit": {
+        "name": "Redirect After Submit",
+        "section": "Behavior",
+        "default_value": "",
+        "label": "Redirect URL After Submit",
+        "type": "string"
+      },
+      "show_success_message": {
+        "name": "Show Success Message",
+        "section": "Behavior",
+        "default_value": "true",
+        "label": "Show Success Message",
+        "type": "boolean"
+      }
+    })
+  }, null, 2);
 }
 
 async function exportResults(result: any, outputDir: string): Promise<void> {

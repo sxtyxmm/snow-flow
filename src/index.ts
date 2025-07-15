@@ -7,7 +7,7 @@ import logger from './utils/logger';
 async function main() {
   try {
     // Validate configuration
-    validateConfig();
+    validateConfig('api');
     
     // Create orchestrator
     const config: ServiceNowStudioConfig = {

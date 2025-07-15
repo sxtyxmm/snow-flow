@@ -26,7 +26,7 @@ program
   .option('--dry-run', 'Generate without deploying')
   .action(async (options) => {
     try {
-      validateConfig();
+      validateConfig('api');
       
       const config: ServiceNowStudioConfig = {
         instanceUrl: process.env.SERVICENOW_INSTANCE_URL!,
@@ -111,7 +111,7 @@ program
   .option('--force', 'Force deployment')
   .action(async (options) => {
     try {
-      validateConfig();
+      validateConfig('api');
       
       const config: ServiceNowStudioConfig = {
         instanceUrl: process.env.SERVICENOW_INSTANCE_URL!,
@@ -141,7 +141,7 @@ program
   .option('--config-file <file>', 'Configuration file to validate')
   .action(async (options) => {
     try {
-      validateConfig();
+      validateConfig('api');
       
       const config: ServiceNowStudioConfig = {
         instanceUrl: process.env.SERVICENOW_INSTANCE_URL!,

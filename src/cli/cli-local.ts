@@ -29,7 +29,7 @@ program
       console.log('🚀 Starting ServiceNow App Generation (Local Mode)');
       console.log('💡 This mode uses smart templates and avoids Claude API costs');
       
-      validateConfig();
+      validateConfig('local');
       
       const config: ServiceNowStudioConfig = {
         instanceUrl: process.env.SERVICENOW_INSTANCE_URL!,
