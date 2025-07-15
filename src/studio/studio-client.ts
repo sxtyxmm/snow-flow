@@ -11,8 +11,9 @@ export class ServiceNowStudioClient {
 
   constructor(config: ServiceNowStudioConfig) {
     this.config = config;
+    const baseUrl = config.instanceUrl.replace(/\/+$/, '');
     this.axiosInstance = axios.create({
-      baseURL: `${config.instanceUrl}/api/now`,
+      baseURL: `${baseUrl}/api/now`,
       timeout: config.timeout || 60000,
     });
 

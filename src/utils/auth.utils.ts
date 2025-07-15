@@ -30,7 +30,8 @@ export class AuthUtils {
     }
 
     try {
-      const tokenUrl = `${config.instanceUrl}/oauth_token.do`;
+      const baseUrl = config.instanceUrl.replace(/\/+$/, '');
+      const tokenUrl = `${baseUrl}/oauth_token.do`;
       const response = await axios.post(tokenUrl, new URLSearchParams({
         grant_type: 'client_credentials',
         client_id: config.clientId!,
