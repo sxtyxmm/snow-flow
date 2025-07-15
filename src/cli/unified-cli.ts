@@ -431,11 +431,26 @@ async function showResults(result: any, options: any): Promise<void> {
 }
 
 async function loadTemplate(templateName: string): Promise<any> {
-  const templatesDir = path.join(__dirname, '../templates');
-  const templatePath = path.join(templatesDir, `${templateName}.json`);
+  // Try both src/ and dist/ directories to handle both ts-node and compiled versions
+  const possibleDirs = [
+    path.join(__dirname, '../templates'), // dist/cli/../templates = dist/templates
+    path.join(__dirname, '../../src/templates'), // dist/cli/../../src/templates = src/templates
+    path.join(process.cwd(), 'src/templates'), // current dir + src/templates
+    path.join(process.cwd(), 'dist/templates') // current dir + dist/templates
+  ];
   
-  if (!fs.existsSync(templatePath)) {
-    throw new Error(`Template not found: ${templateName}`);
+  let templatePath: string | null = null;
+  
+  for (const dir of possibleDirs) {
+    const candidate = path.join(dir, `${templateName}.json`);
+    if (fs.existsSync(candidate)) {
+      templatePath = candidate;
+      break;
+    }
+  }
+  
+  if (!templatePath) {
+    throw new Error(`Template not found: ${templateName}. Searched in: ${possibleDirs.join(', ')}`);
   }
   
   return JSON.parse(fs.readFileSync(templatePath, 'utf8'));
