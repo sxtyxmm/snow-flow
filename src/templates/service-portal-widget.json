@@ -1,0 +1,149 @@
+{
+  "requirements": {
+    "ui": [
+      {
+        "type": "portal",
+        "name": "Custom Widget Portal",
+        "description": "Service Portal with custom widgets",
+        "widgets": ["task_counter", "user_dashboard", "quick_actions"]
+      }
+    ],
+    "tables": [
+      {
+        "name": "x_widget_data",
+        "label": "Widget Data",
+        "description": "Data table for widget functionality",
+        "fields": [
+          {
+            "name": "title",
+            "label": "Title",
+            "type": "string",
+            "mandatory": true
+          },
+          {
+            "name": "widget_type",
+            "label": "Widget Type",
+            "type": "choice",
+            "choices": ["counter", "chart", "list", "form", "dashboard"],
+            "defaultValue": "counter"
+          },
+          {
+            "name": "configuration",
+            "label": "Configuration",
+            "type": "json",
+            "description": "Widget configuration in JSON format"
+          },
+          {
+            "name": "data_source",
+            "label": "Data Source",
+            "type": "string",
+            "description": "API endpoint or table name for data"
+          },
+          {
+            "name": "refresh_interval",
+            "label": "Refresh Interval (seconds)",
+            "type": "number",
+            "defaultValue": "30"
+          }
+        ]
+      }
+    ],
+    "businessRules": [
+      {
+        "name": "Widget Data Validation",
+        "table": "x_widget_data",
+        "when": "before",
+        "actions": ["insert", "update"],
+        "description": "Validate widget configuration JSON"
+      }
+    ],
+    "security": [
+      {
+        "type": "acl",
+        "name": "Widget Data Read",
+        "table": "x_widget_data",
+        "operation": "read",
+        "roles": ["portal_user"]
+      },
+      {
+        "type": "acl",
+        "name": "Widget Data Write",
+        "table": "x_widget_data",
+        "operation": "write",
+        "roles": ["portal_admin"]
+      }
+    ]
+  },
+  "widgets": [
+    {
+      "name": "task_counter",
+      "title": "Task Counter Widget",
+      "description": "Displays count of tasks by status",
+      "type": "counter",
+      "template": "task-counter-template.html",
+      "controller": "TaskCounterController",
+      "css": "task-counter.css",
+      "data_source": "task",
+      "configuration": {
+        "show_chart": true,
+        "auto_refresh": true,
+        "refresh_interval": 30,
+        "status_colors": {
+          "new": "#0066cc",
+          "in_progress": "#ff9900",
+          "completed": "#00cc00"
+        }
+      }
+    },
+    {
+      "name": "user_dashboard",
+      "title": "User Dashboard Widget",
+      "description": "Personal dashboard for users",
+      "type": "dashboard",
+      "template": "user-dashboard-template.html",
+      "controller": "UserDashboardController",
+      "css": "user-dashboard.css",
+      "data_source": "sys_user",
+      "configuration": {
+        "show_recent_items": true,
+        "show_favorites": true,
+        "show_notifications": true,
+        "max_items": 10
+      }
+    },
+    {
+      "name": "quick_actions",
+      "title": "Quick Actions Widget",
+      "description": "Quick action buttons for common tasks",
+      "type": "form",
+      "template": "quick-actions-template.html",
+      "controller": "QuickActionsController",
+      "css": "quick-actions.css",
+      "configuration": {
+        "actions": [
+          {
+            "label": "Create Incident",
+            "table": "incident",
+            "action": "create",
+            "icon": "fa-exclamation-triangle"
+          },
+          {
+            "label": "Request Item",
+            "table": "sc_request",
+            "action": "create",
+            "icon": "fa-shopping-cart"
+          }
+        ]
+      }
+    }
+  ],
+  "preferences": {
+    "useModernUI": true,
+    "includeMobileSupport": true,
+    "generateTests": true,
+    "includeDocumentation": true,
+    "followBestPractices": true,
+    "generateServicePortal": true,
+    "includeWidgetExamples": true
+  }
+}

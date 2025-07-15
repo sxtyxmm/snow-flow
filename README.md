@@ -6,20 +6,22 @@ Een geavanceerd multi-agent systeem dat gebruik maakt van AI om automatisch Serv
 
 - **🤖 6 Gespecialiseerde AI Agents** - Elk verantwoordelijk voor een specifiek aspect van ServiceNow ontwikkeling
 - **🏗️ Complete Applicatie Generatie** - Bouwt volledige ServiceNow applicaties van A tot Z
-- **⚡ Parallel Processing** - Agents werken tegelijkertijd voor maximale snelheid
-- **🎨 Template System** - Voorgedefinieerde templates voor snelle start
-- **🔧 CLI Interface** - Eenvoudige command-line interface voor alle functionaliteit
+- **⚡ Unified CLI** - Eén command voor alles (zoals `claude-flow swarm`)
+- **🎨 Widget Builder** - Maak Service Portal widgets met één commando
+- **📱 Template System** - Voorgedefinieerde templates voor snelle start
+- **💰 Cost-Effective** - Local Mode gebruikt je Claude Code Max abonnement (geen extra kosten)
 - **🔐 Enterprise Ready** - OAuth2, Basic Auth, en volledige security support
 
 ## 📋 Inhoudsopgave
 
 - [Installatie](#-installatie)
-- [Configuratie](#-configuratie)
-- [Credentials Setup](#-credentials-setup)
-- [Gebruik](#-gebruik)
+- [Quick Start](#-quick-start)
+- [Unified CLI Commands](#-unified-cli-commands)
+- [Widget Builder](#-widget-builder)
+- [Application Builder](#-application-builder)
+- [Configuration](#-configuration)
 - [Agents Overzicht](#-agents-overzicht)
 - [Templates](#-templates)
-- [API Documentatie](#-api-documentatie)
 - [Troubleshooting](#-troubleshooting)
 
 ## 🚀 Installatie
@@ -28,7 +30,7 @@ Een geavanceerd multi-agent systeem dat gebruik maakt van AI om automatisch Serv
 - Node.js 18+ 
 - npm of yarn
 - ServiceNow instance met Studio access
-- Claude API key van Anthropic
+- Claude Code Max abonnement (voor Local Mode)
 
 ### Stappen
 
@@ -48,272 +50,288 @@ npm install
 npm run build
 ```
 
-4. **Maak de CLI globaal beschikbaar (optioneel)**
-```bash
-npm link
-```
-
-## ⚙️ Configuratie
-
-### 1. Environment Variables
-
-Kopieer het `.env.example` bestand naar `.env`:
-
+4. **Setup configuratie**
 ```bash
 cp .env.example .env
+# Edit .env met je ServiceNow credentials
 ```
 
-### 2. Bewerk het `.env` bestand met je credentials:
+## ⚡ Quick Start
 
-```env
-# ServiceNow Configuratie
-SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com
-SERVICENOW_USERNAME=your-username
-SERVICENOW_PASSWORD=your-password
+### 1. **Basis Setup**
+```bash
+# Initialiseer project
+snow-flow init --name "My Project"
 
-# Optioneel: OAuth2 (aanbevolen voor productie)
-SERVICENOW_CLIENT_ID=your-oauth-client-id
-SERVICENOW_CLIENT_SECRET=your-oauth-client-secret
+# Check status
+snow-flow status
 
-# Claude AI Configuratie
-ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxx
-
-# Applicatie Settings
-LOG_LEVEL=info
-MAX_CONCURRENT_AGENTS=6
-GENERATION_TIMEOUT=300000
-VALIDATE_COMPONENTS=true
-DEPLOY_COMPONENTS=true
-CREATE_UPDATE_SETS=true
+# Bekijk templates
+snow-flow templates
 ```
 
-## 🔐 Credentials Setup
+### 2. **Maak je eerste widget**
+```bash
+# Task counter widget
+snow-flow widget "Task Counter" --type counter --table task
 
-### ServiceNow Credentials
+# Dashboard widget
+snow-flow widget "User Dashboard" --type dashboard --table sys_user
 
-#### Basic Authentication
-1. **Username**: Je ServiceNow gebruikersnaam
-2. **Password**: Je ServiceNow wachtwoord
-3. **Instance URL**: De volledige URL van je ServiceNow instance (bijv. https://dev123456.service-now.com)
+# Form widget
+snow-flow widget "Quick Form" --type form --table incident
+```
 
-⚠️ **Belangrijk**: De gebruiker moet de volgende rollen hebben:
-- `admin` of
-- `studio_admin` + `app_creator`
+### 3. **Maak complete applicatie**
+```bash
+# Task management app
+snow-flow app "Task Manager" --template task-management
 
-#### OAuth2 Authentication (Aanbevolen)
-1. Ga naar **System OAuth > Application Registry** in ServiceNow
-2. Klik op **New** > **Create an OAuth API endpoint for external clients**
-3. Vul in:
-   - **Name**: Snow-flow Client
-   - **Client ID**: Wordt automatisch gegenereerd
-   - **Client Secret**: Klik op het slot icoon om te genereren
-4. Sla op en kopieer de Client ID en Secret naar je `.env` bestand
+# Basic CRUD app
+snow-flow app "My App" --template basic-crud
 
-### Claude AI Integration
+# Custom app met config
+snow-flow create application --config my-app-config.json
+```
 
-Snow-flow biedt twee modi voor AI-generatie:
+## 🎯 Unified CLI Commands
 
-#### 💰 Local Mode (Aanbevolen - Geen extra kosten)
-Gebruikt je Claude Code Max abonnement - geen API key nodig!
+### **Main Commands**
 
 ```bash
-# Geen ANTHROPIC_API_KEY nodig!
-npm run cli-local generate --template task-management
+# 🎨 Widget Builder
+snow-flow widget <name> [options]
+
+# 📱 Application Builder  
+snow-flow app <name> [options]
+
+# 🔧 Component Builder
+snow-flow component <type> <name> [options]
+
+# 📊 Status & Info
+snow-flow status
+snow-flow templates
 ```
 
-#### 🔴 API Mode (Origineel - Kost geld)
-Voor wie direct API access wil:
-
-1. Ga naar [Anthropic Console](https://console.anthropic.com/)
-2. Maak een account aan of log in
-3. Ga naar **API Keys**
-4. Klik op **Create Key**
-5. Kopieer de key (begint met `sk-ant-api03-`)
-6. Plak in je `.env` bestand
-
-⚠️ **Belangrijk**: API mode kan $100-500+ per maand kosten!
-
-## 🎯 Gebruik
-
-### CLI Commands
-
-#### 💰 Local Mode (Aanbevolen - Geen kosten)
+### **Widget Commands**
 
 ```bash
-# Bekijk cost comparison
-npm run cost-comparison
+# Counter widget
+snow-flow widget "Task Counter" --type counter --table task
 
-# Template mode (instant, gratis)
-npm run cli-local generate --template task-management --mode template
+# Dashboard widget
+snow-flow widget "User Dashboard" --type dashboard --table sys_user
 
-# Interactive mode (flexibel, gratis)
-npm run cli-local generate --template task-management --mode interactive
-npm run claude-process  # Process prompts met Claude Code
+# Chart widget
+snow-flow widget "Performance Chart" --type chart --table task
 
-# Status checking
-npm run claude-status
-npm run claude-cleanup
+# Form widget
+snow-flow widget "Quick Form" --type form --table incident
+
+# List widget
+snow-flow widget "Task List" --type list --table task
 ```
 
-#### 🔴 API Mode (Origineel - Kost geld)
+### **Application Commands**
 
 ```bash
-# Initialiseer een nieuw project
-servicenow-app-builder init --name "mijn-app" --scope "x_mijn_app"
+# Task Management System
+snow-flow app "Task Manager" --template task-management
 
-# Genereer een applicatie
-servicenow-app-builder generate --config-file app-config.json
+# Basic CRUD Application
+snow-flow app "My CRUD App" --template basic-crud
 
-# Met een template
-servicenow-app-builder generate \
-  --template task-management \
-  --app-name "Task Manager" \
-  --app-scope "x_task_mgr"
+# Service Portal Application
+snow-flow app "Portal App" --template service-portal-widget
 
-# Dry-run (zonder deployment)
-servicenow-app-builder generate --config-file app-config.json --dry-run
+# Custom application
+snow-flow app "Custom App" --scope x_custom --mode local
 ```
 
-#### 3. Bekijk beschikbare templates
+### **Component Commands**
+
 ```bash
-servicenow-app-builder templates
+# Business Rules
+snow-flow component business-rule "Auto Assignment" --table incident
+
+# Client Scripts
+snow-flow component client-script "Form Validation" --table task
+
+# UI Pages
+snow-flow component ui-page "Custom Page" --table task
+
+# Workflows
+snow-flow component workflow "Approval Process" --table sc_request
 ```
 
-#### 4. Deploy een update set
+### **Advanced Commands**
+
 ```bash
-servicenow-app-builder deploy --update-set-id "12345" --environment production
+# Met custom config
+snow-flow create application --config app-config.json
+
+# Dry run (preview)
+snow-flow create widget --name "Test Widget" --dry-run
+
+# Deploy direct
+snow-flow app "My App" --deploy
+
+# Interactive mode
+snow-flow create application --mode interactive
 ```
 
-#### 5. Valideer een applicatie
+## 🎨 Widget Builder
+
+### **Widget Types**
+
+#### **Counter Widgets**
 ```bash
-servicenow-app-builder validate --app-id "67890"
+# Task counter
+snow-flow widget "Task Counter" --type counter --table task
+
+# Incident counter
+snow-flow widget "Incident Counter" --type counter --table incident
+
+# Request counter
+snow-flow widget "Request Counter" --type counter --table sc_request
 ```
 
-### Programmatisch Gebruik
+#### **Dashboard Widgets**
+```bash
+# User dashboard
+snow-flow widget "My Dashboard" --type dashboard --table sys_user
 
-```typescript
-import { ServiceNowAppOrchestrator } from 'snow-flow';
+# Team dashboard
+snow-flow widget "Team Dashboard" --type dashboard --table task
 
-const orchestrator = new ServiceNowAppOrchestrator({
-  instanceUrl: 'https://dev123456.service-now.com',
-  username: 'admin',
-  password: 'password',
-  // Of gebruik OAuth2:
-  // clientId: 'your-client-id',
-  // clientSecret: 'your-client-secret'
-});
+# Manager dashboard
+snow-flow widget "Manager View" --type dashboard --table incident
+```
 
-await orchestrator.initialize();
+#### **Form Widgets**
+```bash
+# Quick incident form
+snow-flow widget "Quick Incident" --type form --table incident
 
-const result = await orchestrator.generateApplication({
-  appName: 'My Custom App',
-  appScope: 'x_my_app',
-  appDescription: 'Een custom ServiceNow applicatie',
-  requirements: {
-    tables: [{
-      name: 'x_my_app_record',
-      label: 'My Record',
-      fields: [
-        { name: 'title', label: 'Title', type: 'string', mandatory: true },
-        { name: 'description', label: 'Description', type: 'text' }
-      ]
-    }],
-    workflows: [{
-      name: 'Approval Workflow',
-      table: 'x_my_app_record',
-      activities: [
-        { name: 'Manager Approval', type: 'approval' }
-      ]
-    }]
+# Request form
+snow-flow widget "Service Request" --type form --table sc_request
+
+# Feedback form
+snow-flow widget "Feedback Form" --type form --table feedback
+```
+
+#### **Chart Widgets**
+```bash
+# Performance chart
+snow-flow widget "Performance Chart" --type chart --table task
+
+# Trend chart
+snow-flow widget "Trend Analysis" --type chart --table incident
+
+# Status chart
+snow-flow widget "Status Overview" --type chart --table sc_request
+```
+
+### **Generated Widget Components**
+
+Elke widget genereert:
+- **HTML Template** - Angular.js template met data binding
+- **CSS Styling** - Modern, responsive design
+- **JavaScript Controller** - Client-side interactie
+- **Server Script** - GlideScript voor data processing
+- **Option Schema** - Configuratie opties
+- **Demo Data** - Voorbeeld data voor testing
+
+### **Widget Configuration**
+
+```json
+{
+  "name": "task_counter_widget",
+  "type": "counter",
+  "table": "task",
+  "configuration": {
+    "show_chart": true,
+    "auto_refresh": true,
+    "refresh_interval": 30,
+    "status_colors": {
+      "new": "#0066cc",
+      "in_progress": "#ff9900",
+      "completed": "#00cc00"
+    }
   }
-});
-
-console.log(`Application created: ${result.appId}`);
+}
 ```
 
-## 🤖 Agents Overzicht
+## 📱 Application Builder
 
-### 1. Schema Designer Agent
-- **Verantwoordelijk voor**: Database tabellen, velden, relaties
-- **Genereert**: 
-  - ServiceNow tabellen met inheritance
-  - Veld definities met juiste types
-  - Relaties tussen tabellen
-  - Indexes voor performance
+### **Templates**
 
-### 2. Script Generator Agent
-- **Verantwoordelijk voor**: Server-side scripting
-- **Genereert**:
-  - Business Rules (before/after/async)
-  - Script Includes
-  - Scheduled Jobs
-  - Fix Scripts
-
-### 3. UI Builder Agent
-- **Verantwoordelijk voor**: User interfaces
-- **Genereert**:
-  - Forms met field layouts
-  - Lists met columns en filters
-  - UI Pages (HTML/CSS/JS)
-  - Service Portal Widgets
-
-### 4. Workflow Designer Agent
-- **Verantwoordelijk voor**: Process automation
-- **Genereert**:
-  - Workflow definitions
-  - Approval processes
-  - Notifications
-  - SLA definitions
-
-### 5. Security Agent
-- **Verantwoordelijk voor**: Toegangscontrole
-- **Genereert**:
-  - Access Control Lists (ACLs)
-  - Rollen en groepen
-  - Data segregation rules
-  - Security policies
-
-### 6. Update Set Manager Agent
-- **Verantwoordelijk voor**: Deployment
-- **Genereert**:
-  - Update Sets
-  - Migration scripts
-  - Rollback procedures
-  - Deployment documentatie
-
-## 📋 Templates
-
-### Basic CRUD
-Een simpele CRUD applicatie met:
-- Een database tabel
+#### **Basic CRUD**
+```bash
+snow-flow app "My CRUD App" --template basic-crud
+```
+- Database tabel met CRUD operaties
 - Form en List views
-- Basis ACLs
+- Basis ACLs en security
 - Status workflow
 
+#### **Task Management**
 ```bash
-servicenow-app-builder generate --template basic-crud
+snow-flow app "Task Manager" --template task-management
 ```
-
-### Task Management
-Complete task management systeem met:
 - Task tabel met priorities
 - Assignment workflows
 - Approval processes
 - Dashboard widgets
 - Email notifications
 
+#### **Service Portal Widget**
 ```bash
-servicenow-app-builder generate --template task-management
+snow-flow app "Widget Collection" --template service-portal-widget
+```
+- Multiple widget types
+- Portal integration
+- Configuration options
+- Mobile support
+
+### **Custom Applications**
+
+```bash
+# Met custom config
+snow-flow create application --config custom-app.json
+
+# Interactive mode
+snow-flow create application --mode interactive
 ```
 
-### Meer templates komen binnenkort!
-- Asset Management
-- Incident Management
-- Approval Workflow
-- Service Catalog Item
-- Mobile App
+## ⚙️ Configuration
 
-## 📚 Configuratie Bestand Voorbeeld
+### **Environment Variables**
+
+```env
+# ServiceNow Configuration (VERPLICHT)
+SERVICENOW_INSTANCE_URL=https://dev123456.service-now.com
+SERVICENOW_USERNAME=admin
+SERVICENOW_PASSWORD=your-password
+
+# OAuth2 (Optioneel maar aanbevolen)
+SERVICENOW_CLIENT_ID=your-client-id
+SERVICENOW_CLIENT_SECRET=your-client-secret
+
+# Application Settings
+LOG_LEVEL=info
+MAX_CONCURRENT_AGENTS=6
+TIMEOUT_MS=60000
+
+# Local Mode (Aanbevolen - Gratis)
+CLAUDE_CODE_INTEGRATION=true
+TEMPLATE_MODE_ENABLED=true
+
+# API Mode (Kost geld)
+# ANTHROPIC_API_KEY=sk-ant-api03-your-key
+```
+
+### **Application Config File**
 
 ```json
 {
@@ -344,13 +362,6 @@ servicenow-app-builder generate --template task-management
             "label": "Department",
             "type": "reference",
             "reference": "cmn_department"
-          },
-          {
-            "name": "equipment_needed",
-            "label": "Equipment Needed",
-            "type": "choice",
-            "choices": ["Laptop", "Desktop", "Mobile", "All"],
-            "multiple": true
           }
         ]
       }
@@ -364,86 +375,270 @@ servicenow-app-builder generate --template task-management
             "name": "Manager Approval",
             "type": "approval",
             "assignmentGroup": "managers"
-          },
-          {
-            "name": "IT Setup",
-            "type": "task",
-            "assignmentGroup": "it_support"
-          },
-          {
-            "name": "Send Welcome Email",
-            "type": "notification"
           }
         ]
       }
     ],
     "ui": [
       {
-        "type": "form",
-        "name": "Onboarding Form",
-        "table": "x_emp_onboard_request"
-      },
-      {
-        "type": "portal",
-        "name": "Employee Portal",
-        "widgets": ["onboarding_status", "my_requests"]
-      }
-    ],
-    "security": [
-      {
-        "type": "acl",
-        "name": "HR Write Access",
-        "table": "x_emp_onboard_request",
-        "operation": "write",
-        "roles": ["hr_specialist", "hr_manager"]
+        "type": "widget",
+        "name": "onboarding_dashboard",
+        "widget_type": "dashboard",
+        "data_source": "x_emp_onboard_request"
       }
     ]
-  },
-  "preferences": {
-    "useModernUI": true,
-    "includeMobileSupport": true,
-    "generateTests": true,
-    "includeDocumentation": true
   }
 }
 ```
 
-## 🔧 Troubleshooting
+## 🤖 Agents Overzicht
 
-### Veel voorkomende problemen
+### **1. Schema Designer Agent**
+- **Functie**: Database tabellen, velden, relaties
+- **Genereert**: 
+  - ServiceNow tabellen met inheritance
+  - Veld definities met juiste types
+  - Relaties tussen tabellen
+  - Indexes voor performance
 
-#### 1. Authentication Failed
-**Probleem**: Kan niet inloggen op ServiceNow
-**Oplossing**: 
-- Controleer username/password
-- Verifieer instance URL (moet https:// bevatten)
-- Check of gebruiker juiste rollen heeft
+### **2. Script Generator Agent**
+- **Functie**: Server-side scripting
+- **Genereert**:
+  - Business Rules (before/after/async)
+  - Script Includes
+  - Scheduled Jobs
+  - Fix Scripts
 
-#### 2. Claude API Errors
-**Probleem**: AI agent errors
-**Oplossing**:
-- Verifieer API key is geldig
-- Check API quota/limits
-- Controleer internet connectie
+### **3. UI Builder Agent**
+- **Functie**: User interfaces
+- **Genereert**:
+  - Service Portal Widgets
+  - Forms met field layouts
+  - Lists met columns en filters
+  - UI Pages (HTML/CSS/JS)
 
-#### 3. Deployment Failed
-**Probleem**: Update set deployment faalt
-**Oplossing**:
-- Verifieer ServiceNow permissions
-- Check of target instance bereikbaar is
-- Controleer update set dependencies
+### **4. Workflow Designer Agent**
+- **Functie**: Process automation
+- **Genereert**:
+  - Workflow definitions
+  - Approval processes
+  - Notifications
+  - SLA definitions
 
-### Debug Mode
+### **5. Security Agent**
+- **Functie**: Toegangscontrole
+- **Genereert**:
+  - Access Control Lists (ACLs)
+  - Rollen en groepen
+  - Data segregation rules
+  - Security policies
 
-Voor meer gedetailleerde logging:
+### **6. Update Set Manager Agent**
+- **Functie**: Deployment
+- **Genereert**:
+  - Update Sets
+  - Migration scripts
+  - Rollback procedures
+  - Deployment documentatie
+
+## 📋 Templates
+
+### **Available Templates**
+
 ```bash
-LOG_LEVEL=debug servicenow-app-builder generate --config-file app-config.json
+# Bekijk alle templates
+snow-flow templates
 ```
 
-### Logs bekijken
-Logs worden opgeslagen in:
-- Console output
-- `./logs/app.log` (als geconfigureerd)
+#### **basic-crud**
+```bash
+snow-flow app "My CRUD App" --template basic-crud
+```
+- Simpele CRUD applicatie
+- Een database tabel
+- Form en List views
+- Basis ACLs en workflow
+
+#### **task-management**
+```bash
+snow-flow app "Task Manager" --template task-management
+```
+- Complete task management systeem
+- Task tabel met priorities
+- Assignment workflows
+- Approval processes
+- Dashboard widgets
+
+#### **service-portal-widget**
+```bash
+snow-flow app "Widget Collection" --template service-portal-widget
+```
+- Multiple widget types
+- Counter, Dashboard, Form widgets
+- Service Portal integration
+- Mobile support
+
+## 💰 Cost Modes
+
+### **Local Mode (Aanbevolen - Gratis)**
+```bash
+# Gebruikt je Claude Code Max abonnement
+snow-flow widget "My Widget" --mode local  # Default mode
+```
+- **Kosten**: $0 extra
+- **Speed**: Template mode = instant
+- **Quality**: Uitstekend voor 90% van use cases
+
+### **API Mode (Kost geld)**
+```bash
+# Gebruikt Claude API direct
+snow-flow widget "My Widget" --mode api
+```
+- **Kosten**: $100-500+ per maand
+- **Speed**: Volledig automatisch
+- **Quality**: Hoogste kwaliteit AI generatie
+
+### **Interactive Mode**
+```bash
+# Handmatige processing via Claude Code
+snow-flow widget "My Widget" --mode interactive
+```
+- **Kosten**: $0 (gebruikt Claude Code)
+- **Speed**: Handmatig maar flexibel
+- **Quality**: Volledig aanpasbaar
+
+## 🔧 Advanced Usage
+
+### **Batch Operations**
+```bash
+# Multiple widgets
+snow-flow widget "Counter Widget" --type counter --table task
+snow-flow widget "Dashboard Widget" --type dashboard --table task
+snow-flow widget "Form Widget" --type form --table task
+
+# Complete app with widgets
+snow-flow app "Full App" --template task-management --scope x_full_app
+```
+
+### **Custom Scopes**
+```bash
+# Custom scope
+snow-flow app "My App" --scope x_custom_scope
+
+# Project-specific scope
+snow-flow widget "Project Widget" --scope x_project_mgmt
+```
+
+### **Development Workflow**
+```bash
+# 1. Initialize project
+snow-flow init --name "My Project"
+
+# 2. Create widgets
+snow-flow widget "Task Counter" --type counter --table task
+snow-flow widget "User Dashboard" --type dashboard --table sys_user
+
+# 3. Create main app
+snow-flow app "Main App" --template task-management
+
+# 4. Check status
+snow-flow status
+```
+
+## 🔍 Troubleshooting
+
+### **Common Issues**
+
+#### **1. Command Not Found**
+```bash
+# Make sure you're in the right directory
+cd Snow-flow
+
+# Use npm run if global install fails
+npm run snow-flow widget "My Widget"
+```
+
+#### **2. ServiceNow Connection Issues**
+```bash
+# Check your .env file
+snow-flow status
+
+# Verify credentials
+SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com
+SERVICENOW_USERNAME=your-username
+SERVICENOW_PASSWORD=your-password
+```
+
+#### **3. Build Issues**
+```bash
+# Rebuild the project
+npm run build
+
+# Check for TypeScript errors
+npm run typecheck
+```
+
+### **Debug Mode**
+```bash
+# Enable debug logging
+LOG_LEVEL=debug snow-flow widget "Debug Widget"
+
+# Check Claude Code integration
+snow-flow claude-status
+```
+
+## 🎯 Examples
+
+### **Real-world Examples**
+
+#### **IT Service Desk**
+```bash
+# Create incident counter widget
+snow-flow widget "Incident Counter" --type counter --table incident
+
+# Create service request dashboard
+snow-flow widget "Service Dashboard" --type dashboard --table sc_request
+
+# Create IT service app
+snow-flow app "IT Service Desk" --template task-management --scope x_it_service
+```
+
+#### **HR Onboarding**
+```bash
+# Create onboarding form widget
+snow-flow widget "Onboarding Form" --type form --table hr_onboarding
+
+# Create employee dashboard
+snow-flow widget "Employee Dashboard" --type dashboard --table sys_user
+
+# Create HR application
+snow-flow app "HR Onboarding" --template basic-crud --scope x_hr_onboard
+```
+
+#### **Project Management**
+```bash
+# Create project counter
+snow-flow widget "Project Counter" --type counter --table project
+
+# Create project dashboard
+snow-flow widget "Project Dashboard" --type dashboard --table project
+
+# Create project management app
+snow-flow app "Project Manager" --template task-management --scope x_project_mgmt
+```
+
+## 📊 Performance
+
+### **Generation Times**
+- **Template Mode**: < 1 seconde
+- **Local Mode**: 2-5 seconden
+- **API Mode**: 10-30 seconden
+- **Interactive Mode**: Manual (flexibel)
+
+### **Resource Usage**
+- **Memory**: < 200MB
+- **CPU**: Minimal tijdens template mode
+- **Network**: Alleen ServiceNow API calls
 
 ## 🤝 Contributing
 
@@ -451,7 +646,7 @@ Bijdragen zijn welkom!
 
 1. Fork het project
 2. Maak een feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit je changes (`git commit -m 'Add some AmazingFeature'`)
+3. Commit je changes (`git commit -m 'Add: nieuwe unified CLI'`)
 4. Push naar de branch (`git push origin feature/AmazingFeature`)
 5. Open een Pull Request
 
@@ -462,6 +657,7 @@ Dit project is gelicenseerd onder de MIT License - zie het [LICENSE](LICENSE) be
 ## 🙏 Credits
 
 - Gebouwd met [Claude AI](https://www.anthropic.com/claude) van Anthropic
+- Geïnspireerd door [claude-flow](https://github.com/ruvnet/claude-flow)
 - ServiceNow® is een geregistreerd handelsmerk van ServiceNow, Inc.
 
 ## 📞 Support
@@ -469,7 +665,16 @@ Dit project is gelicenseerd onder de MIT License - zie het [LICENSE](LICENSE) be
 Voor vragen of problemen:
 - Open een [GitHub Issue](https://github.com/groeimetai/Snow-flow/issues)
 - Bekijk de [Wiki](https://github.com/groeimetai/Snow-flow/wiki) voor meer documentatie
+- Check [COST-OPTIMIZATION.md](COST-OPTIMIZATION.md) voor kostenvergelijking
 
 ---
 
 **Let op**: Dit is een onafhankelijk project en is niet geaffilieerd met ServiceNow, Inc.
+
+**Quick Commands Cheat Sheet:**
+```bash
+snow-flow widget "My Widget" --type counter    # Widget maken
+snow-flow app "My App" --template basic-crud   # App maken  
+snow-flow status                               # Status check
+snow-flow templates                            # Templates bekijken
+```

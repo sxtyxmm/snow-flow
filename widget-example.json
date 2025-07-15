@@ -1,0 +1,73 @@
+{
+  "appName": "My Custom Widget",
+  "appScope": "x_my_widget",
+  "appDescription": "Custom ServiceNow widget application",
+  "appVersion": "1.0.0",
+  "requirements": {
+    "tables": [
+      {
+        "name": "x_my_widget_data",
+        "label": "Widget Data",
+        "fields": [
+          {
+            "name": "title",
+            "label": "Title",
+            "type": "string",
+            "mandatory": true
+          },
+          {
+            "name": "count",
+            "label": "Count",
+            "type": "number",
+            "defaultValue": "0"
+          },
+          {
+            "name": "status",
+            "label": "Status",
+            "type": "choice",
+            "choices": ["active", "inactive", "pending"]
+          }
+        ]
+      }
+    ],
+    "ui": [
+      {
+        "type": "widget",
+        "name": "task_counter_widget",
+        "title": "Task Counter",
+        "description": "Real-time task counter widget",
+        "widget_type": "counter",
+        "data_source": "task",
+        "configuration": {
+          "show_chart": true,
+          "auto_refresh": true,
+          "refresh_interval": 30,
+          "status_colors": {
+            "new": "#0066cc",
+            "in_progress": "#ff9900", 
+            "completed": "#00cc00"
+          }
+        }
+      },
+      {
+        "type": "widget",
+        "name": "user_dashboard_widget",
+        "title": "User Dashboard",
+        "description": "Personal dashboard widget",
+        "widget_type": "dashboard",
+        "data_source": "sys_user",
+        "configuration": {
+          "show_recent_items": true,
+          "show_favorites": true,
+          "max_items": 10
+        }
+      }
+    ]
+  },
+  "preferences": {
+    "useModernUI": true,
+    "includeMobileSupport": true,
+    "generateTests": true,
+    "includeDocumentation": true
+  }
+}
