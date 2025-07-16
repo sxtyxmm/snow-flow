@@ -57,3 +57,17 @@ temp/
 # Claude-specific
 .claude/
 claude-config.json
+
+# Memory and session data
+memory/
+.swarm/
+
+# Test files
+test-*.js
+test-*.ts
+
+# ServiceNow artifacts (should be in Neo4j, not Git)
+servicenow/widgets/
+servicenow/flows/
+servicenow/scripts/
+servicenow/workflows/

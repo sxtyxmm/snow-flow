@@ -84,6 +84,11 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
 # Optional: Advanced Configuration
 SNOW_FLOW_PARALLEL=true
 SNOW_FLOW_MONITOR=true
+
+# Optional: Neo4j Graph Memory (for intelligent artifact understanding)
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your-neo4j-password
 ```
 
 ### 5. Authentication & First Run
@@ -183,6 +188,62 @@ snow-flow config show         # Display current configuration
 - **Custom Table Structures** with business rules
 - **Security Configurations** with role-based access
 - **Update Sets** for production deployment
+
+## 🧠 Neo4j Graph Memory (Optional but Recommended)
+
+Snow-Flow can use Neo4j to create an intelligent knowledge graph of all ServiceNow artifacts, enabling:
+- **Instant Understanding**: Claude understands relationships between widgets, flows, scripts
+- **Impact Analysis**: See what will break before making changes
+- **Pattern Recognition**: Learn from successful implementations
+- **AI Suggestions**: Get recommendations based on past success
+
+### Neo4j Setup
+
+1. **Install Neo4j** (if not already installed):
+```bash
+# macOS
+brew install neo4j
+
+# Ubuntu/Debian
+wget -O - https://debian.neo4j.com/neotechnology.gpg.key | sudo apt-key add -
+echo 'deb https://debian.neo4j.com stable 5.0' | sudo tee /etc/apt/sources.list.d/neo4j.list
+sudo apt-get update
+sudo apt-get install neo4j
+
+# Or use Docker
+docker run -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:latest
+```
+
+2. **Start Neo4j**:
+```bash
+# Local installation
+neo4j start
+
+# Or with Docker
+docker start neo4j
+```
+
+3. **Configure Snow-Flow** (add to .env):
+```env
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your-password
+```
+
+4. **Use Graph Memory**:
+```bash
+# Index all discovered artifacts
+snow-flow graph index-all
+
+# Analyze impact before changes
+snow-flow graph impact "widget_123"
+
+# Find related artifacts
+snow-flow graph find-related "script_include_456"
+
+# Get AI suggestions
+snow-flow graph suggest "incident management dashboard"
+```
 
 ## 🔧 Advanced Features
 

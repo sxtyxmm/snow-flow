@@ -37,6 +37,7 @@
     "figlet": "^1.8.2",
     "gradient-string": "^3.0.0",
     "inquirer": "^12.7.0",
+    "neo4j-driver": "^5.23.0",
     "node-fetch": "^3.3.2",
     "ora": "^8.2.0",
     "sqlite3": "^5.1.7",

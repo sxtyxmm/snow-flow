@@ -10,6 +10,62 @@ When developing for ServiceNow, ALWAYS:
 3. Use Task tool for parallel execution
 4. Deploy DIRECTLY using MCP tools - NO file generation
 5. Learn from every operation and improve continuously
+6. **NEW**: Index ALL artifacts in Neo4j graph for instant understanding
+
+## 🧠 NEO4J GRAPH MEMORY - INTELLIGENT ARTIFACT UNDERSTANDING
+
+### ALWAYS Index Artifacts in Graph
+```javascript
+// After EVERY artifact discovery or creation:
+await snow_graph_index_artifact({
+  artifact: {
+    id: artifact.sys_id,
+    name: artifact.name,
+    type: artifact.type,
+    content: artifact.script || artifact.template,
+    purpose: artifact.description
+  },
+  relationships: [
+    { to: 'related_artifact_id', type: 'USES', data_flow: 'calls API method' },
+    { to: 'table_id', type: 'MODIFIES', data_flow: 'updates records' }
+  ]
+});
+```
+
+### Find Related Artifacts Instantly
+```javascript
+// Before modifying ANY artifact, check impact:
+const impact = await snow_graph_analyze_impact({
+  artifact_id: 'widget_123',
+  change_type: 'modify'
+});
+
+// Find all related artifacts:
+const related = await snow_graph_find_related({
+  artifact_id: 'script_include_456',
+  depth: 3,
+  relationship_types: ['USES', 'REQUIRES']
+});
+```
+
+### AI-Powered Suggestions
+```javascript
+// Get intelligent suggestions based on context:
+const suggestions = await snow_graph_suggest_artifacts({
+  context: 'incident management dashboard',
+  artifact_type: 'widget',
+  requirements: ['real-time updates', 'color coding', 'charts']
+});
+```
+
+### Pattern Recognition
+```javascript
+// Learn from successful patterns:
+const patterns = await snow_graph_pattern_analysis({
+  pattern_type: 'architectural',
+  min_occurrences: 3
+});
+```
 
 ## 🚀 AUTONOMOUS BATCH TOOL PATTERNS
 
