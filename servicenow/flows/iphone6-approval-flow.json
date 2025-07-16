@@ -1,0 +1,323 @@
+{
+  "name": "iPhone 6 Request Approval Flow",
+  "description": "Workflow to route iPhone 6 requests to admin for approval before processing",
+  "table": "sc_request",
+  "active": true,
+  "version": "1.0",
+  "trigger": {
+    "type": "record_created",
+    "table": "sc_request",
+    "conditions": [
+      {
+        "field": "state",
+        "operator": "=",
+        "value": "1"
+      }
+    ]
+  },
+  "activities": [
+    {
+      "id": "check_iphone6",
+      "name": "Check if iPhone 6 Request",
+      "type": "condition",
+      "description": "Check if any requested items contain iPhone 6",
+      "condition": {
+        "type": "script",
+        "script": "// Check if any requested items contain iPhone 6\nvar requestedItems = new GlideRecord('sc_req_item');\nrequestedItems.addQuery('request', inputs.record_id);\nrequestedItems.query();\n\nvar containsIphone6 = false;\nwhile (requestedItems.next()) {\n  var catItem = requestedItems.cat_item.getDisplayValue();\n  if (catItem && catItem.toLowerCase().indexOf('iphone 6') !== -1) {\n    containsIphone6 = true;\n    break;\n  }\n}\n\noutputs.contains_iphone6 = containsIphone6;"
+      },
+      "outputs": [
+        {
+          "name": "contains_iphone6",
+          "type": "boolean",
+          "label": "Contains iPhone 6"
+        }
+      ]
+    },
+    {
+      "id": "set_pending_approval",
+      "name": "Set Request to Pending Approval",
+      "type": "update_record",
+      "description": "Update request state to pending approval",
+      "condition": {
+        "field": "check_iphone6.contains_iphone6",
+        "operator": "=",
+        "value": "true"
+      },
+      "table": "sc_request",
+      "record_id": "${inputs.record_id}",
+      "fields": {
+        "state": "2",
+        "approval": "requested",
+        "comments": "iPhone 6 request requires admin approval"
+      }
+    },
+    {
+      "id": "create_approval",
+      "name": "Create Admin Approval",
+      "type": "approval",
+      "description": "Send approval request to admin",
+      "condition": {
+        "field": "check_iphone6.contains_iphone6",
+        "operator": "=",
+        "value": "true"
+      },
+      "approval_settings": {
+        "approvers": [
+          {
+            "type": "role",
+            "value": "admin"
+          }
+        ],
+        "approval_type": "anyone",
+        "due_date": {
+          "type": "relative",
+          "value": "3",
+          "unit": "days"
+        },
+        "approval_name": "iPhone 6 Request Approval",
+        "approval_description": "Please review and approve this iPhone 6 request",
+        "approval_instructions": "Review the iPhone 6 request details and approve if justified by business needs."
+      },
+      "inputs": {
+        "record_id": "${inputs.record_id}",
+        "table": "sc_request",
+        "requestor": "${inputs.record.requested_for}",
+        "short_description": "${inputs.record.short_description}"
+      }
+    },
+    {
+      "id": "notify_requestor_pending",
+      "name": "Notify Requestor - Pending Approval",
+      "type": "notification",
+      "description": "Notify requestor that request is pending approval",
+      "condition": {
+        "field": "check_iphone6.contains_iphone6",
+        "operator": "=",
+        "value": "true"
+      },
+      "notification_settings": {
+        "recipients": [
+          {
+            "type": "field",
+            "value": "requested_for"
+          }
+        ],
+        "subject": "Your iPhone 6 Request is Pending Approval",
+        "body": "Dear ${inputs.record.requested_for.display_value},\\n\\nYour request for iPhone 6 (${inputs.record.number}) has been submitted and is currently pending admin approval.\\n\\nRequest Details:\\n- Request Number: ${inputs.record.number}\\n- Description: ${inputs.record.short_description}\\n- Submitted: ${inputs.record.sys_created_on}\\n\\nYou will be notified once the approval decision is made.\\n\\nThank you,\\nIT Service Management"
+      }
+    },
+    {
+      "id": "check_approval_result",
+      "name": "Check Approval Result",
+      "type": "condition",
+      "description": "Check if approval was approved or rejected",
+      "condition": {
+        "type": "script",
+        "script": "// Check approval result\nvar approvalState = inputs.approval_state;\noutputs.is_approved = (approvalState === 'approved');\noutputs.is_rejected = (approvalState === 'rejected');"
+      },
+      "inputs": {
+        "approval_state": "${create_approval.approval_state}"
+      },
+      "outputs": [
+        {
+          "name": "is_approved",
+          "type": "boolean",
+          "label": "Is Approved"
+        },
+        {
+          "name": "is_rejected",
+          "type": "boolean",
+          "label": "Is Rejected"
+        }
+      ]
+    },
+    {
+      "id": "approve_request",
+      "name": "Approve Request",
+      "type": "update_record",
+      "description": "Update request to approved state",
+      "condition": {
+        "field": "check_approval_result.is_approved",
+        "operator": "=",
+        "value": "true"
+      },
+      "table": "sc_request",
+      "record_id": "${inputs.record_id}",
+      "fields": {
+        "state": "3",
+        "approval": "approved",
+        "comments": "iPhone 6 request approved by admin"
+      }
+    },
+    {
+      "id": "reject_request",
+      "name": "Reject Request",
+      "type": "update_record",
+      "description": "Update request to rejected state",
+      "condition": {
+        "field": "check_approval_result.is_rejected",
+        "operator": "=",
+        "value": "true"
+      },
+      "table": "sc_request",
+      "record_id": "${inputs.record_id}",
+      "fields": {
+        "state": "4",
+        "approval": "rejected",
+        "comments": "iPhone 6 request rejected by admin"
+      }
+    },
+    {
+      "id": "notify_requestor_approved",
+      "name": "Notify Requestor - Approved",
+      "type": "notification",
+      "description": "Notify requestor that request was approved",
+      "condition": {
+        "field": "check_approval_result.is_approved",
+        "operator": "=",
+        "value": "true"
+      },
+      "notification_settings": {
+        "recipients": [
+          {
+            "type": "field",
+            "value": "requested_for"
+          }
+        ],
+        "subject": "Your iPhone 6 Request has been Approved",
+        "body": "Dear ${inputs.record.requested_for.display_value},\\n\\nGood news! Your iPhone 6 request (${inputs.record.number}) has been approved by the admin.\\n\\nRequest Details:\\n- Request Number: ${inputs.record.number}\\n- Description: ${inputs.record.short_description}\\n- Approved: ${gs.nowDateTime()}\\n\\nYour request will now proceed to fulfillment. You will receive updates on the progress.\\n\\nThank you,\\nIT Service Management"
+      }
+    },
+    {
+      "id": "notify_requestor_rejected",
+      "name": "Notify Requestor - Rejected",
+      "type": "notification",
+      "description": "Notify requestor that request was rejected",
+      "condition": {
+        "field": "check_approval_result.is_rejected",
+        "operator": "=",
+        "value": "true"
+      },
+      "notification_settings": {
+        "recipients": [
+          {
+            "type": "field",
+            "value": "requested_for"
+          }
+        ],
+        "subject": "Your iPhone 6 Request has been Rejected",
+        "body": "Dear ${inputs.record.requested_for.display_value},\\n\\nWe regret to inform you that your iPhone 6 request (${inputs.record.number}) has been rejected by the admin.\\n\\nRequest Details:\\n- Request Number: ${inputs.record.number}\\n- Description: ${inputs.record.short_description}\\n- Rejected: ${gs.nowDateTime()}\\n\\nReason: ${create_approval.approval_comments}\\n\\nIf you have questions about this decision, please contact your administrator.\\n\\nThank you,\\nIT Service Management"
+      }
+    },
+    {
+      "id": "notify_admin_decision",
+      "name": "Notify Admin - Decision Logged",
+      "type": "notification",
+      "description": "Notify admin that decision has been processed",
+      "condition": {
+        "type": "or",
+        "conditions": [
+          {
+            "field": "check_approval_result.is_approved",
+            "operator": "=",
+            "value": "true"
+          },
+          {
+            "field": "check_approval_result.is_rejected",
+            "operator": "=",
+            "value": "true"
+          }
+        ]
+      },
+      "notification_settings": {
+        "recipients": [
+          {
+            "type": "role",
+            "value": "admin"
+          }
+        ],
+        "subject": "iPhone 6 Request Decision Processed",
+        "body": "Admin,\\n\\nYour approval decision for iPhone 6 request ${inputs.record.number} has been processed.\\n\\nRequest Details:\\n- Request Number: ${inputs.record.number}\\n- Requestor: ${inputs.record.requested_for.display_value}\\n- Decision: ${create_approval.approval_state}\\n- Comments: ${create_approval.approval_comments}\\n\\nThe requestor has been notified of the decision.\\n\\nIT Service Management System"
+      }
+    },
+    {
+      "id": "log_workflow_completion",
+      "name": "Log Workflow Completion",
+      "type": "script",
+      "description": "Log workflow completion for audit purposes",
+      "script": "// Log workflow completion\ngs.info('iPhone 6 Approval Workflow completed for request: ' + inputs.record.number);\ngs.info('Final approval state: ' + inputs.record.approval);\ngs.info('Final request state: ' + inputs.record.state);\n\n// Update workflow tracking\nvar workflowLog = new GlideRecord('sys_flow_context');\nworkflowLog.initialize();\nworkflowLog.workflow_name = 'iPhone 6 Request Approval Flow';\nworkflowLog.record_id = inputs.record_id;\nworkflowLog.completion_status = 'completed';\nworkflowLog.completion_time = gs.nowDateTime();\nworkflowLog.insert();"
+    }
+  ],
+  "flow_logic": {
+    "start": "check_iphone6",
+    "paths": [
+      {
+        "from": "check_iphone6",
+        "to": "set_pending_approval",
+        "condition": "contains_iphone6 = true"
+      },
+      {
+        "from": "check_iphone6",
+        "to": "log_workflow_completion",
+        "condition": "contains_iphone6 = false"
+      },
+      {
+        "from": "set_pending_approval",
+        "to": "create_approval"
+      },
+      {
+        "from": "create_approval",
+        "to": "notify_requestor_pending"
+      },
+      {
+        "from": "notify_requestor_pending",
+        "to": "check_approval_result"
+      },
+      {
+        "from": "check_approval_result",
+        "to": "approve_request",
+        "condition": "is_approved = true"
+      },
+      {
+        "from": "check_approval_result",
+        "to": "reject_request",
+        "condition": "is_rejected = true"
+      },
+      {
+        "from": "approve_request",
+        "to": "notify_requestor_approved"
+      },
+      {
+        "from": "reject_request",
+        "to": "notify_requestor_rejected"
+      },
+      {
+        "from": "notify_requestor_approved",
+        "to": "notify_admin_decision"
+      },
+      {
+        "from": "notify_requestor_rejected",
+        "to": "notify_admin_decision"
+      },
+      {
+        "from": "notify_admin_decision",
+        "to": "log_workflow_completion"
+      }
+    ]
+  },
+  "configuration": {
+    "timeout": "7 days",
+    "retry_policy": {
+      "max_retries": 3,
+      "retry_interval": "1 hour"
+    },
+    "error_handling": {
+      "on_error": "notify_admin",
+      "error_notification": {
+        "recipients": ["admin"],
+        "subject": "iPhone 6 Approval Workflow Error",
+        "body": "An error occurred in the iPhone 6 approval workflow for request ${inputs.record.number}. Please check the workflow logs."
+      }
+    }
+  }
+}

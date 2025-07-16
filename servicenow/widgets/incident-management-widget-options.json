@@ -1,0 +1,470 @@
+{
+  "widget_options": [
+    {
+      "name": "title",
+      "label": "Widget Title",
+      "type": "string",
+      "default_value": "Incident Management",
+      "hint": "The title displayed in the widget header"
+    },
+    {
+      "name": "max_items",
+      "label": "Maximum Items to Display",
+      "type": "integer",
+      "default_value": 20,
+      "hint": "Maximum number of incidents to show in the list"
+    },
+    {
+      "name": "refresh_interval",
+      "label": "Auto Refresh Interval (seconds)",
+      "type": "integer",
+      "default_value": 30,
+      "hint": "How often to automatically refresh the incident data"
+    },
+    {
+      "name": "show_filters",
+      "label": "Show Filter Controls",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display priority, state, and search filters"
+    },
+    {
+      "name": "show_footer",
+      "label": "Show Footer Information",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display last updated time and next refresh info"
+    },
+    {
+      "name": "show_closed",
+      "label": "Include Closed Incidents",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Include closed/resolved incidents in the display"
+    },
+    {
+      "name": "assignment_group",
+      "label": "Filter by Assignment Group",
+      "type": "reference",
+      "table": "sys_user_group",
+      "default_value": "",
+      "hint": "Only show incidents assigned to this group"
+    },
+    {
+      "name": "caller_id",
+      "label": "Filter by Caller",
+      "type": "reference",
+      "table": "sys_user",
+      "default_value": "",
+      "hint": "Only show incidents reported by this user"
+    },
+    {
+      "name": "days_back",
+      "label": "Days Back to Search",
+      "type": "integer",
+      "default_value": 30,
+      "hint": "Only show incidents created within this many days"
+    },
+    {
+      "name": "show_summary_cards",
+      "label": "Show Priority Summary Cards",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display the priority count cards at the top"
+    },
+    {
+      "name": "enable_export",
+      "label": "Enable Data Export",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Allow users to export incident data to CSV/JSON"
+    },
+    {
+      "name": "compact_view",
+      "label": "Compact View Mode",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Use a more compact display format"
+    },
+    {
+      "name": "show_relative_time",
+      "label": "Show Relative Time",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display time as 'X hours ago' instead of absolute time"
+    },
+    {
+      "name": "highlight_overdue",
+      "label": "Highlight Overdue Incidents",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Visually highlight incidents that are overdue"
+    },
+    {
+      "name": "default_priority_filter",
+      "label": "Default Priority Filter",
+      "type": "choice",
+      "choices": [
+        {"label": "All Priorities", "value": ""},
+        {"label": "Critical Only", "value": "1"},
+        {"label": "High Only", "value": "2"},
+        {"label": "Medium Only", "value": "3"},
+        {"label": "Low Only", "value": "4"},
+        {"label": "Critical & High", "value": "1,2"}
+      ],
+      "default_value": "",
+      "hint": "Default priority filter when widget loads"
+    },
+    {
+      "name": "default_state_filter",
+      "label": "Default State Filter",
+      "type": "choice",
+      "choices": [
+        {"label": "All States", "value": ""},
+        {"label": "New", "value": "1"},
+        {"label": "In Progress", "value": "2"},
+        {"label": "On Hold", "value": "3"},
+        {"label": "Pending", "value": "4"},
+        {"label": "Resolved", "value": "6"},
+        {"label": "Closed", "value": "7"},
+        {"label": "Open (New + In Progress)", "value": "1,2"}
+      ],
+      "default_value": "",
+      "hint": "Default state filter when widget loads"
+    },
+    {
+      "name": "enable_keyboard_nav",
+      "label": "Enable Keyboard Navigation",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Allow keyboard navigation through incident list"
+    },
+    {
+      "name": "show_business_service",
+      "label": "Show Business Service",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Display business service information for incidents"
+    },
+    {
+      "name": "show_configuration_item",
+      "label": "Show Configuration Item",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Display configuration item information for incidents"
+    },
+    {
+      "name": "enable_click_to_open",
+      "label": "Enable Click to Open",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Allow clicking on incidents to open them in a new tab"
+    },
+    {
+      "name": "color_scheme",
+      "label": "Color Scheme",
+      "type": "choice",
+      "choices": [
+        {"label": "Default", "value": "default"},
+        {"label": "High Contrast", "value": "high-contrast"},
+        {"label": "Dark Theme", "value": "dark"},
+        {"label": "Colorblind Friendly", "value": "colorblind"}
+      ],
+      "default_value": "default",
+      "hint": "Visual color scheme for the widget"
+    },
+    {
+      "name": "custom_css_class",
+      "label": "Custom CSS Class",
+      "type": "string",
+      "default_value": "",
+      "hint": "Additional CSS class to apply to the widget container"
+    },
+    {
+      "name": "enable_animations",
+      "label": "Enable Animations",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Enable smooth animations for interactions"
+    },
+    {
+      "name": "show_work_notes",
+      "label": "Show Work Notes Preview",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Display a preview of work notes in the incident list"
+    },
+    {
+      "name": "enable_bulk_actions",
+      "label": "Enable Bulk Actions",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Allow bulk actions on multiple incidents"
+    },
+    {
+      "name": "widget_height",
+      "label": "Widget Height (px)",
+      "type": "integer",
+      "default_value": 600,
+      "hint": "Fixed height for the widget in pixels (0 for auto)"
+    },
+    {
+      "name": "enable_real_time_updates",
+      "label": "Enable Real-time Updates",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Use WebSocket for real-time incident updates"
+    },
+    {
+      "name": "show_sla_info",
+      "label": "Show SLA Information",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Display SLA status and breach warnings"
+    },
+    {
+      "name": "enable_notifications",
+      "label": "Enable Browser Notifications",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Show browser notifications for new critical incidents"
+    },
+    {
+      "name": "show_age_indicator",
+      "label": "Show Age Indicator",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display visual indicator for incident age"
+    },
+    {
+      "name": "group_by_assignment",
+      "label": "Group by Assignment Group",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Group incidents by their assignment group"
+    },
+    {
+      "name": "show_charts",
+      "label": "Show Visual Charts",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display interactive charts for incident data visualization"
+    },
+    {
+      "name": "chart_types",
+      "label": "Chart Types to Display",
+      "type": "choice",
+      "choices": [
+        {"label": "All Charts", "value": "all"},
+        {"label": "Status Distribution Only", "value": "status"},
+        {"label": "Priority Breakdown Only", "value": "priority"},
+        {"label": "Trend Analysis Only", "value": "trend"},
+        {"label": "Status + Priority", "value": "status,priority"},
+        {"label": "No Charts", "value": "none"}
+      ],
+      "default_value": "all",
+      "hint": "Choose which charts to display in the widget"
+    },
+    {
+      "name": "auto_refresh",
+      "label": "Enable Auto Refresh",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Automatically refresh widget data at specified intervals"
+    },
+    {
+      "name": "max_records",
+      "label": "Maximum Records to Load",
+      "type": "integer",
+      "default_value": 100,
+      "hint": "Maximum number of incident records to load from database"
+    },
+    {
+      "name": "display_fields",
+      "label": "Additional Fields to Display",
+      "type": "choice",
+      "choices": [
+        {"label": "Basic Fields Only", "value": "basic"},
+        {"label": "Include Business Service", "value": "business"},
+        {"label": "Include Configuration Item", "value": "ci"},
+        {"label": "Include Location", "value": "location"},
+        {"label": "Include All Fields", "value": "all"}
+      ],
+      "default_value": "basic",
+      "hint": "Choose which additional fields to display in incident cards"
+    },
+    {
+      "name": "priority_colors",
+      "label": "Priority Color Scheme",
+      "type": "choice",
+      "choices": [
+        {"label": "Default (Red/Orange/Yellow/Green)", "value": "default"},
+        {"label": "High Contrast", "value": "high-contrast"},
+        {"label": "Colorblind Safe", "value": "colorblind"},
+        {"label": "Monochrome", "value": "monochrome"}
+      ],
+      "default_value": "default",
+      "hint": "Color scheme for priority indicators"
+    },
+    {
+      "name": "card_layout",
+      "label": "Card Layout Style",
+      "type": "choice",
+      "choices": [
+        {"label": "Grid (Cards)", "value": "grid"},
+        {"label": "List (Compact)", "value": "list"},
+        {"label": "Table (Detailed)", "value": "table"}
+      ],
+      "default_value": "grid",
+      "hint": "Layout style for displaying incidents"
+    },
+    {
+      "name": "enable_search",
+      "label": "Enable Search Bar",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Show search bar for filtering incidents"
+    },
+    {
+      "name": "search_fields",
+      "label": "Search Fields",
+      "type": "choice",
+      "choices": [
+        {"label": "Number + Description", "value": "basic"},
+        {"label": "Include Caller", "value": "caller"},
+        {"label": "Include Assignment", "value": "assignment"},
+        {"label": "All Fields", "value": "all"}
+      ],
+      "default_value": "basic",
+      "hint": "Fields to include in search functionality"
+    },
+    {
+      "name": "enable_filters",
+      "label": "Enable Filter Dropdowns",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Show filter dropdowns for priority, state, and assignment group"
+    },
+    {
+      "name": "filter_persistence",
+      "label": "Remember Filter Settings",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Remember user's filter preferences across sessions"
+    },
+    {
+      "name": "show_trend_indicators",
+      "label": "Show Trend Indicators",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display trend arrows and percentage changes in summary cards"
+    },
+    {
+      "name": "enable_drill_down",
+      "label": "Enable Chart Drill-down",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Allow clicking on charts to filter incidents"
+    },
+    {
+      "name": "mobile_columns",
+      "label": "Mobile Columns",
+      "type": "integer",
+      "default_value": 1,
+      "hint": "Number of columns to display on mobile devices"
+    },
+    {
+      "name": "tablet_columns",
+      "label": "Tablet Columns",
+      "type": "integer",
+      "default_value": 2,
+      "hint": "Number of columns to display on tablet devices"
+    },
+    {
+      "name": "desktop_columns",
+      "label": "Desktop Columns",
+      "type": "integer",
+      "default_value": 3,
+      "hint": "Number of columns to display on desktop devices"
+    },
+    {
+      "name": "show_empty_state",
+      "label": "Show Empty State Message",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Display friendly message when no incidents are found"
+    },
+    {
+      "name": "empty_state_message",
+      "label": "Custom Empty State Message",
+      "type": "string",
+      "default_value": "No incidents found matching your criteria",
+      "hint": "Custom message to display when no incidents are found"
+    },
+    {
+      "name": "loading_animation",
+      "label": "Loading Animation Style",
+      "type": "choice",
+      "choices": [
+        {"label": "Spinner", "value": "spinner"},
+        {"label": "Skeleton", "value": "skeleton"},
+        {"label": "Pulse", "value": "pulse"},
+        {"label": "Fade", "value": "fade"}
+      ],
+      "default_value": "spinner",
+      "hint": "Animation style for loading states"
+    },
+    {
+      "name": "show_performance_metrics",
+      "label": "Show Performance Metrics",
+      "type": "boolean",
+      "default_value": false,
+      "hint": "Display query performance metrics in footer"
+    },
+    {
+      "name": "enable_accessibility",
+      "label": "Enhanced Accessibility",
+      "type": "boolean",
+      "default_value": true,
+      "hint": "Enable enhanced accessibility features (ARIA labels, keyboard navigation)"
+    },
+    {
+      "name": "cache_duration",
+      "label": "Cache Duration (minutes)",
+      "type": "integer",
+      "default_value": 5,
+      "hint": "How long to cache incident data (0 to disable caching)"
+    }
+  ],
+  "widget_dependencies": [
+    "sp-widget-utils",
+    "angular-chart.js",
+    "bootstrap"
+  ],
+  "widget_categories": [
+    "IT Service Management",
+    "Incident Management",
+    "Dashboard",
+    "Monitoring"
+  ],
+  "widget_tags": [
+    "incident",
+    "monitoring",
+    "dashboard",
+    "real-time",
+    "priority",
+    "assignment",
+    "sla"
+  ],
+  "widget_permissions": {
+    "read": "incident.read",
+    "write": "incident.write",
+    "admin": "incident.admin"
+  },
+  "widget_compatibility": {
+    "min_version": "Madrid",
+    "max_version": "Vancouver",
+    "mobile_friendly": true,
+    "responsive": true
+  }
+}

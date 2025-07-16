@@ -1,0 +1,207 @@
+<div class="incident-management-widget">
+  <!-- Header Section -->
+  <div class="widget-header">
+    <h2 class="widget-title">
+      <i class="fa fa-exclamation-triangle"></i>
+      Incident Management
+    </h2>
+    <div class="header-controls">
+      <span class="incident-count" ng-if="!c.isLoading">
+        {{c.filteredIncidents.length}} of {{c.incidents.length}} incidents
+      </span>
+    </div>
+  </div>
+
+  <!-- Filter and Sort Controls -->
+  <div class="controls-section" ng-if="c.options.enable_filtering || c.options.enable_sorting">
+    <div class="row">
+      <!-- Search Filter -->
+      <div class="col-md-4" ng-if="c.options.enable_filtering">
+        <div class="form-group">
+          <div class="input-group">
+            <span class="input-group-addon">
+              <i class="fa fa-search"></i>
+            </span>
+            <input type="text" 
+                   class="form-control" 
+                   placeholder="Search incidents..." 
+                   ng-model="c.searchText"
+                   ng-change="c.filterIncidents()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority Filter -->
+      <div class="col-md-3" ng-if="c.options.enable_filtering">
+        <div class="form-group">
+          <select class="form-control" 
+                  ng-model="c.priorityFilter" 
+                  ng-change="c.filterIncidents()">
+            <option value="">All Priorities</option>
+            <option value="1">1 - Critical</option>
+            <option value="2">2 - High</option>
+            <option value="3">3 - Moderate</option>
+            <option value="4">4 - Low</option>
+            <option value="5">5 - Planning</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- State Filter -->
+      <div class="col-md-3" ng-if="c.options.enable_filtering">
+        <div class="form-group">
+          <select class="form-control" 
+                  ng-model="c.stateFilter" 
+                  ng-change="c.filterIncidents()">
+            <option value="">All States</option>
+            <option value="1">New</option>
+            <option value="2">In Progress</option>
+            <option value="3">On Hold</option>
+            <option value="6">Resolved</option>
+            <option value="7">Closed</option>
+            <option value="8">Canceled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sort Control -->
+      <div class="col-md-2" ng-if="c.options.enable_sorting">
+        <div class="form-group">
+          <select class="form-control" 
+                  ng-model="c.sortField" 
+                  ng-change="c.sortIncidents()">
+            <option value="number">Number</option>
+            <option value="priority">Priority</option>
+            <option value="opened_at">Created</option>
+            <option value="updated_at">Updated</option>
+            <option value="state">State</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" ng-if="c.isLoading">
+    <div class="loading-spinner">
+      <i class="fa fa-spinner fa-spin fa-3x"></i>
+      <p>Loading incidents...</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" ng-if="!c.isLoading && c.filteredIncidents.length === 0">
+    <div class="empty-state-icon">
+      <i class="fa fa-inbox fa-4x"></i>
+    </div>
+    <h3>No incidents found</h3>
+    <p ng-if="c.hasFilters()">Try adjusting your filters or search criteria</p>
+    <p ng-if="!c.hasFilters()">There are no incidents to display</p>
+    <button class="btn btn-default" 
+            ng-if="c.hasFilters()" 
+            ng-click="c.clearFilters()">
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Incident Grid -->
+  <div class="incident-grid" ng-if="!c.isLoading && c.filteredIncidents.length > 0">
+    <div class="row">
+      <div class="col-md-6 col-lg-4" 
+           ng-repeat="incident in c.pagedIncidents track by incident.sys_id">
+        <div class="incident-card" 
+             ng-class="{'priority-' + incident.priority: c.options.show_priority_colors}"
+             ng-click="c.openIncident(incident)">
+          
+          <!-- Card Header -->
+          <div class="card-header">
+            <span class="incident-number">{{incident.number}}</span>
+            <span class="incident-priority" 
+                  ng-class="'priority-' + incident.priority"
+                  title="Priority {{incident.priority}}">
+              P{{incident.priority}}
+            </span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-body">
+            <h4 class="incident-title" title="{{incident.short_description}}">
+              {{incident.short_description | limitTo: 60}}{{incident.short_description.length > 60 ? '...' : ''}}
+            </h4>
+            
+            <div class="incident-details">
+              <div class="detail-row">
+                <i class="fa fa-user"></i>
+                <span>{{incident.assigned_to_display || 'Unassigned'}}</span>
+              </div>
+              <div class="detail-row">
+                <i class="fa fa-building"></i>
+                <span>{{incident.assignment_group_display || 'No Group'}}</span>
+              </div>
+              <div class="detail-row">
+                <i class="fa fa-clock-o"></i>
+                <span>{{c.getTimeAgo(incident.opened_at)}}</span>
+              </div>
+            </div>
+
+            <!-- State Badge -->
+            <div class="incident-state">
+              <span class="state-badge" ng-class="'state-' + incident.state">
+                {{c.getStateName(incident.state)}}
+              </span>
+            </div>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="card-footer">
+            <div class="footer-actions">
+              <button class="btn btn-sm btn-link" 
+                      ng-click="c.updateIncident(incident, $event)"
+                      title="Quick Update">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-link" 
+                      ng-click="c.viewDetails(incident, $event)"
+                      title="View Details">
+                <i class="fa fa-eye"></i>
+              </button>
+            </div>
+            <div class="update-info">
+              Updated {{c.getTimeAgo(incident.updated_at)}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-controls" 
+       ng-if="!c.isLoading && c.filteredIncidents.length > c.recordsPerPage">
+    <nav>
+      <ul class="pagination">
+        <li ng-class="{disabled: c.currentPage === 1}">
+          <a href="#" ng-click="c.goToPage(c.currentPage - 1)">
+            <i class="fa fa-chevron-left"></i>
+          </a>
+        </li>
+        
+        <li ng-repeat="page in c.getPageNumbers()" 
+            ng-class="{active: page === c.currentPage}">
+          <a href="#" ng-click="c.goToPage(page)">{{page}}</a>
+        </li>
+        
+        <li ng-class="{disabled: c.currentPage === c.totalPages}">
+          <a href="#" ng-click="c.goToPage(c.currentPage + 1)">
+            <i class="fa fa-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    
+    <div class="pagination-info">
+      Showing {{c.getPaginationStart()}} - {{c.getPaginationEnd()}} 
+      of {{c.filteredIncidents.length}} incidents
+    </div>
+  </div>
+</div>

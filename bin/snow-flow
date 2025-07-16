@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+
+// This is the main executable for snow-flow CLI
+// It imports and runs the minimal CLI directly
+
+import('../dist/cli.js').catch(err => {
+  // If dist doesn't exist, try to run from source with tsx
+  import('tsx').then(() => {
+    return import('../src/cli.ts');
+  }).catch(() => {
+    console.error('Error: snow-flow is not built. Please run "npm run build" first.');
+    console.error(err);
+    process.exit(1);
+  });
+});

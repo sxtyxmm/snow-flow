@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "topology": "hierarchical",
+  "maxAgents": 8,
+  "memory": {
+    "database": ".swarm/memory.db",
+    "namespace": "snow-flow"
+  }
+}

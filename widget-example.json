@@ -1,73 +1,68 @@
 {
-  "appName": "My Custom Widget",
-  "appScope": "x_my_widget",
-  "appDescription": "Custom ServiceNow widget application",
-  "appVersion": "1.0.0",
-  "requirements": {
-    "tables": [
-      {
-        "name": "x_my_widget_data",
-        "label": "Widget Data",
-        "fields": [
-          {
-            "name": "title",
-            "label": "Title",
-            "type": "string",
-            "mandatory": true
-          },
-          {
-            "name": "count",
-            "label": "Count",
-            "type": "number",
-            "defaultValue": "0"
-          },
-          {
-            "name": "status",
-            "label": "Status",
-            "type": "choice",
-            "choices": ["active", "inactive", "pending"]
-          }
-        ]
-      }
-    ],
-    "ui": [
-      {
-        "type": "widget",
-        "name": "task_counter_widget",
-        "title": "Task Counter",
-        "description": "Real-time task counter widget",
-        "widget_type": "counter",
-        "data_source": "task",
-        "configuration": {
-          "show_chart": true,
-          "auto_refresh": true,
-          "refresh_interval": 30,
-          "status_colors": {
-            "new": "#0066cc",
-            "in_progress": "#ff9900", 
-            "completed": "#00cc00"
-          }
-        }
-      },
-      {
-        "type": "widget",
-        "name": "user_dashboard_widget",
-        "title": "User Dashboard",
-        "description": "Personal dashboard widget",
-        "widget_type": "dashboard",
-        "data_source": "sys_user",
-        "configuration": {
-          "show_recent_items": true,
-          "show_favorites": true,
-          "max_items": 10
-        }
-      }
-    ]
-  },
-  "preferences": {
-    "useModernUI": true,
-    "includeMobileSupport": true,
-    "generateTests": true,
-    "includeDocumentation": true
-  }
+  "name": "Incident Dashboard Widget",
+  "description": "Real-time incident monitoring dashboard",
+  "components": [
+    {
+      "type": "header",
+      "binding": "title",
+      "content": "Incident Overview"
+    },
+    {
+      "type": "metric",
+      "binding": "total_count",
+      "label": "Total Active Incidents"
+    },
+    {
+      "type": "metric", 
+      "binding": "critical_count",
+      "label": "Critical Incidents"
+    },
+    {
+      "type": "list",
+      "binding": "recent_incidents",
+      "label": "Recent Incidents"
+    },
+    {
+      "type": "chart",
+      "binding": "incident_trend",
+      "label": "7-Day Trend"
+    }
+  ],
+  "dataSources": [
+    {
+      "name": "recent_incidents",
+      "table": "incident",
+      "query": "active=true^ORDERBYDESCsys_created_on",
+      "limit": 10
+    },
+    {
+      "name": "total_count",
+      "table": "incident",
+      "query": "active=true",
+      "aggregate": "COUNT"
+    },
+    {
+      "name": "critical_count",
+      "table": "incident", 
+      "query": "active=true^priority=1",
+      "aggregate": "COUNT"
+    }
+  ],
+  "options": [
+    {
+      "name": "refresh_interval",
+      "label": "Refresh Interval (seconds)",
+      "type": "integer",
+      "default_value": 30
+    },
+    {
+      "name": "show_chart",
+      "label": "Show Trend Chart",
+      "type": "boolean",
+      "default_value": true
+    }
+  ],
+  "dependencies": [
+    "angular-chart.js"
+  ]
 }
