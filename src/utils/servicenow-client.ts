@@ -498,4 +498,179 @@ export class ServiceNowClient {
       return [];
     }
   }
+
+  /**
+   * Create a Flow Designer flow
+   */
+  async createFlow(flow: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🔄 Creating Flow Designer flow...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow`,
+        {
+          name: flow.name,
+          description: flow.description,
+          active: flow.active,
+          table_name: flow.table,
+          trigger_type: flow.trigger_type,
+          trigger_condition: flow.condition,
+          definition: flow.flow_definition,
+          category: flow.category,
+          linked_artifacts: flow.artifact_references
+        }
+      );
+      
+      console.log('✅ Flow created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create flow:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a Script Include
+   */
+  async createScriptInclude(scriptInclude: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📝 Creating Script Include...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_script_include`,
+        {
+          name: scriptInclude.name,
+          api_name: scriptInclude.api_name,
+          description: scriptInclude.description,
+          script: scriptInclude.script,
+          active: scriptInclude.active,
+          access: scriptInclude.access || 'public'
+        }
+      );
+      
+      console.log('✅ Script Include created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create script include:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a Business Rule
+   */
+  async createBusinessRule(businessRule: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📋 Creating Business Rule...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_script`,
+        {
+          name: businessRule.name,
+          collection: businessRule.table,
+          when: businessRule.when,
+          condition: businessRule.condition,
+          script: businessRule.script,
+          description: businessRule.description,
+          active: businessRule.active,
+          order: businessRule.order || 100
+        }
+      );
+      
+      console.log('✅ Business Rule created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create business rule:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a Table
+   */
+  async createTable(table: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🗄️ Creating Table...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_db_object`,
+        {
+          name: table.name,
+          label: table.label,
+          extends_table: table.extends_table || 'sys_metadata',
+          is_extendable: table.is_extendable !== false,
+          access: table.access || 'public',
+          create_access_controls: table.create_access_controls !== false
+        }
+      );
+      
+      console.log('✅ Table created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create table:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a Table Field
+   */
+  async createTableField(field: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📊 Creating Table Field...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_dictionary`,
+        {
+          name: `${field.table}.${field.element}`,
+          element: field.element,
+          column_label: field.column_label,
+          internal_type: field.internal_type || 'string',
+          max_length: field.max_length || 255,
+          active: true
+        }
+      );
+      
+      console.log('✅ Table Field created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create table field:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
 }
