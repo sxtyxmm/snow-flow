@@ -105,6 +105,24 @@ snow-flow auth logout         # Logout from ServiceNow
 snow-flow auth status         # Check authentication status
 ```
 
+### 🧠 Intelligent Natural Language Commands
+
+```bash
+# Find ServiceNow artifacts using natural language
+snow-flow find "the widget that shows incidents on the homepage"
+snow-flow find "approval flow for purchasing equipment"
+snow-flow find "script that validates phone numbers"
+
+# Edit artifacts with natural language instructions
+snow-flow edit "modify the incident dashboard widget to show priority colors"
+snow-flow edit "add email notification to approval flow after manager approval"
+snow-flow edit "update the user profile widget with new fields"
+
+# Analyze and understand complex artifacts
+snow-flow analyze "incident management flow" --deep-index
+snow-flow analyze "user dashboard widget" --relationships
+```
+
 ### Multi-Agent Swarm
 ```bash
 snow-flow swarm "objective"   # Start multi-agent swarm for complex tasks
@@ -149,6 +167,29 @@ snow-flow config show         # Display current configuration
 
 ## 🔧 Advanced Features
 
+### 🧠 Intelligent Natural Language Processing
+Snow-Flow features advanced AI-powered natural language processing for ServiceNow artifacts:
+
+```bash
+# Find artifacts using natural language
+snow-flow find "the widget that shows incidents on the homepage"
+snow-flow find "approval flow for hardware requests over €1000"
+
+# Edit using natural language instructions
+snow-flow edit "pas de flow aan met de naam 'approval request flow' en zorg dat er na de approval stap een mailtje naar test@admin.nl wordt gestuurd"
+
+# Analyze and understand complex ServiceNow artifacts
+snow-flow analyze "incident management widget" --deep-index
+```
+
+### 🔍 Intelligent Artifact Discovery
+Snow-Flow automatically discovers and indexes ServiceNow artifacts with intelligent memory:
+
+- **Smart Search**: Find artifacts using natural language descriptions
+- **Contextual Understanding**: AI understands artifact purpose and relationships
+- **Memory Indexing**: Large scripts and flows are intelligently indexed for optimal Claude interaction
+- **Modification Points**: Automatically identifies where and how artifacts can be modified
+
 ### Direct ServiceNow Deployment
 Snow-Flow includes specialized MCP (Model Context Protocol) tools for direct ServiceNow deployment:
 
@@ -176,17 +217,38 @@ await snow_deploy_flow({
 });
 ```
 
-### Multi-Agent Coordination
-Snow-Flow uses advanced batch processing for parallel agent execution:
+### 🤖 Intelligent Multi-Agent Coordination
+Snow-Flow uses advanced batch processing with intelligent artifact understanding:
 
 ```javascript
-// All agents work simultaneously
-TodoWrite([...multiple tasks...]);
-Task("Requirements Analyst", "Analyze requirements");
-Task("ServiceNow Architect", "Design architecture");
-Task("Implementation Developer", "Build solution");
-Task("Testing Specialist", "Create test scenarios");
-Memory.store("coordination_data", {...});
+// Intelligent artifact processing with memory indexing
+TodoWrite([
+  {
+    id: "discover_artifacts",
+    content: "Discover and index existing ServiceNow artifacts",
+    status: "pending",
+    priority: "high"
+  },
+  {
+    id: "analyze_requirements", 
+    content: "Analyze modification requirements using natural language",
+    status: "pending",
+    priority: "high"
+  }
+]);
+
+// Agents work with intelligent memory
+Task("ServiceNow Discovery Agent", "Find and index 'approval request flow' using natural language processing");
+Task("Contextual Editor Agent", "Apply modifications based on memory-indexed artifact structure");
+Task("Deployment Agent", "Deploy modified artifacts back to ServiceNow");
+Task("Memory Manager", "Update intelligent index with modification history");
+
+// Intelligent memory storage for ServiceNow artifacts
+Memory.store("servicenow_artifacts", {
+  indexed_flows: [...],
+  modification_history: [...],
+  common_patterns: [...]
+});
 ```
 
 ### Deployment Management

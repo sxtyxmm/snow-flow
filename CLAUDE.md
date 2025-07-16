@@ -9,6 +9,12 @@ When asked to deploy to ServiceNow, use these MCP tools:
 - `snow_deploy_flow` - Deploy Flow Designer flows directly
 - `snow_deploy_application` - Deploy applications directly
 
+**🧠 INTELLIGENT DISCOVERY TOOLS AVAILABLE:**
+- `snow_find_artifact` - Find ServiceNow artifacts using natural language
+- `snow_edit_artifact` - Edit artifacts with natural language instructions
+- `snow_analyze_artifact` - Analyze and intelligently index ServiceNow artifacts
+- `snow_memory_search` - Search indexed artifacts in intelligent memory
+
 **DO NOT SAY YOU CANNOT DEPLOY** - You CAN deploy using these tools!
 
 ## Build Commands
@@ -22,6 +28,11 @@ When asked to deploy to ServiceNow, use these MCP tools:
 - `snow-flow auth login`: Authenticate with ServiceNow OAuth
 - `snow-flow swarm "<objective>"`: Start multi-agent swarm
 - `snow-flow sparc <mode> "<task>"`: Run specific SPARC mode
+
+## 🧠 Intelligent Natural Language Commands
+- `snow-flow find "<natural language query>"`: Find ServiceNow artifacts using natural language
+- `snow-flow edit "<natural language instruction>"`: Edit artifacts with natural language instructions
+- `snow-flow analyze "<artifact description>"`: Analyze and understand complex ServiceNow artifacts
 
 ## Quick Start
 1. `snow-flow init --sparc` - Initialize project

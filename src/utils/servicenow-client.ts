@@ -462,4 +462,40 @@ export class ServiceNowClient {
       };
     }
   }
+
+  /**
+   * Get a specific record by sys_id
+   */
+  async getRecord(table: string, sys_id: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/${table}/${sys_id}`
+      );
+      return response.data.result;
+    } catch (error) {
+      console.error(`Failed to get record from ${table}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search records in a table using encoded query
+   */
+  async searchRecords(table: string, query: string, limit: number = 10): Promise<any[]> {
+    try {
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/${table}`,
+        {
+          params: {
+            sysparm_query: query,
+            sysparm_limit: limit
+          }
+        }
+      );
+      return response.data.result || [];
+    } catch (error) {
+      console.error(`Failed to search records in ${table}:`, error);
+      return [];
+    }
+  }
 }
