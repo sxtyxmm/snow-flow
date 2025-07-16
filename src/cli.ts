@@ -385,6 +385,19 @@ await creator.createIncidentManagementWidget();
 - snow_deploy_update_set - Create update sets
 - snow_validate_deployment - Validate before deploying
 - snow_rollback_deployment - Rollback if needed
+
+🧠 **Intelligent Flow Composition Tools:**
+- snow_create_complex_flow - Create complete flows with automatic artifact orchestration
+- snow_analyze_flow_instruction - Analyze natural language flow instructions
+- snow_discover_flow_artifacts - Discover artifacts needed for complex flows
+- snow_preview_flow_structure - Preview flow structure before deployment
+
+🎯 **Flow Composition Capabilities:**
+- Automatic discovery of existing ServiceNow artifacts (script includes, business rules, tables)
+- Intelligent artifact orchestration in flows
+- Natural language processing for complex flow instructions
+- Fallback creation for missing artifacts
+- Multi-artifact coordination and deployment
 ` : `
 📝 **File-based development mode**
 
@@ -1328,6 +1341,149 @@ program
     } catch (error) {
       console.error('❌ Failed to start MCP server:', error);
       process.exit(1);
+    }
+  });
+
+// Create Flow command - intelligent flow composition
+program
+  .command('create-flow <instruction>')
+  .description('Create complex ServiceNow flows using natural language with automatic artifact orchestration')
+  .option('--analyze-only', 'Only analyze the instruction without creating the flow')
+  .option('--preview', 'Preview the flow structure before deployment')
+  .option('--no-deploy', 'Create the flow but do not deploy it')
+  .action(async (instruction: string, options) => {
+    console.log(`\n🧠 Snow-Flow Intelligent Flow Composer`);
+    console.log(`📝 Instruction: ${instruction}`);
+    console.log(`🔍 Analyzing requirements and discovering artifacts...\n`);
+    
+    // Check authentication
+    const oauth = new ServiceNowOAuth();
+    const isAuthenticated = await oauth.isAuthenticated();
+    
+    if (!isAuthenticated) {
+      console.log('🔗 ServiceNow connection: ❌ Not authenticated');
+      console.log('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
+      console.log('📝 Flow will be created as definition files\n');
+    } else {
+      console.log('🔗 ServiceNow connection: ✅ Authenticated');
+      console.log('🚀 Flow will be created and deployed directly to ServiceNow\n');
+    }
+    
+    // Generate Claude Code prompt for flow composition
+    const flowPrompt = `# Snow-Flow Intelligent Flow Composer
+
+## Instruction
+${instruction}
+
+## Task: Create Complex ServiceNow Flow with Multi-Artifact Orchestration
+
+You are Snow-Flow's intelligent flow composer. Your task is to create a complex ServiceNow flow using natural language processing and automatic artifact orchestration.
+
+## Process Steps
+
+### 1. Analyze Flow Requirements
+Use the flow composition MCP tools to understand the instruction:
+- \`snow_analyze_flow_instruction\` - Parse and understand the natural language instruction
+- Identify required ServiceNow artifacts (script includes, business rules, tables, etc.)
+- Determine data flow and business logic requirements
+
+### 2. Discover ServiceNow Artifacts
+Use intelligent artifact discovery:
+- \`snow_discover_flow_artifacts\` - Find existing ServiceNow artifacts that match requirements
+- Search for script includes, business rules, tables, and other components
+- Identify missing artifacts that need to be created
+
+### 3. Preview Flow Structure
+Before deployment, preview the complete flow:
+- \`snow_preview_flow_structure\` - Show the complete flow structure
+- Display all activities, variables, and error handling
+- Show how discovered artifacts will be orchestrated
+
+### 4. Create and Deploy Flow
+Create the complete flow with orchestration:
+- \`snow_create_complex_flow\` - Generate complete flow with all artifacts
+- Automatically create fallback artifacts if needed
+- Deploy to ServiceNow if authenticated
+
+## Advanced Capabilities
+
+### Multi-Artifact Orchestration
+The flow composer can automatically:
+- Find existing script includes for LLM translation
+- Discover business rules for data storage
+- Create tables for translated messages
+- Link all components in a cohesive flow
+
+### Intelligent Fallback Creation
+If required artifacts are not found:
+- Creates basic LLM translation script includes
+- Generates data storage business rules
+- Creates database tables with proper schema
+- Ensures all components work together
+
+### Natural Language Processing
+Understands complex instructions like:
+- "Create a flow using LLM localization to translate support desk messages to English"
+- "Build approval flow with email notifications after manager approval"
+- "Design incident escalation with automatic assignment based on priority"
+
+## Available Flow Composition Tools
+
+### Core Tools
+- \`snow_create_complex_flow\` - Main flow creation tool
+- \`snow_analyze_flow_instruction\` - Instruction analysis
+- \`snow_discover_flow_artifacts\` - Artifact discovery
+- \`snow_preview_flow_structure\` - Flow preview
+
+### Configuration
+- Deploy immediately: ${!options.noDeploy}
+- Analysis only: ${options.analyzeOnly || false}
+- Preview mode: ${options.preview || false}
+- ServiceNow authenticated: ${isAuthenticated}
+
+## Expected Output
+
+The flow composer will:
+1. Parse your natural language instruction
+2. Identify all required ServiceNow artifacts
+3. Discover existing artifacts or create fallbacks
+4. Compose a complete flow with orchestration
+5. Deploy to ServiceNow (if authenticated)
+6. Provide direct links to created artifacts
+
+## Instructions for Execution
+
+${options.analyzeOnly ? 
+  'ANALYZE ONLY: Use snow_analyze_flow_instruction to analyze the instruction and show requirements.' :
+  options.preview ?
+  'PREVIEW MODE: Use snow_preview_flow_structure to show the complete flow structure before deployment.' :
+  'FULL CREATION: Use snow_create_complex_flow to create and deploy the complete flow with orchestration.'
+}
+
+Execute this intelligent flow composition using Snow-Flow's advanced orchestration capabilities.
+`;
+
+    try {
+      // Execute Claude Code with the flow composition prompt
+      const success = await executeClaudeCode(flowPrompt);
+      
+      if (success) {
+        console.log('\n✅ Flow composition completed successfully!');
+        if (isAuthenticated && !options.noDeploy) {
+          console.log('🚀 Flow deployed to ServiceNow with all artifacts');
+          console.log('📊 Check your ServiceNow instance for the deployed flow');
+        } else {
+          console.log('📋 Flow structure created and analyzed');
+        }
+      } else {
+        console.log('\n⚠️  Claude Code execution failed. Flow composition prompt generated:');
+        console.log('=' .repeat(80));
+        console.log(flowPrompt);
+        console.log('=' .repeat(80));
+        console.log('\n💡 Copy this prompt and run it in Claude Code for flow composition');
+      }
+    } catch (error) {
+      console.error('❌ Flow composition failed:', error instanceof Error ? error.message : String(error));
     }
   });
 

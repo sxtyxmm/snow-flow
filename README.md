@@ -19,6 +19,9 @@ Snow-Flow is an advanced multi-agent development framework specifically designed
 - 📊 **Batch Operations**: Parallel execution of multiple tasks for maximum efficiency
 - 🔄 **Rollback Support**: Safe deployment with rollback capabilities
 - 💾 **Persistent Memory**: Cross-session memory for agent coordination
+- 🧠 **Intelligent Flow Composition**: Create complex flows with automatic artifact orchestration
+- 🔍 **Natural Language Processing**: Find, edit, and analyze ServiceNow artifacts using natural language
+- 🎯 **Multi-Artifact Discovery**: Automatically discover and orchestrate multiple ServiceNow components
 
 ## 🚀 Quick Start
 
@@ -121,6 +124,22 @@ snow-flow edit "update the user profile widget with new fields"
 # Analyze and understand complex artifacts
 snow-flow analyze "incident management flow" --deep-index
 snow-flow analyze "user dashboard widget" --relationships
+```
+
+### 🚀 Complex Flow Composition
+
+```bash
+# Create complex flows with automatic artifact orchestration
+snow-flow create-flow "maak een flow waarbij we het script include gebruiken waar we de localizatie met LLMs gebruiken om dan de berichten van het support desk mee te vertalen naar engels en deze op te slaan in een tabel aan de hand van een business rule"
+
+# Analyze flow requirements before creation
+snow-flow create-flow "approval flow for hardware purchases over €1000" --analyze-only
+
+# Preview flow structure before deployment
+snow-flow create-flow "incident escalation with automatic assignment" --preview
+
+# Create flow but don't deploy immediately
+snow-flow create-flow "user onboarding automation" --no-deploy
 ```
 
 ### Multi-Agent Swarm

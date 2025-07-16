@@ -105,6 +105,17 @@
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
       }
+    },
+    "servicenow-flow-composer": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-flow-composer-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
     }
   }
 }

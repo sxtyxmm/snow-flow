@@ -15,6 +15,12 @@ When asked to deploy to ServiceNow, use these MCP tools:
 - `snow_analyze_artifact` - Analyze and intelligently index ServiceNow artifacts
 - `snow_memory_search` - Search indexed artifacts in intelligent memory
 
+**🚀 COMPLEX FLOW COMPOSITION TOOLS AVAILABLE:**
+- `snow_create_complex_flow` - Create complete flows with automatic artifact orchestration
+- `snow_analyze_flow_instruction` - Analyze natural language flow instructions
+- `snow_discover_flow_artifacts` - Discover artifacts needed for complex flows
+- `snow_preview_flow_structure` - Preview flow structure before deployment
+
 **DO NOT SAY YOU CANNOT DEPLOY** - You CAN deploy using these tools!
 
 ## Build Commands
@@ -33,6 +39,12 @@ When asked to deploy to ServiceNow, use these MCP tools:
 - `snow-flow find "<natural language query>"`: Find ServiceNow artifacts using natural language
 - `snow-flow edit "<natural language instruction>"`: Edit artifacts with natural language instructions
 - `snow-flow analyze "<artifact description>"`: Analyze and understand complex ServiceNow artifacts
+
+## 🚀 Complex Flow Composition Commands
+- `snow-flow create-flow "<natural language instruction>"`: Create complex flows with automatic artifact orchestration
+- `snow-flow create-flow "<instruction>" --analyze-only`: Analyze flow requirements without creating
+- `snow-flow create-flow "<instruction>" --preview`: Preview flow structure before deployment
+- `snow-flow create-flow "<instruction>" --no-deploy`: Create flow but don't deploy immediately
 
 ## Quick Start
 1. `snow-flow init --sparc` - Initialize project
