@@ -47,7 +47,7 @@ class ServiceNowFlowComposerMCP {
       tools: [
         {
           name: 'snow_create_complex_flow',
-          description: 'Create complex ServiceNow flows with automatic artifact orchestration using natural language',
+          description: 'FULLY AUTONOMOUS flow creation - parses natural language, discovers artifacts, creates missing components, links everything, deploys automatically. ZERO MANUAL WORK!',
           inputSchema: {
             type: 'object',
             properties: {
@@ -71,7 +71,7 @@ class ServiceNowFlowComposerMCP {
         },
         {
           name: 'snow_analyze_flow_instruction',
-          description: 'Analyze a natural language instruction to understand required artifacts and flow structure',
+          description: 'AUTONOMOUS analysis - understands complex requirements, identifies all needed artifacts, plans optimal flow structure. SELF-LEARNING from patterns.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -85,7 +85,7 @@ class ServiceNowFlowComposerMCP {
         },
         {
           name: 'snow_discover_flow_artifacts',
-          description: 'Discover and analyze ServiceNow artifacts needed for a flow',
+          description: 'AUTONOMOUS discovery - finds all required artifacts, creates missing ones, ensures compatibility. INTELLIGENT DEPENDENCY RESOLUTION!',
           inputSchema: {
             type: 'object',
             properties: {

@@ -73,7 +73,7 @@ class ServiceNowIntelligentMCP {
       tools: [
         {
           name: 'snow_find_artifact',
-          description: 'Find ServiceNow artifacts using natural language',
+          description: 'AUTONOMOUS artifact discovery - finds ServiceNow artifacts using natural language, searches memory first, then ServiceNow. NO MANUAL SEARCH NEEDED.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -85,7 +85,7 @@ class ServiceNowIntelligentMCP {
         },
         {
           name: 'snow_edit_artifact',
-          description: 'Edit ServiceNow artifacts using natural language instructions',
+          description: 'AUTONOMOUS artifact modification - edits ServiceNow artifacts using natural language, handles errors automatically, retries on failure. DIRECT MODIFICATION.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -96,7 +96,7 @@ class ServiceNowIntelligentMCP {
         },
         {
           name: 'snow_analyze_artifact',
-          description: 'Analyze and understand ServiceNow artifacts with intelligent indexing',
+          description: 'AUTONOMOUS deep analysis - intelligently indexes artifacts for optimal Claude understanding, stores in memory for future use. SELF-LEARNING SYSTEM.',
           inputSchema: {
             type: 'object',
             properties: {

@@ -49,7 +49,7 @@ class ServiceNowDeploymentMCP {
       tools: [
         {
           name: 'snow_deploy_widget',
-          description: 'Deploy a widget to ServiceNow with full configuration',
+          description: 'AUTONOMOUS widget deployment - deploys directly to ServiceNow, returns live URLs, handles errors automatically. NO MANUAL STEPS!',
           inputSchema: {
             type: 'object',
             properties: {
@@ -69,7 +69,7 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_deploy_flow',
-          description: 'Deploy a Flow Designer flow to ServiceNow',
+          description: 'AUTONOMOUS flow deployment - creates complete flows with linked artifacts, auto-deploys dependencies, self-healing. FULLY AUTOMATED!',
           inputSchema: {
             type: 'object',
             properties: {
