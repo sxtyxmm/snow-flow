@@ -22,14 +22,12 @@ if (missingVars.length > 0) {
   console.warn('   Copy .env.example to .env and configure your ServiceNow credentials.');
 }
 
-// Generate MCP configuration with absolute paths and real environment values
+// Generate MCP configuration with node + args format (recommended by official docs)
 const mcpConfig = {
   mcpServers: {
     "servicenow-deployment": {
       command: "node",
-      args: [
-        path.join(projectRoot, "dist/mcp/servicenow-deployment-mcp.js")
-      ],
+      args: [path.join(projectRoot, "dist/mcp/servicenow-deployment-mcp.js")],
       env: {
         SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
         SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
@@ -38,9 +36,7 @@ const mcpConfig = {
     },
     "servicenow-flow-composer": {
       command: "node",
-      args: [
-        path.join(projectRoot, "dist/mcp/servicenow-flow-composer-mcp.js")
-      ],
+      args: [path.join(projectRoot, "dist/mcp/servicenow-flow-composer-mcp.js")],
       env: {
         SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
         SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
@@ -49,9 +45,7 @@ const mcpConfig = {
     },
     "servicenow-update-set": {
       command: "node",
-      args: [
-        path.join(projectRoot, "dist/mcp/servicenow-update-set-mcp.js")
-      ],
+      args: [path.join(projectRoot, "dist/mcp/servicenow-update-set-mcp.js")],
       env: {
         SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
         SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
@@ -60,9 +54,7 @@ const mcpConfig = {
     },
     "servicenow-intelligent": {
       command: "node",
-      args: [
-        path.join(projectRoot, "dist/mcp/servicenow-intelligent-mcp.js")
-      ],
+      args: [path.join(projectRoot, "dist/mcp/servicenow-intelligent-mcp.js")],
       env: {
         SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
         SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
@@ -71,9 +63,7 @@ const mcpConfig = {
     },
     "servicenow-graph-memory": {
       command: "node",
-      args: [
-        path.join(projectRoot, "dist/mcp/servicenow-graph-memory-mcp.js")
-      ],
+      args: [path.join(projectRoot, "dist/mcp/servicenow-graph-memory-mcp.js")],
       env: {
         NEO4J_URI: process.env.NEO4J_URI || "bolt://localhost:7687",
         NEO4J_USER: process.env.NEO4J_USER || "neo4j",
@@ -89,9 +79,27 @@ const mcpConfig = {
 // Write the configuration file
 fs.writeFileSync(mcpFilePath, JSON.stringify(mcpConfig, null, 2));
 
+// Make all MCP server files executable
+const mcpServerFiles = [
+  'servicenow-deployment-mcp.js',
+  'servicenow-flow-composer-mcp.js',
+  'servicenow-update-set-mcp.js',
+  'servicenow-intelligent-mcp.js',
+  'servicenow-graph-memory-mcp.js'
+];
+
+mcpServerFiles.forEach(file => {
+  const filePath = path.join(projectRoot, 'dist/mcp', file);
+  if (fs.existsSync(filePath)) {
+    fs.chmodSync(filePath, '755');
+  }
+});
+
 console.log('✅ Generated .mcp.json with dynamic configuration');
 console.log('📁 Project root:', projectRoot);
 console.log('🔧 Environment variables:', requiredEnvVars.filter(v => process.env[v]).length + '/' + requiredEnvVars.length + ' configured');
+console.log('🔐 Made MCP server files executable');
+console.log('📝 Using node + args format for Claude Code compatibility');
 
 if (missingVars.length === 0) {
   console.log('🎉 All ServiceNow environment variables are configured!');
