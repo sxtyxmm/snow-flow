@@ -5,6 +5,58 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-07-17
+
+### 🔍 Advanced ServiceNow Search System
+- **Added** `snow_comprehensive_search` - Multi-table search across 16+ ServiceNow tables
+- **Enhanced** `snow_find_artifact` with sequential search strategy (exact match → contains → description → wildcards)
+- **Fixed** ServiceNow API OR query handling that caused incorrect search results
+- **Improved** Search precision by prioritizing exact matches over wildcard searches
+- **Added** Support for searching in description fields and inactive records
+- **Optimized** "any" type searches to use only common tables for better performance
+
+### 🧠 Intelligent Search Strategies
+- **Added** Exact name matching without wildcards for better precision
+- **Added** Case-sensitive and case-insensitive wildcard searches
+- **Added** Description field searching (`short_description`, `description`)
+- **Added** Fallback search strategies when initial searches fail
+- **Fixed** Authentication issues in `searchRecords` method by adding `ensureAuthenticated()`
+- **Enhanced** Query building to handle ServiceNow-specific API quirks
+
+### 📊 Search Result Enhancements
+- **Added** Grouped search results by table type with detailed metadata
+- **Added** Search strategy indication (shows how each result was found)
+- **Added** Comprehensive artifact information (table, status, description, sys_id)
+- **Added** Support for Business Rules, Widgets, Scripts, Flows, and 12+ other artifact types
+- **Improved** Result formatting with clear categorization and metadata
+
+### 🔧 MCP Server Improvements
+- **Enhanced** Dynamic path generation for GitHub distribution compatibility
+- **Fixed** Hardcoded absolute paths in `.mcp.json` configuration
+- **Added** Template-based MCP configuration with placeholder replacement
+- **Improved** Error handling and logging throughout MCP servers
+- **Added** Debug logging for search operations and result processing
+
+### ⚡ Performance & Reliability
+- **Optimized** Search timeouts by limiting common table searches
+- **Fixed** Memory leaks in multi-table search operations
+- **Improved** Connection handling and retry logic
+- **Enhanced** OAuth token refresh mechanism
+- **Added** Comprehensive error recovery for failed searches
+
+### 📚 Documentation & Examples
+- **Updated** README.md with comprehensive search capabilities documentation
+- **Added** API reference with TypeScript examples
+- **Added** Troubleshooting guide for common search issues
+- **Enhanced** MCP tool documentation with usage examples
+- **Added** Search strategy explanations and best practices
+
+### 🔐 Authentication & Configuration Improvements
+- **Fixed** OAuth scope configuration from 'useraccount admin' to 'useraccount'
+- **Added** Dynamic MCP configuration path generation for GitHub distribution
+- **Improved** ServiceNow client authentication flow with proper error handling
+- **Enhanced** Token refresh mechanism and session management
+
 ## [1.1.0] - 2025-01-17
 
 ### 🌊 Enhanced Flow Composer MCP
