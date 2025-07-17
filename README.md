@@ -1,5 +1,6 @@
 # Snow-Flow 🌨️ - ServiceNow Multi-Agent Development Framework
 
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)](https://github.com/groeimetai/snow-flow/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![ServiceNow](https://img.shields.io/badge/ServiceNow-Compatible-blue.svg)](https://www.servicenow.com/)
@@ -8,6 +9,30 @@
 > **AI-Powered ServiceNow Development with Multi-Agent Orchestration**
 
 Snow-Flow is an advanced multi-agent development framework specifically designed for ServiceNow. It combines the power of Claude AI with specialized ServiceNow deployment tools to create widgets, workflows, and applications directly in your ServiceNow instance.
+
+## 🎉 What's New in v1.1.0
+
+### 🌊 Enhanced Flow Composer MCP
+- **Natural Language Flow Creation**: Create complex ServiceNow flows using natural language instructions
+- **Intelligent Artifact Discovery**: Automatically finds and links existing ServiceNow components
+- **Smart Dependency Resolution**: Maps data flow between artifacts intelligently
+- **Fallback Artifact Creation**: Creates missing components when needed
+
+### 🎨 Intelligent Template System
+- **Context-Aware Selection**: Automatically selects the best template based on requirements
+- **Expanded Widget Templates**: Dashboard, data table, form, and chart widgets
+- **Advanced Flow Templates**: Approval workflows, integration flows, automation patterns
+- **Composite Templates**: Complete systems with multiple orchestrated artifacts
+
+### 🧠 Natural Language Understanding
+- **Smart Variable Extraction**: Extracts variables from natural language descriptions
+- **Pattern Recognition**: Recognizes approval flows, dashboards, integrations automatically
+- **ServiceNow Best Practices**: Applies best practices and security patterns automatically
+
+### ⚡ Update Set Management
+- **Automatic Tracking**: All deployments tracked in Update Sets
+- **Production Ready**: Export Update Sets for production deployment
+- **Change Management**: Complete audit trail for all changes
 
 ## ✨ Key Features
 
@@ -746,6 +771,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **ServiceNow** for the amazing platform
 - **MCP (Model Context Protocol)** for tool integration
 - **Open Source Community** for inspiration and contributions
+
+## 📋 Changelog
+
+### Version 1.1.0 (2025-01-17)
+- 🌊 **Enhanced Flow Composer MCP** - Natural language flow creation with intelligent artifact orchestration
+- 🎨 **Intelligent Template System** - Context-aware template selection with expanded widget and flow templates
+- 🧠 **Natural Language Understanding** - Smart variable extraction and pattern recognition
+- ⚡ **Update Set Management** - Automatic tracking and production-ready deployment
+- 📊 **New Templates** - Dashboard widgets, data tables, approval flows, integration flows, and composite systems
+
+### Version 1.0.0 (2025-01-15)
+- 🚀 **Initial Release** - Multi-agent orchestration framework for ServiceNow
+- 🔐 **OAuth Integration** - Secure ServiceNow authentication and API access
+- 🎯 **SPARC Methodology** - 17 specialized development modes
+- 📦 **Basic Templates** - Widget, flow, and application templates
+- 🔗 **MCP Integration** - Claude Code compatibility
+
+For detailed changes, see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
