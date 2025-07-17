@@ -12,13 +12,56 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { FlowComposer, FlowInstruction } from '../orchestrator/flow-composer.js';
+import { EnhancedFlowComposer } from '../orchestrator/flow-composer.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
 
+// Define FlowInstruction interface to match EnhancedFlowComposer output
+interface FlowInstruction {
+  naturalLanguage: string;
+  parsedIntent: {
+    flowName: string;
+    description: string;
+    table: string;
+    trigger: {
+      type: string;
+      table: string;
+      condition: string;
+    };
+    intents: string[];
+    dataFlow: string[];
+  };
+  requiredArtifacts: Array<{
+    sys_id: string;
+    name: string;
+    type: string;
+    inputs: any[];
+    outputs: any[];
+    dependencies: string[];
+  }>;
+  flowStructure: {
+    name: string;
+    description: string;
+    table: string;
+    trigger: any;
+    activities: Array<{
+      id: string;
+      name: string;
+      type: string;
+      artifact_reference?: any;
+      inputs?: any;
+      outputs?: any;
+    }>;
+    connections: any[];
+    variables: any[];
+    error_handling: any[];
+  };
+  deploymentReady: boolean;
+}
+
 class ServiceNowFlowComposerMCP {
   private server: Server;
-  private composer: FlowComposer;
+  private composer: EnhancedFlowComposer;
   private oauth: ServiceNowOAuth;
   private logger: Logger;
 
@@ -35,7 +78,7 @@ class ServiceNowFlowComposerMCP {
       }
     );
 
-    this.composer = new FlowComposer();
+    this.composer = new EnhancedFlowComposer();
     this.oauth = new ServiceNowOAuth();
     this.logger = new Logger('ServiceNowFlowComposerMCP');
 
@@ -203,10 +246,10 @@ class ServiceNowFlowComposerMCP {
 - **Trigger**: ${flowInstruction.flowStructure.trigger.type} on ${flowInstruction.flowStructure.trigger.table}
 
 🔍 **Artifacts Discovered & Orchestrated:**
-${flowInstruction.requiredArtifacts.map((artifact, index) => `${index + 1}. **${artifact.type}**: ${artifact.purpose}`).join('\n')}
+${flowInstruction.requiredArtifacts.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**: ${artifact.name}`).join('\n')}
 
 🏗️ **Flow Structure:**
-${flowInstruction.flowStructure.activities.map((activity, index) => `${index + 1}. **${activity.name}** (${activity.type})${activity.artifact ? ` - Uses: ${activity.artifact.name}` : ''}`).join('\n')}
+${flowInstruction.flowStructure.activities.map((activity: any, index: number) => `${index + 1}. **${activity.name}** (${activity.type})${activity.artifact_reference ? ` - Uses: ${activity.artifact_reference.name}` : ''}`).join('\n')}
 
 🔄 **Data Flow:**
 ${flowInstruction.parsedIntent.dataFlow.join(' → ')}
@@ -256,31 +299,32 @@ The flow is now ready to process support desk messages, translate them using LLM
 "${args.instruction}"
 
 🧠 **Parsed Intent:**
-- **Action**: ${flowInstruction.parsedIntent.action}
-- **Trigger**: ${flowInstruction.parsedIntent.trigger}
-- **Components**: ${flowInstruction.parsedIntent.components.join(', ')}
+- **Flow Name**: ${flowInstruction.parsedIntent.flowName}
+- **Table**: ${flowInstruction.parsedIntent.table}
+- **Trigger Type**: ${flowInstruction.parsedIntent.trigger.type}
+- **Condition**: ${flowInstruction.parsedIntent.trigger.condition || 'None'}
+- **Intents**: ${flowInstruction.parsedIntent.intents.join(', ') || 'None'}
 - **Data Flow**: ${flowInstruction.parsedIntent.dataFlow.join(' → ')}
-- **Business Logic**: ${flowInstruction.parsedIntent.businessLogic.join(', ')}
 
 🔧 **Required Artifacts:**
-${flowInstruction.requiredArtifacts.map((artifact, index) => `${index + 1}. **${artifact.type}**
-   - Purpose: ${artifact.purpose}
-   - Search Query: "${artifact.searchQuery}"
-   - Required: ${artifact.required ? 'Yes' : 'No'}
-   - Fallback: ${artifact.fallbackAction || 'None'}`).join('\n\n')}
+${flowInstruction.requiredArtifacts.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**
+   - Name: ${artifact.name}
+   - Sys ID: ${artifact.sys_id}
+   - Inputs: ${artifact.inputs.length} input(s)
+   - Outputs: ${artifact.outputs.length} output(s)`).join('\n\n')}
 
 🏗️ **Flow Structure Preview:**
 - **Name**: ${flowInstruction.flowStructure.name}
 - **Trigger**: ${flowInstruction.flowStructure.trigger.type} on ${flowInstruction.flowStructure.trigger.table}
 - **Activities**: ${flowInstruction.flowStructure.activities.length}
 - **Variables**: ${flowInstruction.flowStructure.variables.length}
-- **Error Handling**: ${flowInstruction.flowStructure.errorHandling.length} rules
+- **Error Handling**: ${flowInstruction.flowStructure.error_handling.length} rules
 
 📊 **Complexity Analysis:**
 - **Artifact Dependencies**: ${flowInstruction.requiredArtifacts.length}
 - **Processing Steps**: ${flowInstruction.flowStructure.activities.length}
-- **Integration Points**: ${flowInstruction.requiredArtifacts.filter(a => a.required).length}
-- **Fallback Scenarios**: ${flowInstruction.requiredArtifacts.filter(a => a.fallbackAction).length}
+- **Integration Points**: ${flowInstruction.requiredArtifacts.length}
+- **Data Flow Steps**: ${flowInstruction.parsedIntent.dataFlow.length}
 
 ✅ **Analysis Complete!** The instruction has been successfully parsed and all required components identified.`,
           },
@@ -300,7 +344,7 @@ ${flowInstruction.requiredArtifacts.map((artifact, index) => `${index + 1}. **${
       // Filter by specific artifact types if requested
       let artifactsToShow = flowInstruction.requiredArtifacts;
       if (args.artifact_types && args.artifact_types.length > 0) {
-        artifactsToShow = flowInstruction.requiredArtifacts.filter(a => 
+        artifactsToShow = flowInstruction.requiredArtifacts.filter((a: any) => 
           args.artifact_types.includes(a.type)
         );
       }
@@ -317,7 +361,7 @@ ${flowInstruction.requiredArtifacts.map((artifact, index) => `${index + 1}. **${
 
 📦 **Discovered Artifacts** (${artifactsToShow.length} found):
 
-${artifactsToShow.map((artifact, index) => `### ${index + 1}. ${artifact.type.toUpperCase()}
+${artifactsToShow.map((artifact: any, index: number) => `### ${index + 1}. ${artifact.type.toUpperCase()}
 **Purpose**: ${artifact.purpose}
 **Search Strategy**: "${artifact.searchQuery}"
 **Required**: ${artifact.required ? '✅ Yes' : '❌ No'}
@@ -335,7 +379,7 @@ ${artifactsToShow.map((artifact, index) => `### ${index + 1}. ${artifact.type.to
 `).join('\n')}
 
 🔗 **ServiceNow Search Links:**
-${artifactsToShow.map(artifact => `- ${artifact.type}: https://${credentials?.instance}/nav_to.do?uri=${this.getTableForArtifactType(artifact.type)}_list.do`).join('\n')}
+${artifactsToShow.map((artifact: any) => `- ${artifact.type}: https://${credentials?.instance}/nav_to.do?uri=${this.getTableForArtifactType(artifact.type)}_list.do`).join('\n')}
 
 💡 **Discovery Strategy:**
 1. **Intelligent Search**: Uses natural language processing to find relevant artifacts
@@ -380,10 +424,10 @@ ${artifactsToShow.map(artifact => `- ${artifact.type}: https://${credentials?.in
 - **Condition**: ${flowStructure.trigger.condition || 'None'}
 
 📊 **Flow Variables:**
-${flowStructure.variables.map(variable => `- **${variable.name}** (${variable.type}): ${variable.description}`).join('\n')}
+${flowStructure.variables.map((variable: any) => `- **${variable.name}** (${variable.type}): ${variable.description}`).join('\n')}
 
 🏗️ **Flow Activities:**
-${flowStructure.activities.map((activity, index) => `### ${index + 1}. ${activity.name}
+${flowStructure.activities.map((activity: any, index: number) => `### ${index + 1}. ${activity.name}
 **Type**: ${activity.type}
 **ID**: ${activity.id}
 ${activity.artifact ? `**Uses Artifact**: ${activity.artifact.name} (${activity.artifact.type})` : ''}
@@ -396,20 +440,20 @@ ${Object.entries(activity.outputs).map(([key, value]) => `  - ${key}: ${value}`)
 `).join('\n')}
 
 ⚠️ **Error Handling:**
-${flowStructure.errorHandling.map((handler, index) => `${index + 1}. **Condition**: ${handler.condition}
+${flowStructure.error_handling.map((handler: any, index: number) => `${index + 1}. **Condition**: ${handler.condition}
    **Action**: ${handler.action}
    **Parameters**: ${JSON.stringify(handler.parameters || {})}`).join('\n\n')}
 
 🔄 **Flow Execution Path:**
 1. **${flowStructure.trigger.type}** event occurs on **${flowStructure.trigger.table}**
-${flowStructure.activities.map((activity, index) => `${index + 2}. Execute **${activity.name}** (${activity.type})`).join('\n')}
+${flowStructure.activities.map((activity: any, index: number) => `${index + 2}. Execute **${activity.name}** (${activity.type})`).join('\n')}
 
 📈 **Flow Metrics:**
 - **Total Activities**: ${flowStructure.activities.length}
 - **Variables**: ${flowStructure.variables.length}
-- **Error Handlers**: ${flowStructure.errorHandling.length}
-- **Artifact Dependencies**: ${flowStructure.activities.filter(a => a.artifact).length}
-- **External Integrations**: ${flowStructure.activities.filter(a => a.type === 'custom_script').length}
+- **Error Handlers**: ${flowStructure.error_handling.length}
+- **Artifact Dependencies**: ${flowStructure.activities.filter((a: any) => a.artifact).length}
+- **External Integrations**: ${flowStructure.activities.filter((a: any) => a.type === 'custom_script').length}
 
 🎯 **Data Flow Analysis:**
 ${this.analyzeDataFlow(flowStructure.activities)}
@@ -474,8 +518,8 @@ ${args.flow_instruction.requiredArtifacts.map((artifact: any, index: number) => 
   }
 
   private getFlowStepForArtifact(artifact: any, flowInstruction: FlowInstruction): string {
-    const step = flowInstruction.flowStructure.activities.find(a => 
-      a.artifact && a.artifact.type === artifact.type
+    const step = flowInstruction.flowStructure.activities.find((a: any) => 
+      a.artifact_reference && a.artifact_reference.type === artifact.type
     );
     return step ? step.name : 'Not used in flow';
   }

@@ -673,4 +673,279 @@ export class ServiceNowClient {
       };
     }
   }
+
+  /**
+   * Create a new Update Set
+   */
+  async createUpdateSet(updateSet: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📦 Creating Update Set...');
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_update_set`,
+        {
+          name: updateSet.name,
+          description: updateSet.description,
+          release_date: updateSet.release_date,
+          state: updateSet.state || 'in_progress',
+          application: updateSet.application || 'global'
+        }
+      );
+      
+      console.log('✅ Update Set created successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Set current Update Set for the session
+   */
+  async setCurrentUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🔄 Setting current Update Set...');
+      
+      // Use the preference API to set the current update set
+      const response = await this.client.put(
+        `${this.getBaseUrl()}/api/now/ui/user_preference`,
+        {
+          name: 'sys_update_set',
+          value: updateSetId,
+          user: 'current'
+        }
+      );
+      
+      console.log('✅ Current Update Set changed successfully!');
+      
+      return {
+        success: true,
+        data: { update_set_id: updateSetId }
+      };
+    } catch (error) {
+      console.error('❌ Failed to set current Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Get current Update Set
+   */
+  async getCurrentUpdateSet(): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📋 Getting current Update Set...');
+      
+      // Get the current update set preference
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/ui/user_preference/sys_update_set`
+      );
+      
+      if (response.data.result && response.data.result.value) {
+        // Get Update Set details
+        const updateSetResponse = await this.client.get(
+          `${this.getBaseUrl()}/api/now/table/sys_update_set/${response.data.result.value}`
+        );
+        
+        return {
+          success: true,
+          data: updateSetResponse.data.result
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No current Update Set found'
+      };
+    } catch (error) {
+      console.error('❌ Failed to get current Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Get Update Set by ID
+   */
+  async getUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log(`📋 Getting Update Set ${updateSetId}...`);
+      
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/sys_update_set/${updateSetId}`
+      );
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to get Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * List Update Sets
+   */
+  async listUpdateSets(options: any): Promise<ServiceNowAPIResponse<any[]>> {
+    try {
+      console.log('📋 Listing Update Sets...');
+      
+      let query = 'sys_created_by=javascript:gs.getUserName()';
+      if (options.state) {
+        query += `^state=${options.state}`;
+      }
+      
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/sys_update_set`,
+        {
+          params: {
+            sysparm_query: query,
+            sysparm_limit: options.limit || 10,
+            sysparm_orderby: 'sys_created_on^DESC'
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to list Update Sets:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Complete an Update Set
+   */
+  async completeUpdateSet(updateSetId: string, notes?: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('✅ Completing Update Set...');
+      
+      const response = await this.client.patch(
+        `${this.getBaseUrl()}/api/now/table/sys_update_set/${updateSetId}`,
+        {
+          state: 'complete',
+          description: notes ? `${notes}\n\nCompleted: ${new Date().toISOString()}` : undefined
+        }
+      );
+      
+      console.log('✅ Update Set completed successfully!');
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to complete Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Preview Update Set changes
+   */
+  async previewUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🔍 Previewing Update Set changes...');
+      
+      // Get Update Set details
+      const updateSetResponse = await this.getUpdateSet(updateSetId);
+      if (!updateSetResponse.success) {
+        return updateSetResponse;
+      }
+      
+      // Get Update Set changes
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/sys_update_xml`,
+        {
+          params: {
+            sysparm_query: `update_set=${updateSetId}`,
+            sysparm_limit: 1000
+          }
+        }
+      );
+      
+      return {
+        success: true,
+        data: {
+          ...updateSetResponse.data,
+          changes: response.data.result
+        }
+      };
+    } catch (error) {
+      console.error('❌ Failed to preview Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Export Update Set as XML
+   */
+  async exportUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('📤 Exporting Update Set...');
+      
+      // Get Update Set details first
+      const updateSetResponse = await this.getUpdateSet(updateSetId);
+      if (!updateSetResponse.success) {
+        return updateSetResponse;
+      }
+      
+      // Use the unload processor to export
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/unload.do`,
+        {
+          params: {
+            sysparm_sys_id: updateSetId,
+            sysparm_table: 'sys_update_set',
+            sysparm_unload_format: 'xml'
+          },
+          responseType: 'text'
+        }
+      );
+      
+      return {
+        success: true,
+        data: {
+          name: updateSetResponse.data.name,
+          xml: response.data,
+          change_count: updateSetResponse.data.update_count || 0
+        }
+      };
+    } catch (error) {
+      console.error('❌ Failed to export Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
 }

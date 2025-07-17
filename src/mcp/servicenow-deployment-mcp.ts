@@ -250,9 +250,56 @@ class ServiceNowDeploymentMCP {
     });
   }
 
+  /**
+   * Ensure an Update Set is active before deployment
+   */
+  private async ensureUpdateSet(artifactType: string, artifactName: string): Promise<{ updateSetId: string; updateSetName: string }> {
+    // Check if there's a current Update Set
+    const currentUpdateSet = await this.client.getCurrentUpdateSet();
+    
+    if (currentUpdateSet.success && currentUpdateSet.data) {
+      this.logger.info('Using existing Update Set', { 
+        name: currentUpdateSet.data.name,
+        id: currentUpdateSet.data.sys_id 
+      });
+      return {
+        updateSetId: currentUpdateSet.data.sys_id,
+        updateSetName: currentUpdateSet.data.name
+      };
+    }
+    
+    // No current Update Set - create one automatically
+    const updateSetName = `Auto: ${artifactType} - ${artifactName} - ${new Date().toISOString().split('T')[0]}`;
+    const createResult = await this.client.createUpdateSet({
+      name: updateSetName,
+      description: `Automatically created for ${artifactType} deployment: ${artifactName}`,
+      state: 'in_progress'
+    });
+    
+    if (!createResult.success) {
+      throw new Error(`Failed to create Update Set: ${createResult.error}`);
+    }
+    
+    // Set as current
+    await this.client.setCurrentUpdateSet(createResult.data.sys_id);
+    
+    this.logger.info('Created new Update Set', { 
+      name: updateSetName,
+      id: createResult.data.sys_id 
+    });
+    
+    return {
+      updateSetId: createResult.data.sys_id,
+      updateSetName: updateSetName
+    };
+  }
+
   private async deployWidget(args: any) {
     try {
       this.logger.info('Deploying widget to ServiceNow', { name: args.name });
+
+      // Ensure Update Set is active
+      const { updateSetId, updateSetName } = await this.ensureUpdateSet('Widget', args.name);
 
       // Validate widget structure
       if (!args.template || !args.name || !args.title) {
@@ -290,6 +337,10 @@ class ServiceNowDeploymentMCP {
 - Name: ${args.name}
 - Title: ${args.title}
 - Sys ID: ${result.data.sys_id}
+
+📦 Update Set:
+- Name: ${updateSetName}
+- ID: ${updateSetId}
 - Category: ${args.category || 'custom'}
 
 🔗 Direct Links:
@@ -315,6 +366,9 @@ class ServiceNowDeploymentMCP {
   private async deployFlow(args: any) {
     try {
       this.logger.info('Deploying Flow Designer flow to ServiceNow', { name: args.name });
+
+      // Ensure Update Set is active
+      const { updateSetId, updateSetName } = await this.ensureUpdateSet('Flow', args.name);
 
       // Check if this is a master flow with linked artifacts
       const isComposedFlow = args.composed_flow || args.linked_artifacts;
@@ -408,6 +462,10 @@ class ServiceNowDeploymentMCP {
 - Table: ${args.table || 'N/A'}
 - Category: ${args.category || 'automation'}
 - Active: ${args.active !== false ? 'Yes' : 'No'}
+
+📦 **Update Set:**
+- Name: ${updateSetName}
+- ID: ${updateSetId}
 ${artifactSummary}${activitySummary}
 🔗 **Direct Links:**
 - Flow Designer: ${flowUrl}
@@ -561,6 +619,9 @@ ${isComposedFlow ? `
     try {
       this.logger.info('Deploying application to ServiceNow', { name: args.name });
 
+      // Ensure Update Set is active
+      const { updateSetId, updateSetName } = await this.ensureUpdateSet('Application', args.name);
+
       // Create application in ServiceNow
       const result = await this.client.createApplication({
         name: args.name,
@@ -588,6 +649,10 @@ ${isComposedFlow ? `
 - Scope: ${args.scope}
 - Version: ${args.version}
 - Sys ID: ${result.data.sys_id}
+
+📦 Update Set:
+- Name: ${updateSetName}
+- ID: ${updateSetId}
 
 🔗 Direct Links:
 - Application Record: ${appUrl}

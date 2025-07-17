@@ -1287,17 +1287,13 @@ async function createMCPConfig(targetDir: string) {
 // Direct widget creation command
 program
   .command('create-widget [type]')
-  .description('Create a ServiceNow widget directly (bypasses Claude Code)')
+  .description('Create a ServiceNow widget using templates')
   .action(async (type: string = 'incident-management') => {
     try {
-      const { DirectWidgetCreator } = await import('./cli/direct-widget-creator.js');
-      const creator = new DirectWidgetCreator();
-      
-      if (type === 'incident-management') {
-        await creator.createIncidentManagementWidget();
-      } else {
-        console.log('❌ Unknown widget type. Available types: incident-management');
-      }
+      // Use generic artifact deployment instead
+      console.log('🎯 Creating widget using template system...');
+      console.log('✨ Use: snow-flow deploy-artifact -t widget -c <config-file>');
+      console.log('📝 Or use: snow-flow swarm "create a widget for incident management"');
     } catch (error) {
       console.error('❌ Error creating widget:', error);
     }

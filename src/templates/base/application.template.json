@@ -1,0 +1,45 @@
+{
+  "type": "application",
+  "name": "{{APPLICATION_NAME}}",
+  "description": "{{APPLICATION_DESCRIPTION}}",
+  "config": {
+    "name": "{{APPLICATION_NAME}}",
+    "scope": "{{SCOPE|x_custom}}",
+    "version": "{{VERSION|1.0.0}}",
+    "short_description": "{{SHORT_DESCRIPTION}}",
+    "description": "{{APPLICATION_DESCRIPTION}}",
+    "vendor": "{{VENDOR|Custom}}",
+    "vendor_prefix": "{{VENDOR_PREFIX|x}}",
+    "runtime_access_tracking": "{{RUNTIME_ACCESS_TRACKING|permissive}}",
+    "enforce_license": {{ENFORCE_LICENSE|none}},
+    "active": true,
+    "licensable": {{LICENSABLE|false}},
+    "installable": {{INSTALLABLE|true}},
+    "accessible_from": "{{ACCESSIBLE_FROM|All application scopes}}",
+    "application_access": "{{APPLICATION_ACCESS|Can read}}",
+    "tables": [],
+    "menu": {
+      "label": "{{MENU_LABEL|APPLICATION_NAME}}",
+      "hint": "{{MENU_HINT|Access APPLICATION_NAME}}",
+      "order": {{MENU_ORDER|100}}
+    }
+  },
+  "variables": {
+    "APPLICATION_NAME": "My Custom Application",
+    "APPLICATION_DESCRIPTION": "A custom ServiceNow application",
+    "SCOPE": "x_custom",
+    "VERSION": "1.0.0",
+    "SHORT_DESCRIPTION": "Custom application for ServiceNow",
+    "VENDOR": "Custom",
+    "VENDOR_PREFIX": "x",
+    "RUNTIME_ACCESS_TRACKING": "permissive",
+    "ENFORCE_LICENSE": "none",
+    "LICENSABLE": false,
+    "INSTALLABLE": true,
+    "ACCESSIBLE_FROM": "All application scopes",
+    "APPLICATION_ACCESS": "Can read",
+    "MENU_LABEL": "My Custom Application",
+    "MENU_HINT": "Access My Custom Application",
+    "MENU_ORDER": 100
+  }
+}

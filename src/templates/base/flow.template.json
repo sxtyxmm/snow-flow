@@ -1,0 +1,48 @@
+{
+  "type": "flow",
+  "name": "{{FLOW_NAME}}",
+  "description": "{{FLOW_DESCRIPTION}}",
+  "config": {
+    "table": "{{TABLE|incident}}",
+    "trigger_type": "{{TRIGGER_TYPE|record_created}}",
+    "condition": "{{CONDITION|active=true}}",
+    "category": "{{CATEGORY|automation}}",
+    "active": true,
+    "flow_definition": {
+      "activities": [
+        {
+          "id": "start",
+          "type": "start",
+          "name": "Flow Start"
+        },
+        {
+          "id": "activity_1",
+          "type": "{{ACTIVITY_TYPE|script}}",
+          "name": "{{ACTIVITY_NAME|Process Record}}",
+          "inputs": {},
+          "outputs": {}
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "name": "Flow End"
+        }
+      ],
+      "connections": [
+        { "from": "start", "to": "activity_1" },
+        { "from": "activity_1", "to": "end" }
+      ],
+      "variables": []
+    }
+  },
+  "variables": {
+    "FLOW_NAME": "My Flow",
+    "FLOW_DESCRIPTION": "A custom ServiceNow flow",
+    "TABLE": "incident",
+    "TRIGGER_TYPE": "record_created",
+    "CONDITION": "active=true",
+    "CATEGORY": "automation",
+    "ACTIVITY_TYPE": "script",
+    "ACTIVITY_NAME": "Process Record"
+  }
+}

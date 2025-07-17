@@ -1,0 +1,64 @@
+{
+  "type": "table",
+  "name": "{{TABLE_NAME}}",
+  "description": "{{TABLE_DESCRIPTION}}",
+  "config": {
+    "name": "{{TABLE_NAME}}",
+    "label": "{{LABEL}}",
+    "plural": "{{PLURAL}}",
+    "extends_table": "{{EXTENDS_TABLE|task}}",
+    "number_ref": {
+      "table": "{{TABLE_NAME}}",
+      "prefix": "{{PREFIX|CUSTOM}}"
+    },
+    "access": "{{ACCESS|public}}",
+    "create_access_controls": {{CREATE_ACCESS_CONTROLS|true}},
+    "live_feed_enabled": {{LIVE_FEED_ENABLED|false}},
+    "is_extendable": {{IS_EXTENDABLE|true}},
+    "create_module": {{CREATE_MODULE|true}},
+    "icon": "{{ICON|}}",
+    "user_role": "{{USER_ROLE|}}",
+    "fields": [
+      {
+        "column_name": "{{FIELD1_NAME|description}}",
+        "column_label": "{{FIELD1_LABEL|Description}}",
+        "type": "{{FIELD1_TYPE|string}}",
+        "max_length": {{FIELD1_LENGTH|255}},
+        "mandatory": {{FIELD1_MANDATORY|false}},
+        "display": {{FIELD1_DISPLAY|true}},
+        "active": true
+      }
+    ],
+    "acls": {
+      "create": "{{ACL_CREATE|true}}",
+      "read": "{{ACL_READ|true}}",
+      "write": "{{ACL_WRITE|true}}",
+      "delete": "{{ACL_DELETE|admin}}"
+    }
+  },
+  "variables": {
+    "TABLE_NAME": "u_custom_table",
+    "TABLE_DESCRIPTION": "A custom ServiceNow table",
+    "LABEL": "Custom Table",
+    "PLURAL": "Custom Tables",
+    "EXTENDS_TABLE": "task",
+    "PREFIX": "CUSTOM",
+    "ACCESS": "public",
+    "CREATE_ACCESS_CONTROLS": true,
+    "LIVE_FEED_ENABLED": false,
+    "IS_EXTENDABLE": true,
+    "CREATE_MODULE": true,
+    "ICON": "",
+    "USER_ROLE": "",
+    "FIELD1_NAME": "description",
+    "FIELD1_LABEL": "Description",
+    "FIELD1_TYPE": "string",
+    "FIELD1_LENGTH": 255,
+    "FIELD1_MANDATORY": false,
+    "FIELD1_DISPLAY": true,
+    "ACL_CREATE": "true",
+    "ACL_READ": "true",
+    "ACL_WRITE": "true",
+    "ACL_DELETE": "admin"
+  }
+}

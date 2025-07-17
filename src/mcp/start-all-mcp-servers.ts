@@ -31,6 +31,10 @@ async function startAllServers() {
     {
       name: 'ServiceNow Graph Memory MCP',
       script: 'dist/mcp/servicenow-graph-memory-mcp.js'
+    },
+    {
+      name: 'ServiceNow Update Set MCP',
+      script: 'dist/mcp/servicenow-update-set-mcp.js'
     }
   ];
 

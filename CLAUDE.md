@@ -1,35 +1,112 @@
 # Claude Code Configuration - AUTONOMOUS ServiceNow Development
 
+## 🚨 CRITICAL: ServiceNow Update Set Requirements
+
+### MANDATORY: Always Work in Update Sets
+**EVERY ServiceNow change MUST be tracked in an Update Set!**
+
+Before making ANY changes to ServiceNow:
+1. **Check current Update Set**: `snow_update_set_current`
+2. **Create new Update Set** (if needed): `snow_update_set_create`
+3. **All deployments automatically ensure Update Set**
+
+### Update Set Best Practices
+```javascript
+// ALWAYS start a new user story with an Update Set:
+await snow_update_set_create({
+  name: "STORY-123: Add incident management dashboard",
+  description: "Create dashboard widget for incident tracking with real-time updates",
+  user_story: "STORY-123"
+});
+
+// Check current Update Set before any work:
+const current = await snow_update_set_current();
+
+// Switch to existing Update Set for continued work:
+await snow_update_set_switch({
+  update_set_id: "sys_id_here"
+});
+
+// Complete Update Set when done:
+await snow_update_set_complete({
+  notes: "All widgets tested and working. Ready for UAT."
+});
+```
+
+### Automatic Update Set Creation
+If you forget to create an Update Set, the deployment MCP will:
+1. Check for current Update Set
+2. Auto-create one with pattern: `Auto: <Type> - <Name> - <Date>`
+3. Notify you in deployment results
+
+### Update Set Tools Available
+- `snow_update_set_create` - Create new Update Set for user story
+- `snow_update_set_switch` - Switch to existing Update Set
+- `snow_update_set_current` - Check current active Update Set
+- `snow_update_set_list` - List all Update Sets
+- `snow_update_set_complete` - Mark Update Set as complete
+- `snow_update_set_preview` - Preview all changes in Update Set
+- `snow_update_set_export` - Export Update Set as XML
+
 ## 🤖 AUTONOMOUS MODE: MAXIMUM SELF-DIRECTION
 
 **THIS SYSTEM IS DESIGNED FOR FULL AUTONOMY - NO MANUAL STEPS NEEDED!**
 
 When developing for ServiceNow, ALWAYS:
-1. Use TodoWrite IMMEDIATELY to plan all tasks
-2. Store ALL information in Memory for cross-agent coordination  
-3. Use Task tool for parallel execution
+1. **Create or verify Update Set first** (see above)
+2. Use TodoWrite IMMEDIATELY to plan all tasks
+3. Store ALL information in Memory for cross-agent coordination  
+4. Use Task tool for parallel execution
 4. Deploy DIRECTLY using MCP tools - NO file generation
 5. Learn from every operation and improve continuously
 6. **NEW**: Index ALL artifacts in Neo4j graph for instant understanding
 
 ## 🧠 NEO4J GRAPH MEMORY - INTELLIGENT ARTIFACT UNDERSTANDING
 
-### ALWAYS Index Artifacts in Graph
+### Progressive Indexing Strategy - DON'T INDEX EVERYTHING!
 ```javascript
-// After EVERY artifact discovery or creation:
-await snow_graph_index_artifact({
-  artifact: {
-    id: artifact.sys_id,
-    name: artifact.name,
-    type: artifact.type,
-    content: artifact.script || artifact.template,
-    purpose: artifact.description
-  },
-  relationships: [
-    { to: 'related_artifact_id', type: 'USES', data_flow: 'calls API method' },
-    { to: 'table_id', type: 'MODIFIES', data_flow: 'updates records' }
-  ]
-});
+// SMART INDEXING based on context - not overwhelming the system
+const indexingResult = await progressiveIndexer.indexForContext(
+  'incident_management',
+  userInstruction
+);
+
+// Only indexes:
+// - 10 most relevant artifacts immediately
+// - Schedules lazy loading for moderately relevant
+// - Skips irrelevant artifacts completely
+
+// The system learns what's important:
+// ✅ Recently used artifacts get higher priority
+// ✅ Artifacts related to current task are indexed first
+// ✅ Old, unused artifacts are cleaned up automatically
+```
+
+### Index Only What's Needed
+```javascript
+// GOOD - Progressive indexing based on task:
+if (task.includes('incident widget')) {
+  // Only index incident-related widgets and their dependencies
+  await indexForContext('incident_management', task);
+}
+
+// BAD - Don't do this:
+// await indexAllServiceNowArtifacts(); // ❌ TOO MUCH DATA!
+
+// After discovery, index ONLY relevant artifacts:
+const relevantArtifacts = discoveredArtifacts.filter(a => a.relevance > 0.7);
+for (const artifact of relevantArtifacts) {
+  await snow_graph_index_artifact({
+    artifact: {
+      id: artifact.sys_id,
+      name: artifact.name,
+      type: artifact.type,
+      content: artifact.script || artifact.template,
+      purpose: artifact.description
+    },
+    relationships: extractRelevantRelationships(artifact)
+  });
+}
 ```
 
 ### Find Related Artifacts Instantly
@@ -66,6 +143,166 @@ const patterns = await snow_graph_pattern_analysis({
   min_occurrences: 3
 });
 ```
+
+## 📊 SMART INDEXING STRATEGIES
+
+### Context-Based Indexing Rules
+```javascript
+// Simple task = Less indexing
+if (userAsks("create a simple widget")) {
+  indexingStrategy = {
+    mode: 'lazy',
+    maxInitialArtifacts: 5,      // Only 5 most relevant
+    relevanceThreshold: 0.8,      // Very high threshold
+    contextWindow: 10             // Small context
+  };
+}
+
+// Complex task = More indexing
+if (userAsks("create complete incident management system")) {
+  indexingStrategy = {
+    mode: 'eager',
+    maxInitialArtifacts: 20,      // More artifacts needed
+    relevanceThreshold: 0.5,      // Lower threshold
+    contextWindow: 50             // Larger context
+  };
+}
+
+// Multi-artifact orchestration = Progressive
+if (userAsks("create flow with multiple integrations")) {
+  indexingStrategy = {
+    mode: 'progressive',
+    maxInitialArtifacts: 10,      // Start moderate
+    relevanceThreshold: 0.7,      // Balanced threshold
+    contextWindow: 25             // Medium context
+  };
+}
+```
+
+### Relevance Scoring
+```javascript
+// How artifacts are scored for relevance:
+function calculateRelevance(artifact, userTask) {
+  let score = 0;
+  
+  // Name match (most important)
+  if (artifact.name.includes(taskKeyword)) score += 0.4;
+  
+  // Description match
+  if (artifact.description.includes(taskKeyword)) score += 0.2;
+  
+  // Recent = more relevant
+  if (artifact.lastUpdated < 7_days_ago) score += 0.2;
+  
+  // Popular = more relevant
+  if (artifact.usageCount > 10) score += 0.1;
+  
+  // Related to current context
+  if (artifact.relatedToCurrentTask) score += 0.1;
+  
+  return Math.min(score, 1.0);
+}
+```
+
+### Cleanup Strategy
+```javascript
+// Automatic cleanup of irrelevant artifacts:
+// Runs periodically to keep graph lean
+await cleanupIrrelevantArtifacts({
+  olderThan: 30_days,
+  accessedLessThan: 2_times,
+  relevanceBelow: 0.5
+});
+```
+
+## 🧠 FLOW COMPOSER MCP - NATURAL LANGUAGE FLOW CREATION
+
+### Create Complex Flows with Natural Language
+**USE THIS for all Flow Designer workflows!**
+
+```javascript
+// Create flow from natural language instruction
+const flow = await snow_create_complex_flow({
+  instruction: "Create a flow that translates incident descriptions to English using LLM when priority is high"
+});
+
+// The Flow Composer will:
+// 1. Parse your instruction to understand intent
+// 2. Discover required ServiceNow artifacts (script includes, business rules, tables)
+// 3. Create a complete flow with all activities and connections
+// 4. Deploy directly to ServiceNow with Update Set tracking
+```
+
+### Flow Composer Capabilities
+
+#### 1. Natural Language Understanding
+```javascript
+// Understands complex instructions like:
+await snow_create_complex_flow({
+  instruction: "When a high priority incident is created, translate the description to English, notify the manager, and create a task for follow-up"
+});
+
+// Automatically identifies:
+// - Trigger: incident created
+// - Condition: priority = high
+// - Activities: translate, notify, create task
+// - Data flow: incident → translation → notification → task
+```
+
+#### 2. Intelligent Artifact Discovery
+```javascript
+// Discovers and links existing artifacts
+await snow_discover_flow_artifacts({
+  instruction: "Use our LLM translation service to process messages",
+  artifact_types: ["script_include", "business_rule"]
+});
+
+// Finds:
+// - LLMTranslationService script include
+// - Message processing business rules
+// - Related tables and fields
+```
+
+#### 3. Preview Before Deploy
+```javascript
+// Preview the flow structure before deployment
+const preview = await snow_preview_flow_structure({
+  instruction: "Create approval flow for purchases over $1000"
+});
+
+// Shows:
+// - Complete flow diagram
+// - All activities and connections
+// - Variables and error handling
+// - Required artifacts
+```
+
+### Flow Composition Best Practices
+
+1. **Be Specific**: Include tables, conditions, and actions
+   ```javascript
+   // Good: Specific and clear
+   "When incident priority changes to high, notify the assigned group manager and create a problem record"
+   
+   // Bad: Too vague
+   "Make a notification flow"
+   ```
+
+2. **Use ServiceNow Terms**: The composer understands ServiceNow concepts
+   ```javascript
+   "Create flow for change request approval with CAB voting when risk is high"
+   ```
+
+3. **Chain Multiple Actions**: Complex workflows are supported
+   ```javascript
+   "Translate description, then check knowledge base, then assign to specialist group, finally send notification"
+   ```
+
+### Available Flow Composer Tools
+- `snow_create_complex_flow` - Create complete flow from instruction
+- `snow_analyze_flow_instruction` - Analyze instruction without creating
+- `snow_discover_flow_artifacts` - Find artifacts for flow
+- `snow_preview_flow_structure` - Preview flow before deployment
 
 ## 🚀 AUTONOMOUS BATCH TOOL PATTERNS
 

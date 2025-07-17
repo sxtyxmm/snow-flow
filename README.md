@@ -19,9 +19,11 @@ Snow-Flow is an advanced multi-agent development framework specifically designed
 - 📊 **Batch Operations**: Parallel execution of multiple tasks for maximum efficiency
 - 🔄 **Rollback Support**: Safe deployment with rollback capabilities
 - 💾 **Persistent Memory**: Cross-session memory for agent coordination
-- 🧠 **Intelligent Flow Composition**: Create complex flows with automatic artifact orchestration
+- 🧠 **Intelligent Flow Composition**: Create complex flows with automatic artifact orchestration  
 - 🔍 **Natural Language Processing**: Find, edit, and analyze ServiceNow artifacts using natural language
 - 🎯 **Multi-Artifact Discovery**: Automatically discover and orchestrate multiple ServiceNow components
+- 🌊 **Flow Composer MCP**: Create Flow Designer flows from natural language with intelligent artifact linking
+- ⚡ **Update Set Management**: Automatic Update Set creation and tracking for all deployments
 
 ## 🚀 Quick Start
 
@@ -145,6 +147,24 @@ snow-flow create-flow "incident escalation with automatic assignment" --preview
 
 # Create flow but don't deploy immediately
 snow-flow create-flow "user onboarding automation" --no-deploy
+
+# Discover artifacts for a flow
+snow-flow create-flow "translate support messages and store them" --discover-artifacts
+```
+
+### 🌊 Flow Composer MCP Tools
+
+```bash
+# Create flows from natural language - FULLY AUTONOMOUS!
+snow-flow create-flow "Create a flow that translates incident descriptions to English using LLM when priority is high"
+
+# The Flow Composer MCP automatically:
+# ✅ Parses natural language instructions
+# ✅ Discovers existing artifacts (script includes, business rules, tables)
+# ✅ Creates missing artifacts as fallbacks
+# ✅ Links everything with intelligent data flow
+# ✅ Deploys directly to ServiceNow Flow Designer
+# ✅ Returns live URLs to view your flow
 ```
 
 ### Multi-Agent Swarm
@@ -245,7 +265,237 @@ snow-flow graph find-related "script_include_456"
 snow-flow graph suggest "incident management dashboard"
 ```
 
+## 🚀 Complex Development Scenarios
+
+Snow-Flow excels at complex, multi-component ServiceNow development tasks. Here are real-world scenarios you can execute:
+
+### 1. 🏢 Complete Incident Management System
+```bash
+snow-flow swarm "Build a complete incident management system with dashboard, automated assignment based on category, SLA tracking, escalation flows, and manager approval for high priority incidents"
+```
+
+**What happens autonomously:**
+- Creates incident dashboard widget with real-time charts
+- Builds assignment rules based on category/priority matrix
+- Implements SLA tracking with breach notifications
+- Creates escalation flow with multi-level approvals
+- Links all components with proper data flow
+- Deploys everything with zero manual steps
+
+### 2. 🛒 Employee Purchase Request Portal
+```bash
+snow-flow swarm "Create an employee self-service portal for IT equipment requests with approval workflow based on cost (manager approval for >€1000, director for >€5000), automated procurement task creation, and budget tracking dashboard"
+```
+
+**Autonomous execution:**
+- Designs service portal with catalog items
+- Creates multi-tier approval flow with cost conditions
+- Integrates with procurement system
+- Builds budget tracking widget with spend analytics
+- Sets up automated email notifications
+- Creates related tables and business rules
+
+### 3. 🔄 Change Management Automation
+```bash
+snow-flow create-flow "Implement change management process with risk assessment, CAB approval for high-risk changes, automated testing schedules, rollback procedures, and post-implementation reviews"
+```
+
+**System automatically:**
+- Analyzes existing change tables and processes
+- Creates risk assessment calculator
+- Builds CAB approval workflow
+- Implements automated test scheduling
+- Creates rollback procedures with impact analysis
+- Sets up post-implementation review tasks
+
+### 4. 🔐 Security Incident Response Platform
+```bash
+snow-flow swarm "Build security incident response platform with automated threat classification, SOAR integration, evidence collection workflows, stakeholder notifications based on severity, and compliance reporting dashboard"
+```
+
+**Full autonomous development:**
+- Creates threat classification ML model integration
+- Builds evidence collection procedures
+- Implements severity-based notification matrix
+- Creates compliance dashboard with audit trails
+- Links with existing security tools
+- Deploys with proper access controls
+
+### 5. 📊 Executive KPI Dashboard System
+```bash
+snow-flow swarm "Create executive dashboard showing real-time KPIs from multiple sources: incident resolution times, change success rates, project status, budget utilization, and employee satisfaction scores with drill-down capabilities"
+```
+
+**Autonomous implementation:**
+- Discovers all relevant data sources
+- Creates aggregation scripts for KPIs
+- Builds responsive dashboard widgets
+- Implements drill-down navigation
+- Sets up scheduled data refresh
+- Optimizes for performance
+
+### 6. 🤖 AI-Powered Service Desk
+```bash
+snow-flow swarm "Implement AI-powered service desk with natural language ticket creation, automatic categorization using ML, suggested solutions from knowledge base, sentiment analysis for escalation, and chatbot integration"
+```
+
+**System handles:**
+- NLP integration for ticket parsing
+- ML model for categorization
+- Knowledge base search integration
+- Sentiment analysis implementation
+- Chatbot workflow creation
+- All API integrations
+
+### 7. 🌊 Complex Multi-Artifact Flow Composition
+```bash
+snow-flow create-flow "Create a flow that uses the localization script include with LLMs to translate support desk messages to English and store them in a table using a business rule"
+```
+
+**Flow Composer automatically:**
+- Discovers existing localization script includes
+- Finds or creates translation business rules
+- Links artifacts with proper data flow
+- Maps outputs to inputs intelligently
+- Handles error conditions
+- Deploys complete flow with all dependencies
+
+### 8. 🏭 Multi-Stage Software Deployment Pipeline
+```bash
+snow-flow create-flow "Create software deployment pipeline with developer request form, automated testing in dev, staging deployment with smoke tests, CAB approval for production, automated rollout with health checks, and rollback triggers"
+```
+
+**Fully automated creation of:**
+- Developer request catalog item
+- Environment promotion workflows
+- Automated testing integrations
+- CAB approval process
+- Health check monitoring
+- Automated rollback procedures
+
+### 9. 📈 Predictive Incident Prevention System
+```bash
+snow-flow swarm "Build predictive incident prevention system that analyzes patterns, identifies potential issues before they occur, creates preventive tasks, tracks prevention effectiveness, and shows ROI dashboard"
+```
+
+**Autonomous development includes:**
+- Pattern analysis engine
+- Predictive model integration
+- Preventive task automation
+- Effectiveness tracking metrics
+- ROI calculation dashboard
+- Continuous learning loop
+
+### 10. 🌐 Multi-Language Support System
+```bash
+snow-flow create-flow "Implement multi-language support system with automatic translation of tickets, knowledge articles, and notifications using LLM integration, with quality review workflow and glossary management"
+```
+
+**System automatically:**
+- Integrates LLM translation services
+- Creates quality review workflows
+- Builds glossary management system
+- Implements language detection
+- Sets up notification templates
+- Handles right-to-left languages
+
+### 11. 🔗 Cross-Platform Integration Hub
+```bash
+snow-flow swarm "Create integration hub connecting ServiceNow with Jira, Slack, Teams, SAP, and Salesforce with bi-directional sync, conflict resolution, mapping interface, and monitoring dashboard"
+```
+
+**Complete autonomous setup:**
+- Discovers available APIs
+- Creates integration workflows
+- Implements conflict resolution
+- Builds mapping interface
+- Sets up monitoring dashboard
+- Handles authentication for all platforms
+
+### 💡 How It Works
+
+For each scenario, Snow-Flow:
+
+1. **Understands Context**: Uses NLP to parse requirements
+2. **Progressive Indexing**: Finds only relevant existing artifacts
+3. **Intelligent Planning**: Creates optimal implementation plan
+4. **Parallel Execution**: Multiple agents work simultaneously
+5. **Artifact Orchestration**: Links all components properly
+6. **Direct Deployment**: Deploys to ServiceNow instantly
+7. **Learning & Optimization**: Stores patterns for future use
+
+### 🎯 Key Benefits
+
+- **Zero Manual Steps**: Everything happens autonomously
+- **Intelligent Reuse**: Leverages existing components
+- **Best Practices**: Follows ServiceNow standards
+- **Performance Optimized**: Only indexes what's needed
+- **Continuous Learning**: Gets better with each use
+
 ## 🔧 Advanced Features
+
+### 🌊 Flow Composer MCP - Natural Language Flow Creation
+
+Snow-Flow's Flow Composer MCP is a powerful tool that creates complete ServiceNow flows from natural language:
+
+```javascript
+// Create complex flows with multi-artifact orchestration
+await snow_create_complex_flow({
+  instruction: "Create a flow that translates incident descriptions to English using LLM when priority is high"
+});
+
+// Analyze flow requirements
+await snow_analyze_flow_instruction({
+  instruction: "approval flow with manager and director approval for purchases over €5000"
+});
+
+// Discover and orchestrate artifacts
+await snow_discover_flow_artifacts({
+  instruction: "use the translation script include to process support messages",
+  artifact_types: ['script_include', 'business_rule', 'table']
+});
+
+// Preview flow structure before deployment
+await snow_preview_flow_structure({
+  instruction: "incident escalation flow with automatic assignment based on category"
+});
+```
+
+**Flow Composer Features:**
+- 🧠 **Natural Language Understanding**: Parses complex instructions in any language
+- 🔍 **Intelligent Artifact Discovery**: Finds and links existing ServiceNow components
+- 🔗 **Automatic Dependency Resolution**: Maps data flow between artifacts
+- 🎯 **Smart Fallback Creation**: Creates missing artifacts when needed
+- ⚡ **Direct Deployment**: Deploys complete flows to Flow Designer
+- 📊 **Error Handling**: Automatic retry and validation logic
+
+### ⚡ Update Set Management
+
+All deployments are automatically tracked in Update Sets for safe production deployment:
+
+```javascript
+// Create Update Set for a user story
+await snow_update_set_create({
+  name: "STORY-123: Add incident translation flow",
+  description: "Implements automatic translation for support messages",
+  user_story: "STORY-123"
+});
+
+// Track artifacts in current Update Set
+await snow_update_set_add_artifact({
+  type: "flow",
+  sys_id: "flow_sys_id_here",
+  name: "incident_translation_flow"
+});
+
+// Preview all changes
+await snow_update_set_preview();
+
+// Export for production deployment
+await snow_update_set_export({
+  output_path: "./exports/STORY-123.xml"
+});
+```
 
 ### 🧠 Intelligent Natural Language Processing
 Snow-Flow features advanced AI-powered natural language processing for ServiceNow artifacts:
@@ -294,6 +544,19 @@ await snow_deploy_flow({
   condition: 'category=hardware',
   flow_definition: flowJSON,
   category: 'approval'
+});
+
+// Deploy composed flows with linked artifacts
+await snow_deploy_flow({
+  name: 'translation_flow',
+  description: 'Translate and store support messages',
+  composed_flow: true,
+  linked_artifacts: [
+    { type: 'script_include', name: 'LLMTranslationUtil' },
+    { type: 'business_rule', name: 'StoreTranslatedMessage' },
+    { type: 'table', name: 'u_translations' }
+  ],
+  flow_definition: composedFlowJSON
 });
 ```
 

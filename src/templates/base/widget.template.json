@@ -1,0 +1,25 @@
+{
+  "type": "widget",
+  "name": "{{WIDGET_NAME}}",
+  "description": "{{WIDGET_DESCRIPTION}}",
+  "config": {
+    "id": "{{WIDGET_ID}}",
+    "title": "{{WIDGET_TITLE}}",
+    "category": "{{CATEGORY|custom}}",
+    "template": "<div class=\"{{WIDGET_CLASS}}\">\n  <!-- Widget HTML here -->\n</div>",
+    "css": ".{{WIDGET_CLASS}} {\n  /* Widget styles here */\n}",
+    "client_script": "function() {\n  var c = this;\n  \n  // Client controller logic here\n  c.data = c.data || {};\n}",
+    "server_script": "(function() {\n  // Server script logic here\n  data = data || {};\n  \n  // Fetch data from ServiceNow\n  \n})()",
+    "option_schema": "[]",
+    "demo_data": "{}",
+    "has_preview": true
+  },
+  "variables": {
+    "WIDGET_NAME": "My Widget",
+    "WIDGET_DESCRIPTION": "A custom ServiceNow widget",
+    "WIDGET_ID": "my_widget",
+    "WIDGET_TITLE": "My Widget",
+    "WIDGET_CLASS": "my-widget",
+    "CATEGORY": "custom"
+  }
+}
