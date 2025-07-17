@@ -365,7 +365,7 @@ snow-flow swarm "Implement AI-powered service desk with natural language ticket 
 ```
 
 **System handles:**
-- NLP integration for ticket parsing
+- Natural language processing for ticket parsing
 - ML model for categorization
 - Knowledge base search integration
 - Sentiment analysis implementation
@@ -441,7 +441,7 @@ snow-flow swarm "Create integration hub connecting ServiceNow with Jira, Slack, 
 
 For each scenario, Snow-Flow:
 
-1. **Understands Context**: Uses NLP to parse requirements
+1. **Understands Context**: Uses natural language understanding to parse requirements
 2. **Progressive Indexing**: Finds only relevant existing artifacts
 3. **Intelligent Planning**: Creates optimal implementation plan
 4. **Parallel Execution**: Multiple agents work simultaneously
