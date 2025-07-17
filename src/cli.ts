@@ -940,13 +940,17 @@ program
   monitor               Real-time monitoring dashboard
   memory <action>       Memory operations
   auth <action>         Authentication management
-  mcp                   Start ServiceNow MCP server for Claude Code
+  mcp <action>          Manage ServiceNow MCP servers
+  create-flow <instruction> Create flows using natural language
   help                  Show this help
 
 🎯 Example Usage:
   snow-flow auth login --instance dev12345.service-now.com --client-id your-id --client-secret your-secret
   snow-flow auth status
+  snow-flow mcp start   # Start MCP servers for Claude Code
+  snow-flow mcp status  # Check MCP server status
   snow-flow swarm "create a widget for incident management"
+  snow-flow create-flow "approval flow for hardware purchases over €1000"
   snow-flow spawn widget-builder --name "IncidentWidget"
   snow-flow monitor --duration 120
   snow-flow memory store "project" "incident_system"
@@ -965,12 +969,20 @@ program
   - SNOW_CLIENT_ID: OAuth Client ID from ServiceNow
   - SNOW_CLIENT_SECRET: OAuth Client Secret from ServiceNow
   
+🔧 MCP Server Management:
+  - start        Start all or specific MCP servers
+  - stop         Stop all or specific MCP servers  
+  - restart      Restart all or specific MCP servers
+  - status       Show status of all MCP servers
+  - logs         View MCP server logs
+  - list         List all configured MCP servers
+
   🔗 Live ServiceNow Integration:
   - Create widgets directly in ServiceNow
   - Execute workflows in real-time
   - Test changes immediately in your instance
 
-🌐 More Info: https://github.com/your-org/snow-flow
+🌐 More Info: https://github.com/groeimetai/snow-flow
     `);
   });
 
@@ -1175,22 +1187,67 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
 }
 
 async function createMCPConfig(targetDir: string) {
+  // Create the correct .mcp.json file for Claude Code discovery
   const mcpConfig = {
     "mcpServers": {
-      "servicenow": {
+      "servicenow-deployment": {
         "command": "node",
-        "args": ["dist/mcp/start-servicenow-mcp.js"],
+        "args": ["dist/mcp/servicenow-deployment-mcp.js"],
         "env": {
-          "SNOW_INSTANCE": process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-          "SNOW_CLIENT_ID": process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-          "SNOW_CLIENT_SECRET": process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-flow-composer": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-flow-composer-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-update-set": {
+        "command": "node", 
+        "args": ["dist/mcp/servicenow-update-set-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-intelligent": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-intelligent-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-graph-memory": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-graph-memory-mcp.js"],
+        "env": {
+          "NEO4J_URI": "${NEO4J_URI}",
+          "NEO4J_USER": "${NEO4J_USER}",
+          "NEO4J_PASSWORD": "${NEO4J_PASSWORD}",
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
         }
       }
     }
   };
   
-  const mcpConfigPath = join(targetDir, '.claude/mcp-config.json');
+  // Create .mcp.json in project root for Claude Code discovery
+  const mcpConfigPath = join(targetDir, '.mcp.json');
   await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+  
+  // Also create legacy config in .claude for backward compatibility
+  const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
+  await fs.writeFile(legacyConfigPath, JSON.stringify(mcpConfig, null, 2));
   
   // Create comprehensive Claude Code settings file
   const claudeSettings = {
@@ -1299,46 +1356,223 @@ program
     }
   });
 
-// MCP Server command
+// MCP Server command with subcommands
 program
-  .command('mcp')
-  .description('Start ServiceNow MCP server for Claude Code integration')
+  .command('mcp <action>')
+  .description('Manage ServiceNow MCP servers for Claude Code integration')
+  .option('--server <name>', 'Specific server name to manage')
   .option('--port <port>', 'Port for MCP server (default: auto)')
   .option('--host <host>', 'Host for MCP server (default: localhost)')
-  .action(async (options) => {
-    console.log('🚀 Starting ServiceNow MCP Server...');
-    console.log('🔧 This will enable Claude Code to directly access ServiceNow APIs');
-    console.log('');
+  .action(async (action: string, options) => {
+    const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
+    const manager = new MCPServerManager();
     
-    // Import and start MCP server
     try {
-      const { spawn } = require('child_process');
-      const mcpProcess = spawn('node', ['dist/mcp/start-servicenow-mcp.js'], {
-        stdio: 'inherit',
-        cwd: process.cwd()
-      });
+      await manager.initialize();
       
-      mcpProcess.on('error', (error: Error) => {
-        console.error('❌ Failed to start MCP server:', error.message);
-        process.exit(1);
-      });
-      
-      mcpProcess.on('close', (code: number | null) => {
-        console.log(`\n🛑 MCP Server stopped with code: ${code}`);
-        process.exit(code || 0);
-      });
-      
-      // Handle process termination
-      process.on('SIGINT', () => {
-        console.log('\n🛑 Stopping MCP Server...');
-        mcpProcess.kill('SIGINT');
-      });
-      
+      switch (action) {
+        case 'start':
+          await handleMCPStart(manager, options);
+          break;
+        case 'stop':
+          await handleMCPStop(manager, options);
+          break;
+        case 'restart':
+          await handleMCPRestart(manager, options);
+          break;
+        case 'status':
+          await handleMCPStatus(manager, options);
+          break;
+        case 'logs':
+          await handleMCPLogs(manager, options);
+          break;
+        case 'list':
+          await handleMCPList(manager, options);
+          break;
+        default:
+          console.error(`❌ Unknown action: ${action}`);
+          console.log('Available actions: start, stop, restart, status, logs, list');
+          process.exit(1);
+      }
     } catch (error) {
-      console.error('❌ Failed to start MCP server:', error);
+      console.error('❌ MCP operation failed:', error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
   });
+
+// MCP action handlers
+async function handleMCPStart(manager: any, options: any): Promise<void> {
+  console.log('🚀 Starting ServiceNow MCP Servers...');
+  
+  if (options.server) {
+    console.log(`📡 Starting server: ${options.server}`);
+    const success = await manager.startServer(options.server);
+    if (success) {
+      console.log(`✅ Server '${options.server}' started successfully`);
+    } else {
+      console.log(`❌ Failed to start server '${options.server}'`);
+      process.exit(1);
+    }
+  } else {
+    console.log('📡 Starting all configured MCP servers...');
+    await manager.startAllServers();
+    
+    const status = manager.getServerStatus();
+    const running = status.filter((s: any) => s.status === 'running').length;
+    const total = status.length;
+    
+    console.log(`\n✅ Started ${running}/${total} MCP servers`);
+    
+    if (running === total) {
+      console.log('🎉 All MCP servers are now running and available in Claude Code!');
+      console.log('\n📋 Next steps:');
+      console.log('   1. Open Claude Code');
+      console.log('   2. MCP tools will be automatically available');
+      console.log('   3. Use snow_deploy_widget, snow_deploy_flow, etc.');
+    } else {
+      console.log('⚠️  Some servers failed to start. Check logs with: snow-flow mcp logs');
+    }
+  }
+}
+
+async function handleMCPStop(manager: any, options: any): Promise<void> {
+  if (options.server) {
+    console.log(`🛑 Stopping server: ${options.server}`);
+    const success = await manager.stopServer(options.server);
+    if (success) {
+      console.log(`✅ Server '${options.server}' stopped successfully`);
+    } else {
+      console.log(`❌ Failed to stop server '${options.server}'`);
+      process.exit(1);
+    }
+  } else {
+    console.log('🛑 Stopping all MCP servers...');
+    await manager.stopAllServers();
+    console.log('✅ All MCP servers stopped');
+  }
+}
+
+async function handleMCPRestart(manager: any, options: any): Promise<void> {
+  if (options.server) {
+    console.log(`🔄 Restarting server: ${options.server}`);
+    await manager.stopServer(options.server);
+    const success = await manager.startServer(options.server);
+    if (success) {
+      console.log(`✅ Server '${options.server}' restarted successfully`);
+    } else {
+      console.log(`❌ Failed to restart server '${options.server}'`);
+      process.exit(1);
+    }
+  } else {
+    console.log('🔄 Restarting all MCP servers...');
+    await manager.stopAllServers();
+    await manager.startAllServers();
+    
+    const running = manager.getRunningServersCount();
+    const total = manager.getServerStatus().length;
+    console.log(`✅ Restarted ${running}/${total} MCP servers`);
+  }
+}
+
+async function handleMCPStatus(manager: any, options: any): Promise<void> {
+  const servers = manager.getServerStatus();
+  
+  console.log('\n📊 MCP Server Status');
+  console.log('═'.repeat(80));
+  
+  if (servers.length === 0) {
+    console.log('No MCP servers configured');
+    return;
+  }
+  
+  servers.forEach((server: any) => {
+    const statusIcon = server.status === 'running' ? '✅' : 
+                      server.status === 'starting' ? '🔄' : 
+                      server.status === 'error' ? '❌' : '⭕';
+    
+    console.log(`${statusIcon} ${server.name}`);
+    console.log(`   Status: ${server.status}`);
+    console.log(`   Script: ${server.script}`);
+    
+    if (server.pid) {
+      console.log(`   PID: ${server.pid}`);
+    }
+    
+    if (server.startedAt) {
+      console.log(`   Started: ${server.startedAt.toLocaleString()}`);
+    }
+    
+    if (server.lastError) {
+      console.log(`   Last Error: ${server.lastError}`);
+    }
+    
+    console.log('');
+  });
+  
+  const running = servers.filter((s: any) => s.status === 'running').length;
+  const total = servers.length;
+  
+  console.log(`📈 Summary: ${running}/${total} servers running`);
+  
+  if (running === total) {
+    console.log('🎉 All MCP servers are operational and available in Claude Code!');
+  } else if (running > 0) {
+    console.log('⚠️  Some servers are not running. Use "snow-flow mcp start" to start them.');
+  } else {
+    console.log('💡 No servers running. Use "snow-flow mcp start" to start all servers.');
+  }
+}
+
+async function handleMCPLogs(manager: any, options: any): Promise<void> {
+  const { join } = require('path');
+  const { promises: fs } = require('fs');
+  
+  const logDir = join(process.cwd(), '.snow-flow', 'logs');
+  
+  try {
+    const logFiles = await fs.readdir(logDir);
+    
+    if (options.server) {
+      const serverLogFile = `${options.server.replace(/\\s+/g, '_').toLowerCase()}.log`;
+      if (logFiles.includes(serverLogFile)) {
+        console.log(`📄 Logs for ${options.server}:`);
+        console.log('═'.repeat(80));
+        const logContent = await fs.readFile(join(logDir, serverLogFile), 'utf-8');
+        console.log(logContent);
+      } else {
+        console.log(`❌ No logs found for server '${options.server}'`);
+      }
+    } else {
+      console.log('📄 Available log files:');
+      logFiles.forEach((file: string) => {
+        console.log(`   - ${file}`);
+      });
+      console.log('\\n💡 Use --server <name> to view specific server logs');
+    }
+  } catch (error) {
+    console.log('📄 No log files found');
+  }
+}
+
+async function handleMCPList(manager: any, options: any): Promise<void> {
+  const servers = manager.getServerStatus();
+  
+  console.log('\n📋 Configured MCP Servers');
+  console.log('═'.repeat(80));
+  
+  if (servers.length === 0) {
+    console.log('No MCP servers configured');
+    console.log('💡 Run "snow-flow init" to configure default MCP servers');
+    return;
+  }
+  
+  servers.forEach((server: any, index: number) => {
+    console.log(`${index + 1}. ${server.name}`);
+    console.log(`   Script: ${server.script}`);
+    console.log(`   Status: ${server.status}`);
+    console.log('');
+  });
+}
 
 // Create Flow command - intelligent flow composition
 program
@@ -1545,19 +1779,142 @@ program
       console.log('   - Automation and parallel execution enabled');
       console.log('   - Extended output limits and thinking tokens\n');
       
+      // Phase 6: Build project and start MCP servers
+      console.log('🔧 Building project and initializing MCP servers...');
+      
+      // First, build the project so MCP servers are available
+      console.log('🏗️  Building project (compiling TypeScript)...');
+      try {
+        const { spawn } = require('child_process');
+        const buildProcess = spawn('npm', ['run', 'build'], {
+          cwd: targetDir,
+          stdio: 'pipe'
+        });
+        
+        await new Promise((resolve, reject) => {
+          buildProcess.on('close', (code: number) => {
+            if (code === 0) {
+              resolve(undefined);
+            } else {
+              reject(new Error(`Build failed with code ${code}`));
+            }
+          });
+        });
+        
+        console.log('✅ Project built successfully');
+        
+        // Now initialize and start MCP servers
+        const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
+        const manager = new MCPServerManager();
+        await manager.initialize();
+        console.log('✅ MCP server manager initialized');
+        
+        console.log('📡 Starting MCP servers...');
+        await manager.startAllServers();
+        
+        const status = manager.getServerStatus();
+        const running = status.filter(s => s.status === 'running').length;
+        const total = status.length;
+        
+        if (running > 0) {
+          console.log(`✅ Started ${running}/${total} MCP servers`);
+          console.log('🎉 MCP servers are now running and available in Claude Code!');
+        } else {
+          console.log('⚠️  MCP servers configured but failed to start');
+        }
+        
+        // Phase 7: Register MCP servers with Claude Code
+        console.log('📡 Registering MCP servers with Claude Code...');
+        try {
+          const { spawn } = require('child_process');
+          
+          const mcpServers = [
+            { name: 'servicenow-deployment', path: join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js') },
+            { name: 'servicenow-flow-composer', path: join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js') },
+            { name: 'servicenow-update-set', path: join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js') },
+            { name: 'servicenow-intelligent', path: join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js') },
+            { name: 'servicenow-graph-memory', path: join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js') }
+          ];
+          
+          let registeredCount = 0;
+          for (const server of mcpServers) {
+            try {
+              await new Promise((resolve, reject) => {
+                const registerProcess = spawn('claude', ['mcp', 'add', server.name, server.path], {
+                  cwd: targetDir,
+                  stdio: 'pipe'
+                });
+                
+                registerProcess.on('close', (code: number) => {
+                  if (code === 0) {
+                    registeredCount++;
+                    resolve(undefined);
+                  } else {
+                    reject(new Error(`Failed to register ${server.name}`));
+                  }
+                });
+                
+                registerProcess.on('error', reject);
+              });
+            } catch (error) {
+              console.log(`   ⚠️  Failed to register ${server.name} with Claude Code`);
+            }
+          }
+          
+          if (registeredCount > 0) {
+            console.log(`✅ Registered ${registeredCount}/${mcpServers.length} MCP servers with Claude Code`);
+            console.log('🎉 MCP servers are now visible in Claude Code /mcp command!');
+          } else {
+            console.log('⚠️  MCP server registration failed - use manual registration:');
+            console.log(`   claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-flow-composer "${join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+          }
+          
+        } catch (error) {
+          console.log('⚠️  Claude Code MCP registration failed - manual registration required:');
+          console.log(`   claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-flow-composer "${join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+        }
+        
+      } catch (error) {
+        console.log('⚠️  Build failed - MCP servers will need manual start:');
+        console.log('   1. Run: npm run build');
+        console.log('   2. Run: snow-flow mcp start');
+        console.log('   3. Register with Claude Code:');
+        console.log(`      claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
+        console.log(`      (repeat for other servers)`);
+        console.log(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      
       // Success message
-      console.log('🎉 Snow-Flow project initialized successfully!');
+      console.log('\n🎉 Snow-Flow project initialized successfully!');
       console.log('');
       console.log('📋 Next steps:');
       console.log('   1. Edit .env file with your ServiceNow OAuth credentials');
       console.log('   2. Run: snow-flow auth login');
       console.log('   3. Start your first swarm: snow-flow swarm "create a widget for incident management"');
       console.log('');
+      console.log('✅ Project is ready to use! MCP servers are running and registered with Claude Code.');
+      console.log('💡 Use /mcp in Claude Code to see all available ServiceNow tools.');
+      console.log('');
+      console.log('🔧 MCP Server Management:');
+      console.log('   - Start servers: snow-flow mcp start');
+      console.log('   - Check status: snow-flow mcp status');
+      console.log('   - View logs: snow-flow mcp logs');
+      console.log('   - Stop servers: snow-flow mcp stop');
+      console.log('');
       console.log('📚 Documentation:');
       console.log('   - Environment config: .env (configure OAuth credentials here)');
       console.log('   - Project structure: .claude/commands/');
       console.log('   - Configuration: .claude/config.json');
       console.log('   - Memory system: .swarm/memory.db');
+      console.log('   - MCP servers: .snow-flow/mcp-servers.json');
       if (options.sparc) {
         console.log('   - SPARC modes: .claude/commands/sparc/');
         console.log('   - Full guide: CLAUDE.md');

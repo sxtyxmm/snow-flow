@@ -188,11 +188,6 @@ class ServiceNowFlowComposerMCP {
       const { name, arguments: args } = request.params;
 
       try {
-        const isAuth = await this.oauth.isAuthenticated();
-        if (!isAuth) {
-          throw new Error('Not authenticated with ServiceNow. Run "snow-flow auth login" first.');
-        }
-
         switch (name) {
           case 'snow_create_complex_flow':
             return await this.createComplexFlow(args);
@@ -218,6 +213,19 @@ class ServiceNowFlowComposerMCP {
   }
 
   private async createComplexFlow(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Creating complex flow from natural language', { instruction: args.instruction });
 
@@ -284,6 +292,19 @@ The flow is now ready to process support desk messages, translate them using LLM
   }
 
   private async analyzeFlowInstruction(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Analyzing flow instruction', { instruction: args.instruction });
 
@@ -336,6 +357,19 @@ ${flowInstruction.requiredArtifacts.map((artifact: any, index: number) => `${ind
   }
 
   private async discoverFlowArtifacts(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Discovering flow artifacts', { instruction: args.instruction });
 
@@ -402,6 +436,19 @@ ${artifactsToShow.map((artifact: any) => `- ${artifact.type}: https://${credenti
   }
 
   private async previewFlowStructure(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Previewing flow structure', { instruction: args.instruction });
 
@@ -470,6 +517,19 @@ ${this.analyzeDataFlow(flowStructure.activities)}
   }
 
   private async deployComposedFlow(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Deploying composed flow', { flow: args.flow_instruction });
 

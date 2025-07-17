@@ -1,0 +1,62 @@
+{
+  "mcpServers": {
+    "servicenow-deployment": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-deployment-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "dev198027.service-now.com/",
+        "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
+        "SNOW_CLIENT_SECRET": "Welkom123"
+      }
+    },
+    "servicenow-flow-composer": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-flow-composer-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "dev198027.service-now.com/",
+        "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
+        "SNOW_CLIENT_SECRET": "Welkom123"
+      }
+    },
+    "servicenow-update-set": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-update-set-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "dev198027.service-now.com/",
+        "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
+        "SNOW_CLIENT_SECRET": "Welkom123"
+      }
+    },
+    "servicenow-intelligent": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-intelligent-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "dev198027.service-now.com/",
+        "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
+        "SNOW_CLIENT_SECRET": "Welkom123"
+      }
+    },
+    "servicenow-graph-memory": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-graph-memory-mcp.js"
+      ],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USER": "neo4j",
+        "NEO4J_PASSWORD": "password",
+        "SNOW_INSTANCE": "dev198027.service-now.com/",
+        "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
+        "SNOW_CLIENT_SECRET": "Welkom123"
+      }
+    }
+  }
+}

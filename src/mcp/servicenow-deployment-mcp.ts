@@ -207,11 +207,9 @@ class ServiceNowDeploymentMCP {
       const { name, arguments: args } = request.params;
 
       try {
-        // Ensure authentication
-        const isAuth = await this.oauth.isAuthenticated();
-        if (!isAuth) {
-          throw new Error('Not authenticated with ServiceNow. Run "snow-flow auth login" first.');
-        }
+        // Note: Authentication check moved to individual tool methods
+        // This allows the MCP server to start without credentials
+        // and fail gracefully when tools are actually used
 
         switch (name) {
           case 'snow_deploy_widget':
@@ -296,6 +294,19 @@ class ServiceNowDeploymentMCP {
 
   private async deployWidget(args: any) {
     try {
+      // Check authentication first
+      const isAuth = await this.oauth.isAuthenticated();
+      if (!isAuth) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            },
+          ],
+        };
+      }
+
       this.logger.info('Deploying widget to ServiceNow', { name: args.name });
 
       // Ensure Update Set is active

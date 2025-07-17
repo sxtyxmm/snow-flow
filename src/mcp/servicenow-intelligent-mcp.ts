@@ -125,11 +125,6 @@ class ServiceNowIntelligentMCP {
       const { name, arguments: args } = request.params;
 
       try {
-        const isAuth = await this.oauth.isAuthenticated();
-        if (!isAuth) {
-          throw new Error('Not authenticated with ServiceNow. Run "snow-flow auth login" first.');
-        }
-
         switch (name) {
           case 'snow_find_artifact':
             return await this.findArtifact(args);
@@ -153,6 +148,19 @@ class ServiceNowIntelligentMCP {
   }
 
   private async findArtifact(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Finding ServiceNow artifact', { query: args.query });
 
@@ -199,6 +207,19 @@ class ServiceNowIntelligentMCP {
   }
 
   private async editArtifact(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Editing ServiceNow artifact', { query: args.query });
 
@@ -236,6 +257,19 @@ class ServiceNowIntelligentMCP {
   }
 
   private async analyzeArtifact(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
     try {
       this.logger.info('Analyzing ServiceNow artifact', { sys_id: args.sys_id });
 

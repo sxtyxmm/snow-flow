@@ -62,13 +62,16 @@
 
 Ensure your ServiceNow user has appropriate permissions:
 
-1. **Roles needed**:
+1. **Roles needed for your ServiceNow user**:
    - `rest_api_explorer` - For API access
-   - `admin` or specific table permissions for the resources you want to access
+   - `sp_admin` - **Required** for Service Portal widget deployment with server scripts
+   - `admin` - Alternative to sp_admin, provides broader system access
 
-2. **OAuth Scopes**:
-   - `useraccount` - Basic user information
-   - Additional scopes as needed for your use case
+2. **OAuth Scopes** (handled automatically by Snow-Flow):
+   - `useraccount` - Basic user information and read access
+   - `admin` - Required for widget server script deployment and table modifications
+   
+   ⚠️ **Important**: The `admin` scope is required for deploying widgets with server scripts. Without this scope, server scripts will be cleared during deployment due to insufficient permissions.
 
 ## Troubleshooting
 
@@ -90,6 +93,12 @@ Ensure your ServiceNow user has appropriate permissions:
 ### "State parameter missing"
 - This is handled automatically by Snow-Flow
 - If you see this error, ensure you're using the latest version
+
+### "Widget server script is empty after deployment"
+- This indicates insufficient OAuth permissions
+- Ensure your ServiceNow user has `sp_admin` role for Service Portal administration
+- The OAuth application must request `admin` scope (handled automatically)
+- Re-authenticate after updating permissions: `snow-flow auth logout` → `snow-flow auth login`
 
 ## Security Best Practices
 
