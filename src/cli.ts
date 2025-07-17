@@ -19,7 +19,7 @@ const program = new Command();
 program
   .name('snow-flow')
   .description('ServiceNow Multi-Agent Development Framework')
-  .version('1.0.0');
+  .version('1.1.0');
 
 // Swarm command - the main orchestration command
 program
@@ -31,7 +31,7 @@ program
   .option('--parallel', 'Enable parallel execution')
   .option('--monitor', 'Enable real-time monitoring')
   .action(async (objective: string, options) => {
-    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm`);
+    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v1.1.0`);
     console.log(`📋 Objective: ${objective}`);
     console.log(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
     console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}\n`);
@@ -180,7 +180,7 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
   
   // Show initial dashboard only once
   console.log('┌─────────────────────────────────────────────────────────────┐');
-  console.log('│                  🚀 Snow-Flow Dashboard                     │');
+  console.log('│               🚀 Snow-Flow Dashboard v1.1.0                 │');
   console.log('├─────────────────────────────────────────────────────────────┤');
   console.log(`│ 🤖 Claude Code Status:  ✅ Starting                        │`);
   console.log(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}                            │`);
@@ -744,7 +744,7 @@ program
       }
       
       console.log('┌─────────────────────────────────────────────────────────────┐');
-      console.log('│                  🚀 Snow-Flow Monitor                       │');
+      console.log('│               🚀 Snow-Flow Monitor v1.1.0                   │');
       console.log('├─────────────────────────────────────────────────────────────┤');
       console.log(`│ 📊 System Status:       ✅ Online                          │`);
       console.log(`│ ⏱️  Monitor Time:        ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}                          │`);
@@ -931,7 +931,7 @@ program
   .description('Show detailed help information')
   .action(() => {
     console.log(`
-🚀 Snow-Flow - ServiceNow Multi-Agent Development Framework
+🚀 Snow-Flow v1.1.0 - ServiceNow Multi-Agent Development Framework
 
 📋 Available Commands:
   swarm <objective>     Execute multi-agent orchestration
