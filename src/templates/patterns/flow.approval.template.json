@@ -1,0 +1,271 @@
+{
+  "type": "flow",
+  "name": "Approval Flow Template",
+  "description": "Template for creating multi-stage approval flows with conditions and notifications",
+  "category": "patterns/approval",
+  "config": {
+    "name": "{{FLOW_NAME|approval_flow}}",
+    "description": "{{FLOW_DESCRIPTION|Multi-stage approval flow with notifications}}",
+    "table": "{{TABLE_NAME|sc_request}}",
+    "active": true,
+    "trigger": {
+      "type": "{{TRIGGER_TYPE|record_created}}",
+      "table": "{{TABLE_NAME|sc_request}}",
+      "condition": "{{TRIGGER_CONDITION|}}"
+    },
+    "variables": [
+      {
+        "name": "request_record",
+        "type": "reference",
+        "reference": "{{TABLE_NAME|sc_request}}",
+        "description": "The record that triggered the flow"
+      },
+      {
+        "name": "approval_level",
+        "type": "string",
+        "value": "1",
+        "description": "Current approval level"
+      },
+      {
+        "name": "approval_history",
+        "type": "array",
+        "value": "[]",
+        "description": "History of all approvals"
+      },
+      {
+        "name": "rejection_reason",
+        "type": "string",
+        "value": "",
+        "description": "Reason for rejection if applicable"
+      }
+    ],
+    "activities": [
+      {
+        "id": "start",
+        "type": "start",
+        "name": "Flow Start",
+        "outputs": {
+          "next": "check_amount"
+        }
+      },
+      {
+        "id": "check_amount",
+        "type": "condition",
+        "name": "Check Request Amount",
+        "description": "Determine approval levels based on amount",
+        "condition": "{{AMOUNT_FIELD|estimated_cost}} > {{HIGH_AMOUNT_THRESHOLD|5000}}",
+        "outputs": {
+          "true": "director_approval",
+          "false": "manager_approval"
+        }
+      },
+      {
+        "id": "manager_approval",
+        "type": "approval",
+        "name": "Manager Approval",
+        "description": "Request approval from manager",
+        "config": {
+          "approvers": "{{MANAGER_FIELD|requested_for.manager}}",
+          "approval_type": "{{APPROVAL_TYPE|user}}",
+          "due_date": "{{DUE_DATE_DAYS|3}}",
+          "reminder_days": "{{REMINDER_DAYS|1}}",
+          "approval_message": "Please review and approve this {{TABLE_LABEL|request}}: ${request_record.number}"
+        },
+        "outputs": {
+          "approved": "check_secondary_approval",
+          "rejected": "rejection_notification"
+        }
+      },
+      {
+        "id": "director_approval",
+        "type": "approval",
+        "name": "Director Approval",
+        "description": "Request approval from director for high-value items",
+        "config": {
+          "approvers": "{{DIRECTOR_FIELD|requested_for.department.director}}",
+          "approval_type": "{{APPROVAL_TYPE|user}}",
+          "due_date": "{{DUE_DATE_DAYS|2}}",
+          "reminder_days": "{{REMINDER_DAYS|1}}",
+          "approval_message": "High-value {{TABLE_LABEL|request}} requires your approval: ${request_record.number}"
+        },
+        "outputs": {
+          "approved": "manager_approval",
+          "rejected": "rejection_notification"
+        }
+      },
+      {
+        "id": "check_secondary_approval",
+        "type": "condition",
+        "name": "Check Secondary Approval Need",
+        "description": "Determine if additional approvals are needed",
+        "condition": "{{SECONDARY_APPROVAL_CONDITION|category == 'hardware'}}",
+        "outputs": {
+          "true": "technical_approval",
+          "false": "approval_notification"
+        }
+      },
+      {
+        "id": "technical_approval",
+        "type": "approval",
+        "name": "Technical Approval",
+        "description": "Technical team approval for specific categories",
+        "config": {
+          "approvers": "{{TECHNICAL_GROUP|technical_approval_group}}",
+          "approval_type": "group",
+          "due_date": "{{DUE_DATE_DAYS|3}}",
+          "approval_message": "Technical review required for: ${request_record.number}"
+        },
+        "outputs": {
+          "approved": "approval_notification",
+          "rejected": "rejection_notification"
+        }
+      },
+      {
+        "id": "approval_notification",
+        "type": "notification",
+        "name": "Send Approval Notification",
+        "description": "Notify requester of approval",
+        "config": {
+          "recipients": ["${request_record.requested_for}"],
+          "template": "{{APPROVAL_TEMPLATE|request_approved}}",
+          "message": "Your {{TABLE_LABEL|request}} ${request_record.number} has been approved!"
+        },
+        "outputs": {
+          "next": "create_fulfillment_task"
+        }
+      },
+      {
+        "id": "rejection_notification",
+        "type": "notification",
+        "name": "Send Rejection Notification",
+        "description": "Notify requester of rejection",
+        "config": {
+          "recipients": ["${request_record.requested_for}"],
+          "template": "{{REJECTION_TEMPLATE|request_rejected}}",
+          "message": "Your {{TABLE_LABEL|request}} ${request_record.number} has been rejected. Reason: ${rejection_reason}"
+        },
+        "outputs": {
+          "next": "update_rejected_state"
+        }
+      },
+      {
+        "id": "create_fulfillment_task",
+        "type": "create_record",
+        "name": "Create Fulfillment Task",
+        "description": "Create task for fulfillment team",
+        "config": {
+          "table": "{{TASK_TABLE|sc_task}}",
+          "values": {
+            "parent": "${request_record.sys_id}",
+            "short_description": "{{TASK_DESCRIPTION|Fulfill approved request}} ${request_record.number}",
+            "assigned_to": "{{FULFILLMENT_USER|}}",
+            "assignment_group": "{{FULFILLMENT_GROUP|fulfillment_team}}",
+            "priority": "${request_record.priority}",
+            "due_date": "{{TASK_DUE_DAYS|5}}"
+          }
+        },
+        "outputs": {
+          "next": "update_approved_state"
+        }
+      },
+      {
+        "id": "update_approved_state",
+        "type": "update_record",
+        "name": "Update to Approved State",
+        "description": "Update request state to approved",
+        "config": {
+          "record": "${request_record}",
+          "values": {
+            "approval": "approved",
+            "state": "{{APPROVED_STATE|approved}}",
+            "stage": "fulfillment"
+          }
+        },
+        "outputs": {
+          "next": "end_approved"
+        }
+      },
+      {
+        "id": "update_rejected_state",
+        "type": "update_record",
+        "name": "Update to Rejected State",
+        "description": "Update request state to rejected",
+        "config": {
+          "record": "${request_record}",
+          "values": {
+            "approval": "rejected",
+            "state": "{{REJECTED_STATE|closed_rejected}}",
+            "stage": "closed",
+            "comments": "Rejected: ${rejection_reason}"
+          }
+        },
+        "outputs": {
+          "next": "end_rejected"
+        }
+      },
+      {
+        "id": "end_approved",
+        "type": "end",
+        "name": "End - Approved",
+        "description": "Flow completed with approval"
+      },
+      {
+        "id": "end_rejected",
+        "type": "end",
+        "name": "End - Rejected",
+        "description": "Flow completed with rejection"
+      }
+    ],
+    "connections": [
+      {"from": "start", "to": "check_amount"},
+      {"from": "check_amount", "to": "director_approval", "condition": "true"},
+      {"from": "check_amount", "to": "manager_approval", "condition": "false"},
+      {"from": "manager_approval", "to": "check_secondary_approval", "condition": "approved"},
+      {"from": "manager_approval", "to": "rejection_notification", "condition": "rejected"},
+      {"from": "director_approval", "to": "manager_approval", "condition": "approved"},
+      {"from": "director_approval", "to": "rejection_notification", "condition": "rejected"},
+      {"from": "check_secondary_approval", "to": "technical_approval", "condition": "true"},
+      {"from": "check_secondary_approval", "to": "approval_notification", "condition": "false"},
+      {"from": "technical_approval", "to": "approval_notification", "condition": "approved"},
+      {"from": "technical_approval", "to": "rejection_notification", "condition": "rejected"},
+      {"from": "approval_notification", "to": "create_fulfillment_task"},
+      {"from": "rejection_notification", "to": "update_rejected_state"},
+      {"from": "create_fulfillment_task", "to": "update_approved_state"},
+      {"from": "update_approved_state", "to": "end_approved"},
+      {"from": "update_rejected_state", "to": "end_rejected"}
+    ],
+    "error_handling": {
+      "on_error": "notify_admin",
+      "retry_count": 3,
+      "retry_delay": 300,
+      "notification_group": "{{ERROR_NOTIFICATION_GROUP|flow_administrators}}"
+    }
+  },
+  "variables": {
+    "FLOW_NAME": "approval_flow",
+    "FLOW_DESCRIPTION": "Multi-stage approval flow with notifications",
+    "TABLE_NAME": "sc_request",
+    "TABLE_LABEL": "request",
+    "TRIGGER_TYPE": "record_created",
+    "TRIGGER_CONDITION": "",
+    "AMOUNT_FIELD": "estimated_cost",
+    "HIGH_AMOUNT_THRESHOLD": "5000",
+    "MANAGER_FIELD": "requested_for.manager",
+    "DIRECTOR_FIELD": "requested_for.department.director",
+    "APPROVAL_TYPE": "user",
+    "DUE_DATE_DAYS": "3",
+    "REMINDER_DAYS": "1",
+    "SECONDARY_APPROVAL_CONDITION": "category == 'hardware'",
+    "TECHNICAL_GROUP": "technical_approval_group",
+    "APPROVAL_TEMPLATE": "request_approved",
+    "REJECTION_TEMPLATE": "request_rejected",
+    "TASK_TABLE": "sc_task",
+    "TASK_DESCRIPTION": "Fulfill approved request",
+    "FULFILLMENT_USER": "",
+    "FULFILLMENT_GROUP": "fulfillment_team",
+    "TASK_DUE_DAYS": "5",
+    "APPROVED_STATE": "approved",
+    "REJECTED_STATE": "closed_rejected",
+    "ERROR_NOTIFICATION_GROUP": "flow_administrators"
+  }
+}

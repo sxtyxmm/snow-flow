@@ -14,6 +14,7 @@ export interface Template {
   type: string;
   name: string;
   description: string;
+  category?: string;
   config: any;
   variables?: TemplateVariables;
 }
@@ -96,12 +97,63 @@ export class TemplateEngine {
   /**
    * Get available templates
    */
-  async getAvailableTemplates(): Promise<string[]> {
+  async getAvailableTemplates(type?: string, category?: string): Promise<Template[]> {
+    const templates: Template[] = [];
+    
+    // Check base directory
     const baseDir = join(this.templatesPath, 'base');
-    const files = await fs.readdir(baseDir);
-    return files
-      .filter(file => file.endsWith('.template.json'))
-      .map(file => file.replace('.template.json', ''));
+    if (await this.directoryExists(baseDir)) {
+      const baseTemplates = await this.getTemplatesFromDirectory(baseDir);
+      templates.push(...baseTemplates);
+    }
+    
+    // Check patterns directory
+    const patternsDir = join(this.templatesPath, 'patterns');
+    if (await this.directoryExists(patternsDir)) {
+      const patternTemplates = await this.getTemplatesFromDirectory(patternsDir);
+      templates.push(...patternTemplates);
+    }
+    
+    // Filter by type and category if specified
+    return templates.filter(template => {
+      if (type && template.type !== type) return false;
+      if (category && template.category !== category) return false;
+      return true;
+    });
+  }
+  
+  /**
+   * Get templates from a directory
+   */
+  private async getTemplatesFromDirectory(dir: string): Promise<Template[]> {
+    const templates: Template[] = [];
+    const files = await fs.readdir(dir);
+    
+    for (const file of files) {
+      if (file.endsWith('.template.json')) {
+        try {
+          const relativePath = join(dir, file).replace(this.templatesPath + '/', '');
+          const template = await this.loadTemplate(relativePath);
+          templates.push(template);
+        } catch (error) {
+          console.error(`Error loading template ${file}:`, error);
+        }
+      }
+    }
+    
+    return templates;
+  }
+  
+  /**
+   * Check if directory exists
+   */
+  private async directoryExists(path: string): Promise<boolean> {
+    try {
+      const stat = await fs.stat(path);
+      return stat.isDirectory();
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -167,34 +219,245 @@ export class TemplateEngine {
    */
   async generateFromDescription(
     description: string,
-    type: string
+    type?: string
   ): Promise<any> {
-    // Extract key information from description
+    // Determine the best template based on description
+    const template = await this.selectBestTemplate(description, type);
+    
+    // Extract variables from description
+    const variables = this.extractVariablesFromDescription(description, template);
+    
+    // Process template with extracted variables
+    return this.processTemplate(template, variables);
+  }
+  
+  /**
+   * Select the best template based on natural language description
+   */
+  private async selectBestTemplate(description: string, preferredType?: string): Promise<Template> {
+    const lowerDesc = description.toLowerCase();
+    
+    // Determine type if not specified
+    let type = preferredType;
+    if (!type) {
+      if (lowerDesc.includes('widget') || lowerDesc.includes('dashboard') || lowerDesc.includes('visualization')) {
+        type = 'widget';
+      } else if (lowerDesc.includes('flow') || lowerDesc.includes('workflow') || lowerDesc.includes('approval')) {
+        type = 'flow';
+      } else if (lowerDesc.includes('script') || lowerDesc.includes('utility') || lowerDesc.includes('function')) {
+        type = 'script_include';
+      } else if (lowerDesc.includes('rule') || lowerDesc.includes('trigger')) {
+        type = 'business_rule';
+      } else if (lowerDesc.includes('table') || lowerDesc.includes('data model')) {
+        type = 'table';
+      }
+    }
+    
+    // Get available templates of this type
+    const templates = await this.getAvailableTemplates(type);
+    
+    // Score templates based on description match
+    let bestTemplate: Template | null = null;
+    let bestScore = 0;
+    
+    for (const template of templates) {
+      const score = this.scoreTemplate(template, description);
+      if (score > bestScore) {
+        bestScore = score;
+        bestTemplate = template;
+      }
+    }
+    
+    // Fallback to base template if no good match
+    if (!bestTemplate) {
+      const basePath = `base/${type}.template.json`;
+      bestTemplate = await this.loadTemplate(basePath);
+    }
+    
+    return bestTemplate;
+  }
+  
+  /**
+   * Score a template based on how well it matches the description
+   */
+  private scoreTemplate(template: Template, description: string): number {
+    let score = 0;
+    const lowerDesc = description.toLowerCase();
+    const lowerTemplateName = template.name.toLowerCase();
+    const lowerTemplateDesc = template.description.toLowerCase();
+    
+    // Check template name
+    const nameWords = lowerTemplateName.split(/\s+/);
+    for (const word of nameWords) {
+      if (lowerDesc.includes(word) && word.length > 3) {
+        score += 2;
+      }
+    }
+    
+    // Check template description
+    const descWords = lowerTemplateDesc.split(/\s+/);
+    for (const word of descWords) {
+      if (lowerDesc.includes(word) && word.length > 3) {
+        score += 1;
+      }
+    }
+    
+    // Pattern-specific scoring
+    if (template.category) {
+      if (template.category.includes('dashboard') && lowerDesc.includes('dashboard')) score += 5;
+      if (template.category.includes('approval') && lowerDesc.includes('approval')) score += 5;
+      if (template.category.includes('integration') && (lowerDesc.includes('integrate') || lowerDesc.includes('api'))) score += 5;
+      if (template.category.includes('datatable') && (lowerDesc.includes('table') || lowerDesc.includes('list'))) score += 5;
+    }
+    
+    return score;
+  }
+  
+  /**
+   * Extract variables from natural language description
+   */
+  private extractVariablesFromDescription(description: string, template: Template): TemplateVariables {
     const variables: TemplateVariables = {};
-
-    // Extract name
-    const nameMatch = description.match(/(?:create|build|make)\s+(?:a|an)?\s*(\w+[\w\s]*?)(?:widget|flow|script|for|with|that)/i);
+    const lowerDesc = description.toLowerCase();
+    
+    // Extract name variants
+    const nameMatch = description.match(/(?:create|build|make)\s+(?:a|an)?\s*([^,.\s]+(?:\s+[^,.\s]+)*?)(?:\s+(?:widget|flow|script|for|with|that|$))/i);
     if (nameMatch) {
-      variables.NAME = nameMatch[1].trim();
-      variables.WIDGET_NAME = variables.NAME;
-      variables.FLOW_NAME = variables.NAME;
-      variables.CLASS_NAME = variables.NAME.replace(/\s+/g, '');
+      const name = nameMatch[1].trim();
+      variables.NAME = name;
+      variables.WIDGET_NAME = name.replace(/\s+/g, '_').toLowerCase();
+      variables.FLOW_NAME = name.replace(/\s+/g, '_').toLowerCase();
+      variables.CLASS_NAME = name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+      variables.WIDGET_TITLE = name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      variables.FLOW_DESCRIPTION = `${name} automation flow`;
+      variables.WIDGET_DESCRIPTION = `Widget for ${name.toLowerCase()}`;
     }
-
-    // Extract table/target
-    const tableMatch = description.match(/(?:for|on|from)\s+(\w+)\s+(?:table|records?)/i);
-    if (tableMatch) {
-      variables.TABLE = tableMatch[1].toLowerCase();
+    
+    // Extract table name
+    const tablePatterns = [
+      /(?:for|on|from|of)\s+(\w+)\s+(?:table|records?|data)/i,
+      /(?:track|manage|display|show)\s+(\w+)(?:\s|$)/i,
+      /(\w+)\s+(?:management|tracking|dashboard)/i
+    ];
+    
+    for (const pattern of tablePatterns) {
+      const match = description.match(pattern);
+      if (match) {
+        variables.TABLE = match[1].toLowerCase();
+        variables.TABLE_NAME = match[1].toLowerCase();
+        break;
+      }
     }
-
-    // Extract trigger type
-    if (description.toLowerCase().includes('when created')) {
+    
+    // Extract trigger conditions
+    if (lowerDesc.includes('when created') || lowerDesc.includes('on create')) {
       variables.TRIGGER_TYPE = 'record_created';
-    } else if (description.toLowerCase().includes('when updated')) {
+    } else if (lowerDesc.includes('when updated') || lowerDesc.includes('on update')) {
       variables.TRIGGER_TYPE = 'record_updated';
+    } else if (lowerDesc.includes('when deleted') || lowerDesc.includes('on delete')) {
+      variables.TRIGGER_TYPE = 'record_deleted';
     }
-
-    // Create from appropriate template
-    return await this.createFromTemplate(type, variables);
+    
+    // Extract approval-specific variables
+    if (template.type === 'flow' && lowerDesc.includes('approval')) {
+      // Extract amount thresholds
+      const amountMatch = description.match(/(?:over|above|greater than|more than)\s*[$€£]?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)/i);
+      if (amountMatch) {
+        variables.HIGH_AMOUNT_THRESHOLD = amountMatch[1].replace(/,/g, '');
+      }
+      
+      // Extract approvers
+      if (lowerDesc.includes('manager')) variables.APPROVAL_TYPE = 'manager';
+      if (lowerDesc.includes('director')) variables.APPROVAL_TYPE = 'director';
+      if (lowerDesc.includes('group')) variables.APPROVAL_TYPE = 'group';
+    }
+    
+    // Extract integration-specific variables
+    if (template.type === 'flow' && lowerDesc.includes('integrat')) {
+      const apiMatch = description.match(/(?:api|endpoint|url):\s*([^\s]+)/i);
+      if (apiMatch) {
+        variables.API_ENDPOINT = apiMatch[1];
+      }
+    }
+    
+    // Extract refresh intervals for dashboards
+    if (template.type === 'widget' && lowerDesc.includes('dashboard')) {
+      const intervalMatch = description.match(/(?:refresh|update)\s+(?:every|each)\s+(\d+)\s*(?:second|minute)/i);
+      if (intervalMatch) {
+        let interval = parseInt(intervalMatch[1]);
+        if (lowerDesc.includes('minute')) interval *= 60;
+        variables.REFRESH_INTERVAL = interval.toString();
+      }
+    }
+    
+    // Apply intelligent defaults based on context
+    this.applyIntelligentDefaults(variables, template, description);
+    
+    return variables;
+  }
+  
+  /**
+   * Apply intelligent defaults based on context
+   */
+  private applyIntelligentDefaults(variables: TemplateVariables, template: Template, description: string): void {
+    const lowerDesc = description.toLowerCase();
+    
+    // Table-specific defaults
+    if (variables.TABLE) {
+      const table = variables.TABLE as string;
+      
+      // Incident-specific defaults
+      if (table === 'incident') {
+        variables.PRIORITY_FIELD = variables.PRIORITY_FIELD || 'priority';
+        variables.STATE_FIELD = variables.STATE_FIELD || 'state';
+        variables.ASSIGNED_TO_FIELD = variables.ASSIGNED_TO_FIELD || 'assigned_to';
+      }
+      
+      // Request-specific defaults
+      if (table.includes('request')) {
+        variables.APPROVAL_FIELD = variables.APPROVAL_FIELD || 'approval';
+        variables.STAGE_FIELD = variables.STAGE_FIELD || 'stage';
+      }
+      
+      // Change-specific defaults
+      if (table.includes('change')) {
+        variables.RISK_FIELD = variables.RISK_FIELD || 'risk';
+        variables.CAB_REQUIRED_FIELD = variables.CAB_REQUIRED_FIELD || 'cab_required';
+      }
+    }
+    
+    // Apply ServiceNow best practices
+    if (template.type === 'widget') {
+      variables.WIDGET_ROLES = variables.WIDGET_ROLES || '';
+      variables.MAX_RECORDS = variables.MAX_RECORDS || '100';
+    }
+    
+    if (template.type === 'flow') {
+      variables.ACTIVE = variables.ACTIVE || 'true';
+      variables.RUN_AS = variables.RUN_AS || 'system_user';
+    }
+    
+    if (template.type === 'business_rule') {
+      variables.ORDER = variables.ORDER || '100';
+      variables.ACTIVE = variables.ACTIVE || 'true';
+    }
+  }
+  
+  /**
+   * Create from pattern template
+   */
+  async createFromPattern(
+    pattern: string,
+    variables: TemplateVariables = {}
+  ): Promise<any> {
+    // Load pattern template
+    const templatePath = `patterns/${pattern}.template.json`;
+    const template = await this.loadTemplate(templatePath);
+    
+    // Apply intelligent defaults
+    this.applyIntelligentDefaults(variables, template, '');
+    
+    // Process with variables
+    return this.processTemplate(template, variables);
   }
 }
