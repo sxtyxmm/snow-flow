@@ -30,6 +30,7 @@ interface IndexedArtifact {
   meta: {
     sys_id: string;
     name: string;
+    title?: string;
     type: string;
     last_updated: string;
   };
@@ -398,6 +399,7 @@ class ServiceNowIntelligentMCP {
       meta: {
         sys_id: artifact.sys_id,
         name: artifact.name || artifact.title,
+        title: artifact.title,
         type: artifact.sys_class_name || 'unknown',
         last_updated: artifact.sys_updated_on,
       },
@@ -494,11 +496,19 @@ class ServiceNowIntelligentMCP {
 
       for (const file of files) {
         if (file.endsWith('.json')) {
-          const content = await fs.readFile(join(this.memoryPath, file), 'utf8');
-          const artifact = JSON.parse(content);
-          
-          if (this.matchesIntent(artifact, intent)) {
-            results.push(artifact);
+          try {
+            const content = await fs.readFile(join(this.memoryPath, file), 'utf8');
+            const artifact = JSON.parse(content);
+            
+            // Ensure artifact has basic structure
+            if (artifact && (artifact.meta || artifact.claudeSummary)) {
+              if (this.matchesIntent(artifact, intent)) {
+                results.push(artifact);
+              }
+            }
+          } catch (parseError) {
+            this.logger.warn(`Failed to parse memory file: ${file}`, parseError);
+            // Continue with next file
           }
         }
       }
@@ -511,8 +521,10 @@ class ServiceNowIntelligentMCP {
 
   private matchesIntent(artifact: IndexedArtifact, intent: ParsedIntent): boolean {
     const searchTerm = intent.identifier.toLowerCase();
-    const artifactName = artifact.meta.name.toLowerCase();
-    const artifactSummary = artifact.claudeSummary.toLowerCase();
+    
+    // Safe access to artifact properties with fallbacks
+    const artifactName = (artifact.meta?.name || artifact.meta?.title || '').toLowerCase();
+    const artifactSummary = (artifact.claudeSummary || '').toLowerCase();
     
     return artifactName.includes(searchTerm) || artifactSummary.includes(searchTerm);
   }
