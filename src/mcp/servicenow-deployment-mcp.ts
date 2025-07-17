@@ -376,6 +376,19 @@ class ServiceNowDeploymentMCP {
 
   private async deployFlow(args: any) {
     try {
+      // Check authentication first
+      const isAuth = await this.oauth.isAuthenticated();
+      if (!isAuth) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            },
+          ],
+        };
+      }
+
       this.logger.info('Deploying Flow Designer flow to ServiceNow', { name: args.name });
 
       // Ensure Update Set is active
@@ -628,6 +641,19 @@ ${isComposedFlow ? `
 
   private async deployApplication(args: any) {
     try {
+      // Check authentication first
+      const isAuth = await this.oauth.isAuthenticated();
+      if (!isAuth) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            },
+          ],
+        };
+      }
+
       this.logger.info('Deploying application to ServiceNow', { name: args.name });
 
       // Ensure Update Set is active
