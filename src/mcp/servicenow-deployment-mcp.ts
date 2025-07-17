@@ -309,8 +309,18 @@ class ServiceNowDeploymentMCP {
 
       this.logger.info('Deploying widget to ServiceNow', { name: args.name });
 
-      // Ensure Update Set is active
-      const { updateSetId, updateSetName } = await this.ensureUpdateSet('Widget', args.name);
+      // Try to ensure Update Set is active (optional for now)
+      let updateSetId, updateSetName;
+      try {
+        const updateSetResult = await this.ensureUpdateSet('Widget', args.name);
+        updateSetId = updateSetResult.updateSetId;
+        updateSetName = updateSetResult.updateSetName;
+        this.logger.info('Using Update Set', { updateSetName, updateSetId });
+      } catch (updateSetError) {
+        this.logger.warn('Could not create/use Update Set, proceeding without it', updateSetError);
+        updateSetId = null;
+        updateSetName = 'Direct deployment (no update set)';
+      }
 
       // Validate widget structure
       if (!args.template || !args.name || !args.title) {
