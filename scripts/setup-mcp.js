@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Dynamic MCP Configuration Generator
- * Generates .mcp.json with absolute paths and actual environment variables
+ * Generates .mcp.json from template with absolute paths and actual environment variables
  * This ensures compatibility with Claude Code while keeping the project portable
  */
 
@@ -10,7 +10,15 @@ const path = require('path');
 require('dotenv').config();
 
 const projectRoot = process.cwd();
+const templatePath = path.join(projectRoot, '.mcp.json.template');
 const mcpFilePath = path.join(projectRoot, '.mcp.json');
+
+// Check if template exists
+if (!fs.existsSync(templatePath)) {
+  console.error('❌ Error: .mcp.json.template not found!');
+  console.error('   This file should be in the project root.');
+  process.exit(1);
+}
 
 // Check if required environment variables are set
 const requiredEnvVars = ['SNOW_INSTANCE', 'SNOW_CLIENT_ID', 'SNOW_CLIENT_SECRET'];
@@ -22,62 +30,27 @@ if (missingVars.length > 0) {
   console.warn('   Copy .env.example to .env and configure your ServiceNow credentials.');
 }
 
-// Generate MCP configuration with node + args format (recommended by official docs)
-const mcpConfig = {
-  mcpServers: {
-    "servicenow-deployment": {
-      command: "node",
-      args: [path.join(projectRoot, "dist/mcp/servicenow-deployment-mcp.js")],
-      env: {
-        SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-        SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-        SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-      }
-    },
-    "servicenow-flow-composer": {
-      command: "node",
-      args: [path.join(projectRoot, "dist/mcp/servicenow-flow-composer-mcp.js")],
-      env: {
-        SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-        SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-        SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-      }
-    },
-    "servicenow-update-set": {
-      command: "node",
-      args: [path.join(projectRoot, "dist/mcp/servicenow-update-set-mcp.js")],
-      env: {
-        SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-        SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-        SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-      }
-    },
-    "servicenow-intelligent": {
-      command: "node",
-      args: [path.join(projectRoot, "dist/mcp/servicenow-intelligent-mcp.js")],
-      env: {
-        SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-        SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-        SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-      }
-    },
-    "servicenow-graph-memory": {
-      command: "node",
-      args: [path.join(projectRoot, "dist/mcp/servicenow-graph-memory-mcp.js")],
-      env: {
-        NEO4J_URI: process.env.NEO4J_URI || "bolt://localhost:7687",
-        NEO4J_USER: process.env.NEO4J_USER || "neo4j",
-        NEO4J_PASSWORD: process.env.NEO4J_PASSWORD || "password",
-        SNOW_INSTANCE: process.env.SNOW_INSTANCE || "your-instance.service-now.com",
-        SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID || "your-oauth-client-id",
-        SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-      }
-    }
-  }
+// Read template
+const template = fs.readFileSync(templatePath, 'utf8');
+
+// Replace placeholders
+const replacements = {
+  '{{PROJECT_ROOT}}': projectRoot,
+  '{{SNOW_INSTANCE}}': process.env.SNOW_INSTANCE || 'your-instance.service-now.com',
+  '{{SNOW_CLIENT_ID}}': process.env.SNOW_CLIENT_ID || 'your-oauth-client-id',
+  '{{SNOW_CLIENT_SECRET}}': process.env.SNOW_CLIENT_SECRET || 'your-oauth-client-secret',
+  '{{NEO4J_URI}}': process.env.NEO4J_URI || 'bolt://localhost:7687',
+  '{{NEO4J_USER}}': process.env.NEO4J_USER || 'neo4j',
+  '{{NEO4J_PASSWORD}}': process.env.NEO4J_PASSWORD || 'password'
 };
 
+let mcpConfig = template;
+for (const [placeholder, value] of Object.entries(replacements)) {
+  mcpConfig = mcpConfig.replace(new RegExp(placeholder, 'g'), value);
+}
+
 // Write the configuration file
-fs.writeFileSync(mcpFilePath, JSON.stringify(mcpConfig, null, 2));
+fs.writeFileSync(mcpFilePath, mcpConfig);
 
 // Make all MCP server files executable
 const mcpServerFiles = [

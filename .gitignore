@@ -71,3 +71,6 @@ servicenow/widgets/
 servicenow/flows/
 servicenow/scripts/
 servicenow/workflows/
+
+# MCP configuration (generated dynamically)
+.mcp.json
