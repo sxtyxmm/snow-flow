@@ -637,7 +637,7 @@ class ServiceNowIntelligentMCP {
           if (firstTerm && firstTerm.length > 2) {
             for (const [type, table] of Object.entries(tableMapping)) {
               try {
-                const broadQuery = `nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*`;
+                const broadQuery = `(nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*)^LIMIT10`;
                 const results = await this.client.searchRecords(table, broadQuery);
                 if (results && results.length > 0) {
                   const typedResults = results.map(result => ({
@@ -677,7 +677,7 @@ class ServiceNowIntelligentMCP {
         // Try searching with just the first search term with wildcards
         const firstTerm = intent.identifier.split(' ')[0];
         if (firstTerm && firstTerm.length > 2) {
-          const broadQuery = `nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*`;
+          const broadQuery = `(nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*)^LIMIT10`;
           results = await this.client.searchRecords(table, broadQuery);
         }
         
@@ -698,14 +698,14 @@ class ServiceNowIntelligentMCP {
 
   private buildServiceNowQuery(intent: ParsedIntent): string {
     // Build proper ServiceNow encoded query with wildcards
-    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 2); // Skip very short terms
+    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 1); // Allow 2+ character terms
     
     if (searchTerms.length === 0) {
-      // Return all active records if no search terms
-      return 'active=true';
+      // Return first 10 active records if no search terms
+      return 'active=true^LIMIT10';
     }
 
-    // Create LIKE queries with wildcards for each term
+    // Create LIKE queries with wildcards for each term - be more permissive
     const queries = [];
     for (const term of searchTerms) {
       // Search in multiple fields with wildcards (*term*)
@@ -713,14 +713,11 @@ class ServiceNowIntelligentMCP {
       queries.push(`titleLIKE*${term}*`);
       queries.push(`short_descriptionLIKE*${term}*`);
       queries.push(`descriptionLIKE*${term}*`);
-      
-      // Also search for exact matches without wildcards
-      queries.push(`name=${term}`);
-      queries.push(`title=${term}`);
     }
     
-    // Join with OR to find any match
-    return queries.join('^OR');
+    // Join with OR to find any match, add limit
+    const query = `(${queries.join('^OR')})^LIMIT20`;
+    return query;
   }
 
   private async intelligentlyIndex(artifact: any): Promise<IndexedArtifact> {
