@@ -184,6 +184,9 @@ export class ServiceNowClient {
       console.log('🎨 Creating ServiceNow widget...');
       console.log(`📋 Widget Name: ${widget.name}`);
       
+      // Ensure we have credentials before making the API call
+      await this.ensureAuthenticated();
+      
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sp_widget`,
         {
