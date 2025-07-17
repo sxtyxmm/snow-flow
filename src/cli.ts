@@ -1769,9 +1769,7 @@ program
       console.log('✅ Environment file created\n');
       
       // Phase 5: Create MCP configuration and Claude Code settings
-      console.log('🌐 Creating MCP server configuration...');
-      await createMCPConfig(targetDir);
-      console.log('✅ MCP configuration created');
+      console.log('🌐 MCP server configuration will be generated after build...');
       console.log('⚙️  Claude Code settings configured with:\n');
       console.log('   - No timeouts (unlimited execution time)');
       console.log('   - All batch tools enabled (TodoWrite, Task, Memory)');
@@ -1802,6 +1800,25 @@ program
         });
         
         console.log('✅ Project built successfully');
+        
+        // Run MCP setup script to generate .mcp.json
+        console.log('🔧 Generating MCP configuration...');
+        const setupProcess = spawn('npm', ['run', 'setup-mcp'], {
+          cwd: targetDir,
+          stdio: 'pipe'
+        });
+        
+        await new Promise((resolve, reject) => {
+          setupProcess.on('close', (code: number) => {
+            if (code === 0) {
+              resolve(undefined);
+            } else {
+              reject(new Error(`MCP setup failed with code ${code}`));
+            }
+          });
+        });
+        
+        console.log('✅ MCP configuration generated with absolute paths');
         
         // Now initialize and start MCP servers
         const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
@@ -1900,8 +1917,21 @@ program
       console.log('   2. Run: snow-flow auth login');
       console.log('   3. Start your first swarm: snow-flow swarm "create a widget for incident management"');
       console.log('');
-      console.log('✅ Project is ready to use! MCP servers are running and registered with Claude Code.');
-      console.log('💡 Use /mcp in Claude Code to see all available ServiceNow tools.');
+      console.log('✅ Project is ready to use!');
+      console.log('');
+      console.log('🔧 MCP Servers:');
+      console.log('   - ✅ All 5 MCP servers have been built and configured');
+      console.log('   - ✅ .mcp.json generated with absolute paths and credentials');
+      console.log('   - ⚠️  Known Issue: MCP servers may show as "failed" in Claude Code');
+      console.log('   - 💡 This is a Claude Code bug (GitHub Issue #1611)');
+      console.log('   - 🎯 Workaround: Use Claude Desktop or command-line tools');
+      console.log('');
+      console.log('📡 Available MCP Tools (when Claude Code is fixed):');
+      console.log('   - snow_deploy_widget - Deploy widgets directly');
+      console.log('   - snow_create_complex_flow - Natural language flow creation');
+      console.log('   - snow_update_set_create - Manage Update Sets');
+      console.log('   - snow_find_artifact - Search with natural language');
+      console.log('   - snow_graph_index_artifact - Neo4j graph memory');
       console.log('');
       console.log('🔧 MCP Server Management:');
       console.log('   - Start servers: snow-flow mcp start');
@@ -1911,8 +1941,8 @@ program
       console.log('');
       console.log('📚 Documentation:');
       console.log('   - Environment config: .env (configure OAuth credentials here)');
-      console.log('   - Project structure: .claude/commands/');
-      console.log('   - Configuration: .claude/config.json');
+      console.log('   - MCP configuration: .mcp.json (auto-generated)');
+      console.log('   - Project structure: README.md');
       console.log('   - Memory system: .swarm/memory.db');
       console.log('   - MCP servers: .snow-flow/mcp-servers.json');
       if (options.sparc) {
