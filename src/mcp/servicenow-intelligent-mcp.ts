@@ -380,10 +380,12 @@ class ServiceNowIntelligentMCP {
       if (!results || results.length === 0) {
         this.logger.info(`No results found with specific query, trying broader search...`);
         
-        // Try searching with just the first search term
+        // Try searching with just the first search term with wildcards
         const firstTerm = intent.identifier.split(' ')[0];
-        const broadQuery = `nameLIKE${firstTerm}^ORtitleLIKE${firstTerm}`;
-        results = await this.client.searchRecords(table, broadQuery);
+        if (firstTerm && firstTerm.length > 2) {
+          const broadQuery = `nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*`;
+          results = await this.client.searchRecords(table, broadQuery);
+        }
         
         // If still no results, get first 10 records to test connection
         if (!results || results.length === 0) {
@@ -401,8 +403,8 @@ class ServiceNowIntelligentMCP {
   }
 
   private buildServiceNowQuery(intent: ParsedIntent): string {
-    // Build proper ServiceNow encoded query
-    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 0);
+    // Build proper ServiceNow encoded query with wildcards
+    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 2); // Skip very short terms
     
     if (searchTerms.length === 0) {
       // Return all active records if no search terms
@@ -412,9 +414,15 @@ class ServiceNowIntelligentMCP {
     // Create LIKE queries with wildcards for each term
     const queries = [];
     for (const term of searchTerms) {
-      // Search in both name and title fields with wildcards
-      queries.push(`nameLIKE${term}`);
-      queries.push(`titleLIKE${term}`);
+      // Search in multiple fields with wildcards (*term*)
+      queries.push(`nameLIKE*${term}*`);
+      queries.push(`titleLIKE*${term}*`);
+      queries.push(`short_descriptionLIKE*${term}*`);
+      queries.push(`descriptionLIKE*${term}*`);
+      
+      // Also search for exact matches without wildcards
+      queries.push(`name=${term}`);
+      queries.push(`title=${term}`);
     }
     
     // Join with OR to find any match
@@ -574,8 +582,9 @@ class ServiceNowIntelligentMCP {
       const id = result.sys_id || 'Unknown';
       const updated = result.sys_updated_on || result.last_updated || 'Unknown';
       const active = result.active !== undefined ? (result.active ? 'Active' : 'Inactive') : 'Unknown';
+      const description = result.short_description || result.description || 'No description';
       
-      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Status: ${active}\n   - Updated: ${updated}`;
+      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Status: ${active}\n   - Description: ${description}\n   - Updated: ${updated}`;
     }).join('\n\n');
 
     return `✅ Found ${results.length} artifact(s):\n\n${formattedResults}`;
