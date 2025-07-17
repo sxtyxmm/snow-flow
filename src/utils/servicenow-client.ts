@@ -486,6 +486,8 @@ export class ServiceNowClient {
    */
   async searchRecords(table: string, query: string, limit: number = 10): Promise<any[]> {
     try {
+      await this.ensureAuthenticated();
+      
       const response = await this.client.get(
         `${this.getBaseUrl()}/api/now/table/${table}`,
         {

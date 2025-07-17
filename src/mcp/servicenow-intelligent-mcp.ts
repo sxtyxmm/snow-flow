@@ -119,6 +119,18 @@ class ServiceNowIntelligentMCP {
             required: ['query'],
           },
         },
+        {
+          name: 'snow_comprehensive_search',
+          description: 'COMPREHENSIVE multi-table search - searches across all relevant ServiceNow tables for artifacts. Perfect for finding hard-to-locate items.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: { type: 'string', description: 'Natural language search query' },
+              include_inactive: { type: 'boolean', description: 'Include inactive records', default: false },
+            },
+            required: ['query'],
+          },
+        },
       ],
     }));
 
@@ -135,6 +147,8 @@ class ServiceNowIntelligentMCP {
             return await this.analyzeArtifact(args);
           case 'snow_memory_search':
             return await this.searchMemory(args);
+          case 'snow_comprehensive_search':
+            return await this.comprehensiveSearch(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -187,6 +201,11 @@ class ServiceNowIntelligentMCP {
       const liveResults = await this.searchServiceNow(intent);
       this.logger.info(`ServiceNow search returned ${liveResults?.length || 0} results`);
       
+      // Debug log
+      if (liveResults && liveResults.length > 0) {
+        this.logger.info(`First result: ${JSON.stringify(liveResults[0])}`);
+      }
+      
       // 4. Index results for future use (only if we have results)
       if (liveResults && liveResults.length > 0) {
         this.logger.info('Indexing found artifacts for future use...');
@@ -197,6 +216,7 @@ class ServiceNowIntelligentMCP {
 
       const credentials = await this.oauth.loadCredentials();
       const resultText = this.formatResults(liveResults);
+      this.logger.info(`Formatted result text: ${resultText.substring(0, 200)}...`);
       const editSuggestion = this.generateEditSuggestion(liveResults?.[0]);
 
       return {
@@ -320,6 +340,117 @@ class ServiceNowIntelligentMCP {
       };
     } catch (error) {
       throw new Error(`Memory search failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async comprehensiveSearch(args: any) {
+    // Check authentication first
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
+    try {
+      this.logger.info('Starting comprehensive search', { query: args.query });
+
+      // Define tables to search with their descriptions
+      const searchTables = [
+        { name: 'sys_script', desc: 'Business Rules', type: 'business_rule' },
+        { name: 'sys_script_include', desc: 'Script Includes', type: 'script_include' },
+        { name: 'sys_script_client', desc: 'Client Scripts', type: 'client_script' },
+        { name: 'sys_ui_script', desc: 'UI Scripts', type: 'ui_script' },
+        { name: 'sp_widget', desc: 'Service Portal Widgets', type: 'widget' },
+        { name: 'sys_hub_flow', desc: 'Flow Designer Flows', type: 'flow' },
+        { name: 'wf_workflow', desc: 'Workflows', type: 'workflow' },
+        { name: 'sys_ui_action', desc: 'UI Actions', type: 'ui_action' },
+        { name: 'sys_ui_policy', desc: 'UI Policies', type: 'ui_policy' },
+        { name: 'sys_data_policy', desc: 'Data Policies', type: 'data_policy' },
+        { name: 'sys_app_application', desc: 'Applications', type: 'application' },
+        { name: 'sys_db_object', desc: 'Tables', type: 'table' },
+        { name: 'sys_dictionary', desc: 'Dictionary/Fields', type: 'field' },
+        { name: 'sysevent_email_action', desc: 'Notifications', type: 'notification' },
+        { name: 'sys_transform_map', desc: 'Transform Maps', type: 'transform_map' },
+        { name: 'sys_ws_definition', desc: 'REST APIs', type: 'rest_api' },
+      ];
+
+      const searchString = args.query.trim();
+      const allResults = [];
+
+      // Generate multiple search strategies like Claude Code did
+      const searchStrategies = [
+        { query: `name=${searchString}`, desc: 'Exact name match' },
+        { query: `nameLIKE${searchString}`, desc: 'Name contains' },
+        { query: `short_descriptionLIKE${searchString}`, desc: 'Description contains' },
+        { query: `nameLIKE${searchString}^ORshort_descriptionLIKE${searchString}`, desc: 'Name or description' },
+      ];
+
+      // Add wildcard searches if multiple words
+      const words = searchString.split(' ').filter((w: string) => w.length > 2);
+      if (words.length > 1) {
+        const firstWord = words[0];
+        const lastWord = words[words.length - 1];
+        searchStrategies.push({ 
+          query: `nameLIKE*${firstWord}*${lastWord}*`, 
+          desc: 'First and last word match' 
+        });
+      }
+
+      for (const table of searchTables) {
+        this.logger.info(`Searching ${table.desc} (${table.name})...`);
+        
+        for (const strategy of searchStrategies) {
+          try {
+            const activeFilter = args.include_inactive ? '' : '^active=true';
+            const fullQuery = `${strategy.query}${activeFilter}^LIMIT5`;
+            
+            const results = await this.client.searchRecords(table.name, fullQuery);
+            
+            if (results && results.length > 0) {
+              // Add metadata to results
+              const enhancedResults = results.map(result => ({
+                ...result,
+                artifact_type: table.type,
+                table_name: table.name,
+                table_description: table.desc,
+                search_strategy: strategy.desc
+              }));
+              
+              allResults.push(...enhancedResults);
+              
+              // Stop searching this table if we found results
+              break;
+            }
+          } catch (error) {
+            this.logger.warn(`Error searching ${table.name}:`, error);
+          }
+        }
+      }
+
+      // Remove duplicates by sys_id
+      const uniqueResults = allResults.filter((result, index, self) => 
+        index === self.findIndex(r => r.sys_id === result.sys_id)
+      );
+
+      const credentials = await this.oauth.loadCredentials();
+      const resultText = this.formatComprehensiveResults(uniqueResults);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `🔍 Comprehensive ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: https://${credentials?.instance}\n\n💡 Searched across ${searchTables.length} table types with multiple strategies.`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Comprehensive search failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -605,17 +736,43 @@ class ServiceNowIntelligentMCP {
         deployment: 'cicd_deployment',
       };
 
-      // If searching for 'any' type, search all tables
+      // If searching for 'any' type, search only the most common tables
       if (intent.artifactType === 'any') {
-        this.logger.info('Searching all artifact types...');
+        this.logger.info('Searching common artifact types...');
         const allResults = [];
         
-        for (const [type, table] of Object.entries(tableMapping)) {
+        // Define most common tables to search when type is 'any'
+        const commonTables = {
+          widget: 'sp_widget',
+          business_rule: 'sys_script',
+          client_script: 'sys_script_client',
+          script_include: 'sys_script_include',
+          flow: 'sys_hub_flow',
+          workflow: 'wf_workflow',
+          ui_action: 'sys_ui_action',
+          table: 'sys_db_object',
+          application: 'sys_app_application',
+        };
+        
+        for (const [type, table] of Object.entries(commonTables)) {
           try {
-            const query = this.buildServiceNowQuery(intent);
-            this.logger.info(`Searching ${table} (${type}) with query: ${query}`);
+            // Try exact match first for each table
+            const searchString = intent.identifier.trim();
+            let results = await this.client.searchRecords(table, `name=${searchString}^LIMIT2`);
             
-            const results = await this.client.searchRecords(table, query);
+            // If no exact match, try contains
+            if (!results || results.length === 0) {
+              results = await this.client.searchRecords(table, `nameLIKE${searchString}^LIMIT3`);
+            }
+            
+            // If still no results, try wildcards on first term only
+            if (!results || results.length === 0) {
+              const firstTerm = searchString.split(' ')[0];
+              if (firstTerm && firstTerm.length > 2) {
+                results = await this.client.searchRecords(table, `nameLIKE*${firstTerm}*^LIMIT3`);
+              }
+            }
+            
             if (results && results.length > 0) {
               // Add artifact type to results for identification
               const typedResults = results.map(result => ({
@@ -630,15 +787,15 @@ class ServiceNowIntelligentMCP {
           }
         }
         
-        // If still no results, try broader search in all tables
+        // If still no results, try broader search in common tables only
         if (allResults.length === 0) {
-          this.logger.info('No results found, trying broader search in all tables...');
+          this.logger.info('No results found, trying broader search in common tables...');
           const firstTerm = intent.identifier.split(' ')[0];
           if (firstTerm && firstTerm.length > 2) {
-            for (const [type, table] of Object.entries(tableMapping)) {
+            for (const [type, table] of Object.entries(commonTables)) {
               try {
-                const broadQuery = `(nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*)^LIMIT10`;
-                const results = await this.client.searchRecords(table, broadQuery);
+                const broadQuery = `(nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*)^LIMIT5`;
+                const results = await this.client.searchRecords(table, broadQuery, 5);
                 if (results && results.length > 0) {
                   const typedResults = results.map(result => ({
                     ...result,
@@ -664,15 +821,36 @@ class ServiceNowIntelligentMCP {
         return [];
       }
 
-      // First try specific search
-      const query = this.buildServiceNowQuery(intent);
-      this.logger.info(`Searching ${table} with query: ${query}`);
+      // First try exact match
+      const searchString = intent.identifier.trim();
+      let results = [];
       
-      let results = await this.client.searchRecords(table, query);
+      // Try exact name match first
+      this.logger.info(`Trying exact match: name=${searchString}`);
+      results = await this.client.searchRecords(table, `name=${searchString}^LIMIT5`);
       
-      // If no results and we have a specific search, try a broader search
+      // If no exact match, try contains without wildcards (ServiceNow specific)
       if (!results || results.length === 0) {
-        this.logger.info(`No results found with specific query, trying broader search...`);
+        this.logger.info(`No exact match, trying contains: nameLIKE${searchString}`);
+        results = await this.client.searchRecords(table, `nameLIKE${searchString}^LIMIT10`);
+      }
+      
+      // Also try description fields
+      if (!results || results.length === 0) {
+        this.logger.info(`No name match, trying description: short_descriptionLIKE${searchString}`);
+        results = await this.client.searchRecords(table, `short_descriptionLIKE${searchString}^ORdescriptionLIKE${searchString}^LIMIT10`);
+      }
+      
+      // If still no results, use the complex query
+      if (!results || results.length === 0) {
+        const query = this.buildServiceNowQuery(intent);
+        this.logger.info(`No contains match, trying complex query: ${query}`);
+        results = await this.client.searchRecords(table, query);
+      }
+      
+      // If still no results, try a broader search
+      if (!results || results.length === 0) {
+        this.logger.info(`No results found, trying broader search...`);
         
         // Try searching with just the first search term with wildcards
         const firstTerm = intent.identifier.split(' ')[0];
@@ -697,26 +875,51 @@ class ServiceNowIntelligentMCP {
   }
 
   private buildServiceNowQuery(intent: ParsedIntent): string {
-    // Build proper ServiceNow encoded query with wildcards
-    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 1); // Allow 2+ character terms
+    // Build proper ServiceNow encoded query
+    const searchString = intent.identifier.trim();
     
-    if (searchTerms.length === 0) {
+    if (searchString.length === 0) {
       // Return first 10 active records if no search terms
       return 'active=true^LIMIT10';
     }
 
-    // Create LIKE queries with wildcards for each term - be more permissive
-    const queries = [];
-    for (const term of searchTerms) {
-      // Search in multiple fields with wildcards (*term*)
-      queries.push(`nameLIKE*${term}*`);
-      queries.push(`titleLIKE*${term}*`);
-      queries.push(`short_descriptionLIKE*${term}*`);
-      queries.push(`descriptionLIKE*${term}*`);
+    // First try exact name match
+    const exactQuery = `name=${searchString}`;
+    
+    // Then try name contains (without wildcards for multi-word)
+    const containsQuery = `nameLIKE${searchString}`;
+    
+    // For single words, use wildcards (keep original case for better matching)
+    const searchTerms = searchString.split(' ').filter(term => term.length > 1);
+    const wildcardQueries = [];
+    
+    if (searchTerms.length === 1) {
+      // Single word - use wildcards with both cases
+      const term = searchTerms[0];
+      const termLower = term.toLowerCase();
+      wildcardQueries.push(`nameLIKE*${term}*`);
+      wildcardQueries.push(`nameLIKE*${termLower}*`);
+      wildcardQueries.push(`titleLIKE*${term}*`);
+      wildcardQueries.push(`titleLIKE*${termLower}*`);
+      wildcardQueries.push(`short_descriptionLIKE*${termLower}*`);
+    } else {
+      // Multiple words - search for first and last word with wildcards
+      const firstTerm = searchTerms[0];
+      const lastTerm = searchTerms[searchTerms.length - 1];
+      const firstLower = firstTerm.toLowerCase();
+      const lastLower = lastTerm.toLowerCase();
+      
+      wildcardQueries.push(`nameLIKE*${firstTerm}*`);
+      wildcardQueries.push(`nameLIKE*${firstLower}*`);
+      wildcardQueries.push(`nameLIKE*${lastTerm}*`);
+      wildcardQueries.push(`nameLIKE*${lastLower}*`);
+      wildcardQueries.push(`titleLIKE*${firstTerm}*`);
+      wildcardQueries.push(`titleLIKE*${lastTerm}*`);
     }
     
-    // Join with OR to find any match, add limit
-    const query = `(${queries.join('^OR')})^LIMIT20`;
+    // Combine queries: try exact match OR contains OR wildcards
+    const allQueries = [exactQuery, containsQuery, ...wildcardQueries];
+    const query = `(${allQueries.join('^OR')})^LIMIT20`;
     return query;
   }
 
@@ -887,6 +1090,51 @@ class ServiceNowIntelligentMCP {
     return results.map((result, index) => 
       `${index + 1}. **${result.meta.name}**\n   - Type: ${result.meta.type}\n   - Summary: ${result.claudeSummary}\n   - Modification Points: ${result.modificationPoints.length}`
     ).join('\n\n');
+  }
+
+  private formatComprehensiveResults(results: any[]): string {
+    if (!results || results.length === 0) {
+      return '❌ No artifacts found across all ServiceNow tables.\n\n🔍 **Suggestions:**\n- Check spelling and try different terms\n- Include inactive records with include_inactive=true\n- Try broader search terms\n- The artifact might be in a scoped application';
+    }
+
+    // Group results by table type
+    const groupedResults = results.reduce((groups, result) => {
+      const tableDesc = result.table_description || result.table_name;
+      if (!groups[tableDesc]) {
+        groups[tableDesc] = [];
+      }
+      groups[tableDesc].push(result);
+      return groups;
+    }, {} as Record<string, any[]>);
+
+    let output = `✅ Found ${results.length} artifact(s) across ${Object.keys(groupedResults).length} table type(s):\n\n`;
+
+    for (const [tableDesc, tableResults] of Object.entries(groupedResults)) {
+      output += `## ${tableDesc}\n`;
+      
+      (tableResults as any[]).forEach((result: any, index: number) => {
+        const name = result.name || result.title || result.display_name || result.sys_id || 'Unknown';
+        const active = result.active !== undefined ? (result.active ? 'Active' : 'Inactive') : 'Unknown';
+        const description = result.short_description || result.description || 'No description';
+        const strategy = result.search_strategy || 'Unknown';
+        const collection = result.collection || result.table_name || 'Unknown';
+        
+        output += `${index + 1}. **${name}**\n`;
+        output += `   - Table: ${collection}\n`;
+        output += `   - Status: ${active}\n`;
+        output += `   - Description: ${description}\n`;
+        output += `   - Found via: ${strategy}\n`;
+        output += `   - Sys ID: ${result.sys_id}\n`;
+        
+        if (result.when) output += `   - When: ${result.when}\n`;
+        if (result.order) output += `   - Order: ${result.order}\n`;
+        if (result.condition) output += `   - Condition: ${result.condition}\n`;
+        
+        output += '\n';
+      });
+    }
+
+    return output;
   }
 
   private generateEditSuggestion(artifact: any): string {
