@@ -20,7 +20,7 @@ import { join } from 'path';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';
-  artifactType: 'widget' | 'flow' | 'script' | 'application' | 'business_rule' | 'client_script' | 'ui_script' | 'table' | 'form' | 'list' | 'any';
+  artifactType: string; // Allow any artifact type from the comprehensive table mapping
   identifier: string;
   modification?: string;
   confidence: number;
@@ -324,35 +324,124 @@ class ServiceNowIntelligentMCP {
   }
 
   private async parseIntent(query: string): Promise<ParsedIntent> {
-    // Enhanced intent parsing with better type detection
+    // Enhanced intent parsing with comprehensive type detection
     const lowercaseQuery = query.toLowerCase();
     
-    let artifactType: ParsedIntent['artifactType'] = 'any'; // Default to searching all types
+    let artifactType = 'any'; // Default to searching all types
     
     // Check for specific artifact types (order matters - most specific first)
-    if (lowercaseQuery.includes('widget')) {
-      artifactType = 'widget';
-    } else if (lowercaseQuery.includes('flow') || lowercaseQuery.includes('workflow')) {
-      artifactType = 'flow';
-    } else if (lowercaseQuery.includes('script include')) {
-      artifactType = 'script';
-    } else if (lowercaseQuery.includes('business rule')) {
-      artifactType = 'business_rule';
-    } else if (lowercaseQuery.includes('client script')) {
-      artifactType = 'client_script';
-    } else if (lowercaseQuery.includes('ui script')) {
-      artifactType = 'ui_script';
-    } else if (lowercaseQuery.includes('application') || lowercaseQuery.includes('app')) {
-      artifactType = 'application';
-    } else if (lowercaseQuery.includes('table')) {
-      artifactType = 'table';
-    } else if (lowercaseQuery.includes('form')) {
-      artifactType = 'form';
-    } else if (lowercaseQuery.includes('list')) {
-      artifactType = 'list';
-    } else if (lowercaseQuery.includes('script')) {
-      artifactType = 'script';
-    }
+    
+    // Service Portal
+    if (lowercaseQuery.includes('widget')) artifactType = 'widget';
+    else if (lowercaseQuery.includes('portal')) artifactType = 'portal';
+    else if (lowercaseQuery.includes('page') && lowercaseQuery.includes('service')) artifactType = 'page';
+    else if (lowercaseQuery.includes('theme')) artifactType = 'theme';
+    
+    // Flow Designer & Workflow
+    else if (lowercaseQuery.includes('flow designer') || lowercaseQuery.includes('sys_hub_flow')) artifactType = 'flow';
+    else if (lowercaseQuery.includes('workflow') && !lowercaseQuery.includes('orchestration')) artifactType = 'workflow';
+    else if (lowercaseQuery.includes('workflow activity')) artifactType = 'workflow_activity';
+    else if (lowercaseQuery.includes('flow')) artifactType = 'flow';
+    
+    // Scripts & Automation (most specific first)
+    else if (lowercaseQuery.includes('script include')) artifactType = 'script_include';
+    else if (lowercaseQuery.includes('business rule')) artifactType = 'business_rule';
+    else if (lowercaseQuery.includes('client script')) artifactType = 'client_script';
+    else if (lowercaseQuery.includes('ui script')) artifactType = 'ui_script';
+    else if (lowercaseQuery.includes('ui action')) artifactType = 'ui_action';
+    else if (lowercaseQuery.includes('ui policy action')) artifactType = 'ui_policy_action';
+    else if (lowercaseQuery.includes('ui policy')) artifactType = 'ui_policy';
+    else if (lowercaseQuery.includes('data policy rule')) artifactType = 'data_policy_rule';
+    else if (lowercaseQuery.includes('data policy')) artifactType = 'data_policy';
+    
+    // Applications
+    else if (lowercaseQuery.includes('scoped app')) artifactType = 'scoped_app';
+    else if (lowercaseQuery.includes('application') || lowercaseQuery.includes('app')) artifactType = 'application';
+    
+    // Tables & Fields
+    else if (lowercaseQuery.includes('field') || lowercaseQuery.includes('dictionary')) artifactType = 'field';
+    else if (lowercaseQuery.includes('table')) artifactType = 'table';
+    
+    // Forms & UI
+    else if (lowercaseQuery.includes('form section')) artifactType = 'form_section';
+    else if (lowercaseQuery.includes('list control')) artifactType = 'list_control';
+    else if (lowercaseQuery.includes('related list')) artifactType = 'related_list';
+    else if (lowercaseQuery.includes('form')) artifactType = 'form';
+    else if (lowercaseQuery.includes('list')) artifactType = 'list';
+    else if (lowercaseQuery.includes('view')) artifactType = 'view';
+    else if (lowercaseQuery.includes('formatter')) artifactType = 'formatter';
+    
+    // Reports & Dashboards
+    else if (lowercaseQuery.includes('pa dashboard')) artifactType = 'pa_dashboard';
+    else if (lowercaseQuery.includes('pa widget')) artifactType = 'pa_widget';
+    else if (lowercaseQuery.includes('dashboard')) artifactType = 'dashboard';
+    else if (lowercaseQuery.includes('report')) artifactType = 'report';
+    else if (lowercaseQuery.includes('gauge')) artifactType = 'gauge';
+    else if (lowercaseQuery.includes('chart')) artifactType = 'chart';
+    else if (lowercaseQuery.includes('indicator')) artifactType = 'indicator';
+    
+    // Security & Access Control
+    else if (lowercaseQuery.includes('acl') || lowercaseQuery.includes('access control')) artifactType = 'acl';
+    else if (lowercaseQuery.includes('role')) artifactType = 'role';
+    else if (lowercaseQuery.includes('group')) artifactType = 'group';
+    
+    // Notifications & Communication
+    else if (lowercaseQuery.includes('email template')) artifactType = 'email_template';
+    else if (lowercaseQuery.includes('notification')) artifactType = 'notification';
+    
+    // Import & Export
+    else if (lowercaseQuery.includes('import set')) artifactType = 'import_set';
+    else if (lowercaseQuery.includes('transform map')) artifactType = 'transform_map';
+    
+    // Web Services
+    else if (lowercaseQuery.includes('rest api') || lowercaseQuery.includes('rest')) artifactType = 'rest_api';
+    else if (lowercaseQuery.includes('soap api') || lowercaseQuery.includes('soap')) artifactType = 'soap_api';
+    
+    // Scheduled Jobs
+    else if (lowercaseQuery.includes('scheduled job')) artifactType = 'scheduled_job';
+    else if (lowercaseQuery.includes('scheduled import')) artifactType = 'scheduled_import';
+    
+    // Knowledge Management
+    else if (lowercaseQuery.includes('knowledge base')) artifactType = 'knowledge_base';
+    else if (lowercaseQuery.includes('knowledge article') || lowercaseQuery.includes('knowledge')) artifactType = 'knowledge_article';
+    
+    // System Administration
+    else if (lowercaseQuery.includes('system property') || lowercaseQuery.includes('property')) artifactType = 'property';
+    
+    // Mobile
+    else if (lowercaseQuery.includes('mobile app') || lowercaseQuery.includes('mobile')) artifactType = 'mobile_app';
+    
+    // Catalog
+    else if (lowercaseQuery.includes('catalog item')) artifactType = 'catalog_item';
+    else if (lowercaseQuery.includes('catalog variable')) artifactType = 'catalog_variable';
+    else if (lowercaseQuery.includes('catalog')) artifactType = 'catalog';
+    
+    // SLA & Metrics
+    else if (lowercaseQuery.includes('sla')) artifactType = 'sla';
+    else if (lowercaseQuery.includes('metric')) artifactType = 'metric';
+    
+    // Other common types
+    else if (lowercaseQuery.includes('attachment')) artifactType = 'attachment';
+    else if (lowercaseQuery.includes('language')) artifactType = 'language';
+    else if (lowercaseQuery.includes('translation')) artifactType = 'translated_text';
+    else if (lowercaseQuery.includes('processor')) artifactType = 'processor';
+    else if (lowercaseQuery.includes('update set')) artifactType = 'update_set';
+    else if (lowercaseQuery.includes('ml model') || lowercaseQuery.includes('machine learning')) artifactType = 'ml_model';
+    else if (lowercaseQuery.includes('spoke')) artifactType = 'spoke';
+    else if (lowercaseQuery.includes('connection')) artifactType = 'connection';
+    else if (lowercaseQuery.includes('virtual agent') || lowercaseQuery.includes('chatbot')) artifactType = 'virtual_agent';
+    else if (lowercaseQuery.includes('event rule')) artifactType = 'event_rule';
+    else if (lowercaseQuery.includes('alert')) artifactType = 'alert';
+    else if (lowercaseQuery.includes('discovery')) artifactType = 'discovery_schedule';
+    else if (lowercaseQuery.includes('ci class')) artifactType = 'ci_class';
+    else if (lowercaseQuery.includes('relationship')) artifactType = 'relationship_type';
+    else if (lowercaseQuery.includes('service map')) artifactType = 'service_map';
+    else if (lowercaseQuery.includes('orchestration workflow')) artifactType = 'orchestration_workflow';
+    else if (lowercaseQuery.includes('pipeline')) artifactType = 'pipeline';
+    else if (lowercaseQuery.includes('deployment')) artifactType = 'deployment';
+    
+    // Generic fallbacks
+    else if (lowercaseQuery.includes('script')) artifactType = 'script_include';
 
     return {
       action: 'find',
@@ -375,17 +464,145 @@ class ServiceNowIntelligentMCP {
 
   private async searchServiceNow(intent: ParsedIntent) {
     try {
-      const tableMapping = {
+      const tableMapping: Record<string, string> = {
+        // Service Portal
         widget: 'sp_widget',
+        portal: 'sp_portal',
+        page: 'sp_page',
+        theme: 'sp_theme',
+        
+        // Flow Designer & Workflow
         flow: 'sys_hub_flow',
+        workflow: 'wf_workflow',
+        workflow_activity: 'wf_activity',
+        
+        // Scripts & Automation
+        script_include: 'sys_script_include',
         script: 'sys_script_include',
-        application: 'sys_app_application',
         business_rule: 'sys_script',
         client_script: 'sys_script_client',
         ui_script: 'sys_ui_script',
+        ui_action: 'sys_ui_action',
+        ui_policy: 'sys_ui_policy',
+        ui_policy_action: 'sys_ui_policy_action',
+        data_policy: 'sys_data_policy',
+        data_policy_rule: 'sys_data_policy_rule',
+        
+        // Applications & Scoped Apps
+        application: 'sys_app_application',
+        app: 'sys_app_application',
+        scoped_app: 'sys_app',
+        
+        // Tables & Fields
         table: 'sys_db_object',
+        field: 'sys_dictionary',
+        dictionary: 'sys_dictionary',
+        
+        // Forms & UI
         form: 'sys_form',
+        form_section: 'sys_form_section',
         list: 'sys_list',
+        list_control: 'sys_list_control',
+        view: 'sys_ui_view',
+        related_list: 'sys_ui_related_list',
+        formatter: 'sys_ui_formatter',
+        
+        // Reports & Dashboards
+        report: 'sys_report',
+        dashboard: 'sys_dashboard',
+        gauge: 'pa_dashboards',
+        chart: 'sys_chart',
+        
+        // Security & Access Control
+        acl: 'sys_security_acl',
+        role: 'sys_user_role',
+        group: 'sys_user_group',
+        
+        // Notifications & Communication
+        notification: 'sysevent_email_action',
+        email_template: 'sysevent_email_template',
+        
+        // Import & Export
+        import_set: 'sys_import_set',
+        transform_map: 'sys_transform_map',
+        
+        // Web Services
+        rest_api: 'sys_ws_definition',
+        soap_api: 'sys_web_service',
+        
+        // Scheduled Jobs
+        scheduled_job: 'sysauto_script',
+        scheduled_import: 'scheduled_import_set',
+        
+        // Knowledge Management
+        knowledge_base: 'kb_knowledge_base',
+        knowledge_article: 'kb_knowledge',
+        
+        // System Administration
+        property: 'sys_properties',
+        system_property: 'sys_properties',
+        
+        // Mobile
+        mobile_app: 'sys_mobile_application',
+        
+        // Catalog
+        catalog: 'sc_catalog',
+        catalog_item: 'sc_cat_item',
+        catalog_variable: 'item_option_new',
+        
+        // SLA & Metrics
+        sla: 'contract_sla',
+        metric: 'sys_report_color',
+        
+        // Attachments & Files
+        attachment: 'sys_attachment',
+        
+        // Languages & Translations
+        language: 'sys_language',
+        translated_text: 'sys_translated',
+        
+        // Processors & Servlets
+        processor: 'sys_processor',
+        
+        // Update Sets & Deployment
+        update_set: 'sys_update_set',
+        
+        // AI & ML
+        ml_model: 'ml_model',
+        
+        // Integration Hub
+        spoke: 'sys_hub_action_type',
+        connection: 'sys_connection',
+        
+        // Virtual Agent
+        virtual_agent: 'sys_cs_topic',
+        chatbot: 'sys_cs_topic',
+        
+        // Performance Analytics
+        pa_dashboard: 'pa_dashboards',
+        pa_widget: 'pa_widgets',
+        indicator: 'pa_indicators',
+        
+        // Event Management
+        event_rule: 'em_event_rule',
+        alert: 'em_alert',
+        
+        // Discovery
+        discovery_schedule: 'discovery_schedule',
+        
+        // CMDB
+        ci_class: 'sys_db_object',
+        relationship_type: 'cmdb_rel_type',
+        
+        // Service Mapping
+        service_map: 'sa_pattern',
+        
+        // Orchestration
+        orchestration_workflow: 'sc_ic_workflow',
+        
+        // DevOps
+        pipeline: 'cicd_pipeline',
+        deployment: 'cicd_deployment',
       };
 
       // If searching for 'any' type, search all tables
