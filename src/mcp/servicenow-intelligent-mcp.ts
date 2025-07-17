@@ -184,14 +184,16 @@ class ServiceNowIntelligentMCP {
       // 3. Search ServiceNow live
       const liveResults = await this.searchServiceNow(intent);
       
-      // 4. Index results for future use
-      for (const result of liveResults) {
-        await this.intelligentlyIndex(result);
+      // 4. Index results for future use (only if we have results)
+      if (liveResults && liveResults.length > 0) {
+        for (const result of liveResults) {
+          await this.intelligentlyIndex(result);
+        }
       }
 
       const credentials = await this.oauth.loadCredentials();
       const resultText = this.formatResults(liveResults);
-      const editSuggestion = this.generateEditSuggestion(liveResults[0]);
+      const editSuggestion = this.generateEditSuggestion(liveResults?.[0]);
 
       return {
         content: [
@@ -350,17 +352,29 @@ class ServiceNowIntelligentMCP {
   }
 
   private async searchServiceNow(intent: ParsedIntent) {
-    const tableMapping = {
-      widget: 'sp_widget',
-      flow: 'sys_hub_flow',
-      script: 'sys_script_include',
-      application: 'sys_app_application',
-    };
+    try {
+      const tableMapping = {
+        widget: 'sp_widget',
+        flow: 'sys_hub_flow',
+        script: 'sys_script_include',
+        application: 'sys_app_application',
+      };
 
-    const table = tableMapping[intent.artifactType];
-    const query = this.buildServiceNowQuery(intent);
+      const table = tableMapping[intent.artifactType];
+      if (!table) {
+        this.logger.warn(`Unknown artifact type: ${intent.artifactType}`);
+        return [];
+      }
 
-    return await this.client.searchRecords(table, query);
+      const query = this.buildServiceNowQuery(intent);
+      const results = await this.client.searchRecords(table, query);
+
+      // Ensure we always return an array
+      return Array.isArray(results) ? results : [];
+    } catch (error) {
+      this.logger.error('Error searching ServiceNow', error);
+      return [];
+    }
   }
 
   private buildServiceNowQuery(intent: ParsedIntent): string {
@@ -504,9 +518,18 @@ class ServiceNowIntelligentMCP {
   }
 
   private formatResults(results: any[]): string {
-    return results.map((result, index) => 
-      `${index + 1}. **${result.name || result.title}**\n   - Type: ${result.sys_class_name}\n   - ID: ${result.sys_id}\n   - Updated: ${result.sys_updated_on}`
-    ).join('\n\n');
+    if (!results || results.length === 0) {
+      return '❌ No artifacts found matching your search criteria.';
+    }
+
+    return results.map((result, index) => {
+      const name = result.name || result.title || result.display_name || result.sys_id || 'Unknown';
+      const type = result.sys_class_name || result.type || 'Unknown';
+      const id = result.sys_id || 'Unknown';
+      const updated = result.sys_updated_on || result.last_updated || 'Unknown';
+      
+      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Updated: ${updated}`;
+    }).join('\n\n');
   }
 
   private formatMemoryResults(results: IndexedArtifact[]): string {
@@ -516,7 +539,12 @@ class ServiceNowIntelligentMCP {
   }
 
   private generateEditSuggestion(artifact: any): string {
-    return `💡 To edit this artifact, use:\n\`snow-flow edit "modify ${artifact.name || artifact.title} to add [your requirements]"\``;
+    if (!artifact) {
+      return '💡 Use snow_edit_artifact to modify ServiceNow artifacts with natural language.';
+    }
+    
+    const name = artifact.name || artifact.title || artifact.display_name || 'the artifact';
+    return `💡 To edit this artifact, use:\n\`snow-flow edit "modify ${name} to add [your requirements]"\``;
   }
 
   private async findTargetArtifact(intent: ParsedIntent) {
