@@ -173,7 +173,7 @@ export class ServiceNowOAuth {
       response_type: 'code',
       client_id: clientId,
       redirect_uri: redirectUri,
-      scope: 'useraccount',
+      scope: 'useraccount admin',
       state: this.stateParameter || '',
       code_challenge: this.codeChallenge || '',
       code_challenge_method: 'S256'
