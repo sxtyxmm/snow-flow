@@ -20,7 +20,7 @@ import { join } from 'path';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';
-  artifactType: 'widget' | 'flow' | 'script' | 'application';
+  artifactType: 'widget' | 'flow' | 'script' | 'application' | 'business_rule' | 'client_script' | 'ui_script' | 'table' | 'form' | 'list' | 'any';
   identifier: string;
   modification?: string;
   confidence: number;
@@ -324,16 +324,34 @@ class ServiceNowIntelligentMCP {
   }
 
   private async parseIntent(query: string): Promise<ParsedIntent> {
-    // Simple intent parsing - in real implementation would use NLP
+    // Enhanced intent parsing with better type detection
     const lowercaseQuery = query.toLowerCase();
     
-    let artifactType: ParsedIntent['artifactType'] = 'widget';
-    if (lowercaseQuery.includes('flow') || lowercaseQuery.includes('workflow')) {
+    let artifactType: ParsedIntent['artifactType'] = 'any'; // Default to searching all types
+    
+    // Check for specific artifact types (order matters - most specific first)
+    if (lowercaseQuery.includes('widget')) {
+      artifactType = 'widget';
+    } else if (lowercaseQuery.includes('flow') || lowercaseQuery.includes('workflow')) {
       artifactType = 'flow';
-    } else if (lowercaseQuery.includes('script')) {
+    } else if (lowercaseQuery.includes('script include')) {
       artifactType = 'script';
+    } else if (lowercaseQuery.includes('business rule')) {
+      artifactType = 'business_rule';
+    } else if (lowercaseQuery.includes('client script')) {
+      artifactType = 'client_script';
+    } else if (lowercaseQuery.includes('ui script')) {
+      artifactType = 'ui_script';
     } else if (lowercaseQuery.includes('application') || lowercaseQuery.includes('app')) {
       artifactType = 'application';
+    } else if (lowercaseQuery.includes('table')) {
+      artifactType = 'table';
+    } else if (lowercaseQuery.includes('form')) {
+      artifactType = 'form';
+    } else if (lowercaseQuery.includes('list')) {
+      artifactType = 'list';
+    } else if (lowercaseQuery.includes('script')) {
+      artifactType = 'script';
     }
 
     return {
@@ -362,8 +380,67 @@ class ServiceNowIntelligentMCP {
         flow: 'sys_hub_flow',
         script: 'sys_script_include',
         application: 'sys_app_application',
+        business_rule: 'sys_script',
+        client_script: 'sys_script_client',
+        ui_script: 'sys_ui_script',
+        table: 'sys_db_object',
+        form: 'sys_form',
+        list: 'sys_list',
       };
 
+      // If searching for 'any' type, search all tables
+      if (intent.artifactType === 'any') {
+        this.logger.info('Searching all artifact types...');
+        const allResults = [];
+        
+        for (const [type, table] of Object.entries(tableMapping)) {
+          try {
+            const query = this.buildServiceNowQuery(intent);
+            this.logger.info(`Searching ${table} (${type}) with query: ${query}`);
+            
+            const results = await this.client.searchRecords(table, query);
+            if (results && results.length > 0) {
+              // Add artifact type to results for identification
+              const typedResults = results.map(result => ({
+                ...result,
+                artifact_type: type,
+                table_name: table
+              }));
+              allResults.push(...typedResults);
+            }
+          } catch (error) {
+            this.logger.warn(`Error searching ${table}:`, error);
+          }
+        }
+        
+        // If still no results, try broader search in all tables
+        if (allResults.length === 0) {
+          this.logger.info('No results found, trying broader search in all tables...');
+          const firstTerm = intent.identifier.split(' ')[0];
+          if (firstTerm && firstTerm.length > 2) {
+            for (const [type, table] of Object.entries(tableMapping)) {
+              try {
+                const broadQuery = `nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*`;
+                const results = await this.client.searchRecords(table, broadQuery);
+                if (results && results.length > 0) {
+                  const typedResults = results.map(result => ({
+                    ...result,
+                    artifact_type: type,
+                    table_name: table
+                  }));
+                  allResults.push(...typedResults);
+                }
+              } catch (error) {
+                this.logger.warn(`Error in broad search ${table}:`, error);
+              }
+            }
+          }
+        }
+        
+        return allResults;
+      }
+
+      // Search specific table
       const table = tableMapping[intent.artifactType];
       if (!table) {
         this.logger.warn(`Unknown artifact type: ${intent.artifactType}`);
@@ -579,12 +656,14 @@ class ServiceNowIntelligentMCP {
     const formattedResults = results.map((result, index) => {
       const name = result.name || result.title || result.display_name || result.sys_id || 'Unknown';
       const type = result.sys_class_name || result.type || 'Unknown';
+      const artifactType = result.artifact_type || 'Unknown';
+      const tableName = result.table_name || 'Unknown';
       const id = result.sys_id || 'Unknown';
       const updated = result.sys_updated_on || result.last_updated || 'Unknown';
       const active = result.active !== undefined ? (result.active ? 'Active' : 'Inactive') : 'Unknown';
       const description = result.short_description || result.description || 'No description';
       
-      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Status: ${active}\n   - Description: ${description}\n   - Updated: ${updated}`;
+      return `${index + 1}. **${name}**\n   - Artifact Type: ${artifactType}\n   - Table: ${tableName}\n   - Class: ${type}\n   - ID: ${id}\n   - Status: ${active}\n   - Description: ${description}\n   - Updated: ${updated}`;
     }).join('\n\n');
 
     return `✅ Found ${results.length} artifact(s):\n\n${formattedResults}`;
