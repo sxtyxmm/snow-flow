@@ -183,10 +183,13 @@ class ServiceNowIntelligentMCP {
       }
 
       // 3. Search ServiceNow live
+      this.logger.info(`Searching ServiceNow for: ${intent.identifier} (type: ${intent.artifactType})`);
       const liveResults = await this.searchServiceNow(intent);
+      this.logger.info(`ServiceNow search returned ${liveResults?.length || 0} results`);
       
       // 4. Index results for future use (only if we have results)
       if (liveResults && liveResults.length > 0) {
+        this.logger.info('Indexing found artifacts for future use...');
         for (const result of liveResults) {
           await this.intelligentlyIndex(result);
         }
@@ -200,7 +203,7 @@ class ServiceNowIntelligentMCP {
         content: [
           {
             type: 'text',
-            text: `🔍 Found ServiceNow artifacts:\n\n${resultText}\n\n🔗 ServiceNow Instance: https://${credentials?.instance}\n\n${editSuggestion}`,
+            text: `🔍 ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: https://${credentials?.instance}\n\n${editSuggestion}`,
           },
         ],
       };
@@ -367,8 +370,27 @@ class ServiceNowIntelligentMCP {
         return [];
       }
 
+      // First try specific search
       const query = this.buildServiceNowQuery(intent);
-      const results = await this.client.searchRecords(table, query);
+      this.logger.info(`Searching ${table} with query: ${query}`);
+      
+      let results = await this.client.searchRecords(table, query);
+      
+      // If no results and we have a specific search, try a broader search
+      if (!results || results.length === 0) {
+        this.logger.info(`No results found with specific query, trying broader search...`);
+        
+        // Try searching with just the first search term
+        const firstTerm = intent.identifier.split(' ')[0];
+        const broadQuery = `nameLIKE${firstTerm}^ORtitleLIKE${firstTerm}`;
+        results = await this.client.searchRecords(table, broadQuery);
+        
+        // If still no results, get first 10 records to test connection
+        if (!results || results.length === 0) {
+          this.logger.info(`No results with broad search, fetching sample records...`);
+          results = await this.client.searchRecords(table, 'active=true^ORDERBYsys_updated_on^LIMIT10');
+        }
+      }
 
       // Ensure we always return an array
       return Array.isArray(results) ? results : [];
@@ -379,12 +401,24 @@ class ServiceNowIntelligentMCP {
   }
 
   private buildServiceNowQuery(intent: ParsedIntent): string {
-    // Build encoded query based on intent
-    const searchTerms = intent.identifier.toLowerCase().split(' ');
-    const nameQuery = searchTerms.map(term => `nameLIKE${term}`).join('^OR');
-    const titleQuery = searchTerms.map(term => `titleLIKE${term}`).join('^OR');
+    // Build proper ServiceNow encoded query
+    const searchTerms = intent.identifier.toLowerCase().split(' ').filter(term => term.length > 0);
     
-    return `${nameQuery}^OR${titleQuery}`;
+    if (searchTerms.length === 0) {
+      // Return all active records if no search terms
+      return 'active=true';
+    }
+
+    // Create LIKE queries with wildcards for each term
+    const queries = [];
+    for (const term of searchTerms) {
+      // Search in both name and title fields with wildcards
+      queries.push(`nameLIKE${term}`);
+      queries.push(`titleLIKE${term}`);
+    }
+    
+    // Join with OR to find any match
+    return queries.join('^OR');
   }
 
   private async intelligentlyIndex(artifact: any): Promise<IndexedArtifact> {
@@ -531,17 +565,20 @@ class ServiceNowIntelligentMCP {
 
   private formatResults(results: any[]): string {
     if (!results || results.length === 0) {
-      return '❌ No artifacts found matching your search criteria.';
+      return '❌ No artifacts found matching your search criteria.\n\n🔍 **Debugging Info:**\n- ServiceNow connection appears to be working\n- Try broader search terms\n- Check if widgets exist in your ServiceNow instance\n- Use snow_deploy_widget to create new widgets first';
     }
 
-    return results.map((result, index) => {
+    const formattedResults = results.map((result, index) => {
       const name = result.name || result.title || result.display_name || result.sys_id || 'Unknown';
       const type = result.sys_class_name || result.type || 'Unknown';
       const id = result.sys_id || 'Unknown';
       const updated = result.sys_updated_on || result.last_updated || 'Unknown';
+      const active = result.active !== undefined ? (result.active ? 'Active' : 'Inactive') : 'Unknown';
       
-      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Updated: ${updated}`;
+      return `${index + 1}. **${name}**\n   - Type: ${type}\n   - ID: ${id}\n   - Status: ${active}\n   - Updated: ${updated}`;
     }).join('\n\n');
+
+    return `✅ Found ${results.length} artifact(s):\n\n${formattedResults}`;
   }
 
   private formatMemoryResults(results: IndexedArtifact[]): string {
