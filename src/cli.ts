@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { spawn, ChildProcess } from 'child_process';
+import { existsSync } from 'fs';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
@@ -1104,7 +1105,10 @@ async function createBasicConfig(targetDir: string) {
 }
 
 async function createReadmeFiles(targetDir: string) {
-  const mainReadme = `# Snow-Flow Project
+  // Only create README.md if it doesn't exist already
+  const readmePath = join(targetDir, 'README.md');
+  if (!existsSync(readmePath)) {
+    const mainReadme = `# Snow-Flow Project
 
 This is a Snow-Flow project for ServiceNow multi-agent development.
 
@@ -1129,7 +1133,10 @@ This is a Snow-Flow project for ServiceNow multi-agent development.
 - Project structure: \`.claude/commands/\`
 `;
 
-  await fs.writeFile(join(targetDir, 'README.md'), mainReadme);
+    await fs.writeFile(readmePath, mainReadme);
+  }
+  
+  // Create sub-directory READMEs
   await fs.writeFile(join(targetDir, 'memory/agents/README.md'), '# Agent Memory\n\nThis directory contains persistent memory for ServiceNow agents.');
   await fs.writeFile(join(targetDir, 'servicenow/README.md'), '# ServiceNow Artifacts\n\nThis directory contains generated ServiceNow development artifacts.');
 }
@@ -1904,28 +1911,38 @@ program
       console.log('   - Extended output limits and thinking tokens\n');
       
       // Phase 6: Build project and start MCP servers
-      console.log('🔧 Building project and initializing MCP servers...');
+      console.log('🔧 Setting up MCP servers...');
       
-      // First, build the project so MCP servers are available
-      console.log('🏗️  Building project (compiling TypeScript)...');
-      try {
-        const { spawn } = require('child_process');
-        const buildProcess = spawn('npm', ['run', 'build'], {
-          cwd: targetDir,
-          stdio: 'pipe'
-        });
-        
-        await new Promise((resolve, reject) => {
-          buildProcess.on('close', (code: number) => {
-            if (code === 0) {
-              resolve(undefined);
-            } else {
-              reject(new Error(`Build failed with code ${code}`));
-            }
+      // Check if we're running from npm global install or local dev
+      const isGlobalInstall = __dirname.includes('node_modules') || !existsSync(join(targetDir, 'src'));
+      
+      if (!isGlobalInstall) {
+        // Only build if we're in development mode with source files
+        console.log('🏗️  Building project (compiling TypeScript)...');
+        try {
+          const { spawn } = require('child_process');
+          const buildProcess = spawn('npm', ['run', 'build'], {
+            cwd: targetDir,
+            stdio: 'pipe'
           });
-        });
-        
-        console.log('✅ Project built successfully');
+          
+          await new Promise((resolve, reject) => {
+            buildProcess.on('close', (code: number) => {
+              if (code === 0) {
+                resolve(undefined);
+              } else {
+                reject(new Error(`Build failed with code ${code}`));
+              }
+            });
+          });
+          
+          console.log('✅ Project built successfully');
+        } catch (error) {
+          console.log('⚠️  Build failed - continuing with setup...');
+        }
+      } else {
+        console.log('✅ Using pre-built MCP servers from npm package');
+      }
         
         // Run MCP setup script to generate .mcp.json
         console.log('🔧 Generating MCP configuration...');
@@ -2044,22 +2061,31 @@ program
         }
         
       } catch (error) {
-        console.log('⚠️  Build failed - MCP servers will need manual start:');
-        console.log('   1. Run: npm run build');
-        console.log('   2. Run: snow-flow mcp start');
-        console.log('   3. Register with Claude Code:');
-        console.log(`      claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-flow-composer "${join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-operations "${join(targetDir, 'dist/mcp/servicenow-operations-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-platform-development "${join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-integration "${join(targetDir, 'dist/mcp/servicenow-integration-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-automation "${join(targetDir, 'dist/mcp/servicenow-automation-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
-        console.log(`      claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
-        console.log(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        if (!isGlobalInstall) {
+          // Only show build errors in development mode
+          console.log('⚠️  Build failed - MCP servers will need manual start:');
+          console.log('   1. Run: npm run build');
+          console.log('   2. Run: snow-flow mcp start');
+          console.log('   3. Register with Claude Code:');
+          console.log(`      claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-flow-composer "${join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-operations "${join(targetDir, 'dist/mcp/servicenow-operations-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-platform-development "${join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-integration "${join(targetDir, 'dist/mcp/servicenow-integration-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-automation "${join(targetDir, 'dist/mcp/servicenow-automation-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
+          console.log(`      claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
+          console.log(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        } else {
+          // In global install mode, just show a simpler message
+          console.log('⚠️  MCP setup encountered an issue:');
+          console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+          console.log('   The project has been initialized successfully.');
+          console.log('   You may need to configure MCP servers manually.');
+        }
       }
       
       // Success message
