@@ -282,7 +282,7 @@ ${deploymentResult ? '✅ Successfully deployed to ServiceNow!' : '⏳ Ready for
 3. Compose sophisticated flows with multiple components
 4. Deploy complete solutions with all dependencies
 
-The flow is now ready to process support desk messages, translate them using LLM localization, and store results using business rules!`,
+The flow is now ready to handle your workflow requirements!`,
           },
         ],
       };

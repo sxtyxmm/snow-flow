@@ -47,6 +47,15 @@
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
+    },
+    "servicenow-operations": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-operations-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
     }
   }
 }

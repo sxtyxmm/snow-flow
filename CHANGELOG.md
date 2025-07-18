@@ -5,6 +5,62 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-07-18
+
+### 🤖 ServiceNow Operations MCP (NEW!)
+- **Added** Complete operational data management separate from development artifacts
+- **Added** `snow_query_incidents` - Advanced incident querying with AI analysis
+- **Added** `snow_analyze_incident` - Intelligent incident analysis with auto-resolution suggestions
+- **Added** `snow_auto_resolve_incident` - Automated resolution of common technical issues
+- **Added** `snow_query_requests` - Service request operations and analysis
+- **Added** `snow_query_problems` - Problem management with root cause analysis
+- **Added** `snow_cmdb_search` - CMDB discovery and relationship mapping
+- **Added** `snow_user_lookup` - User and group management with roles
+- **Added** `snow_operational_metrics` - Real-time operational dashboards and analytics
+- **Added** `snow_pattern_analysis` - Pattern recognition in incidents, requests, and problems
+- **Added** `snow_knowledge_search` - Intelligent knowledge base integration with relevance scoring
+- **Added** `snow_predictive_analysis` - Predictive analytics for system health and failure prediction
+
+### 🔄 Flow Composer MCP (MAJOR FIX!)
+- **Fixed** Hardcoded artifact discovery - now uses real ServiceNow API integration
+- **Fixed** Natural language parsing - proper understanding of workflow requirements
+- **Fixed** Table detection - correctly identifies sc_req_item vs incident vs other tables
+- **Fixed** Activity generation - creates appropriate ServiceNow Flow Designer activities
+- **Added** ServiceNow-aware instruction parsing with entity extraction
+- **Added** Dynamic artifact discovery based on instruction content
+- **Added** Requirement-based activity creation (approval, tasks, notifications)
+- **Added** Fulfillment workflow templates for catalog items
+- **Added** Approval workflow templates with conditional logic
+- **Added** Task creation for admin and user assignments
+- **Added** Notification activities with proper recipient mapping
+- **Enhanced** Flow structure generation with proper connections and variables
+
+### 🧠 Intelligent Analysis Features
+- **Added** Pattern recognition for network, database, application, and authentication issues
+- **Added** Root cause analysis with confidence scoring
+- **Added** Similar incident discovery for pattern matching
+- **Added** Knowledge base integration with relevance scoring
+- **Added** Automated resolution actions for common technical problems
+- **Added** Predictive analytics for incident volume and system failures
+- **Added** Operational metrics calculation and trending
+
+### 🔧 Technical Improvements
+- **Added** Operational table mappings for ITIL processes
+- **Added** Intelligent query processing with natural language understanding
+- **Added** Multi-table search across operational data
+- **Added** User and group management with role analysis
+- **Added** CMDB relationship discovery and mapping
+- **Enhanced** Error handling and logging throughout operational services
+- **Added** Comprehensive documentation updates
+
+### 📚 Documentation Updates
+- **Updated** README.md with new Operations MCP capabilities
+- **Added** Workflow examples with practical use cases
+- **Added** Incident auto-resolution examples
+- **Added** Operational intelligence examples
+- **Updated** Project structure documentation
+- **Updated** MCP server configuration examples
+
 ## [1.2.0] - 2025-07-17
 
 ### 🔍 Advanced ServiceNow Search System

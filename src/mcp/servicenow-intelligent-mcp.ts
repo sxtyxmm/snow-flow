@@ -741,6 +741,46 @@ class ServiceNowIntelligentMCP {
         this.logger.info('Searching common artifact types...');
         const allResults = [];
         
+        // Handle "list all" queries for any type
+        const searchString = intent.identifier.trim();
+        if (searchString.toLowerCase().includes('list all') || 
+            searchString.toLowerCase().includes('all artifacts') ||
+            searchString.toLowerCase().includes('show all') ||
+            searchString === '') {
+          this.logger.info('Fetching all common artifact types');
+          
+          // Define most common tables to list when showing all
+          const commonTables = {
+            widget: 'sp_widget',
+            business_rule: 'sys_script',
+            client_script: 'sys_script_client',
+            script_include: 'sys_script_include',
+            flow: 'sys_hub_flow',
+            workflow: 'wf_workflow',
+            ui_action: 'sys_ui_action',
+            table: 'sys_db_object',
+            application: 'sys_app_application',
+          };
+          
+          for (const [type, table] of Object.entries(commonTables)) {
+            try {
+              const results = await this.client.searchRecords(table, `active=true^ORDERBYname^LIMIT10`);
+              if (results && results.length > 0) {
+                const typedResults = results.map(result => ({
+                  ...result,
+                  artifact_type: type,
+                  table_name: table
+                }));
+                allResults.push(...typedResults);
+              }
+            } catch (error) {
+              this.logger.warn(`Error fetching ${table}:`, error);
+            }
+          }
+          
+          return allResults;
+        }
+        
         // Define most common tables to search when type is 'any'
         const commonTables = {
           widget: 'sp_widget',
@@ -825,6 +865,27 @@ class ServiceNowIntelligentMCP {
       const searchString = intent.identifier.trim();
       let results = [];
       
+      // Handle "list all" queries
+      if (searchString.toLowerCase().includes('list all') || 
+          searchString.toLowerCase().includes('all flows') ||
+          searchString.toLowerCase().includes('show all') ||
+          searchString === '') {
+        this.logger.info(`Fetching all ${intent.artifactType} records`);
+        // Get all active records of this type, sorted by name
+        results = await this.client.searchRecords(table, `active=true^ORDERBYname^LIMIT50`);
+        
+        // Add artifact type to results
+        if (results && results.length > 0) {
+          results = results.map(result => ({
+            ...result,
+            artifact_type: intent.artifactType,
+            table_name: table
+          }));
+        }
+        
+        return results;
+      }
+      
       // Try exact name match first
       this.logger.info(`Trying exact match: name=${searchString}`);
       results = await this.client.searchRecords(table, `name=${searchString}^LIMIT5`);
@@ -859,10 +920,10 @@ class ServiceNowIntelligentMCP {
           results = await this.client.searchRecords(table, broadQuery);
         }
         
-        // If still no results, get first 10 records to test connection
+        // If still no results, return empty array instead of sample records
         if (!results || results.length === 0) {
-          this.logger.info(`No results with broad search, fetching sample records...`);
-          results = await this.client.searchRecords(table, 'active=true^ORDERBYsys_updated_on^LIMIT10');
+          this.logger.info(`No results found for search term: ${searchString}`);
+          return [];
         }
       }
 
