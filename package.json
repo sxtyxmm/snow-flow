@@ -16,7 +16,6 @@
     "typecheck": "tsc --noEmit",
     "setup-mcp": "node scripts/setup-mcp.js",
     "postbuild": "npm run setup-mcp",
-    "prepublishOnly": "npm run build",
     "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [

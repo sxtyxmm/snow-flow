@@ -775,7 +775,6 @@ ${this.getScopeBenefits(deploymentResult.scope).map(b => `- ${b}`).join('\n')}`,
             },
           ],
         };
-      };
     } catch (error) {
       throw new Error(`Application deployment failed: ${error instanceof Error ? error.message : String(error)}`);
     }
