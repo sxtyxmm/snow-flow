@@ -1,0 +1,413 @@
+/**
+ * Intelligent Agent Detection System
+ * Dynamically determines which agents to spawn based on task analysis
+ */
+
+export interface AgentCapability {
+  type: string;
+  confidence: number;
+  requiredFor: string[];
+  description: string;
+}
+
+export interface TaskAnalysis {
+  primaryAgent: string;
+  supportingAgents: string[];
+  complexity: 'simple' | 'medium' | 'complex';
+  estimatedAgentCount: number;
+  requiresUpdateSet: boolean;
+  requiresApplication: boolean;
+  taskType: string;
+  serviceNowArtifacts: string[];
+}
+
+export class AgentDetector {
+  private static readonly AGENT_PATTERNS = {
+    // Development agents
+    architect: {
+      keywords: ['design', 'architecture', 'structure', 'database', 'schema', 'model', 'entity', 'relationship', 'system'],
+      confidence: 0.9,
+      description: 'System architecture and design',
+      requiredFor: ['applications', 'complex_systems', 'integrations']
+    },
+    coder: {
+      keywords: ['implement', 'code', 'script', 'function', 'api', 'endpoint', 'logic', 'algorithm', 'business_rule', 'schrijf', 'write', 'develop', 'programmeer'],
+      confidence: 0.8,
+      description: 'Code implementation and development',
+      requiredFor: ['scripts', 'functions', 'business_rules', 'apis']
+    },
+    researcher: {
+      keywords: ['research', 'analyze', 'investigate', 'study', 'explore', 'understand', 'learn', 'discover'],
+      confidence: 0.7,
+      description: 'Research and analysis',
+      requiredFor: ['requirements', 'best_practices', 'patterns']
+    },
+    tester: {
+      keywords: ['test', 'verify', 'validate', 'check', 'ensure', 'quality', 'bug', 'debug'],
+      confidence: 0.8,
+      description: 'Testing and quality assurance',
+      requiredFor: ['validation', 'quality_control', 'debugging']
+    },
+    reviewer: {
+      keywords: ['review', 'audit', 'examine', 'evaluate', 'assess', 'approve', 'feedback'],
+      confidence: 0.7,
+      description: 'Code and process review',
+      requiredFor: ['code_review', 'approval_process', 'quality_gates']
+    },
+    documenter: {
+      keywords: ['document', 'documentation', 'guide', 'manual', 'readme', 'help', 'instructions'],
+      confidence: 0.6,
+      description: 'Documentation and guides',
+      requiredFor: ['documentation', 'user_guides', 'api_docs']
+    },
+    orchestrator: {
+      keywords: ['coordinate', 'manage', 'orchestrate', 'organize', 'plan', 'schedule', 'oversee'],
+      confidence: 0.9,
+      description: 'Task coordination and management',
+      requiredFor: ['complex_tasks', 'multi_agent_coordination', 'project_management']
+    },
+    // ServiceNow specific agents
+    flow_designer: {
+      keywords: ['flow', 'workflow', 'process', 'automation', 'approval', 'routing', 'trigger'],
+      confidence: 0.9,
+      description: 'ServiceNow Flow Designer specialist',
+      requiredFor: ['flows', 'workflows', 'approvals', 'automation']
+    },
+    widget_builder: {
+      keywords: ['widget', 'portal', 'dashboard', 'ui', 'interface', 'frontend', 'display'],
+      confidence: 0.9,
+      description: 'Service Portal widget development',
+      requiredFor: ['widgets', 'portals', 'dashboards', 'ui_components']
+    },
+    integration_specialist: {
+      keywords: ['integration', 'api', 'rest', 'soap', 'webhook', 'external', 'third_party'],
+      confidence: 0.8,
+      description: 'System integration and APIs',
+      requiredFor: ['integrations', 'apis', 'webhooks', 'external_systems']
+    },
+    database_expert: {
+      keywords: ['database', 'table', 'field', 'record', 'data', 'schema', 'query', 'report'],
+      confidence: 0.8,
+      description: 'Database and data management',
+      requiredFor: ['tables', 'databases', 'reports', 'data_management']
+    }
+  };
+
+  private static readonly SERVICENOW_ARTIFACTS = {
+    'widget': ['widget_builder', 'coder', 'tester'],
+    'flow': ['flow_designer', 'architect', 'tester'],
+    'workflow': ['flow_designer', 'architect', 'tester'],
+    'application': ['architect', 'coder', 'database_expert', 'tester', 'documenter'],
+    'script': ['coder', 'reviewer', 'tester'],
+    'business_rule': ['coder', 'reviewer', 'tester'],
+    'integration': ['integration_specialist', 'architect', 'tester'],
+    'api': ['integration_specialist', 'coder', 'tester'],
+    'table': ['database_expert', 'architect', 'coder'],
+    'report': ['database_expert', 'analyst', 'coder'],
+    'dashboard': ['widget_builder', 'database_expert', 'coder']
+  };
+
+  static analyzeTask(objective: string): TaskAnalysis {
+    const lowerObjective = objective.toLowerCase();
+    const words = lowerObjective.split(/\s+/);
+    
+    // Detect agent capabilities
+    const agentCapabilities = this.detectAgentCapabilities(lowerObjective);
+    
+    // Determine primary agent
+    const primaryAgent = this.determinePrimaryAgent(agentCapabilities);
+    
+    // Determine supporting agents
+    const supportingAgents = this.determineSupportingAgents(agentCapabilities, primaryAgent);
+    
+    // Assess complexity
+    const complexity = this.assessComplexity(objective, agentCapabilities);
+    
+    // Determine ServiceNow artifacts
+    const serviceNowArtifacts = this.detectServiceNowArtifacts(lowerObjective);
+    
+    // Determine if Update Set is required
+    const requiresUpdateSet = this.requiresUpdateSet(lowerObjective, serviceNowArtifacts);
+    
+    // Determine if new Application is required
+    const requiresApplication = this.requiresApplication(lowerObjective, serviceNowArtifacts);
+    
+    // Determine task type
+    const taskType = this.determineTaskType(lowerObjective, serviceNowArtifacts);
+    
+    return {
+      primaryAgent,
+      supportingAgents,
+      complexity,
+      estimatedAgentCount: Math.min(Math.max(supportingAgents.length + 1, 2), 8),
+      requiresUpdateSet,
+      requiresApplication,
+      taskType,
+      serviceNowArtifacts
+    };
+  }
+
+  private static detectAgentCapabilities(objective: string): AgentCapability[] {
+    const capabilities: AgentCapability[] = [];
+    
+    for (const [agentType, config] of Object.entries(this.AGENT_PATTERNS)) {
+      let matchCount = 0;
+      let totalKeywords = config.keywords.length;
+      
+      for (const keyword of config.keywords) {
+        if (objective.includes(keyword)) {
+          matchCount++;
+        }
+      }
+      
+      if (matchCount > 0) {
+        const confidence = (matchCount / totalKeywords) * config.confidence;
+        capabilities.push({
+          type: agentType,
+          confidence,
+          requiredFor: config.requiredFor,
+          description: config.description
+        });
+      }
+    }
+    
+    return capabilities.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  private static determinePrimaryAgent(capabilities: AgentCapability[]): string {
+    if (capabilities.length === 0) return 'orchestrator';
+    
+    // Special logic for ServiceNow-specific tasks
+    const serviceNowAgents = capabilities.filter(c => 
+      ['flow_designer', 'widget_builder', 'integration_specialist', 'database_expert'].includes(c.type)
+    );
+    
+    if (serviceNowAgents.length > 0) {
+      return serviceNowAgents[0].type;
+    }
+    
+    return capabilities[0].type;
+  }
+
+  private static determineSupportingAgents(capabilities: AgentCapability[], primaryAgent: string): string[] {
+    const supportingAgents = capabilities
+      .filter(c => c.type !== primaryAgent && c.confidence > 0.3)
+      .slice(0, 5) // Max 5 supporting agents
+      .map(c => c.type);
+    
+    // Always include orchestrator for complex tasks
+    if (capabilities.length > 3 && !supportingAgents.includes('orchestrator')) {
+      supportingAgents.push('orchestrator');
+    }
+    
+    // Always include tester for development tasks
+    const developmentAgents = ['coder', 'architect', 'flow_designer', 'widget_builder'];
+    if (developmentAgents.includes(primaryAgent) && !supportingAgents.includes('tester')) {
+      supportingAgents.push('tester');
+    }
+    
+    return supportingAgents;
+  }
+
+  private static assessComplexity(objective: string, capabilities: AgentCapability[]): 'simple' | 'medium' | 'complex' {
+    const wordCount = objective.split(/\s+/).length;
+    const agentCount = capabilities.length;
+    
+    // Complex indicators
+    const complexKeywords = ['integrate', 'multiple', 'complex', 'advanced', 'system', 'architecture', 'enterprise'];
+    const hasComplexKeywords = complexKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    
+    if (wordCount > 20 || agentCount > 4 || hasComplexKeywords) {
+      return 'complex';
+    } else if (wordCount > 10 || agentCount > 2) {
+      return 'medium';
+    } else {
+      return 'simple';
+    }
+  }
+
+  private static detectServiceNowArtifacts(objective: string): string[] {
+    const artifacts: string[] = [];
+    const lowerObjective = objective.toLowerCase();
+    
+    // Check for explicit artifact mentions
+    for (const [artifact, _] of Object.entries(this.SERVICENOW_ARTIFACTS)) {
+      if (lowerObjective.includes(artifact)) {
+        artifacts.push(artifact);
+      }
+    }
+    
+    // Check for business rule specifically
+    if (lowerObjective.includes('business rule') || lowerObjective.includes('business_rule')) {
+      if (!artifacts.includes('business_rule')) {
+        artifacts.push('business_rule');
+      }
+    }
+    
+    // Check for script include
+    if (lowerObjective.includes('script include') || lowerObjective.includes('script_include')) {
+      if (!artifacts.includes('script')) {
+        artifacts.push('script');
+      }
+    }
+    
+    // Check for client script
+    if (lowerObjective.includes('client script') || lowerObjective.includes('client_script')) {
+      if (!artifacts.includes('script')) {
+        artifacts.push('script');
+      }
+    }
+    
+    return artifacts;
+  }
+
+  private static requiresUpdateSet(objective: string, artifacts: string[]): boolean {
+    const lowerObjective = objective.toLowerCase();
+    
+    // Always require Update Set for development tasks
+    const developmentKeywords = [
+      'create', 'build', 'implement', 'develop', 'make', 'generate', 'add', 
+      'bouw', 'maak', 'schrijf', 'write', 'update', 'modify', 'change',
+      'business rule', 'script', 'flow', 'widget', 'workflow', 'client script',
+      'ui action', 'scheduled job', 'transform', 'integration'
+    ];
+    const hasDevelopmentKeywords = developmentKeywords.some(keyword => lowerObjective.includes(keyword));
+    
+    // Or if ServiceNow artifacts are involved
+    const hasServiceNowArtifacts = artifacts.length > 0;
+    
+    // Or if task type indicates development
+    const developmentTaskTypes = [
+      'widget_development', 'flow_development', 'script_development', 
+      'application_development', 'integration_development', 'database_development',
+      'reporting_development', 'general_development'
+    ];
+    const taskType = this.determineTaskType(objective, artifacts);
+    const isDevelopmentTask = developmentTaskTypes.includes(taskType);
+    
+    return hasDevelopmentKeywords || hasServiceNowArtifacts || isDevelopmentTask;
+  }
+
+  private static requiresApplication(objective: string, artifacts: string[]): boolean {
+    // Require new application for comprehensive systems
+    const applicationKeywords = ['application', 'app', 'system', 'complete', 'full', 'comprehensive', 'applicatie'];
+    const hasApplicationKeywords = applicationKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    
+    // Or if multiple complex artifacts are involved
+    const hasMultipleArtifacts = artifacts.length >= 3;
+    
+    return hasApplicationKeywords || hasMultipleArtifacts;
+  }
+
+  private static determineTaskType(objective: string, artifacts: string[]): string {
+    // Determine based on detected artifacts and keywords
+    if (artifacts.includes('widget')) return 'widget_development';
+    if (artifacts.includes('flow') || artifacts.includes('workflow')) return 'flow_development';
+    if (artifacts.includes('application')) return 'application_development';
+    if (artifacts.includes('script') || artifacts.includes('business_rule')) return 'script_development';
+    if (artifacts.includes('integration') || artifacts.includes('api')) return 'integration_development';
+    if (artifacts.includes('table') || artifacts.includes('database')) return 'database_development';
+    if (artifacts.includes('report') || artifacts.includes('dashboard')) return 'reporting_development';
+    
+    // Fallback to general development
+    const developmentKeywords = ['create', 'build', 'implement', 'develop', 'make', 'generate', 'bouw', 'maak'];
+    const hasDevelopmentKeywords = developmentKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    
+    if (hasDevelopmentKeywords) return 'general_development';
+    
+    // Research or analysis tasks
+    const researchKeywords = ['research', 'analyze', 'investigate', 'study', 'explore'];
+    const hasResearchKeywords = researchKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    
+    if (hasResearchKeywords) return 'research_task';
+    
+    return 'orchestration_task';
+  }
+
+  static generateAgentPrompt(agentType: string, objective: string, analysis: TaskAnalysis): string {
+    const agentConfig = this.AGENT_PATTERNS[agentType as keyof typeof this.AGENT_PATTERNS];
+    const basePrompt = `You are a specialized ${agentType} agent in a ServiceNow multi-agent development swarm.
+
+🎯 **Your Role**: ${agentConfig?.description || 'Specialized agent'}
+
+🔍 **Task Context**: ${objective}
+
+🏗️ **Project Setup**:
+${analysis.requiresUpdateSet ? '- ✅ Update Set will be automatically created' : '- ⚠️ No Update Set required'}
+${analysis.requiresApplication ? '- ✅ New Application will be automatically created' : '- ⚠️ Using existing application context'}
+
+🤖 **Team Coordination**:
+- Primary Agent: ${analysis.primaryAgent}
+- Supporting Agents: ${analysis.supportingAgents.join(', ')}
+- Task Complexity: ${analysis.complexity}
+- ServiceNow Artifacts: ${analysis.serviceNowArtifacts.join(', ')}
+
+📋 **Your Responsibilities**:`;
+
+    // Add agent-specific responsibilities
+    switch (agentType) {
+      case 'architect':
+        return basePrompt + `
+- Design system architecture and data models
+- Define relationships between ServiceNow components
+- Create technical specifications
+- Ensure scalability and best practices
+- Coordinate with other agents on implementation approach`;
+
+      case 'coder':
+        return basePrompt + `
+- Implement code based on architectural designs
+- Write ServiceNow scripts, business rules, and functions
+- Ensure code quality and maintainability
+- Follow ServiceNow development best practices
+- Collaborate with testers on code validation`;
+
+      case 'flow_designer':
+        return basePrompt + `
+- Design and implement ServiceNow flows and workflows
+- Configure approval processes and routing logic
+- Set up triggers and conditions
+- Ensure proper integration with other system components
+- Test flow execution and error handling`;
+
+      case 'widget_builder':
+        return basePrompt + `
+- Design and implement Service Portal widgets
+- Create HTML templates and CSS styling
+- Develop client-side and server-side scripts
+- Ensure responsive design and accessibility
+- Integrate with ServiceNow APIs and data sources`;
+
+      case 'tester':
+        return basePrompt + `
+- Develop and execute test plans
+- Validate functionality and performance
+- Identify and report bugs and issues
+- Ensure quality standards are met
+- Coordinate with development agents on fixes`;
+
+      case 'researcher':
+        return basePrompt + `
+- Research ServiceNow best practices and patterns
+- Analyze requirements and gather information
+- Provide insights and recommendations
+- Study existing implementations and solutions
+- Document findings and share knowledge`;
+
+      case 'orchestrator':
+        return basePrompt + `
+- Coordinate activities between all agents
+- Manage task priorities and dependencies
+- Ensure project timeline and milestones
+- Facilitate communication and collaboration
+- Monitor progress and address blockers`;
+
+      default:
+        return basePrompt + `
+- Provide specialized expertise in your domain
+- Collaborate effectively with other agents
+- Ensure quality and best practices
+- Contribute to overall project success`;
+    }
+  }
+}

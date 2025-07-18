@@ -10,6 +10,7 @@ import { join } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
+import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
 
 // Load environment variables
 dotenv.config();
@@ -36,11 +37,16 @@ program
     console.log(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
     console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}\n`);
     
-    // Parse the objective to determine what type of task
-    const taskType = parseObjective(objective);
+    // Analyze the objective using intelligent agent detection
+    const taskAnalysis = analyzeObjective(objective);
     
-    console.log(`🎯 Task Type: ${taskType.type}`);
-    console.log(`📊 Payload: ${JSON.stringify(taskType.payload, null, 2)}`);
+    console.log(`🎯 Task Type: ${taskAnalysis.taskType}`);
+    console.log(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
+    console.log(`👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
+    console.log(`📊 Complexity: ${taskAnalysis.complexity} | Estimated Agents: ${taskAnalysis.estimatedAgentCount}`);
+    console.log(`🔧 ServiceNow Artifacts: ${taskAnalysis.serviceNowArtifacts.join(', ')}`);
+    console.log(`📦 Auto Update Set: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}`);
+    console.log(`🏗️ Auto Application: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}`);
     
     // Show timeout configuration
     const timeoutMinutes = process.env.SNOW_FLOW_TIMEOUT_MINUTES ? parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES) : 60;
@@ -71,7 +77,7 @@ program
     // Start real Claude Code orchestration
     try {
       // Generate the orchestration prompt for Claude Code with ServiceNow integration
-      const orchestrationPrompt = buildClaudeCodePrompt(objective, taskType, options, isAuthenticated);
+      const orchestrationPrompt = buildClaudeCodePrompt(objective, taskAnalysis, options, isAuthenticated);
       
       console.log('🎯 Executing Claude Code with orchestration prompt...');
       console.log('💡 Claude Code will now coordinate the multi-agent development');
@@ -287,22 +293,33 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
 }
 
 // Helper function to build Claude Code orchestration prompt
-function buildClaudeCodePrompt(objective: string, taskType: any, options: any, isAuthenticated: boolean = false): string {
+function buildClaudeCodePrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false): string {
   const prompt = `# Snow-Flow ServiceNow Multi-Agent Development
 
 ## Objective
 ${objective}
 
-## Task Configuration
-- **Type**: ${taskType.type}
+## 🧠 Intelligent Agent Analysis
+- **Task Type**: ${taskAnalysis.taskType}
+- **Primary Agent**: ${taskAnalysis.primaryAgent}
+- **Supporting Agents**: ${taskAnalysis.supportingAgents.join(', ')}
+- **Complexity**: ${taskAnalysis.complexity}
+- **Estimated Agents**: ${taskAnalysis.estimatedAgentCount}
+- **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
+- **Auto Update Set**: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}
+- **Auto Application**: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}
+
+## Configuration
 - **Strategy**: ${options.strategy}
 - **Mode**: ${options.mode}
-- **Max Agents**: ${options.maxAgents}
+- **Max Agents**: ${Math.min(parseInt(options.maxAgents), taskAnalysis.estimatedAgentCount)}
 - **Parallel**: ${options.parallel ? 'Yes' : 'No'}
 - **Monitor**: ${options.monitor ? 'Yes' : 'No'}
 
 ## Task Details
-${JSON.stringify(taskType.payload, null, 2)}
+- **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.length > 0 ? taskAnalysis.serviceNowArtifacts.join(', ') : 'None detected'}
+- **Agent Requirements**: ${taskAnalysis.primaryAgent} (lead) + ${taskAnalysis.supportingAgents.join(', ')} (support)
+- **Complexity Assessment**: ${taskAnalysis.complexity} task requiring ${taskAnalysis.estimatedAgentCount} agents
 
 ## ServiceNow Integration
 ${isAuthenticated ? '✅ **Live ServiceNow Integration: ENABLED**' : '❌ **Live ServiceNow Integration: DISABLED**'}
@@ -426,67 +443,86 @@ You must use this EXACT pattern in ONE message with multiple tool calls:
 // Tool 1: TodoWrite (5-10 todos in one call)
 TodoWrite([
   {
-    id: "${taskType.type}_analysis",
+    id: "task_analysis",
     content: "Analyze ${objective} requirements and constraints",
     status: "pending",
     priority: "high"
   },
   {
-    id: "${taskType.type}_architecture",
+    id: "architecture_design",
     content: "Design ServiceNow architecture and component structure",
     status: "pending", 
     priority: "high"
   },
+  ${taskAnalysis.requiresUpdateSet ? `{
+    id: "update_set_creation",
+    content: "Create Update Set for change management",
+    status: "pending",
+    priority: "high"
+  },` : ''}
+  ${taskAnalysis.requiresApplication ? `{
+    id: "application_creation",
+    content: "Create new ServiceNow Application",
+    status: "pending",
+    priority: "high"
+  },` : ''}
   {
-    id: "${taskType.type}_implementation",
+    id: "implementation",
     content: "Implement ${objective}${isAuthenticated ? ' directly in ServiceNow' : ' as files'}",
     status: "pending",
     priority: "high"
   },
   {
-    id: "${taskType.type}_testing",
+    id: "testing",
     content: "Test and validate ${objective}${isAuthenticated ? ' in ServiceNow instance' : ' via file validation'}",
     status: "pending",
     priority: "medium"
   },
   {
-    id: "${taskType.type}_documentation",
+    id: "documentation",
     content: "Document ${objective}${isAuthenticated ? ' with ServiceNow links' : ' with file references'}",
     status: "pending",
     priority: "medium"
   },
   {
-    id: "${taskType.type}_deployment",
+    id: "deployment",
     content: "Prepare deployment artifacts and instructions",
     status: "pending",
     priority: "low"
   }
 ]);
 
-// Tool 2-6: Task agents (ALL launched in same message)
-Task("Requirements Analyst", "Analyze ${objective} requirements, constraints, and ServiceNow capabilities. Store findings in Memory under 'requirements_analysis'.");
-Task("ServiceNow Architect", "Design architecture for ${objective} including data model, user interface, and integration points. Store design in Memory under 'architecture_design'.");
-Task("Implementation Developer", "Implement ${objective} ${isAuthenticated ? 'directly in ServiceNow using API calls' : 'as files in servicenow/ directory'}. Use Memory data from requirements and architecture.");
-Task("Testing Specialist", "Create comprehensive test scenarios and validation for ${objective}. ${isAuthenticated ? 'Test directly in ServiceNow instance' : 'Validate file structure and syntax'}.");
-Task("Documentation Writer", "Create complete documentation including setup, usage, and maintenance instructions for ${objective}.");
+// Tool 2-N: Task agents (ALL launched in same message)
+Task("${taskAnalysis.primaryAgent}", "${AgentDetector.generateAgentPrompt(taskAnalysis.primaryAgent, objective, taskAnalysis)}");
+${taskAnalysis.supportingAgents.map(agent => 
+  `Task("${agent}", "${AgentDetector.generateAgentPrompt(agent, objective, taskAnalysis)}");`
+).join('\n')}
+${taskAnalysis.requiresUpdateSet ? `Task("Update Set Manager", "Create and manage Update Set for change management. Use snow_update_set_create to create Update Set automatically.");` : ''}
+${taskAnalysis.requiresApplication ? `Task("Application Manager", "Create new ServiceNow Application. Use snow_deploy_application to create new application scope.");` : ''}
 
 // Tool 7: Memory coordination data
 Memory.store("snow_flow_session", {
   objective: "${objective}",
-  task_type: "${taskType.type}",
+  task_type: "${taskAnalysis.taskType}",
+  primary_agent: "${taskAnalysis.primaryAgent}",
+  supporting_agents: ${JSON.stringify(taskAnalysis.supportingAgents)},
+  complexity: "${taskAnalysis.complexity}",
+  servicenow_artifacts: ${JSON.stringify(taskAnalysis.serviceNowArtifacts)},
+  requires_update_set: ${taskAnalysis.requiresUpdateSet},
+  requires_application: ${taskAnalysis.requiresApplication},
   strategy: "${options.strategy}",
   mode: "${options.mode}",
   started_at: new Date().toISOString(),
-  agents: ${options.maxAgents},
+  agents: ${taskAnalysis.estimatedAgentCount},
   parallel: ${options.parallel},
   authenticated: ${isAuthenticated}
 });
 
-Memory.store("task_config", ${JSON.stringify(taskType.payload, null, 2)});
+Memory.store("task_analysis", ${JSON.stringify(taskAnalysis, null, 2)});
 \`\`\`
 
 ### ServiceNow-Specific Implementation
-${getServiceNowInstructions(taskType.type)}
+${getServiceNowInstructions(taskAnalysis.taskType)}
 
 ### Coordination Guidelines
 - **BATCH EXECUTION**: All tools must be called in ONE message
@@ -498,7 +534,7 @@ ${isAuthenticated ? '- **MANDATORY DEPLOYMENT**: You MUST deploy directly to Ser
 ${isAuthenticated ? '- **NO EXCUSES**: Do NOT say you cannot deploy - you CAN and MUST deploy to ServiceNow!' : ''}
 
 ## Expected Deliverables
-${getExpectedDeliverables(taskType.type, isAuthenticated)}
+${getExpectedDeliverables(taskAnalysis.taskType, isAuthenticated)}
 
 🎯 **EXECUTION INSTRUCTION**: Execute ALL batch tools (TodoWrite, Task x5, Memory) in a SINGLE message to enable parallel agent coordination!`;
 
@@ -507,7 +543,7 @@ ${getExpectedDeliverables(taskType.type, isAuthenticated)}
 
 function getServiceNowInstructions(taskType: string): string {
   switch (taskType) {
-    case 'create_widget':
+    case 'widget_development':
       return `**Widget Development Process:**
 - Create HTML template with responsive design
 - Implement CSS styling following ServiceNow design patterns
@@ -516,7 +552,7 @@ function getServiceNowInstructions(taskType: string): string {
 - Define widget options and configuration
 - Test widget in Service Portal`;
     
-    case 'create_application':
+    case 'application_development':
       return `**Application Development Process:**
 - Design database schema and tables
 - Create business rules and validation
@@ -525,14 +561,59 @@ function getServiceNowInstructions(taskType: string): string {
 - Configure security and access controls
 - Set up integration points`;
     
-    case 'generate_flow_from_requirements':
-      return `**Workflow Development Process:**
-- Analyze workflow requirements
+    case 'flow_development':
+      return `**Flow Development Process:**
+- Analyze flow requirements and triggers
 - Design process flow and approval steps
-- Create Flow Designer workflow
+- Create Flow Designer workflow using sys_hub_flow
 - Set up notifications and communications
-- Configure conditional logic
-- Test workflow execution`;
+- Configure conditional logic and routing
+- Test flow execution and error handling`;
+    
+    case 'script_development':
+      return `**Script Development Process:**
+- Analyze business requirements
+- Design script architecture and data flow
+- Implement business rules and script includes
+- Create appropriate error handling
+- Test script functionality
+- Document script behavior`;
+    
+    case 'integration_development':
+      return `**Integration Development Process:**
+- Analyze integration requirements
+- Design API endpoints and data mappings
+- Implement REST/SOAP integrations
+- Create authentication and security
+- Test integration functionality
+- Document API specifications`;
+    
+    case 'database_development':
+      return `**Database Development Process:**
+- Design table structures and relationships
+- Create custom fields and configurations
+- Implement data validation rules
+- Set up reporting and analytics
+- Test data integrity
+- Document database schema`;
+    
+    case 'reporting_development':
+      return `**Reporting Development Process:**
+- Analyze reporting requirements
+- Design report layouts and data sources
+- Create dashboards and visualizations
+- Implement filters and drill-downs
+- Test report performance
+- Document report usage`;
+    
+    case 'research_task':
+      return `**Research Process:**
+- Analyze current state and requirements
+- Research ServiceNow best practices
+- Evaluate available solutions
+- Document findings and recommendations
+- Create implementation roadmap
+- Present research conclusions`;
     
     default:
       return `**ServiceNow Development Process:**
@@ -547,7 +628,7 @@ function getServiceNowInstructions(taskType: string): string {
 
 function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = false): string {
   const baseDeliverables = {
-    'create_widget': [
+    'widget_development': [
       'Widget HTML template',
       'CSS styling files',
       'AngularJS client script',
@@ -555,7 +636,7 @@ function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = fa
       'Widget configuration options',
       'Installation instructions'
     ],
-    'create_application': [
+    'application_development': [
       'Database schema definition',
       'Business rules and validations',
       'User interface components',
@@ -563,13 +644,53 @@ function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = fa
       'Security configuration',
       'Update set for deployment'
     ],
-    'generate_flow_from_requirements': [
+    'flow_development': [
       'Flow Designer workflow',
       'Process documentation',
       'Approval configurations',
       'Notification templates',
       'Test scenarios',
       'Implementation guide'
+    ],
+    'script_development': [
+      'Business rules and script includes',
+      'Error handling logic',
+      'Test cases and validation',
+      'Documentation and comments',
+      'Performance optimization',
+      'Security considerations'
+    ],
+    'integration_development': [
+      'REST/SOAP API endpoints',
+      'Authentication configuration',
+      'Data mapping and transformation',
+      'Error handling and logging',
+      'API documentation',
+      'Integration testing'
+    ],
+    'database_development': [
+      'Table structures and relationships',
+      'Custom fields and configurations',
+      'Data validation rules',
+      'Indexes and performance optimization',
+      'Reporting and analytics',
+      'Data migration scripts'
+    ],
+    'reporting_development': [
+      'Report definitions and layouts',
+      'Dashboard configurations',
+      'Data source connections',
+      'Filters and drill-downs',
+      'Performance optimization',
+      'User access controls'
+    ],
+    'research_task': [
+      'Research findings and analysis',
+      'Best practices documentation',
+      'Solution recommendations',
+      'Implementation roadmap',
+      'Risk assessment',
+      'Feasibility analysis'
     ],
     'default': [
       'ServiceNow implementation',
@@ -601,58 +722,9 @@ function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = fa
   }
 }
 
-// Helper function to parse objectives
-function parseObjective(objective: string): { type: string; payload: any } {
-  const lowerObjective = objective.toLowerCase();
-  
-  if (lowerObjective.includes('widget')) {
-    return {
-      type: 'create_widget',
-      payload: {
-        name: extractName(objective, 'widget'),
-        template: lowerObjective.includes('table') ? 'data-table' : 
-                  lowerObjective.includes('form') ? 'form' :
-                  lowerObjective.includes('chart') ? 'chart' : 'custom',
-        category: lowerObjective.includes('incident') ? 'incident' :
-                  lowerObjective.includes('change') ? 'change' :
-                  lowerObjective.includes('problem') ? 'problem' : 'general'
-      }
-    };
-  } else if (lowerObjective.includes('workflow')) {
-    return {
-      type: 'generate_flow_from_requirements',
-      payload: {
-        requirements: objective,
-        name: extractName(objective, 'workflow')
-      }
-    };
-  } else if (lowerObjective.includes('app') || lowerObjective.includes('application')) {
-    return {
-      type: 'create_application',
-      payload: {
-        requirements: objective,
-        name: extractName(objective, 'application'),
-        category: lowerObjective.includes('hr') ? 'hr' :
-                  lowerObjective.includes('finance') ? 'finance' :
-                  lowerObjective.includes('it') ? 'it' : 'general'
-      }
-    };
-  } else if (lowerObjective.includes('script')) {
-    return {
-      type: 'generate_script',
-      payload: {
-        requirements: objective,
-        scriptType: 'business-rule'
-      }
-    };
-  } else {
-    return {
-      type: 'orchestrate_complex_task',
-      payload: {
-        objective: objective
-      }
-    };
-  }
+// Helper function to analyze objectives using intelligent agent detection
+function analyzeObjective(objective: string): TaskAnalysis {
+  return AgentDetector.analyzeTask(objective);
 }
 
 function extractName(objective: string, type: string): string {
@@ -1922,11 +1994,9 @@ program
       console.log('🔧 MCP Servers:');
       console.log('   - ✅ All 5 MCP servers have been built and configured');
       console.log('   - ✅ .mcp.json generated with absolute paths and credentials');
-      console.log('   - ⚠️  Known Issue: MCP servers may show as "failed" in Claude Code');
-      console.log('   - 💡 This is a Claude Code bug (GitHub Issue #1611)');
-      console.log('   - 🎯 Workaround: Use Claude Desktop or command-line tools');
+      console.log('   - ✅ Ready to use in Claude Code');
       console.log('');
-      console.log('📡 Available MCP Tools (when Claude Code is fixed):');
+      console.log('📡 Available MCP Tools:');
       console.log('   - snow_deploy_widget - Deploy widgets directly');
       console.log('   - snow_create_complex_flow - Natural language flow creation');
       console.log('   - snow_update_set_create - Manage Update Sets');

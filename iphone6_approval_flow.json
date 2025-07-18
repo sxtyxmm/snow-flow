@@ -1,0 +1,68 @@
+{
+  "name": "iPhone 6 Admin Approval Flow",
+  "description": "Checks if a service catalog request is for iPhone 6 and routes to admin approval if true",
+  "table": "sc_request",
+  "trigger_type": "record_created",
+  "condition": "active=true",
+  "flow_logic": {
+    "steps": [
+      {
+        "step": 1,
+        "action": "Get Request Item Details",
+        "description": "Lookup the request item details to check what was requested",
+        "table": "sc_req_item",
+        "lookup_condition": "request={{trigger.sys_id}}"
+      },
+      {
+        "step": 2,
+        "action": "Check if iPhone 6",
+        "description": "Check if the item name or description contains 'iPhone 6'",
+        "condition": "cat_item.name CONTAINS 'iPhone 6' OR short_description CONTAINS 'iPhone 6'",
+        "if_true": "Go to admin approval",
+        "if_false": "Skip to normal processing"
+      },
+      {
+        "step": 3,
+        "action": "Create Admin Approval",
+        "description": "Create approval task for Service Desk Admins group",
+        "approval_type": "group",
+        "assignment_group": "Service Desk Admins",
+        "due_date": "+2 business days"
+      },
+      {
+        "step": 4,
+        "action": "Wait for Approval Decision",
+        "description": "Wait for admin to approve or reject (5 day timeout)",
+        "wait_condition": "approval_state IN ['approved','rejected']"
+      },
+      {
+        "step": 5,
+        "action": "Check Approval Result",
+        "description": "Branch based on approval decision",
+        "if_approved": "Continue to fulfillment",
+        "if_rejected": "Reject request and notify user"
+      },
+      {
+        "step": 6,
+        "action": "Continue Normal Processing",
+        "description": "Update request to approved and move to fulfillment stage"
+      },
+      {
+        "step": 7,
+        "action": "Reject Request",
+        "description": "Update request status to rejected and close"
+      },
+      {
+        "step": 8,
+        "action": "Notify Requester",
+        "description": "Send notification to requester about rejection"
+      }
+    ]
+  },
+  "deployment_info": {
+    "update_set": "iPhone 6 Admin Approval Flow",
+    "update_set_id": "66fc5a79837aea102a7ea130ceaad3ab",
+    "flow_id": "b92d5a3983baea102a7ea130ceaad358",
+    "instance": "dev198027.service-now.com"
+  }
+}

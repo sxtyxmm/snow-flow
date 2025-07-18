@@ -13,6 +13,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { Logger } from '../utils/logger.js';
+import { mcpConfig } from '../utils/mcp-config-manager.js';
 import neo4j, { Driver, Session } from 'neo4j-driver';
 
 interface ArtifactNode {
@@ -35,13 +36,18 @@ interface ArtifactRelationship {
   data_flow?: string;
 }
 
+interface ValidatedNeo4jConfig {
+  uri: string;
+  username: string;
+  password: string;
+  database?: string;
+}
+
 class ServiceNowGraphMemoryMCP {
   private server: Server;
   private logger: Logger;
   private driver: Driver | null = null;
-  private neo4jUri: string;
-  private neo4jUser: string;
-  private neo4jPassword: string;
+  private config: ValidatedNeo4jConfig;
 
   constructor() {
     this.server = new Server(
@@ -57,11 +63,21 @@ class ServiceNowGraphMemoryMCP {
     );
 
     this.logger = new Logger('ServiceNowGraphMemoryMCP');
+    const rawConfig = mcpConfig.getNeo4jConfig();
     
-    // Neo4j connection settings
-    this.neo4jUri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-    this.neo4jUser = process.env.NEO4J_USER || 'neo4j';
-    this.neo4jPassword = process.env.NEO4J_PASSWORD || 'password';
+    // Validate Neo4j configuration
+    if (!rawConfig?.uri || !rawConfig?.username || !rawConfig?.password) {
+      this.logger.error('Neo4j configuration missing. Please set NEO4J_URI, NEO4J_USERNAME, and NEO4J_PASSWORD environment variables.');
+      throw new Error('Neo4j configuration required for Graph Memory MCP');
+    }
+    
+    // After validation, we know these are defined
+    this.config = {
+      uri: rawConfig.uri,
+      username: rawConfig.username,
+      password: rawConfig.password,
+      database: rawConfig.database
+    };
 
     this.setupHandlers();
   }
@@ -70,8 +86,8 @@ class ServiceNowGraphMemoryMCP {
     if (!this.driver) {
       try {
         this.driver = neo4j.driver(
-          this.neo4jUri,
-          neo4j.auth.basic(this.neo4jUser, this.neo4jPassword)
+          this.config.uri,
+          neo4j.auth.basic(this.config.username, this.config.password)
         );
         await this.driver.verifyConnectivity();
         this.logger.info('Connected to Neo4j');

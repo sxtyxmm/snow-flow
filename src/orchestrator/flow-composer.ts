@@ -943,64 +943,455 @@ export class EnhancedFlowComposer {
 
   /**
    * Create a flow from natural language instruction
-   * This is the main method used by the MCP
+   * This is the main method used by the MCP - SIMPLIFIED VERSION
    */
   async createFlowFromInstruction(instruction: string): Promise<any> {
-    this.logger.info('Creating flow from instruction', { instruction });
+    this.logger.info('Creating simplified flow from instruction', { instruction });
 
     // Parse the instruction to understand intent
     const parsedInstruction = this.parseInstruction(instruction);
 
-    // Discover artifacts if needed (but don't require them for flow creation)
-    let artifacts: ArtifactInterface[] = [];
-    try {
-      artifacts = await this.discoverAndAnalyzeArtifacts(instruction);
-      this.logger.info(`Discovered ${artifacts.length} artifacts for flow`);
-    } catch (error) {
-      this.logger.warn('Artifact discovery failed, continuing without artifacts:', error);
-    }
+    // Generate simple actions based on the instruction (now async)
+    const simpleActions = await this.generateSimpleActions(instruction, parsedInstruction.entities);
 
-    // Create activities based on requirements (not artifacts)
-    const activities = await this.createActivitiesFromRequirements(parsedInstruction);
-
-    // Generate activity connections based on workflow logic
-    const connections = this.createWorkflowConnections(activities);
-
-    // Build the complete flow structure
+    // Build a simplified flow structure focusing on basic actions
     const flowStructure = {
       name: parsedInstruction.flowName,
       description: parsedInstruction.description,
       table: parsedInstruction.table,
-      trigger: parsedInstruction.trigger,
-      activities: [
-        {
-          id: 'start',
-          type: 'start',
-          name: 'Flow Start'
-        },
-        ...activities,
-        {
-          id: 'end',
-          type: 'end',
-          name: 'Flow End'
-        }
-      ],
-      connections: [
-        { from: 'start', to: activities[0]?.id || 'end' },
-        ...connections,
-        { from: activities[activities.length - 1]?.id || 'start', to: 'end' }
-      ],
-      variables: this.extractFlowVariables(activities),
-      error_handling: this.generateErrorHandling(activities)
+      trigger_type: parsedInstruction.trigger.type,
+      condition: parsedInstruction.trigger.condition,
+      active: true,
+      category: 'custom',
+      // Simple actions instead of complex activities
+      actions: simpleActions
     };
 
-    return {
+    // Convert to the structure expected by the MCP
+    const flowInstructionOutput = {
       naturalLanguage: instruction,
       parsedIntent: parsedInstruction,
-      requiredArtifacts: artifacts,
-      flowStructure: flowStructure,
+      requiredArtifacts: [], // Empty array for simplified flow
+      flowStructure: {
+        name: flowStructure.name,
+        description: flowStructure.description,
+        table: flowStructure.table,
+        trigger: {
+          type: flowStructure.trigger_type,
+          table: flowStructure.table,
+          condition: flowStructure.condition || ''
+        },
+        activities: simpleActions.map((action, index) => ({
+          id: `activity_${index + 1}`,
+          name: action.name,
+          type: action.type,
+          artifact_reference: action.discovered_action ? {
+            sys_id: action.action_type_id,
+            name: action.discovered_action.name || action.name
+          } : null,
+          inputs: action.inputs || {},
+          outputs: action.outputs || {}
+        })),
+        connections: simpleActions.map((_, index) => {
+          if (index === 0) return null;
+          return {
+            from: `activity_${index}`,
+            to: `activity_${index + 1}`,
+            condition: null
+          };
+        }).filter(Boolean),
+        variables: [],
+        error_handling: []
+      },
       deploymentReady: true
     };
+    
+    return flowInstructionOutput;
+  }
+
+  /**
+   * Generate simple actions based on instruction - WITH SERVICENOW SEARCH
+   */
+  private async generateSimpleActions(instruction: string, entities: any): Promise<any[]> {
+    const actions: any[] = [];
+    const lowerInstruction = instruction.toLowerCase();
+
+    // Notification action
+    if (lowerInstruction.includes('notify') || lowerInstruction.includes('email') || 
+        lowerInstruction.includes('alert')) {
+      
+      const discoveredActions = await this.searchForFlowActions(['notification', 'email', 'send']);
+      const action: any = {
+        type: 'notification',
+        name: 'Send Notification',
+        to: entities.users?.[0] || 'assigned_to',
+        subject: this.extractNotificationSubject(instruction),
+        message: this.extractNotificationMessage(instruction),
+        inputs: {
+          to: entities.users?.[0] || 'assigned_to',
+          subject: this.extractNotificationSubject(instruction),
+          message: this.extractNotificationMessage(instruction)
+        },
+        outputs: {
+          success: true,
+          notification_id: '${notification.sys_id}'
+        }
+      };
+      
+      if (discoveredActions.length > 0) {
+        action.action_type_id = discoveredActions[0].sys_id;
+        action.discovered_action = discoveredActions[0];
+      }
+      
+      actions.push(action);
+    }
+
+    // Field update action
+    if (lowerInstruction.includes('update') || lowerInstruction.includes('set') || 
+        lowerInstruction.includes('change')) {
+      const fieldUpdates = this.extractFieldUpdates(instruction);
+      const discoveredActions = await this.searchForFlowActions(['update', 'record', 'field']);
+      
+      // Add null check for fieldUpdates to prevent map() error
+      if (fieldUpdates && fieldUpdates.length > 0) {
+        for (const update of fieldUpdates) {
+          const action: any = {
+            type: 'field_update',
+            name: `Update ${update.field}`,
+            field: update.field,
+            value: update.value,
+            inputs: {
+              field: update.field,
+              value: update.value
+            },
+            outputs: {
+              success: true,
+              updated_field: update.field
+            }
+          };
+          
+          if (discoveredActions.length > 0) {
+            action.action_type_id = discoveredActions[0].sys_id;
+            action.discovered_action = discoveredActions[0];
+          }
+          
+          actions.push(action);
+        }
+      }
+    }
+
+    // Create task action
+    if (lowerInstruction.includes('create task') || lowerInstruction.includes('assign') || 
+        lowerInstruction.includes('pickup') || lowerInstruction.includes('fulfillment')) {
+      
+      const discoveredActions = await this.searchForFlowActions(['create', 'task', 'record']);
+      const action: any = {
+        type: 'create_task',
+        name: 'Create Task',
+        target_table: 'task',
+        fields: {
+          short_description: this.extractTaskDescription(instruction),
+          assigned_to: entities.users?.[0] || 'caller_id.manager'
+        },
+        inputs: {
+          short_description: this.extractTaskDescription(instruction),
+          assigned_to: entities.users?.[0] || 'caller_id.manager'
+        },
+        outputs: {
+          task_id: '${task.sys_id}',
+          task_number: '${task.number}'
+        }
+      };
+      
+      if (discoveredActions.length > 0) {
+        action.action_type_id = discoveredActions[0].sys_id;
+        action.discovered_action = discoveredActions[0];
+      }
+      
+      actions.push(action);
+    }
+
+    // Approval action
+    if (lowerInstruction.includes('approval') || lowerInstruction.includes('approve')) {
+      const discoveredActions = await this.searchForFlowActions(['approval', 'approve']);
+      const action: any = {
+        type: 'approval',
+        name: 'Request Approval',
+        approvers: entities.groups?.[0] || 'assignment_group.manager',
+        inputs: {
+          approvers: entities.groups?.[0] || 'assignment_group.manager'
+        },
+        outputs: {
+          approval_state: '${approval.state}',
+          approval_comments: '${approval.comments}'
+        }
+      };
+      
+      if (discoveredActions.length > 0) {
+        action.action_type_id = discoveredActions[0].sys_id;
+        action.discovered_action = discoveredActions[0];
+      }
+      
+      actions.push(action);
+    }
+
+    // Wait/Timer action
+    if (lowerInstruction.includes('wait') || lowerInstruction.includes('delay') || 
+        lowerInstruction.includes('after')) {
+      const discoveredActions = await this.searchForFlowActions(['wait', 'timer', 'delay']);
+      const duration = this.extractDuration(instruction);
+      const action: any = {
+        type: 'wait',
+        name: 'Wait Timer',
+        duration: duration,
+        inputs: {
+          duration: duration
+        },
+        outputs: {
+          completed: true
+        }
+      };
+      
+      if (discoveredActions.length > 0) {
+        action.action_type_id = discoveredActions[0].sys_id;
+        action.discovered_action = discoveredActions[0];
+      }
+      
+      actions.push(action);
+    }
+
+    // Log action
+    if (lowerInstruction.includes('log') || lowerInstruction.includes('record')) {
+      const discoveredActions = await this.searchForFlowActions(['log', 'logging']);
+      const action: any = {
+        type: 'log',
+        name: 'Log Message',
+        message: this.extractLogMessage(instruction),
+        level: 'info',
+        inputs: {
+          message: this.extractLogMessage(instruction),
+          level: 'info'
+        },
+        outputs: {
+          logged: true
+        }
+      };
+      
+      if (discoveredActions.length > 0) {
+        action.action_type_id = discoveredActions[0].sys_id;
+        action.discovered_action = discoveredActions[0];
+      }
+      
+      actions.push(action);
+    }
+
+    // If no specific actions found, create basic flow based on context
+    if (actions.length === 0) {
+      // For catalog/order flows
+      if (lowerInstruction.includes('catalog') || lowerInstruction.includes('order') || 
+          lowerInstruction.includes('iphone')) {
+        
+        const updateActions = await this.searchForFlowActions(['update', 'record']);
+        const notifyActions = await this.searchForFlowActions(['notification', 'email']);
+        
+        const updateAction: any = {
+          type: 'field_update',
+          name: 'Set Fulfillment State',
+          field: 'state',
+          value: 'work_in_progress',
+          inputs: {
+            field: 'state',
+            value: 'work_in_progress'
+          },
+          outputs: {
+            success: true,
+            updated_field: 'state'
+          }
+        };
+        
+        const notifyAction: any = {
+          type: 'notification',
+          name: 'Notify User',
+          to: 'requested_for',
+          subject: 'Order Update',
+          message: 'Your order is being processed',
+          inputs: {
+            to: 'requested_for',
+            subject: 'Order Update',
+            message: 'Your order is being processed'
+          },
+          outputs: {
+            success: true,
+            notification_id: '${notification.sys_id}'
+          }
+        };
+        
+        if (updateActions.length > 0) {
+          updateAction.action_type_id = updateActions[0].sys_id;
+          updateAction.discovered_action = updateActions[0];
+        }
+        
+        if (notifyActions.length > 0) {
+          notifyAction.action_type_id = notifyActions[0].sys_id;
+          notifyAction.discovered_action = notifyActions[0];
+        }
+        
+        actions.push(updateAction, notifyAction);
+      } else {
+        // Default notification
+        const notifyActions = await this.searchForFlowActions(['notification', 'email']);
+        const action: any = {
+          type: 'notification',
+          name: 'Flow Executed',
+          to: 'assigned_to',
+          subject: 'Flow Action Completed',
+          message: `Flow executed for: ${instruction}`,
+          inputs: {
+            to: 'assigned_to',
+            subject: 'Flow Action Completed',
+            message: `Flow executed for: ${instruction}`
+          },
+          outputs: {
+            success: true,
+            notification_id: '${notification.sys_id}'
+          }
+        };
+        
+        if (notifyActions.length > 0) {
+          action.action_type_id = notifyActions[0].sys_id;
+          action.discovered_action = notifyActions[0];
+        }
+        
+        actions.push(action);
+      }
+    }
+
+    return actions;
+  }
+
+  /**
+   * Search for flow actions in ServiceNow
+   */
+  private async searchForFlowActions(searchTerms: string[]): Promise<any[]> {
+    const allActions: any[] = [];
+    
+    for (const term of searchTerms) {
+      try {
+        const results = await this.client.searchFlowActions(term);
+        if (results.actionTypes && results.actionTypes.length > 0) {
+          allActions.push(...results.actionTypes);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to search for flow actions with term: ${term}`, error);
+      }
+    }
+    
+    // Remove duplicates based on sys_id
+    const uniqueActions = allActions.filter((action, index, self) => 
+      index === self.findIndex(a => a.sys_id === action.sys_id)
+    );
+    
+    this.logger.info(`Found ${uniqueActions.length} unique flow actions for terms: ${searchTerms.join(', ')}`);
+    return uniqueActions;
+  }
+
+  /**
+   * Helper methods for extracting specific information - NEW METHODS
+   */
+  private extractNotificationSubject(instruction: string): string {
+    const subjectMatch = instruction.match(/subject[:\s]+["']([^"']+)["']/i);
+    if (subjectMatch) return subjectMatch[1];
+    
+    const keywords = ['notify', 'alert', 'email'];
+    for (const keyword of keywords) {
+      if (instruction.toLowerCase().includes(keyword)) {
+        return `Notification: ${instruction.substring(0, 50)}`;
+      }
+    }
+    return 'Flow Notification';
+  }
+
+  private extractNotificationMessage(instruction: string): string {
+    const messageMatch = instruction.match(/message[:\s]+["']([^"']+)["']/i);
+    if (messageMatch) return messageMatch[1];
+    return instruction;
+  }
+
+  private extractFieldUpdates(instruction: string): Array<{field: string, value: string}> {
+    const updates: Array<{field: string, value: string}> = [];
+    
+    // Pattern: "set field to value" or "update field with value"
+    const patterns = [
+      /(?:set|update)\s+(\w+)\s+(?:to|with)\s+["']?([^"']+)["']?/gi,
+      /(\w+)\s*=\s*["']?([^"']+)["']?/gi
+    ];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(instruction)) !== null) {
+        updates.push({
+          field: match[1],
+          value: match[2]
+        });
+      }
+    }
+    
+    // Common field mappings
+    const fieldMap: any = {
+      'status': 'state',
+      'priority': 'priority',
+      'assignment': 'assigned_to',
+      'description': 'short_description'
+    };
+    
+    // Map common field names - add null check to prevent map() error
+    if (!updates || updates.length === 0) {
+      return [];
+    }
+    
+    return updates.map(update => ({
+      field: fieldMap[update.field.toLowerCase()] || update.field,
+      value: update.value
+    }));
+  }
+
+  private extractTaskDescription(instruction: string): string {
+    const taskMatch = instruction.match(/task[:\s]+["']([^"']+)["']/i);
+    if (taskMatch) return taskMatch[1];
+    
+    // For specific contexts
+    const lowerInstruction = instruction.toLowerCase();
+    if (lowerInstruction.includes('pickup')) {
+      return 'User pickup required';
+    }
+    if (lowerInstruction.includes('fulfillment')) {
+      return 'Fulfillment task';
+    }
+    
+    return `Task: ${instruction.substring(0, 80)}`;
+  }
+
+  private extractDuration(instruction: string): number {
+    const durationMatch = instruction.match(/(\d+)\s*(second|minute|hour|day)/i);
+    if (durationMatch) {
+      const value = parseInt(durationMatch[1]);
+      const unit = durationMatch[2].toLowerCase();
+      
+      switch (unit) {
+        case 'second': return value;
+        case 'minute': return value * 60;
+        case 'hour': return value * 3600;
+        case 'day': return value * 86400;
+        default: return 300; // 5 minutes default
+      }
+    }
+    return 300; // 5 minutes default
+  }
+
+  private extractLogMessage(instruction: string): string {
+    const logMatch = instruction.match(/log[:\s]+["']([^"']+)["']/i);
+    if (logMatch) return logMatch[1];
+    return `Flow action: ${instruction}`;
   }
 
   /**
@@ -1044,12 +1435,38 @@ export class EnhancedFlowComposer {
   }
 
   private extractFlowName(instruction: string): string {
-    // Try multiple patterns to extract flow name
+    // First check for quoted flow names - more precise matching
+    const quotedPatterns = [
+      /flow\s+named\s+["']([^"']+)["']/i,
+      /flow\s+called\s+["']([^"']+)["']/i,
+      /["']([^"']+)["']\s+flow/i,
+      /create\s+a\s+flow\s+named\s+["']([^"']+)["']/i
+    ];
+    
+    for (const pattern of quotedPatterns) {
+      const match = instruction.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+    
+    // Check for any remaining quoted strings as fallback
+    const generalQuotedMatch = instruction.match(/["']([^"']+)["']/i);
+    if (generalQuotedMatch && generalQuotedMatch[1] && generalQuotedMatch[1].toLowerCase().includes('flow')) {
+      return generalQuotedMatch[1].trim();
+    }
+    
+    // Then check for 'flow named X' or 'flow called X' without quotes
+    const namedMatch = instruction.match(/flow\s+(?:named|called)\s+([^\s]+(?:\s+[^\s]+)*?)(?:\s+that|\s+which|\s+to|\.|,|$)/i);
+    if (namedMatch && namedMatch[1]) {
+      return namedMatch[1].trim();
+    }
+    
+    // Try other patterns
     const patterns = [
-      /(?:create|build|make)\s+(?:a\s+)?(.+?)(?:\s+flow|\s+that|\s+to|\s+for)/i,
-      /(?:^|\s)(.+?)\s+flow(?:\s|$)/i,
-      /flow\s+(?:for|to|that)\s+(.+?)(?:\s+when|\s+if|\s+$)/i,
-      /(?:^|\s)(.+?)\s+(?:workflow|process)(?:\s|$)/i
+      /(?:create|build|make)\s+(?:a\s+)?(.+?)\s+flow/i,
+      /flow\s+(?:for|to)\s+(.+?)(?:\s+when|\s+if|\.|,|$)/i,
+      /(.+?)\s+(?:workflow|process)(?:\s|$)/i
     ];
 
     for (const pattern of patterns) {
@@ -1629,46 +2046,44 @@ export class EnhancedFlowComposer {
   }
 
   /**
-   * Deploy a flow to ServiceNow
+   * Deploy a flow to ServiceNow - SIMPLIFIED VERSION
    */
   async deployFlow(flowData: any): Promise<any> {
-    this.logger.info('Deploying flow to ServiceNow', { name: flowData.flowStructure.name });
+    this.logger.info('Deploying simplified flow to ServiceNow', { name: flowData.flowStructure.name });
 
     try {
-      // Prepare the flow definition with proper structure
-      const flowDefinition = {
-        name: flowData.flowStructure.name,
-        description: flowData.flowStructure.description,
-        table: flowData.flowStructure.table,
-        trigger_type: flowData.flowStructure.trigger.type,
-        condition: flowData.flowStructure.trigger.condition,
-        activities: flowData.flowStructure.activities,
-        connections: flowData.flowStructure.connections,
-        variables: flowData.flowStructure.variables,
-        error_handling: flowData.flowStructure.error_handling
-      };
+      // Use the simplified flow structure directly
+      const flowDefinition = flowData.flowStructure;
 
-      // Prepare linked artifacts for deployment
-      const linkedArtifacts = flowData.requiredArtifacts ? flowData.requiredArtifacts.map((artifact: any) => ({
-        type: artifact.type,
-        name: artifact.name,
-        sys_id: artifact.sys_id,
-        api_signature: artifact.api_signature || '',
-        purpose: `Used in ${flowData.flowStructure.name}`
+      // Convert activities back to actions format for deployment
+      const actions = flowDefinition.activities ? flowDefinition.activities.map((activity: any) => ({
+        type: activity.type,
+        name: activity.name,
+        ...activity.inputs,
+        // Include any other activity-specific properties
+        to: activity.inputs?.to,
+        subject: activity.inputs?.subject,
+        message: activity.inputs?.message,
+        field: activity.inputs?.field,
+        value: activity.inputs?.value,
+        duration: activity.inputs?.duration,
+        approvers: activity.inputs?.approvers,
+        short_description: activity.inputs?.short_description,
+        assigned_to: activity.inputs?.assigned_to,
+        level: activity.inputs?.level
       })) : [];
 
-      // Create the flow in ServiceNow with proper structure
+      // Create the flow in ServiceNow with simplified structure
       const result = await this.client.createFlow({
         name: flowDefinition.name,
         description: flowDefinition.description,
         table: flowDefinition.table,
-        trigger_type: flowDefinition.trigger_type,
-        condition: flowDefinition.condition,
-        flow_definition: JSON.stringify(flowDefinition),
-        active: true,
-        category: 'custom',
-        linked_artifacts: JSON.stringify(linkedArtifacts),
-        artifact_references: JSON.stringify(flowData.requiredArtifacts || [])
+        trigger_type: flowDefinition.trigger?.type || flowDefinition.trigger_type,
+        condition: flowDefinition.trigger?.condition || flowDefinition.condition || '',
+        active: flowDefinition.active !== false,
+        category: flowDefinition.category || 'custom',
+        // Pass converted actions
+        actions: actions
       });
 
       if (!result.success) {
@@ -1680,18 +2095,18 @@ export class EnhancedFlowComposer {
         sys_id: result.data.sys_id,
         name: flowDefinition.name,
         table: flowDefinition.table,
-        artifacts: linkedArtifacts.length
+        actions: actions.length
       });
 
       return {
         success: true,
-        message: `Flow "${flowDefinition.name}" deployed successfully with ${linkedArtifacts.length} linked artifacts`,
+        message: `Flow "${flowDefinition.name}" deployed successfully with ${actions.length} actions`,
         data: {
           sys_id: result.data.sys_id,
           name: flowDefinition.name,
           table: flowDefinition.table,
-          url: `https://${process.env.SNOW_INSTANCE}/flow-designer/flow/${result.data.sys_id}`,
-          artifacts_deployed: linkedArtifacts.length
+          url: `https://${process.env.SNOW_INSTANCE}/$flow-designer.do#/flow/${result.data.sys_id}`,
+          actions_created: actions.length
         }
       };
     } catch (error) {

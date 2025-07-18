@@ -59,8 +59,30 @@ class ServiceNowUpdateSetMCP {
     this.logger = new Logger('ServiceNowUpdateSetMCP');
     this.sessionsPath = join(process.cwd(), 'memory', 'update-set-sessions');
 
+    // Debug: Test credentials on startup
+    this.testCredentials();
+    
     this.setupHandlers();
     this.ensureSessionsDirectory();
+  }
+
+  /**
+   * Test credentials on startup
+   */
+  private async testCredentials(): Promise<void> {
+    console.log('🔍 [UPDATE-SET MCP] Testing credentials...');
+    try {
+      const credentials = await this.oauth.loadCredentials();
+      if (credentials) {
+        console.log('✅ [UPDATE-SET MCP] Credentials loaded successfully');
+        const isAuth = await this.oauth.isAuthenticated();
+        console.log(`🔐 [UPDATE-SET MCP] Authentication status: ${isAuth ? '✅ Valid' : '❌ Expired'}`);
+      } else {
+        console.log('❌ [UPDATE-SET MCP] No credentials found');
+      }
+    } catch (error) {
+      console.error('❌ [UPDATE-SET MCP] Credential test failed:', error);
+    }
   }
 
   private async ensureSessionsDirectory() {

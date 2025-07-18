@@ -13,7 +13,8 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
-import { ServiceNowOAuth } from '../utils/snow-oauth.js';
+import { mcpAuth } from '../utils/mcp-auth-middleware.js';
+import { mcpConfig } from '../utils/mcp-config-manager.js';
 import { Logger } from '../utils/logger.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -44,9 +45,9 @@ interface IndexedArtifact {
 class ServiceNowIntelligentMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private oauth: ServiceNowOAuth;
   private logger: Logger;
   private memoryPath: string;
+  private config: ReturnType<typeof mcpConfig.getMemoryConfig>;
 
   constructor() {
     this.server = new Server(
@@ -62,9 +63,9 @@ class ServiceNowIntelligentMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.oauth = new ServiceNowOAuth();
     this.logger = new Logger('ServiceNowIntelligentMCP');
-    this.memoryPath = join(process.cwd(), 'memory', 'servicenow_artifacts');
+    this.config = mcpConfig.getMemoryConfig();
+    this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
 
     this.setupHandlers();
   }
@@ -164,13 +165,13 @@ class ServiceNowIntelligentMCP {
 
   private async findArtifact(args: any) {
     // Check authentication first
-    const isAuth = await this.oauth.isAuthenticated();
-    if (!isAuth) {
+    const authResult = await mcpAuth.ensureAuthenticated();
+    if (!authResult.success) {
       return {
         content: [
           {
             type: 'text',
-            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            text: authResult.error || '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
           },
         ],
       };
@@ -214,7 +215,7 @@ class ServiceNowIntelligentMCP {
         }
       }
 
-      const credentials = await this.oauth.loadCredentials();
+      const instanceInfo = await mcpAuth.getInstanceInfo();
       const resultText = this.formatResults(liveResults);
       this.logger.info(`Formatted result text: ${resultText.substring(0, 200)}...`);
       const editSuggestion = this.generateEditSuggestion(liveResults?.[0]);
@@ -223,7 +224,7 @@ class ServiceNowIntelligentMCP {
         content: [
           {
             type: 'text',
-            text: `🔍 ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: https://${credentials?.instance}\n\n${editSuggestion}`,
+            text: `🔍 ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: ${instanceInfo.instance}\n\n${editSuggestion}`,
           },
         ],
       };
@@ -234,13 +235,13 @@ class ServiceNowIntelligentMCP {
 
   private async editArtifact(args: any) {
     // Check authentication first
-    const isAuth = await this.oauth.isAuthenticated();
-    if (!isAuth) {
+    const authResult = await mcpAuth.ensureAuthenticated();
+    if (!authResult.success) {
       return {
         content: [
           {
             type: 'text',
-            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            text: authResult.error || '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
           },
         ],
       };
@@ -267,13 +268,13 @@ class ServiceNowIntelligentMCP {
       // 6. Update memory with changes
       await this.updateMemoryIndex(editedArtifact, modification);
 
-      const credentials = await this.oauth.loadCredentials();
+      const instanceInfo = await mcpAuth.getInstanceInfo();
       
       return {
         content: [
           {
             type: 'text',
-            text: `✅ ServiceNow artifact successfully modified!\n\n🎯 Modification Details:\n- Artifact: ${artifact.name}\n- Type: ${artifact.type}\n- Changes: ${modification.description}\n\n🔗 View in ServiceNow: https://${credentials?.instance}/nav_to.do?uri=${this.getArtifactUrl(artifact)}\n\n📝 The artifact has been intelligently indexed and is now available for future natural language queries.`,
+            text: `✅ ServiceNow artifact successfully modified!\n\n🎯 Modification Details:\n- Artifact: ${artifact.name}\n- Type: ${artifact.type}\n- Changes: ${modification.description}\n\n🔗 View in ServiceNow: ${instanceInfo.instance}/nav_to.do?uri=${this.getArtifactUrl(artifact)}\n\n📝 The artifact has been intelligently indexed and is now available for future natural language queries.`,
           },
         ],
       };
@@ -284,13 +285,13 @@ class ServiceNowIntelligentMCP {
 
   private async analyzeArtifact(args: any) {
     // Check authentication first
-    const isAuth = await this.oauth.isAuthenticated();
-    if (!isAuth) {
+    const authResult = await mcpAuth.ensureAuthenticated();
+    if (!authResult.success) {
       return {
         content: [
           {
             type: 'text',
-            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            text: authResult.error || '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
           },
         ],
       };
@@ -345,13 +346,13 @@ class ServiceNowIntelligentMCP {
 
   private async comprehensiveSearch(args: any) {
     // Check authentication first
-    const isAuth = await this.oauth.isAuthenticated();
-    if (!isAuth) {
+    const authResult = await mcpAuth.ensureAuthenticated();
+    if (!authResult.success) {
       return {
         content: [
           {
             type: 'text',
-            text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            text: authResult.error || '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
           },
         ],
       };
@@ -438,14 +439,14 @@ class ServiceNowIntelligentMCP {
         index === self.findIndex(r => r.sys_id === result.sys_id)
       );
 
-      const credentials = await this.oauth.loadCredentials();
+      const instanceInfo = await mcpAuth.getInstanceInfo();
       const resultText = this.formatComprehensiveResults(uniqueResults);
 
       return {
         content: [
           {
             type: 'text',
-            text: `🔍 Comprehensive ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: https://${credentials?.instance}\n\n💡 Searched across ${searchTables.length} table types with multiple strategies.`,
+            text: `🔍 Comprehensive ServiceNow Search Results:\n\n${resultText}\n\n🔗 ServiceNow Instance: ${instanceInfo.instance}\n\n💡 Searched across ${searchTables.length} table types with multiple strategies.`,
           },
         ],
       };

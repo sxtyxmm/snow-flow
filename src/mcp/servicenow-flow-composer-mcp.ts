@@ -89,7 +89,7 @@ class ServiceNowFlowComposerMCP {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
-          name: 'snow_create_complex_flow',
+          name: 'snow_create_flow',
           description: 'FULLY AUTONOMOUS flow creation - parses natural language, discovers artifacts, creates missing components, links everything, deploys automatically. ZERO MANUAL WORK!',
           inputSchema: {
             type: 'object',
@@ -189,8 +189,8 @@ class ServiceNowFlowComposerMCP {
 
       try {
         switch (name) {
-          case 'snow_create_complex_flow':
-            return await this.createComplexFlow(args);
+          case 'snow_create_flow':
+            return await this.createFlow(args);
           case 'snow_analyze_flow_instruction':
             return await this.analyzeFlowInstruction(args);
           case 'snow_discover_flow_artifacts':
@@ -212,7 +212,7 @@ class ServiceNowFlowComposerMCP {
     });
   }
 
-  private async createComplexFlow(args: any) {
+  private async createFlow(args: any) {
     // Check authentication first
     const isAuth = await this.oauth.isAuthenticated();
     if (!isAuth) {
@@ -245,7 +245,7 @@ class ServiceNowFlowComposerMCP {
         content: [
           {
             type: 'text',
-            text: `🧠 Complex ServiceNow Flow Created Successfully!
+            text: `🧠 ServiceNow Flow Created Successfully!
 
 🎯 **Flow Details:**
 - **Name**: ${flowInstruction.flowStructure.name}

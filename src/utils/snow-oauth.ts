@@ -555,7 +555,18 @@ export class ServiceNowOAuth {
   async loadCredentials(): Promise<ServiceNowCredentials | null> {
     try {
       const tokens = await this.loadTokens();
-      if (!tokens) return null;
+      if (!tokens) {
+        console.log('⚠️  No tokens found in:', this.tokenPath);
+        return null;
+      }
+      
+      // Debug: Log what we found
+      console.log('🔍 Credentials check:');
+      console.log(`   - Token file: ${this.tokenPath}`);
+      console.log(`   - Instance: ${tokens.instance || 'MISSING'}`);
+      console.log(`   - Client ID: ${tokens.clientId ? '✅ Present' : '❌ Missing'}`);
+      console.log(`   - Access Token: ${tokens.accessToken ? '✅ Present' : '❌ Missing'}`);
+      console.log(`   - Expires At: ${tokens.expiresAt || 'MISSING'}`);
       
       return {
         instance: tokens.instance,
@@ -566,6 +577,7 @@ export class ServiceNowOAuth {
         expiresAt: tokens.expiresAt
       };
     } catch (error) {
+      console.error('❌ Error loading credentials:', error);
       return null;
     }
   }

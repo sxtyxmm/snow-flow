@@ -468,8 +468,8 @@ class ServiceNowDeploymentMCP {
       
       const credentials = await this.oauth.loadCredentials();
       const flowUrl = result.success && result.data 
-        ? `https://${credentials?.instance}/flow-designer/flow/${result.data.sys_id}`
-        : `https://${credentials?.instance}/flow-designer`;
+        ? `https://${credentials?.instance}/$flow-designer.do#/flow/${result.data.sys_id}`
+        : `https://${credentials?.instance}/$flow-designer.do`;
 
       const artifactSummary = deployedArtifacts.length > 0 
         ? `\n🔗 **Linked Artifacts Deployed:**\n${deployedArtifacts.map((a, i) => 
@@ -503,7 +503,7 @@ class ServiceNowDeploymentMCP {
 ${artifactSummary}${activitySummary}
 🔗 **Direct Links:**
 - Flow Designer: ${flowUrl}
-- Flow Designer Home: https://${credentials?.instance}/flow-designer
+- Flow Designer Home: https://${credentials?.instance}/$flow-designer.do
 
 📝 **Flow Components Created:**
 1. ✅ Trigger configured (${args.trigger_type})
