@@ -413,9 +413,9 @@ class ServiceNowIntelligentMCP {
             
             const results = await this.client.searchRecords(table.name, fullQuery);
             
-            if (results && results.length > 0) {
+            if (results && results.success && results.data.result.length > 0) {
               // Add metadata to results
-              const enhancedResults = results.map(result => ({
+              const enhancedResults = results.data.result.map((result: any) => ({
                 ...result,
                 artifact_type: table.type,
                 table_name: table.name,
@@ -766,8 +766,8 @@ class ServiceNowIntelligentMCP {
           for (const [type, table] of Object.entries(commonTables)) {
             try {
               const results = await this.client.searchRecords(table, `active=true^ORDERBYname^LIMIT10`);
-              if (results && results.length > 0) {
-                const typedResults = results.map(result => ({
+              if (results && results.success && results.data.result.length > 0) {
+                const typedResults = results.data.result.map((result: any) => ({
                   ...result,
                   artifact_type: type,
                   table_name: table
@@ -802,21 +802,21 @@ class ServiceNowIntelligentMCP {
             let results = await this.client.searchRecords(table, `name=${searchString}^LIMIT2`);
             
             // If no exact match, try contains
-            if (!results || results.length === 0) {
+            if (!results || !results.success || results.data.result.length === 0) {
               results = await this.client.searchRecords(table, `nameLIKE${searchString}^LIMIT3`);
             }
             
             // If still no results, try wildcards on first term only
-            if (!results || results.length === 0) {
+            if (!results || !results.success || results.data.result.length === 0) {
               const firstTerm = searchString.split(' ')[0];
               if (firstTerm && firstTerm.length > 2) {
                 results = await this.client.searchRecords(table, `nameLIKE*${firstTerm}*^LIMIT3`);
               }
             }
             
-            if (results && results.length > 0) {
+            if (results && results.success && results.data.result.length > 0) {
               // Add artifact type to results for identification
-              const typedResults = results.map(result => ({
+              const typedResults = results.data.result.map((result: any) => ({
                 ...result,
                 artifact_type: type,
                 table_name: table
@@ -837,8 +837,8 @@ class ServiceNowIntelligentMCP {
               try {
                 const broadQuery = `(nameLIKE*${firstTerm}*^ORtitleLIKE*${firstTerm}*^ORshort_descriptionLIKE*${firstTerm}*)^LIMIT5`;
                 const results = await this.client.searchRecords(table, broadQuery, 5);
-                if (results && results.length > 0) {
-                  const typedResults = results.map(result => ({
+                if (results && results.success && results.data.result.length > 0) {
+                  const typedResults = results.data.result.map((result: any) => ({
                     ...result,
                     artifact_type: type,
                     table_name: table
@@ -864,7 +864,7 @@ class ServiceNowIntelligentMCP {
 
       // First try exact match
       const searchString = intent.identifier.trim();
-      let results = [];
+      let results: any;
       
       // Handle "list all" queries
       if (searchString.toLowerCase().includes('list all') || 
@@ -876,15 +876,16 @@ class ServiceNowIntelligentMCP {
         results = await this.client.searchRecords(table, `active=true^ORDERBYname^LIMIT50`);
         
         // Add artifact type to results
-        if (results && results.length > 0) {
-          results = results.map(result => ({
+        if (results && results.success && results.data.result.length > 0) {
+          const enhancedResults = results.data.result.map((result: any) => ({
             ...result,
             artifact_type: intent.artifactType,
             table_name: table
           }));
+          return enhancedResults;
         }
         
-        return results;
+        return [];
       }
       
       // Try exact name match first
@@ -892,26 +893,26 @@ class ServiceNowIntelligentMCP {
       results = await this.client.searchRecords(table, `name=${searchString}^LIMIT5`);
       
       // If no exact match, try contains without wildcards (ServiceNow specific)
-      if (!results || results.length === 0) {
+      if (!results || !results.success || results.data.result.length === 0) {
         this.logger.info(`No exact match, trying contains: nameLIKE${searchString}`);
         results = await this.client.searchRecords(table, `nameLIKE${searchString}^LIMIT10`);
       }
       
       // Also try description fields
-      if (!results || results.length === 0) {
+      if (!results || !results.success || results.data.result.length === 0) {
         this.logger.info(`No name match, trying description: short_descriptionLIKE${searchString}`);
         results = await this.client.searchRecords(table, `short_descriptionLIKE${searchString}^ORdescriptionLIKE${searchString}^LIMIT10`);
       }
       
       // If still no results, use the complex query
-      if (!results || results.length === 0) {
+      if (!results || !results.success || results.data.result.length === 0) {
         const query = this.buildServiceNowQuery(intent);
         this.logger.info(`No contains match, trying complex query: ${query}`);
         results = await this.client.searchRecords(table, query);
       }
       
       // If still no results, try a broader search
-      if (!results || results.length === 0) {
+      if (!results || !results.success || results.data.result.length === 0) {
         this.logger.info(`No results found, trying broader search...`);
         
         // Try searching with just the first search term with wildcards
@@ -922,14 +923,14 @@ class ServiceNowIntelligentMCP {
         }
         
         // If still no results, return empty array instead of sample records
-        if (!results || results.length === 0) {
+        if (!results || !results.success || results.data.result.length === 0) {
           this.logger.info(`No results found for search term: ${searchString}`);
           return [];
         }
       }
 
       // Ensure we always return an array
-      return Array.isArray(results) ? results : [];
+      return (results && results.success && results.data.result) ? results.data.result : [];
     } catch (error) {
       this.logger.error('Error searching ServiceNow', error);
       return [];

@@ -219,7 +219,8 @@ export class ServiceNowProgressiveIndexer {
 
     try {
       const query = queries.join('^OR');
-      return await this.client.searchRecords(table, query, limit);
+      const response = await this.client.searchRecords(table, query, limit);
+      return response.success ? response.data.result : [];
     } catch (error) {
       this.logger.error(`Failed to search ${type}`, error);
       return [];

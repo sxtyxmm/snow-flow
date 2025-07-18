@@ -33,5 +33,35 @@
       "NEO4J_USER": "",
       "NEO4J_PASSWORD": ""
     }
+  },
+  {
+    "name": "ServiceNow Operations MCP",
+    "script": "dist/mcp/servicenow-operations-mcp.js",
+    "autoStart": true
+  },
+  {
+    "name": "ServiceNow Platform Development MCP",
+    "script": "dist/mcp/servicenow-platform-development-mcp.js",
+    "autoStart": true
+  },
+  {
+    "name": "ServiceNow Integration MCP",
+    "script": "dist/mcp/servicenow-integration-mcp.js",
+    "autoStart": true
+  },
+  {
+    "name": "ServiceNow Automation MCP",
+    "script": "dist/mcp/servicenow-automation-mcp.js",
+    "autoStart": true
+  },
+  {
+    "name": "ServiceNow Security & Compliance MCP",
+    "script": "dist/mcp/servicenow-security-compliance-mcp.js",
+    "autoStart": true
+  },
+  {
+    "name": "ServiceNow Reporting & Analytics MCP",
+    "script": "dist/mcp/servicenow-reporting-analytics-mcp.js",
+    "autoStart": true
   }
 ]

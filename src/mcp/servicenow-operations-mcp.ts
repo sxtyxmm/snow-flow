@@ -493,13 +493,13 @@ class ServiceNowOperationsMCP {
       const incidents = await this.client.searchRecords('incident', processedQuery, limit);
       
       let result = {
-        total_results: incidents.length,
-        incidents: incidents
+        total_results: incidents.success ? incidents.data.result.length : 0,
+        incidents: incidents.success ? incidents.data.result : []
       };
       
       // Add intelligent analysis if requested
-      if (include_analysis && incidents.length > 0) {
-        const analysis = await this.analyzeIncidents(incidents);
+      if (include_analysis && incidents.success && incidents.data.result.length > 0) {
+        const analysis = await this.analyzeIncidents(incidents.data.result);
         result = { ...result, ...analysis };
       }
       
@@ -507,7 +507,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${incidents.length} incidents matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${incidents.success ? incidents.data.result.length : 0} incidents matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -601,13 +601,13 @@ class ServiceNowOperationsMCP {
       const requests = await this.client.searchRecords('sc_request', processedQuery, limit);
       
       let result: any = {
-        total_results: requests.length,
-        requests: requests
+        total_results: requests.success ? requests.data.result.length : 0,
+        requests: requests.success ? requests.data.result : []
       };
       
       // Include request items if requested
-      if (include_items && requests.length > 0) {
-        const requestItems = await this.getRequestItems(requests);
+      if (include_items && requests.success && requests.data.result.length > 0) {
+        const requestItems = await this.getRequestItems(requests.data.result);
         result = { ...result, request_items: requestItems };
       }
       
@@ -615,7 +615,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${requests.length} requests matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${requests.success ? requests.data.result.length : 0} requests matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -635,13 +635,13 @@ class ServiceNowOperationsMCP {
       const problems = await this.client.searchRecords('problem', processedQuery, limit);
       
       let result: any = {
-        total_results: problems.length,
-        problems: problems
+        total_results: problems.success ? problems.data.result.length : 0,
+        problems: problems.success ? problems.data.result : []
       };
       
       // Include related incidents if requested
-      if (include_incidents && problems.length > 0) {
-        const incidents = await this.getRelatedIncidents(problems);
+      if (include_incidents && problems.success && problems.data.result.length > 0) {
+        const incidents = await this.getRelatedIncidents(problems.data.result);
         result = { ...result, related_incidents: incidents };
       }
       
@@ -649,7 +649,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${problems.length} problems matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${problems.success ? problems.data.result.length : 0} problems matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -671,14 +671,14 @@ class ServiceNowOperationsMCP {
       const configItems = await this.client.searchRecords(ciTable, processedQuery, limit);
       
       let result: any = {
-        total_results: configItems.length,
-        configuration_items: configItems,
+        total_results: configItems.success ? configItems.data.result.length : 0,
+        configuration_items: configItems.success ? configItems.data.result : [],
         ci_type: ci_type
       };
       
       // Include relationships if requested
-      if (include_relationships && configItems.length > 0) {
-        const relationships = await this.getCIRelationships(configItems);
+      if (include_relationships && configItems.success && configItems.data.result.length > 0) {
+        const relationships = await this.getCIRelationships(configItems.data.result);
         result = { ...result, relationships };
       }
       
@@ -686,7 +686,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${configItems.length} configuration items matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${configItems.success ? configItems.data.result.length : 0} configuration items matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -714,7 +714,7 @@ class ServiceNowOperationsMCP {
       
       const users = await this.client.searchRecords('sys_user', userQuery, 5);
       
-      if (users.length === 0) {
+      if (!users.success || users.data.result.length === 0) {
         return {
           content: [
             {
@@ -726,13 +726,13 @@ class ServiceNowOperationsMCP {
       }
       
       let result: any = {
-        total_results: users.length,
-        users: users
+        total_results: users.data.result.length,
+        users: users.data.result
       };
       
       // Include roles and groups if requested
       if (include_roles || include_groups) {
-        const userDetails = await this.getUserDetails(users[0].sys_id, include_roles, include_groups);
+        const userDetails = await this.getUserDetails(users.data.result[0].sys_id, include_roles, include_groups);
         result = { ...result, user_details: userDetails };
       }
       
@@ -740,7 +740,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${users.length} users matching identifier: "${identifier}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${users.success ? users.data.result.length : 0} users matching identifier: "${identifier}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -804,15 +804,15 @@ class ServiceNowOperationsMCP {
       const articles = await this.client.searchRecords('kb_knowledge', processedQuery, limit);
       
       let result: any = {
-        total_results: articles.length,
-        knowledge_articles: articles
+        total_results: articles.success ? articles.data.result.length : 0,
+        knowledge_articles: articles.success ? articles.data.result : []
       };
       
       // If matching to incident, provide relevance scoring
       if (match_incident) {
         const incident = await this.getIncidentDetails(match_incident);
         if (incident) {
-          const relevanceScores = await this.calculateKnowledgeRelevance(articles, incident);
+          const relevanceScores = await this.calculateKnowledgeRelevance(articles.success ? articles.data.result : [], incident);
           result = { ...result, relevance_scores: relevanceScores };
         }
       }
@@ -821,7 +821,7 @@ class ServiceNowOperationsMCP {
         content: [
           {
             type: 'text',
-            text: `Found ${articles.length} knowledge articles matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${articles.success ? articles.data.result.length : 0} knowledge articles matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
@@ -927,13 +927,13 @@ class ServiceNowOperationsMCP {
     let query = `number=${incident_id}`;
     let incidents = await this.client.searchRecords('incident', query, 1);
     
-    if (incidents.length === 0) {
+    if (!incidents.success || incidents.data.result.length === 0) {
       // Try by sys_id
       query = `sys_id=${incident_id}`;
       incidents = await this.client.searchRecords('incident', query, 1);
     }
     
-    return incidents.length > 0 ? incidents[0] : null;
+    return (incidents.success && incidents.data.result.length > 0) ? incidents.data.result[0] : null;
   }
 
   private async performIncidentAnalysis(incident: any, include_similar: boolean, suggest_resolution: boolean): Promise<IncidentAnalysis> {
@@ -961,7 +961,8 @@ class ServiceNowOperationsMCP {
     // Find similar incidents
     if (include_similar) {
       const similarQuery = `short_descriptionLIKE${incident.short_description}^sys_id!=${incident.sys_id}^state=6`;
-      analysis.similar_incidents = await this.client.searchRecords('incident', similarQuery, 5);
+      const similarIncidents = await this.client.searchRecords('incident', similarQuery, 5);
+      analysis.similar_incidents = similarIncidents.success ? similarIncidents.data.result : [];
     }
     
     // Root cause analysis
@@ -969,7 +970,8 @@ class ServiceNowOperationsMCP {
     
     // Search knowledge base
     const kbQuery = `textLIKE${incident.short_description}^workflow_state=published`;
-    analysis.knowledge_articles = await this.client.searchRecords('kb_knowledge', kbQuery, 3);
+    const kbArticles = await this.client.searchRecords('kb_knowledge', kbQuery, 3);
+    analysis.knowledge_articles = kbArticles.success ? kbArticles.data.result : [];
     
     // Automated actions
     analysis.automated_actions = this.generateAutomatedActions(incident, analysis.patterns_found);
@@ -1075,7 +1077,9 @@ class ServiceNowOperationsMCP {
     
     for (const request of requests) {
       const requestItems = await this.client.searchRecords('sc_req_item', `request=${request.sys_id}`, 10);
-      items.push(...requestItems);
+      if (requestItems.success) {
+        items.push(...requestItems.data.result);
+      }
     }
     
     return items;
@@ -1086,7 +1090,9 @@ class ServiceNowOperationsMCP {
     
     for (const problem of problems) {
       const relatedIncidents = await this.client.searchRecords('incident', `problem_id=${problem.sys_id}`, 10);
-      incidents.push(...relatedIncidents);
+      if (relatedIncidents.success) {
+        incidents.push(...relatedIncidents.data.result);
+      }
     }
     
     return incidents;
@@ -1140,22 +1146,24 @@ class ServiceNowOperationsMCP {
     try {
       // Get total incidents
       const totalIncidents = await this.client.searchRecords('incident', `sys_created_on${dateFilter}`, 1000);
-      metrics.total_incidents = totalIncidents.length;
+      metrics.total_incidents = totalIncidents.success ? totalIncidents.data.result.length : 0;
       
       // Get open incidents
       const openIncidents = await this.client.searchRecords('incident', `active=true^sys_created_on${dateFilter}`, 1000);
-      metrics.open_incidents = openIncidents.length;
+      metrics.open_incidents = openIncidents.success ? openIncidents.data.result.length : 0;
       
       // Get high priority incidents
       const highPriorityIncidents = await this.client.searchRecords('incident', `priority=1^sys_created_on${dateFilter}`, 1000);
-      metrics.high_priority_incidents = highPriorityIncidents.length;
+      metrics.high_priority_incidents = highPriorityIncidents.success ? highPriorityIncidents.data.result.length : 0;
       
       // Calculate common categories
       const categories = new Map();
-      totalIncidents.forEach(incident => {
-        const category = incident.category || 'uncategorized';
-        categories.set(category, (categories.get(category) || 0) + 1);
-      });
+      if (totalIncidents.success) {
+        totalIncidents.data.result.forEach((incident: any) => {
+          const category = incident.category || 'uncategorized';
+          categories.set(category, (categories.get(category) || 0) + 1);
+        });
+      }
       
       metrics.common_categories = Array.from(categories.entries())
         .sort((a, b) => b[1] - a[1])
@@ -1212,7 +1220,8 @@ class ServiceNowOperationsMCP {
       common_keywords: new Map()
     };
     
-    incidents.forEach(incident => {
+    if (incidents.success) {
+      incidents.data.result.forEach((incident: any) => {
       // Category patterns
       const category = incident.category || 'uncategorized';
       patterns.by_category.set(category, (patterns.by_category.get(category) || 0) + 1);
@@ -1237,10 +1246,11 @@ class ServiceNowOperationsMCP {
       keywords.forEach((keyword: string) => {
         patterns.common_keywords.set(keyword, (patterns.common_keywords.get(keyword) || 0) + 1);
       });
-    });
+      });
+    }
     
     return {
-      total_incidents: incidents.length,
+      total_incidents: incidents.success ? incidents.data.result.length : 0,
       patterns: {
         by_category: Object.fromEntries(patterns.by_category),
         by_priority: Object.fromEntries(patterns.by_priority),
@@ -1263,19 +1273,21 @@ class ServiceNowOperationsMCP {
       by_approval_status: new Map()
     };
     
-    requests.forEach(request => {
-      const state = request.state || 'unknown';
-      trends.by_state.set(state, (trends.by_state.get(state) || 0) + 1);
-      
-      const requestedFor = request.requested_for || 'unknown';
-      trends.by_requested_for.set(requestedFor, (trends.by_requested_for.get(requestedFor) || 0) + 1);
-      
-      const approvalStatus = request.approval || 'unknown';
-      trends.by_approval_status.set(approvalStatus, (trends.by_approval_status.get(approvalStatus) || 0) + 1);
-    });
+    if (requests.success) {
+      requests.data.result.forEach((request: any) => {
+        const state = request.state || 'unknown';
+        trends.by_state.set(state, (trends.by_state.get(state) || 0) + 1);
+        
+        const requestedFor = request.requested_for || 'unknown';
+        trends.by_requested_for.set(requestedFor, (trends.by_requested_for.get(requestedFor) || 0) + 1);
+        
+        const approvalStatus = request.approval || 'unknown';
+        trends.by_approval_status.set(approvalStatus, (trends.by_approval_status.get(approvalStatus) || 0) + 1);
+      });
+    }
     
     return {
-      total_requests: requests.length,
+      total_requests: requests.success ? requests.data.result.length : 0,
       trends: {
         by_state: Object.fromEntries(trends.by_state),
         top_requesters: Array.from(trends.by_requested_for.entries())
@@ -1295,30 +1307,32 @@ class ServiceNowOperationsMCP {
       resolution_patterns: new Map()
     };
     
-    problems.forEach(problem => {
-      const category = problem.category || 'uncategorized';
-      rootCauses.by_category.set(category, (rootCauses.by_category.get(category) || 0) + 1);
-      
-      const state = problem.state || 'unknown';
-      rootCauses.by_state.set(state, (rootCauses.by_state.get(state) || 0) + 1);
-      
-      if (problem.resolution_notes) {
-        const resolution = problem.resolution_notes.toLowerCase();
-        // Simple pattern matching for resolution types
-        if (resolution.includes('restart')) {
-          rootCauses.resolution_patterns.set('restart', (rootCauses.resolution_patterns.get('restart') || 0) + 1);
+    if (problems.success) {
+      problems.data.result.forEach((problem: any) => {
+        const category = problem.category || 'uncategorized';
+        rootCauses.by_category.set(category, (rootCauses.by_category.get(category) || 0) + 1);
+        
+        const state = problem.state || 'unknown';
+        rootCauses.by_state.set(state, (rootCauses.by_state.get(state) || 0) + 1);
+        
+        if (problem.resolution_notes) {
+          const resolution = problem.resolution_notes.toLowerCase();
+          // Simple pattern matching for resolution types
+          if (resolution.includes('restart')) {
+            rootCauses.resolution_patterns.set('restart', (rootCauses.resolution_patterns.get('restart') || 0) + 1);
+          }
+          if (resolution.includes('configuration')) {
+            rootCauses.resolution_patterns.set('configuration', (rootCauses.resolution_patterns.get('configuration') || 0) + 1);
+          }
+          if (resolution.includes('patch') || resolution.includes('update')) {
+            rootCauses.resolution_patterns.set('patch/update', (rootCauses.resolution_patterns.get('patch/update') || 0) + 1);
+          }
         }
-        if (resolution.includes('configuration')) {
-          rootCauses.resolution_patterns.set('configuration', (rootCauses.resolution_patterns.get('configuration') || 0) + 1);
-        }
-        if (resolution.includes('patch') || resolution.includes('update')) {
-          rootCauses.resolution_patterns.set('patch/update', (rootCauses.resolution_patterns.get('patch/update') || 0) + 1);
-        }
-      }
-    });
+      });
+    }
     
     return {
-      total_problems: problems.length,
+      total_problems: problems.success ? problems.data.result.length : 0,
       root_causes: {
         by_category: Object.fromEntries(rootCauses.by_category),
         by_state: Object.fromEntries(rootCauses.by_state),
@@ -1399,10 +1413,12 @@ class ServiceNowOperationsMCP {
     const historicalData = await this.client.searchRecords('incident', 'sys_created_onONLast 30 days@javascript:gs.daysAgoStart(30)@javascript:gs.daysAgoEnd(0)', 1000);
     
     const dailyVolume = new Map();
-    historicalData.forEach(incident => {
-      const date = new Date(incident.sys_created_on).toDateString();
-      dailyVolume.set(date, (dailyVolume.get(date) || 0) + 1);
-    });
+    if (historicalData.success) {
+      historicalData.data.result.forEach((incident: any) => {
+        const date = new Date(incident.sys_created_on).toDateString();
+        dailyVolume.set(date, (dailyVolume.get(date) || 0) + 1);
+      });
+    }
     
     const avgDailyVolume = Array.from(dailyVolume.values()).reduce((a, b) => a + b, 0) / dailyVolume.size;
     
@@ -1421,11 +1437,11 @@ class ServiceNowOperationsMCP {
     // Analyze problem records and incident patterns
     const problems = await this.client.searchRecords('problem', 'sys_created_onONLast 30 days@javascript:gs.daysAgoStart(30)@javascript:gs.daysAgoEnd(0)', 100);
     
-    const systemFailures = problems.filter(problem => 
+    const systemFailures = problems.success ? problems.data.result.filter((problem: any) => 
       (problem.short_description || '').toLowerCase().includes('system') ||
       (problem.short_description || '').toLowerCase().includes('failure') ||
       (problem.short_description || '').toLowerCase().includes('outage')
-    );
+    ) : [];
     
     return [
       {
@@ -1455,10 +1471,12 @@ class ServiceNowOperationsMCP {
     const userIncidents = await this.client.searchRecords('incident', 'sys_created_onONLast 7 days@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)^priority=1', 100);
     
     const impactLevels = new Map();
-    userIncidents.forEach(incident => {
-      const impact = incident.impact || 'unknown';
-      impactLevels.set(impact, (impactLevels.get(impact) || 0) + 1);
-    });
+    if (userIncidents.success) {
+      userIncidents.data.result.forEach((incident: any) => {
+        const impact = incident.impact || 'unknown';
+        impactLevels.set(impact, (impactLevels.get(impact) || 0) + 1);
+      });
+    }
     
     return [
       {

@@ -15,6 +15,8 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
+import { ScopeManager, DeploymentContext } from '../managers/scope-manager.js';
+import { GlobalScopeStrategy, ScopeType } from '../strategies/global-scope-strategy.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -23,6 +25,8 @@ class ServiceNowDeploymentMCP {
   private client: ServiceNowClient;
   private oauth: ServiceNowOAuth;
   private logger: Logger;
+  private scopeManager: ScopeManager;
+  private globalScopeStrategy: GlobalScopeStrategy;
 
   constructor() {
     this.server = new Server(
@@ -40,6 +44,15 @@ class ServiceNowDeploymentMCP {
     this.client = new ServiceNowClient();
     this.oauth = new ServiceNowOAuth();
     this.logger = new Logger('ServiceNowDeploymentMCP');
+    
+    // Initialize global scope management
+    this.scopeManager = new ScopeManager({
+      defaultScope: ScopeType.GLOBAL,
+      allowFallback: true,
+      validatePermissions: true,
+      enableMigration: false
+    });
+    this.globalScopeStrategy = new GlobalScopeStrategy();
 
     this.setupHandlers();
   }
@@ -87,20 +100,32 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_deploy_application',
-          description: 'Deploy a scoped application to ServiceNow',
+          description: 'INTELLIGENT scope-aware application deployment - automatically selects optimal scope (global/application), validates permissions, handles fallbacks',
           inputSchema: {
             type: 'object',
             properties: {
               name: { type: 'string', description: 'Application name' },
-              scope: { type: 'string', description: 'Application scope' },
+              scope: { type: 'string', description: 'Preferred scope (global/application-specific) - leave blank for intelligent selection' },
               version: { type: 'string', description: 'Application version' },
               short_description: { type: 'string', description: 'Short description' },
               description: { type: 'string', description: 'Full description' },
               vendor: { type: 'string', description: 'Vendor name' },
               vendor_prefix: { type: 'string', description: 'Vendor prefix' },
               active: { type: 'boolean', description: 'Activate application' },
+              scope_strategy: { 
+                type: 'string', 
+                enum: ['global', 'application', 'auto'],
+                description: 'Scope deployment strategy - auto selects optimal scope',
+                default: 'auto'
+              },
+              environment: {
+                type: 'string',
+                enum: ['development', 'testing', 'production'],
+                description: 'Deployment environment',
+                default: 'development'
+              }
             },
-            required: ['name', 'scope', 'version'],
+            required: ['name', 'version'],
           },
         },
         {
@@ -664,60 +689,160 @@ ${isComposedFlow ? `
         };
       }
 
-      this.logger.info('Deploying application to ServiceNow', { name: args.name });
+      this.logger.info('Deploying application with intelligent scope management', { name: args.name });
 
       // Ensure Update Set is active
       const { updateSetId, updateSetName } = await this.ensureUpdateSet('Application', args.name);
 
-      // Create application in ServiceNow
-      const result = await this.client.createApplication({
-        name: args.name,
-        scope: args.scope,
-        version: args.version,
-        short_description: args.short_description,
-        description: args.description || '',
-        vendor: args.vendor || 'Custom',
-        vendor_prefix: args.vendor_prefix || 'x',
-        active: args.active !== false,
-      });
+      // Determine scope strategy
+      const scopeStrategy = this.determineScopeStrategy(args.scope_strategy || 'auto');
 
-      if (result.success && result.data) {
-        const credentials = await this.oauth.loadCredentials();
-        const appUrl = `https://${credentials?.instance}/nav_to.do?uri=sys_app.do?sys_id=${result.data.sys_id}`;
+      // Create deployment context for intelligent scope management
+      const deploymentContext: DeploymentContext = {
+        artifactType: 'application',
+        artifactData: {
+          name: args.name,
+          scope: args.scope,
+          version: args.version,
+          short_description: args.short_description,
+          description: args.description || '',
+          vendor: args.vendor || 'Custom',
+          vendor_prefix: args.vendor_prefix || 'x',
+          active: args.active !== false,
+          // Metadata for scope decision
+          isSystemUtility: this.isSystemUtility(args.name, args.description),
+          isCrossApplication: this.isCrossApplicationApp(args.name, args.description),
+          isBusinessSpecific: this.isBusinessSpecificApp(args.name, args.description)
+        },
+        environmentType: args.environment || 'development',
+        userPreferences: {
+          type: scopeStrategy,
+          fallbackToGlobal: true
+        }
+      };
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `✅ Application deployed successfully!
-              
-📦 Application Details:
+      // Use scope manager for intelligent deployment
+      const deploymentResult = await this.scopeManager.deployWithScopeManagement(deploymentContext);
+
+      if (!deploymentResult.success) {
+        throw new Error(deploymentResult.message || 'Failed to deploy application');
+      }
+
+      const credentials = await this.oauth.loadCredentials();
+      const appUrl = `https://${credentials?.instance}/nav_to.do?uri=sys_app.do?sys_id=${deploymentResult.artifactId}`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Application deployed successfully with intelligent scope management!
+            
+📦 **Application Details:**
 - Name: ${args.name}
-- Scope: ${args.scope}
+- Deployed Scope: ${deploymentResult.scope}
+- Domain: ${deploymentResult.domain}
 - Version: ${args.version}
-- Sys ID: ${result.data.sys_id}
+- Sys ID: ${deploymentResult.artifactId}
 
-📦 Update Set:
+🎯 **Scope Strategy:**
+- Selected Strategy: ${scopeStrategy}
+- Actual Scope: ${deploymentResult.scope}
+- Fallback Applied: ${deploymentResult.fallbackApplied ? 'Yes' : 'No'}
+- Permissions: ${deploymentResult.permissions.join(', ')}
+
+📦 **Update Set:**
 - Name: ${updateSetName}
 - ID: ${updateSetId}
 
-🔗 Direct Links:
+${deploymentResult.warnings && deploymentResult.warnings.length > 0 ? `
+⚠️  **Warnings:**
+${deploymentResult.warnings.map(w => `- ${w}`).join('\n')}
+` : ''}
+
+🔗 **Direct Links:**
 - Application Record: ${appUrl}
 - Studio: https://${credentials?.instance}/nav_to.do?uri=$studio.do
+${deploymentResult.scope === 'global' ? '- Global Applications: https://' + credentials?.instance + '/nav_to.do?uri=sys_app_list.do?sysparm_query=scope=global' : ''}
 
-📝 Next Steps:
-1. Open in Studio to add tables and forms
-2. Create application modules
-3. Set up security rules
-4. Configure application properties`,
+📝 **Next Steps:**
+1. ${deploymentResult.scope === 'global' ? 'Open in Studio as global application' : 'Open in Studio to add tables and forms'}
+2. ${deploymentResult.scope === 'global' ? 'Configure global permissions and access controls' : 'Create application modules'}
+3. ${deploymentResult.scope === 'global' ? 'Set up system-wide integration points' : 'Set up security rules'}
+4. ${deploymentResult.scope === 'global' ? 'Test global scope functionality' : 'Configure application properties'}
+
+💡 **Scope Benefits:**
+${this.getScopeBenefits(deploymentResult.scope).map(b => `- ${b}`).join('\n')}`,
             },
           ],
         };
-      } else {
-        throw new Error(result.error || 'Failed to deploy application');
-      }
+      };
     } catch (error) {
       throw new Error(`Application deployment failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Determine scope strategy from user input
+   */
+  private determineScopeStrategy(strategy: string): ScopeType {
+    switch (strategy?.toLowerCase()) {
+      case 'global':
+        return ScopeType.GLOBAL;
+      case 'application':
+        return ScopeType.APPLICATION;
+      case 'auto':
+      default:
+        return ScopeType.AUTO;
+    }
+  }
+
+  /**
+   * Check if application is a system utility
+   */
+  private isSystemUtility(name: string, description?: string): boolean {
+    const utilityKeywords = ['util', 'system', 'global', 'common', 'shared', 'library', 'tool', 'helper'];
+    const text = `${name} ${description || ''}`.toLowerCase();
+    return utilityKeywords.some(keyword => text.includes(keyword));
+  }
+
+  /**
+   * Check if application is cross-application
+   */
+  private isCrossApplicationApp(name: string, description?: string): boolean {
+    const crossAppKeywords = ['integration', 'connector', 'bridge', 'api', 'cross', 'multi', 'enterprise'];
+    const text = `${name} ${description || ''}`.toLowerCase();
+    return crossAppKeywords.some(keyword => text.includes(keyword));
+  }
+
+  /**
+   * Check if application is business-specific
+   */
+  private isBusinessSpecificApp(name: string, description?: string): boolean {
+    const businessKeywords = ['business', 'custom', 'specific', 'department', 'division', 'team'];
+    const text = `${name} ${description || ''}`.toLowerCase();
+    return businessKeywords.some(keyword => text.includes(keyword));
+  }
+
+  /**
+   * Get scope benefits for user information
+   */
+  private getScopeBenefits(scope: string): string[] {
+    if (scope === 'global') {
+      return [
+        'System-wide availability and integration',
+        'No application boundary restrictions',
+        'Simplified cross-application workflows',
+        'Centralized maintenance and updates',
+        'Better performance for system utilities'
+      ];
+    } else {
+      return [
+        'Isolated application boundaries',
+        'Dedicated namespace and security',
+        'Easier application lifecycle management',
+        'Better organization and maintenance',
+        'Simplified deployment and rollback'
+      ];
     }
   }
 
