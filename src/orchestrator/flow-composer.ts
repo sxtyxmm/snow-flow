@@ -1,11 +1,18 @@
 /**
  * Enhanced ServiceNow Flow Composer with Intelligent Artifact Linking
  * Fixes weaknesses in artifact orchestration and linking
+ * Now includes intelligent Flow vs Subflow decision making
  */
 
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowArtifactIndexer } from '../memory/servicenow-artifact-indexer.js';
 import { Logger } from '../utils/logger.js';
+import { FlowSubflowDecisionEngine, FlowAnalysisResult } from './flow-subflow-decision-engine.js';
+import { SubflowCreationHandler, SubflowCreationResult } from './subflow-creation-handler.js';
+import { FlowPatternTemplates, TemplateMatchingResult } from './flow-pattern-templates.js';
+import { FlowValidationEngine, ValidationResult } from './flow-validation-engine.js';
+import { ScopeManager, DeploymentContext } from '../managers/scope-manager.js';
+import { GlobalScopeStrategy, ScopeType } from '../strategies/global-scope-strategy.js';
 
 export interface ArtifactInterface {
   sys_id: string;
@@ -63,11 +70,36 @@ export class EnhancedFlowComposer {
   private indexer: ServiceNowArtifactIndexer;
   private logger: Logger;
   private artifactRegistry: Map<string, ArtifactInterface> = new Map();
+  
+  // New intelligent components
+  private decisionEngine: FlowSubflowDecisionEngine;
+  private subflowHandler: SubflowCreationHandler;
+  private patternTemplates: FlowPatternTemplates;
+  private validationEngine: FlowValidationEngine;
+  
+  // Global scope management
+  private scopeManager: ScopeManager;
+  private globalScopeStrategy: GlobalScopeStrategy;
 
   constructor() {
     this.client = new ServiceNowClient();
     this.indexer = new ServiceNowArtifactIndexer();
     this.logger = new Logger('EnhancedFlowComposer');
+    
+    // Initialize intelligent components
+    this.decisionEngine = new FlowSubflowDecisionEngine();
+    this.subflowHandler = new SubflowCreationHandler();
+    this.patternTemplates = new FlowPatternTemplates();
+    this.validationEngine = new FlowValidationEngine();
+    
+    // Initialize global scope management
+    this.scopeManager = new ScopeManager({
+      defaultScope: ScopeType.GLOBAL,
+      allowFallback: true,
+      validatePermissions: true,
+      enableMigration: false
+    });
+    this.globalScopeStrategy = new GlobalScopeStrategy();
   }
 
   /**
@@ -559,9 +591,11 @@ export class EnhancedFlowComposer {
         try {
           const results = await this.client.searchRecords(table, `nameLIKE${term}^ORshort_descriptionLIKE${term}`, 5);
           
-          for (const result of results) {
-            const analyzed = await this.analyzeArtifactAPI(result);
-            artifacts.push(analyzed);
+          if (results.success) {
+            for (const result of results.data.result) {
+              const analyzed = await this.analyzeArtifactAPI(result);
+              artifacts.push(analyzed);
+            }
           }
         } catch (error) {
           this.logger.warn(`Failed to search ${table} for ${term}:`, error);
@@ -942,10 +976,185 @@ export class EnhancedFlowComposer {
   }
 
   /**
-   * Create a flow from natural language instruction
-   * This is the main method used by the MCP - SIMPLIFIED VERSION
+   * Create a flow from natural language instruction with intelligent decision making
+   * This is the main method used by the MCP - ENHANCED VERSION
    */
   async createFlowFromInstruction(instruction: string): Promise<any> {
+    this.logger.info('Creating intelligent flow from instruction', { instruction });
+
+    try {
+      // Step 1: Analyze the instruction to determine flow vs subflow
+      const analysisResult = await this.decisionEngine.analyzeAndRecommend(instruction);
+      
+      // Step 2: Validate the decision
+      const validationResult = this.validationEngine.validateDecision(analysisResult, instruction);
+      
+      // Step 3: Find matching templates
+      const matchingTemplates = this.patternTemplates.findMatchingTemplates(instruction);
+      
+      // Step 4: Create subflows if recommended
+      const subflowResults: SubflowCreationResult[] = [];
+      if (analysisResult.subflowCandidates.length > 0) {
+        for (const candidate of analysisResult.subflowCandidates) {
+          const subflowResult = await this.subflowHandler.createSubflow(candidate);
+          subflowResults.push(subflowResult);
+        }
+      }
+      
+      // Step 5: Create the main flow structure
+      const flowStructure = await this.createIntelligentFlowStructure(
+        instruction,
+        analysisResult,
+        matchingTemplates,
+        subflowResults
+      );
+      
+      // Step 6: Return comprehensive result
+      return {
+        naturalLanguage: instruction,
+        
+        // Decision analysis
+        decisionAnalysis: {
+          recommendedType: analysisResult.recommendedType,
+          confidence: analysisResult.confidence,
+          rationale: analysisResult.rationale,
+          complexity: analysisResult.criteria.complexity,
+          reusability: analysisResult.criteria.reusability,
+          context: analysisResult.criteria.context
+        },
+        
+        // Validation results
+        validation: {
+          isValid: validationResult.isValid,
+          severity: validationResult.severity,
+          score: validationResult.score,
+          maxScore: validationResult.maxScore,
+          issues: validationResult.issues,
+          recommendations: validationResult.recommendations
+        },
+        
+        // Template matching
+        templateMatching: {
+          matches: matchingTemplates.length,
+          bestMatch: matchingTemplates[0] || null,
+          confidence: matchingTemplates[0]?.confidence || 0
+        },
+        
+        // Subflow creation results
+        subflowCreation: {
+          candidatesIdentified: analysisResult.subflowCandidates.length,
+          subflowsCreated: subflowResults.filter(r => r.success).length,
+          results: subflowResults
+        },
+        
+        // Main flow structure
+        flowStructure,
+        
+        // Deployment readiness
+        deploymentReady: validationResult.isValid && validationResult.severity !== 'critical',
+        
+        // Recommendations
+        recommendations: this.generateComprehensiveRecommendations(
+          analysisResult,
+          validationResult,
+          matchingTemplates,
+          subflowResults
+        )
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to create intelligent flow', error);
+      
+      // Fallback to simplified flow creation
+      this.logger.info('Falling back to simplified flow creation');
+      return this.createSimplifiedFlowFromInstruction(instruction);
+    }
+  }
+
+  /**
+   * Create intelligent flow structure based on analysis results
+   */
+  private async createIntelligentFlowStructure(
+    instruction: string,
+    analysisResult: FlowAnalysisResult,
+    matchingTemplates: TemplateMatchingResult[],
+    subflowResults: SubflowCreationResult[]
+  ): Promise<any> {
+    // Use best matching template if available
+    const bestTemplate = matchingTemplates[0];
+    
+    if (bestTemplate && bestTemplate.confidence > 0.7) {
+      this.logger.info('Using template for flow creation', {
+        templateId: bestTemplate.template.id,
+        confidence: bestTemplate.confidence
+      });
+      
+      // Customize template based on instruction
+      const customizations = this.extractCustomizationsFromInstruction(instruction);
+      return this.patternTemplates.generateFlowFromTemplate(bestTemplate.template, customizations);
+    }
+    
+    // Otherwise, create from scratch using analysis results
+    const parsedInstruction = this.parseInstruction(instruction);
+    const simpleActions = await this.generateSimpleActions(instruction, parsedInstruction.entities);
+    
+    // Enhance with subflow references
+    const enhancedActions = this.enhanceActionsWithSubflows(simpleActions, subflowResults);
+    
+    return {
+      name: parsedInstruction.flowName,
+      description: parsedInstruction.description,
+      table: parsedInstruction.table,
+      trigger: {
+        type: parsedInstruction.trigger.type,
+        table: parsedInstruction.table,
+        condition: parsedInstruction.trigger.condition || ''
+      },
+      activities: enhancedActions.map((action, index) => ({
+        id: `activity_${index + 1}`,
+        name: action.name,
+        type: action.type,
+        artifact_reference: action.discovered_action ? {
+          sys_id: action.action_type_id,
+          name: action.discovered_action.name || action.name
+        } : null,
+        subflow_reference: action.subflow_reference || null,
+        inputs: action.inputs || {},
+        outputs: action.outputs || {}
+      })),
+      connections: enhancedActions.map((_, index) => {
+        if (index === 0) return null;
+        return {
+          from: `activity_${index}`,
+          to: `activity_${index + 1}`,
+          condition: null
+        };
+      }).filter(Boolean),
+      variables: [],
+      error_handling: analysisResult.criteria.complexity === 'high' ? [
+        {
+          condition: 'any_activity_failed',
+          action: 'stop',
+          parameters: {
+            message: 'Flow execution failed, please review'
+          }
+        }
+      ] : [],
+      metadata: {
+        intelligence_applied: true,
+        decision_confidence: analysisResult.confidence,
+        template_used: bestTemplate?.template.id || null,
+        subflows_created: subflowResults.filter(r => r.success).length,
+        complexity_level: analysisResult.criteria.complexity,
+        reusability_level: analysisResult.criteria.reusability
+      }
+    };
+  }
+
+  /**
+   * Fallback to simplified flow creation (original method)
+   */
+  private async createSimplifiedFlowFromInstruction(instruction: string): Promise<any> {
     this.logger.info('Creating simplified flow from instruction', { instruction });
 
     // Parse the instruction to understand intent
@@ -2046,74 +2255,320 @@ export class EnhancedFlowComposer {
   }
 
   /**
-   * Deploy a flow to ServiceNow - SIMPLIFIED VERSION
+   * Deploy a flow to ServiceNow - ENHANCED WITH GLOBAL SCOPE STRATEGY
    */
   async deployFlow(flowData: any): Promise<any> {
-    this.logger.info('Deploying simplified flow to ServiceNow', { name: flowData.flowStructure.name });
+    this.logger.info('Deploying flow with global scope strategy', { name: flowData.flowStructure.name });
 
     try {
       // Use the simplified flow structure directly
       const flowDefinition = flowData.flowStructure;
 
-      // Convert activities back to actions format for deployment
-      const actions = flowDefinition.activities ? flowDefinition.activities.map((activity: any) => ({
-        type: activity.type,
-        name: activity.name,
-        ...activity.inputs,
-        // Include any other activity-specific properties
-        to: activity.inputs?.to,
-        subject: activity.inputs?.subject,
-        message: activity.inputs?.message,
-        field: activity.inputs?.field,
-        value: activity.inputs?.value,
-        duration: activity.inputs?.duration,
-        approvers: activity.inputs?.approvers,
-        short_description: activity.inputs?.short_description,
-        assigned_to: activity.inputs?.assigned_to,
-        level: activity.inputs?.level
-      })) : [];
+      // Create deployment context for scope management
+      const deploymentContext: DeploymentContext = {
+        artifactType: 'flow',
+        artifactData: {
+          name: flowDefinition.name,
+          description: flowDefinition.description,
+          table: flowDefinition.table,
+          trigger_type: flowDefinition.trigger?.type || flowDefinition.trigger_type,
+          condition: flowDefinition.trigger?.condition || flowDefinition.condition || '',
+          active: flowDefinition.active !== false,
+          category: flowDefinition.category || 'custom',
+          activities: flowDefinition.activities || [],
+          // Additional metadata for scope decision
+          complexity: this.assessFlowComplexity(flowDefinition),
+          crossApplicationIntegration: this.hasCrossApplicationIntegration(flowDefinition),
+          sharedUtility: this.isSharedUtility(flowDefinition)
+        },
+        environmentType: process.env.NODE_ENV === 'production' ? 'production' : 'development'
+      };
 
-      // Create the flow in ServiceNow with simplified structure
-      const result = await this.client.createFlow({
-        name: flowDefinition.name,
-        description: flowDefinition.description,
-        table: flowDefinition.table,
-        trigger_type: flowDefinition.trigger?.type || flowDefinition.trigger_type,
-        condition: flowDefinition.trigger?.condition || flowDefinition.condition || '',
-        active: flowDefinition.active !== false,
-        category: flowDefinition.category || 'custom',
-        // Pass converted actions
-        actions: actions
-      });
+      // Use scope manager to deploy with optimal scope
+      const deploymentResult = await this.scopeManager.deployWithScopeManagement(deploymentContext);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to deploy flow');
+      if (!deploymentResult.success) {
+        throw new Error(deploymentResult.message || 'Failed to deploy flow');
       }
 
-      // Log deployment details
-      this.logger.info('Flow deployed successfully', {
-        sys_id: result.data.sys_id,
+      // Log deployment details with scope information
+      this.logger.info('Flow deployed successfully with scope management', {
+        sys_id: deploymentResult.artifactId,
         name: flowDefinition.name,
         table: flowDefinition.table,
-        actions: actions.length
+        scope: deploymentResult.scope,
+        domain: deploymentResult.domain,
+        fallbackApplied: deploymentResult.fallbackApplied
       });
 
       return {
         success: true,
-        message: `Flow "${flowDefinition.name}" deployed successfully with ${actions.length} actions`,
+        message: `Flow "${flowDefinition.name}" deployed successfully to ${deploymentResult.scope} scope`,
         data: {
-          sys_id: result.data.sys_id,
+          sys_id: deploymentResult.artifactId,
           name: flowDefinition.name,
           table: flowDefinition.table,
-          url: `https://${process.env.SNOW_INSTANCE}/$flow-designer.do#/flow/${result.data.sys_id}`,
-          actions_created: actions.length
+          scope: deploymentResult.scope,
+          domain: deploymentResult.domain,
+          url: `https://${process.env.SNOW_INSTANCE}/$flow-designer.do#/flow/${deploymentResult.artifactId}`,
+          actions_created: flowDefinition.activities?.length || 0,
+          scope_strategy: {
+            selectedScope: deploymentResult.scope,
+            fallbackApplied: deploymentResult.fallbackApplied,
+            permissions: deploymentResult.permissions,
+            warnings: deploymentResult.warnings
+          }
         }
       };
     } catch (error) {
-      this.logger.error('Failed to deploy flow', error);
+      this.logger.error('Failed to deploy flow with scope management', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Assess flow complexity for scope decision
+   */
+  private assessFlowComplexity(flowDefinition: any): 'low' | 'medium' | 'high' {
+    const activityCount = flowDefinition.activities?.length || 0;
+    const hasComplexLogic = flowDefinition.activities?.some((activity: any) => 
+      activity.type === 'script' || activity.type === 'condition' || activity.type === 'loop'
+    );
+    const hasIntegrations = flowDefinition.activities?.some((activity: any) => 
+      activity.type === 'rest' || activity.type === 'soap' || activity.type === 'integration'
+    );
+
+    if (activityCount > 10 || hasComplexLogic || hasIntegrations) {
+      return 'high';
+    } else if (activityCount > 5) {
+      return 'medium';
+    } else {
+      return 'low';
+    }
+  }
+
+  /**
+   * Check if flow has cross-application integration
+   */
+  private hasCrossApplicationIntegration(flowDefinition: any): boolean {
+    // Check for indicators of cross-application integration
+    const integrationIndicators = [
+      'integration',
+      'api',
+      'rest',
+      'soap',
+      'external',
+      'cross',
+      'global',
+      'system'
+    ];
+
+    const flowText = `${flowDefinition.name} ${flowDefinition.description || ''}`.toLowerCase();
+    return integrationIndicators.some(indicator => flowText.includes(indicator));
+  }
+
+  /**
+   * Check if flow is a shared utility
+   */
+  private isSharedUtility(flowDefinition: any): boolean {
+    // Check for indicators of shared utility
+    const utilityIndicators = [
+      'util',
+      'helper',
+      'common',
+      'shared',
+      'library',
+      'global',
+      'system'
+    ];
+
+    const flowText = `${flowDefinition.name} ${flowDefinition.description || ''}`.toLowerCase();
+    return utilityIndicators.some(indicator => flowText.includes(indicator));
+  }
+
+  /**
+   * Extract customizations from instruction for template application
+   */
+  private extractCustomizationsFromInstruction(instruction: string): Record<string, any> {
+    const customizations: Record<string, any> = {};
+    const lowerInstruction = instruction.toLowerCase();
+
+    // Extract specific items or entities
+    if (lowerInstruction.includes('iphone')) {
+      customizations.constants = {
+        catalog_item: 'iPhone 6',
+        item_type: 'hardware'
+      };
+    }
+
+    // Extract specific users or roles
+    if (lowerInstruction.includes('admin')) {
+      customizations.assignments = {
+        admin_group: 'catalog_admins'
+      };
+    }
+
+    // Extract specific conditions
+    const conditionMatch = lowerInstruction.match(/when\s+(.+?)(?:\s+then|\s+,|$)/);
+    if (conditionMatch) {
+      customizations.condition = conditionMatch[1];
+    }
+
+    // Extract specific table
+    const tableMatch = lowerInstruction.match(/(?:on|from|for)\s+(\w+)\s+(?:table|record)/);
+    if (tableMatch) {
+      customizations.table = tableMatch[1];
+    }
+
+    return customizations;
+  }
+
+  /**
+   * Enhance actions with subflow references
+   */
+  private enhanceActionsWithSubflows(actions: any[], subflowResults: SubflowCreationResult[]): any[] {
+    const enhancedActions = [...actions];
+
+    // Map successful subflows to actions
+    const successfulSubflows = subflowResults.filter(r => r.success);
+    
+    for (const subflowResult of successfulSubflows) {
+      if (subflowResult.subflow) {
+        const subflowName = subflowResult.subflow.name.toLowerCase();
+        
+        // Find matching actions that could use this subflow
+        const matchingActionIndex = enhancedActions.findIndex(action => {
+          const actionName = action.name.toLowerCase();
+          return actionName.includes(subflowName) || 
+                 subflowName.includes(actionName) ||
+                 this.actionsAreRelated(action, subflowResult.subflow);
+        });
+
+        if (matchingActionIndex !== -1) {
+          enhancedActions[matchingActionIndex].subflow_reference = {
+            sys_id: subflowResult.sys_id,
+            name: subflowResult.subflow.name,
+            url: subflowResult.url
+          };
+        }
+      }
+    }
+
+    return enhancedActions;
+  }
+
+  /**
+   * Check if action and subflow are related
+   */
+  private actionsAreRelated(action: any, subflow: any): boolean {
+    // Simple heuristic - could be enhanced with more sophisticated matching
+    const actionType = action.type.toLowerCase();
+    const subflowName = subflow.name.toLowerCase();
+    
+    const relatedPairs = [
+      ['approval', 'approval'],
+      ['notification', 'notification'],
+      ['create_task', 'task'],
+      ['update_record', 'update']
+    ];
+
+    return relatedPairs.some(([actionKeyword, subflowKeyword]) => 
+      actionType.includes(actionKeyword) && subflowName.includes(subflowKeyword)
+    );
+  }
+
+  /**
+   * Generate comprehensive recommendations
+   */
+  private generateComprehensiveRecommendations(
+    analysisResult: FlowAnalysisResult,
+    validationResult: ValidationResult,
+    matchingTemplates: TemplateMatchingResult[],
+    subflowResults: SubflowCreationResult[]
+  ): string[] {
+    const recommendations: string[] = [];
+
+    // Decision confidence recommendations
+    if (analysisResult.confidence < 0.7) {
+      recommendations.push('Consider providing more specific requirements to improve decision confidence');
+    }
+
+    // Complexity recommendations
+    if (analysisResult.criteria.complexity === 'high' || analysisResult.criteria.complexity === 'very_high') {
+      recommendations.push('Consider breaking complex logic into smaller, more manageable components');
+    }
+
+    // Reusability recommendations
+    if (analysisResult.criteria.reusability === 'high' && analysisResult.recommendedType === 'main_flow') {
+      recommendations.push('Consider creating reusable subflows for components that may be used elsewhere');
+    }
+
+    // Template recommendations
+    if (matchingTemplates.length > 0 && matchingTemplates[0].confidence > 0.8) {
+      recommendations.push(`Consider using the ${matchingTemplates[0].template.name} template for consistency`);
+    }
+
+    // Validation recommendations
+    validationResult.recommendations.forEach(rec => {
+      if (rec.priority === 'high') {
+        recommendations.push(rec.message);
+      }
+    });
+
+    // Subflow recommendations
+    subflowResults.forEach(result => {
+      if (result.success && result.recommendations) {
+        recommendations.push(...result.recommendations);
+      }
+    });
+
+    // General best practices
+    recommendations.push('Test the flow thoroughly before deploying to production');
+    recommendations.push('Document the flow purpose and usage for future maintenance');
+    recommendations.push('Consider adding error handling for robust operation');
+
+    return recommendations;
+  }
+
+  /**
+   * Get intelligent flow analysis summary
+   */
+  async getFlowAnalysisSummary(instruction: string): Promise<any> {
+    try {
+      const analysisResult = await this.decisionEngine.analyzeAndRecommend(instruction);
+      const validationResult = this.validationEngine.validateDecision(analysisResult, instruction);
+      const matchingTemplates = this.patternTemplates.findMatchingTemplates(instruction);
+
+      return {
+        decision: {
+          recommendedType: analysisResult.recommendedType,
+          confidence: analysisResult.confidence,
+          rationale: analysisResult.rationale
+        },
+        complexity: analysisResult.criteria.complexity,
+        reusability: analysisResult.criteria.reusability,
+        context: analysisResult.criteria.context,
+        validation: {
+          isValid: validationResult.isValid,
+          score: validationResult.score,
+          maxScore: validationResult.maxScore
+        },
+        templates: {
+          matchCount: matchingTemplates.length,
+          bestMatch: matchingTemplates[0]?.template.name || null,
+          confidence: matchingTemplates[0]?.confidence || 0
+        },
+        subflowCandidates: analysisResult.subflowCandidates.length,
+        alternatives: analysisResult.alternatives
+      };
+    } catch (error) {
+      this.logger.error('Failed to get flow analysis summary', error);
+      return {
+        error: 'Analysis failed',
+        message: error instanceof Error ? error.message : String(error)
       };
     }
   }

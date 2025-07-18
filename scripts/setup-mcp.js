@@ -58,7 +58,13 @@ const mcpServerFiles = [
   'servicenow-flow-composer-mcp.js',
   'servicenow-update-set-mcp.js',
   'servicenow-intelligent-mcp.js',
-  'servicenow-graph-memory-mcp.js'
+  'servicenow-graph-memory-mcp.js',
+  'servicenow-operations-mcp.js',
+  'servicenow-platform-development-mcp.js',
+  'servicenow-integration-mcp.js',
+  'servicenow-automation-mcp.js',
+  'servicenow-security-compliance-mcp.js',
+  'servicenow-reporting-analytics-mcp.js'
 ];
 
 mcpServerFiles.forEach(file => {

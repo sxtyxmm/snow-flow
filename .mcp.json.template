@@ -56,6 +56,51 @@
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
+    },
+    "servicenow-platform-development": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-platform-development-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-integration": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-integration-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-automation": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-automation-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-security-compliance": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-security-compliance-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-reporting-analytics": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-reporting-analytics-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
     }
   }
 }

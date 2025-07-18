@@ -1309,6 +1309,60 @@ async function createMCPConfig(targetDir: string) {
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
           "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
         }
+      },
+      "servicenow-operations": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-operations-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-platform-development": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-platform-development-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-integration": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-integration-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-automation": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-automation-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-security-compliance": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-security-compliance-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
+      },
+      "servicenow-reporting-analytics": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-reporting-analytics-mcp.js"],
+        "env": {
+          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        }
       }
     }
   };
@@ -1922,7 +1976,13 @@ program
             { name: 'servicenow-flow-composer', path: join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js') },
             { name: 'servicenow-update-set', path: join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js') },
             { name: 'servicenow-intelligent', path: join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js') },
-            { name: 'servicenow-graph-memory', path: join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js') }
+            { name: 'servicenow-graph-memory', path: join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js') },
+            { name: 'servicenow-operations', path: join(targetDir, 'dist/mcp/servicenow-operations-mcp.js') },
+            { name: 'servicenow-platform-development', path: join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js') },
+            { name: 'servicenow-integration', path: join(targetDir, 'dist/mcp/servicenow-integration-mcp.js') },
+            { name: 'servicenow-automation', path: join(targetDir, 'dist/mcp/servicenow-automation-mcp.js') },
+            { name: 'servicenow-security-compliance', path: join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js') },
+            { name: 'servicenow-reporting-analytics', path: join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js') }
           ];
           
           let registeredCount = 0;
@@ -1960,6 +2020,12 @@ program
             console.log(`   claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
             console.log(`   claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
             console.log(`   claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-operations "${join(targetDir, 'dist/mcp/servicenow-operations-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-platform-development "${join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-integration "${join(targetDir, 'dist/mcp/servicenow-integration-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-automation "${join(targetDir, 'dist/mcp/servicenow-automation-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
+            console.log(`   claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
           }
           
         } catch (error) {
@@ -1969,6 +2035,12 @@ program
           console.log(`   claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
           console.log(`   claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
           console.log(`   claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-operations "${join(targetDir, 'dist/mcp/servicenow-operations-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-platform-development "${join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-integration "${join(targetDir, 'dist/mcp/servicenow-integration-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-automation "${join(targetDir, 'dist/mcp/servicenow-automation-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
+          console.log(`   claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
         }
         
       } catch (error) {
@@ -1977,7 +2049,16 @@ program
         console.log('   2. Run: snow-flow mcp start');
         console.log('   3. Register with Claude Code:');
         console.log(`      claude mcp add servicenow-deployment "${join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js')}"`);
-        console.log(`      (repeat for other servers)`);
+        console.log(`      claude mcp add servicenow-flow-composer "${join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-update-set "${join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-intelligent "${join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-graph-memory "${join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-operations "${join(targetDir, 'dist/mcp/servicenow-operations-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-platform-development "${join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-integration "${join(targetDir, 'dist/mcp/servicenow-integration-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-automation "${join(targetDir, 'dist/mcp/servicenow-automation-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
+        console.log(`      claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
         console.log(`   Error: ${error instanceof Error ? error.message : String(error)}`);
       }
       
@@ -1992,7 +2073,7 @@ program
       console.log('✅ Project is ready to use!');
       console.log('');
       console.log('🔧 MCP Servers:');
-      console.log('   - ✅ All 5 MCP servers have been built and configured');
+      console.log('   - ✅ All 11 MCP servers have been built and configured');
       console.log('   - ✅ .mcp.json generated with absolute paths and credentials');
       console.log('   - ✅ Ready to use in Claude Code');
       console.log('');
@@ -2002,6 +2083,11 @@ program
       console.log('   - snow_update_set_create - Manage Update Sets');
       console.log('   - snow_find_artifact - Search with natural language');
       console.log('   - snow_graph_index_artifact - Neo4j graph memory');
+      console.log('   - snow_create_ui_page - Platform development UI');
+      console.log('   - snow_create_rest_message - Integration management');
+      console.log('   - snow_create_scheduled_job - Process automation');
+      console.log('   - snow_create_security_policy - Security & compliance');
+      console.log('   - snow_create_report - Reporting & analytics');
       console.log('');
       console.log('🔧 MCP Server Management:');
       console.log('   - Start servers: snow-flow mcp start');

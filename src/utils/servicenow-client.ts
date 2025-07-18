@@ -578,7 +578,7 @@ export class ServiceNowClient {
   /**
    * Search records in a table using encoded query
    */
-  async searchRecords(table: string, query: string, limit: number = 10): Promise<any[]> {
+  async searchRecords(table: string, query: string, limit: number = 10): Promise<ServiceNowAPIResponse<any>> {
     try {
       await this.ensureAuthenticated();
       
@@ -591,10 +591,43 @@ export class ServiceNowClient {
           }
         }
       );
-      return response.data.result || [];
+      return {
+        success: true,
+        data: {
+          result: response.data.result || []
+        }
+      };
     } catch (error) {
       console.error(`Failed to search records in ${table}:`, error);
-      return [];
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a record in any ServiceNow table
+   */
+  async createRecord(table: string, data: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      await this.ensureAuthenticated();
+      
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/${table}`,
+        data
+      );
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error(`Failed to create record in ${table}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
     }
   }
 
@@ -619,11 +652,14 @@ export class ServiceNowClient {
         10
       );
       
-      console.log(`✅ Found ${results.length} action types and ${instanceResults.length} action instances`);
+      const actionTypes = results.success ? results.data.result : [];
+      const actionInstances = instanceResults.success ? instanceResults.data.result : [];
+      
+      console.log(`✅ Found ${actionTypes.length} action types and ${actionInstances.length} action instances`);
       
       return {
-        actionTypes: results,
-        actionInstances: instanceResults
+        actionTypes,
+        actionInstances
       };
     } catch (error) {
       console.error('Failed to search flow actions:', error);
@@ -653,8 +689,8 @@ export class ServiceNowClient {
       
       return {
         actionType,
-        inputs,
-        outputs
+        inputs: inputs.success ? inputs.data.result : [],
+        outputs: outputs.success ? outputs.data.result : []
       };
     } catch (error) {
       console.error('Failed to get flow action details:', error);
@@ -1581,7 +1617,7 @@ export class ServiceNowClient {
   /**
    * Ensure we have an active Update Set for tracking changes
    */
-  private async ensureUpdateSet(): Promise<ServiceNowAPIResponse<any>> {
+  async ensureUpdateSet(): Promise<ServiceNowAPIResponse<any>> {
     try {
       // Check if we have a current Update Set
       const currentUpdateSet = await this.getCurrentUpdateSet();

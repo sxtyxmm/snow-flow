@@ -47,7 +47,8 @@ class ServiceNowGraphMemoryMCP {
   private server: Server;
   private logger: Logger;
   private driver: Driver | null = null;
-  private config: ValidatedNeo4jConfig;
+  private config: ValidatedNeo4jConfig | null = null;
+  private neo4jAvailable: boolean = false;
 
   constructor() {
     this.server = new Server(
@@ -65,24 +66,45 @@ class ServiceNowGraphMemoryMCP {
     this.logger = new Logger('ServiceNowGraphMemoryMCP');
     const rawConfig = mcpConfig.getNeo4jConfig();
     
-    // Validate Neo4j configuration
+    // Validate Neo4j configuration - but don't fail if missing
     if (!rawConfig?.uri || !rawConfig?.username || !rawConfig?.password) {
-      this.logger.error('Neo4j configuration missing. Please set NEO4J_URI, NEO4J_USERNAME, and NEO4J_PASSWORD environment variables.');
-      throw new Error('Neo4j configuration required for Graph Memory MCP');
+      this.logger.warn('Neo4j configuration missing. Graph Memory MCP will run in fallback mode without Neo4j functionality.');
+      this.logger.info('To enable Neo4j: set NEO4J_URI, NEO4J_USERNAME, and NEO4J_PASSWORD environment variables.');
+      this.neo4jAvailable = false;
+    } else {
+      // After validation, we know these are defined
+      this.config = {
+        uri: rawConfig.uri,
+        username: rawConfig.username,
+        password: rawConfig.password,
+        database: rawConfig.database
+      };
+      this.neo4jAvailable = true;
     }
-    
-    // After validation, we know these are defined
-    this.config = {
-      uri: rawConfig.uri,
-      username: rawConfig.username,
-      password: rawConfig.password,
-      database: rawConfig.database
-    };
 
     this.setupHandlers();
   }
 
+  private createFallbackResponse(toolName: string): any {
+    return {
+      success: false,
+      message: `${toolName} requires Neo4j database. Please install and configure Neo4j to use graph memory features.`,
+      fallback_mode: true,
+      instructions: [
+        '1. Install Neo4j Community Edition',
+        '2. Start Neo4j service',
+        '3. Set environment variables: NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD',
+        '4. Restart the MCP server'
+      ]
+    };
+  }
+
   private async connectToNeo4j() {
+    if (!this.neo4jAvailable || !this.config) {
+      this.logger.warn('Neo4j not available - using fallback mode');
+      return;
+    }
+    
     if (!this.driver) {
       try {
         this.driver = neo4j.driver(
@@ -262,7 +284,11 @@ class ServiceNowGraphMemoryMCP {
   }
 
   private async indexArtifact(args: any) {
-    const session = this.driver!.session();
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_index_artifact');
+    }
+    
+    const session = this.driver.session();
     try {
       const { artifact, relationships = [] } = args;
 
@@ -353,6 +379,10 @@ class ServiceNowGraphMemoryMCP {
   }
 
   private async findRelatedArtifacts(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_find_related');
+    }
+    
     const session = this.driver!.session();
     try {
       const { artifact_id, depth = 2, relationship_types = [] } = args;
@@ -405,6 +435,10 @@ ${relationships.map((r: any) => `- ${r.type}: ${r.start} → ${r.end}`).join('\n
   }
 
   private async analyzeImpact(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_analyze_impact');
+    }
+    
     const session = this.driver!.session();
     try {
       const { artifact_id, change_type = 'modify' } = args;
@@ -460,6 +494,10 @@ ${riskLevel === 'HIGH' ? '- Create comprehensive test plan\n- Consider phased de
   }
 
   private async suggestArtifacts(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_suggest_artifacts');
+    }
+    
     const session = this.driver!.session();
     try {
       const { context, artifact_type, requirements = [] } = args;
@@ -545,6 +583,10 @@ ${i + 1}. **${s.artifact.name}** (${s.artifact.type})
   }
 
   private async analyzePatterns(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_pattern_analysis');
+    }
+    
     const session = this.driver!.session();
     try {
       const { pattern_type = 'architectural', min_occurrences = 3 } = args;
@@ -601,6 +643,10 @@ ${result.records.map((r: any) => {
   }
 
   private async generateVisualization(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_visualize');
+    }
+    
     const { focus_artifact, include_types = [], max_nodes = 50 } = args;
 
     const typeFilter = include_types.length > 0 
@@ -654,6 +700,10 @@ ${cypherQuery}
   }
 
   private async exportKnowledge(args: any) {
+    if (!this.neo4jAvailable || !this.driver) {
+      return this.createFallbackResponse('snow_graph_export_knowledge');
+    }
+    
     const session = this.driver!.session();
     try {
       const { format = 'json', include_content = false } = args;

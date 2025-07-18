@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ServiceNow Multi-Agent system includes **6 specialized MCP servers** that provide comprehensive coverage for ServiceNow development, operations, and management. Each server focuses on specific aspects of ServiceNow automation and integrates seamlessly with the snow-flow CLI and Claude Code.
+The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that provide comprehensive coverage for ServiceNow development, operations, and management. Each server focuses on specific aspects of ServiceNow automation and integrates seamlessly with the snow-flow CLI and Claude Code.
 
 ## Architecture
 
@@ -18,6 +18,15 @@ The ServiceNow Multi-Agent system includes **6 specialized MCP servers** that pr
 │  │  Update Set     │  │  Graph Memory   │  │  Operations     │ │
 │  │  MCP Server     │  │  MCP Server     │  │  MCP Server     │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  Platform Dev   │  │  Integration    │  │  Automation     │ │
+│  │  MCP Server     │  │  MCP Server     │  │  MCP Server     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐                     │
+│  │  Security &     │  │  Reporting &    │                     │
+│  │  Compliance     │  │  Analytics      │                     │
+│  │  MCP Server     │  │  MCP Server     │                     │
+│  └─────────────────┘  └─────────────────┘                     │
 ├─────────────────────────────────────────────────────────────────┤
 │               Centralized Configuration & Auth                  │
 │  ┌─────────────────┐              ┌─────────────────┐          │
@@ -144,6 +153,124 @@ The ServiceNow Multi-Agent system includes **6 specialized MCP servers** that pr
 - CMDB queries
 - User management
 - Operational reporting
+
+### 7. ServiceNow Platform Development MCP (NEW!)
+**Purpose**: Comprehensive platform development with UI, scripting, and platform customization
+
+**Key Features**:
+- **UI Development**: UI Pages, UI Scripts, UI Policies, UI Actions with dynamic discovery
+- **Script Management**: Script Includes, Business Rules, Client Scripts with validation
+- **Platform Customization**: Dynamic table and field discovery for all platform artifacts
+- **NO HARDCODED VALUES**: All tables, fields, and configurations discovered dynamically
+- **Automatic Discovery**: Intelligent discovery of platform development artifacts
+
+**Tools**:
+- `snow_create_ui_page` - Create UI Pages with dynamic field discovery
+- `snow_create_ui_script` - Create UI Scripts with validation
+- `snow_create_ui_policy` - Create UI Policies with dynamic field discovery
+- `snow_create_ui_action` - Create UI Actions with dynamic table discovery
+- `snow_create_script_include` - Create Script Includes with API discovery
+- `snow_create_business_rule` - Create Business Rules with dynamic table discovery
+- `snow_create_client_script` - Create Client Scripts with form discovery
+- `snow_discover_platform_tables` - Discover all platform development tables
+- `snow_discover_ui_components` - Discover UI components and their relationships
+- `snow_discover_script_apis` - Discover available script APIs and methods
+
+### 8. ServiceNow Integration MCP (NEW!)
+**Purpose**: External system integration with REST, SOAP, and data transformation
+
+**Key Features**:
+- **REST Integration**: REST Messages and Methods with dynamic authentication discovery
+- **SOAP Integration**: Web Services with dynamic WSDL discovery
+- **Data Transformation**: Transform Maps and Field Maps with dynamic field discovery
+- **Import/Export**: Import Sets with dynamic schema discovery
+- **Email Integration**: Email configurations with dynamic server discovery
+- **NO HARDCODED VALUES**: All endpoints, auth types, and configurations discovered dynamically
+
+**Tools**:
+- `snow_create_rest_message` - Create REST Messages with dynamic auth discovery
+- `snow_create_rest_method` - Create REST Methods with dynamic parameter discovery
+- `snow_create_transform_map` - Create Transform Maps with dynamic table discovery
+- `snow_create_field_map` - Create Field Maps with dynamic field validation
+- `snow_create_import_set` - Create Import Sets with dynamic schema discovery
+- `snow_create_web_service` - Create Web Services with dynamic WSDL discovery
+- `snow_create_email_config` - Create Email Configurations with dynamic server discovery
+- `snow_discover_integration_endpoints` - Discover all integration endpoints
+- `snow_test_integration` - Test integration endpoints with validation
+- `snow_discover_data_sources` - Discover all available data sources
+
+### 9. ServiceNow Automation MCP (NEW!)
+**Purpose**: Automated processes, scheduling, and event-driven workflows
+
+**Key Features**:
+- **Scheduled Jobs**: Scheduled Jobs with dynamic timezone and schedule discovery
+- **Event Management**: Event Rules and Notifications with dynamic event discovery
+- **SLA Management**: SLA Definitions with dynamic schedule discovery
+- **Workflow Automation**: Escalation Rules and Workflow Activities with dynamic discovery
+- **Testing & Monitoring**: Job testing and automation discovery
+- **NO HARDCODED VALUES**: All schedules, events, and configurations discovered dynamically
+
+**Tools**:
+- `snow_create_scheduled_job` - Create Scheduled Jobs with dynamic schedule discovery
+- `snow_create_event_rule` - Create Event Rules with dynamic event discovery
+- `snow_create_notification` - Create Notifications with dynamic template discovery
+- `snow_create_sla_definition` - Create SLA Definitions with dynamic field discovery
+- `snow_create_escalation_rule` - Create Escalation Rules with dynamic discovery
+- `snow_create_workflow_activity` - Create Workflow Activities with dynamic discovery
+- `snow_discover_schedules` - Discover all available schedules dynamically
+- `snow_discover_events` - Discover all available events dynamically
+- `snow_discover_automation_jobs` - Discover all automation jobs dynamically
+- `snow_test_scheduled_job` - Test scheduled job execution
+
+### 10. ServiceNow Security & Compliance MCP (NEW!)
+**Purpose**: Security policies, compliance rules, and audit operations
+
+**Key Features**:
+- **Security Policies**: Security policies with dynamic rule discovery
+- **Compliance Management**: Compliance rules with dynamic framework discovery
+- **Audit Controls**: Audit rules with dynamic event discovery
+- **Access Control**: Access control with dynamic role discovery
+- **Data Protection**: Data policies with dynamic field discovery
+- **Vulnerability Management**: Vulnerability scans with dynamic discovery
+- **NO HARDCODED VALUES**: All security configurations discovered dynamically
+
+**Tools**:
+- `snow_create_security_policy` - Create Security Policies with dynamic rule discovery
+- `snow_create_compliance_rule` - Create Compliance Rules with dynamic framework discovery
+- `snow_create_audit_rule` - Create Audit Rules with dynamic event discovery
+- `snow_create_access_control` - Create Access Controls with dynamic role discovery
+- `snow_create_data_policy` - Create Data Policies with dynamic field discovery
+- `snow_create_vulnerability_scan` - Create Vulnerability Scans with dynamic discovery
+- `snow_discover_security_frameworks` - Discover available security frameworks
+- `snow_discover_security_policies` - Discover existing security policies
+- `snow_run_compliance_scan` - Run compliance scans with dynamic rule discovery
+- `snow_audit_trail_analysis` - Analyze audit trails for security incidents
+- `snow_security_risk_assessment` - Perform security risk assessments
+
+### 11. ServiceNow Reporting & Analytics MCP (NEW!)
+**Purpose**: Reports, dashboards, and analytics operations
+
+**Key Features**:
+- **Report Creation**: Reports with dynamic table and field discovery
+- **Dashboard Management**: Dashboards with dynamic widget discovery
+- **KPI Tracking**: KPIs with dynamic metric discovery
+- **Data Visualization**: Charts with dynamic type discovery
+- **Performance Analytics**: Performance analytics with dynamic metric discovery
+- **Scheduled Reporting**: Scheduled reports with dynamic delivery discovery
+- **NO HARDCODED VALUES**: All reporting configurations discovered dynamically
+
+**Tools**:
+- `snow_create_report` - Create Reports with dynamic table and field discovery
+- `snow_create_dashboard` - Create Dashboards with dynamic widget discovery
+- `snow_create_kpi` - Create KPIs with dynamic metric discovery
+- `snow_create_data_visualization` - Create Data Visualizations with dynamic chart discovery
+- `snow_create_performance_analytics` - Create Performance Analytics with dynamic metric discovery
+- `snow_create_scheduled_report` - Create Scheduled Reports with dynamic delivery discovery
+- `snow_discover_reporting_tables` - Discover all tables available for reporting
+- `snow_discover_report_fields` - Discover available fields for reporting
+- `snow_analyze_data_quality` - Analyze data quality for reporting
+- `snow_generate_insights` - Generate data insights and recommendations
+- `snow_export_report_data` - Export report data in various formats
 
 ## Configuration Management
 

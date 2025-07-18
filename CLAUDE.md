@@ -270,12 +270,221 @@ Once configured, Claude Flow MCP tools enhance Claude Code's coordination:
 - `mcp__claude-flow__issue_triage` - Intelligent issue classification
 - `mcp__claude-flow__code_review` - Automated code review with swarms
 
+### ServiceNow MCP Tools (NEW!):
+- `mcp__servicenow-deployment__*` - Widget, Flow, and Application deployment
+- `mcp__servicenow-flow-composer__*` - Natural language flow creation
+- `mcp__servicenow-update-set__*` - Update Set management and tracking
+- `mcp__servicenow-intelligent__*` - AI-powered artifact discovery and editing
+- `mcp__servicenow-graph-memory__*` - Graph-based ServiceNow knowledge management
+- `mcp__servicenow-operations__*` - ITSM operations and monitoring
+- `mcp__servicenow-platform-development__*` - UI, scripting, and platform development
+- `mcp__servicenow-integration__*` - REST, SOAP, and data transformation
+- `mcp__servicenow-automation__*` - Scheduled jobs, events, and workflows
+- `mcp__servicenow-security-compliance__*` - Security policies and compliance management
+- `mcp__servicenow-reporting-analytics__*` - Reports, dashboards, and analytics
+
 ### System Tools:
 - `mcp__claude-flow__benchmark_run` - Measure coordination efficiency
 - `mcp__claude-flow__features_detect` - Available capabilities
 - `mcp__claude-flow__swarm_monitor` - Real-time coordination tracking
 
 ## Workflow Examples (Coordination-Focused)
+
+### ServiceNow Development Workflow Examples (NEW!)
+
+#### ServiceNow Widget Development
+**Context:** Create a complete ServiceNow widget with dynamic data and testing
+
+**Step 1:** Initialize ServiceNow-specific swarm
+```javascript
+mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 4, strategy: "specialized" }
+mcp__claude-flow__agent_spawn { type: "designer", name: "Widget Designer" }
+mcp__claude-flow__agent_spawn { type: "coder", name: "ServiceNow Developer" }
+mcp__claude-flow__agent_spawn { type: "tester", name: "Widget Tester" }
+```
+
+**Step 2:** Create widget with dynamic discovery
+```javascript
+mcp__servicenow-deployment__snow_deploy_widget {
+  name: "incident_dashboard",
+  title: "Incident Dashboard",
+  template: "<div ng-controller='WidgetController'>...</div>",
+  client_script: "function() { ... }",
+  server_script: "data.incidents = new GlideRecord('incident')...",
+  category: "dashboard"
+}
+```
+
+**Step 3:** Coordinate with Update Set management
+```javascript
+mcp__servicenow-update-set__snow_update_set_create {
+  name: "Widget Development Sprint 1",
+  description: "Dashboard widgets for incident management"
+}
+```
+
+#### ServiceNow Flow Creation with Natural Language
+**Context:** Create complex approval flows using natural language
+
+**Step 1:** Natural language flow creation
+```javascript
+mcp__servicenow-flow-composer__snow_create_complex_flow {
+  instruction: "maak een flow waarbij we het script include gebruiken waar we de localizatie met LLMs gebruiken om dan de berichten van het support desk mee te vertalen naar engels en deze op te slaan in een tabel aan de hand van een business rule",
+  deploy_immediately: true,
+  create_missing_artifacts: true
+}
+```
+
+**Step 2:** Intelligent artifact discovery
+```javascript
+mcp__servicenow-intelligent__snow_find_artifact {
+  query: "the script include for LLM translation services"
+}
+```
+
+**Step 3:** Graph-based knowledge management
+```javascript
+mcp__servicenow-graph-memory__snow_graph_index_artifact {
+  artifact: { id: "translation_flow", name: "LLM Translation Flow", type: "flow" },
+  relationships: [
+    { to: "script_include_translation", type: "USES" },
+    { to: "support_desk_table", type: "MODIFIES" }
+  ]
+}
+```
+
+#### ServiceNow Integration Development
+**Context:** Build REST API integrations with external systems
+
+**Step 1:** Discover existing integrations
+```javascript
+mcp__servicenow-integration__snow_discover_integration_endpoints {
+  type: "REST"
+}
+```
+
+**Step 2:** Create new REST endpoint
+```javascript
+mcp__servicenow-integration__snow_create_rest_message {
+  name: "External CRM Integration",
+  endpoint: "https://api.crm.example.com/v1",
+  authType: "oauth2",
+  description: "Integration with external CRM system"
+}
+```
+
+**Step 3:** Set up data transformation
+```javascript
+mcp__servicenow-integration__snow_create_transform_map {
+  name: "CRM Contact to ServiceNow User",
+  sourceTable: "u_crm_contacts",
+  targetTable: "sys_user",
+  description: "Transform CRM contacts to ServiceNow users"
+}
+```
+
+#### ServiceNow Automation Workflows
+**Context:** Create automated processes for ITSM operations
+
+**Step 1:** Discover existing automation
+```javascript
+mcp__servicenow-automation__snow_discover_automation_jobs {
+  status: "active"
+}
+```
+
+**Step 2:** Create scheduled maintenance job
+```javascript
+mcp__servicenow-automation__snow_create_scheduled_job {
+  name: "Weekly System Maintenance",
+  script: "gs.log('Running weekly maintenance...'); // Maintenance logic here",
+  schedule: "weekly",
+  timeZone: "US/Eastern",
+  description: "Automated weekly system maintenance tasks"
+}
+```
+
+**Step 3:** Set up event-driven notifications
+```javascript
+mcp__servicenow-automation__snow_create_notification {
+  name: "High Priority Incident Alert",
+  table: "incident",
+  when: "inserted",
+  condition: "priority=1",
+  recipients: "itil_admin",
+  subject: "URGENT: High Priority Incident Created",
+  message: "A high priority incident has been created: ${number}"
+}
+```
+
+#### ServiceNow Security & Compliance Workflows
+**Context:** Implement security policies and compliance controls
+
+**Step 1:** Create security policies
+```javascript
+mcp__servicenow-security-compliance__snow_create_security_policy {
+  name: "Data Access Control Policy",
+  type: "access",
+  rules: ["restrict_sensitive_data", "audit_access_attempts"],
+  enforcement: "strict",
+  scope: "global"
+}
+```
+
+**Step 2:** Set up compliance monitoring
+```javascript
+mcp__servicenow-security-compliance__snow_create_compliance_rule {
+  name: "GDPR Data Retention",
+  framework: "GDPR",
+  requirement: "Article 5 - Data retention limits",
+  validation: "data_retention_check.js",
+  severity: "high"
+}
+```
+
+**Step 3:** Run compliance scan
+```javascript
+mcp__servicenow-security-compliance__snow_run_compliance_scan {
+  framework: "GDPR",
+  scope: "instance",
+  generateReport: true
+}
+```
+
+#### ServiceNow Reporting & Analytics Workflows
+**Context:** Create comprehensive reports and analytics dashboards
+
+**Step 1:** Discover reporting capabilities
+```javascript
+mcp__servicenow-reporting-analytics__snow_discover_reporting_tables {
+  category: "ITSM",
+  hasData: true
+}
+```
+
+**Step 2:** Create performance dashboard
+```javascript
+mcp__servicenow-reporting-analytics__snow_create_dashboard {
+  name: "ITSM Performance Dashboard",
+  layout: "grid",
+  widgets: [
+    { type: "chart", dataSource: "incident", config: { chartType: "bar" } },
+    { type: "kpi", dataSource: "incident", config: { metric: "resolution_time" } }
+  ],
+  refreshInterval: 15
+}
+```
+
+**Step 3:** Set up automated reporting
+```javascript
+mcp__servicenow-reporting-analytics__snow_create_scheduled_report {
+  reportName: "Monthly Incident Report",
+  schedule: "monthly",
+  recipients: ["management@company.com"],
+  format: "PDF",
+  subject: "Monthly ITSM Performance Report"
+}
+```
 
 ### Research Coordination Example
 **Context:** Claude Code needs to research a complex topic systematically
