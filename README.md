@@ -39,6 +39,15 @@ Each server provides autonomous capabilities for different aspects of ServiceNow
 ### Installation
 
 ```bash
+# Install Snow-Flow globally
+npm install -g snow-flow
+
+# Initialize Snow-Flow in your project directory
+snow-flow init --sparc
+```
+
+#### Alternative: Install from source
+```bash
 # Clone the repository
 git clone https://github.com/groeimetai/snow-flow.git
 cd snow-flow
@@ -49,8 +58,8 @@ npm install
 # Build the project
 npm run build
 
-# Initialize Snow-Flow
-snow-flow init --sparc
+# Link globally (optional)
+npm link
 ```
 
 ### Configuration

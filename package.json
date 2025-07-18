@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
   "version": "1.1.0",
-  "description": "ServiceNow Multi-Agent Development Framework",
+  "description": "Multi-Agent ServiceNow Development Platform - Create, manage, and deploy ServiceNow artifacts using natural language and AI agents",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -15,16 +15,36 @@
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "setup-mcp": "node scripts/setup-mcp.js",
-    "postbuild": "npm run setup-mcp"
+    "postbuild": "npm run setup-mcp",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
     "servicenow",
     "multiagent",
     "automation",
-    "development"
+    "development",
+    "mcp",
+    "ai",
+    "flow-designer",
+    "deployment",
+    "claude",
+    "natural-language"
   ],
-  "author": "",
+  "author": "Snow-Flow Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/groeimetai/snow-flow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/groeimetai/snow-flow/issues"
+  },
+  "homepage": "https://github.com/groeimetai/snow-flow#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
     "@types/node-fetch": "^2.6.12",

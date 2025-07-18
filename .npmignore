@@ -1,0 +1,81 @@
+# Source files (users only need compiled JS)
+src/
+*.ts
+!*.d.ts
+
+# Development files
+.env
+.env.*
+*.log
+logs/
+.DS_Store
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+
+# Development documentation
+*.md
+!README.md
+!LICENSE
+
+# Local data
+memory/
+.swarm/
+.claude/
+.snow-flow/
+coordination/
+servicenow/
+
+# Config files
+.gitignore
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.json
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Build artifacts that shouldn't be published
+*.tsbuildinfo
+
+# Examples and demos (if any remain)
+examples/
+demo/
+
+# Scripts (only keep what's needed)
+scripts/*
+!scripts/postinstall.js
+!scripts/setup-mcp.js
+
+# Templates needed for setup
+!.mcp.json.template
+!.env.example
+
+# Keep only essential files:
+# - dist/ (compiled code)
+# - bin/ (CLI entry point)
+# - scripts/postinstall.js (needed after install)
+# - scripts/setup-mcp.js (needed for MCP setup)
+# - .mcp.json.template (needed for setup)
+# - package.json
+# - README.md
+# - LICENSE

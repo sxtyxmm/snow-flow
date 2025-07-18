@@ -1,66 +1,30 @@
 #!/usr/bin/env node
 
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.join(__dirname, '..');
+console.log('🚀 Setting up Snow-Flow...');
 
-async function postInstall() {
-  console.log('Running post-install setup...');
+// Check if we're in a global install
+const isGlobalInstall = process.env.npm_config_global === 'true' || 
+                        process.env.npm_config_global === true;
 
-  // Create necessary directories
-  const directories = [
-    'memory',
-    'memory/sessions',
-    'memory/agents',
-    'logs',
-    'workflows',
-    'config'
-  ];
-
-  for (const dir of directories) {
-    const dirPath = path.join(projectRoot, dir);
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-      console.log(`✓ Created directory: ${dir}`);
-    } catch (error) {
-      if (error.code !== 'EEXIST') {
-        console.error(`✗ Failed to create directory ${dir}:`, error);
-      }
-    }
+if (isGlobalInstall) {
+  console.log('✅ Snow-Flow installed globally');
+  console.log('📁 Run "snow-flow init --sparc" in your project directory to initialize');
+  
+  // Create global config directory
+  const globalConfigDir = path.join(os.homedir(), '.snow-flow');
+  if (!fs.existsSync(globalConfigDir)) {
+    fs.mkdirSync(globalConfigDir, { recursive: true });
+    console.log(`✅ Created global config directory at ${globalConfigDir}`);
   }
-
-  // Create default config file if it doesn't exist
-  const configPath = path.join(projectRoot, 'config', 'default.json');
-  try {
-    await fs.access(configPath);
-  } catch {
-    const defaultConfig = {
-      orchestrator: {
-        maxAgents: 10,
-        topology: 'hierarchical',
-        strategy: 'adaptive'
-      },
-      memory: {
-        cleanupInterval: 300000,
-        maxEntries: 10000
-      },
-      logging: {
-        level: 'info',
-        enabled: true
-      }
-    };
-
-    await fs.writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
-    console.log('✓ Created default configuration file');
-  }
-
-  console.log('\nPost-install setup completed!');
-  console.log('Run "npm run build" to build the project');
-  console.log('Then use "snow-flow --help" to see available commands');
+} else {
+  // Local installation - don't create directories automatically
+  console.log('✅ Snow-Flow installed locally');
+  console.log('🔧 Run "snow-flow init --sparc" to initialize your project');
 }
 
-postInstall().catch(console.error);
+console.log('\n📚 Documentation: https://github.com/groeimetai/snow-flow#readme');
+console.log('🆘 Get help: snow-flow --help');
