@@ -1961,51 +1961,30 @@ program
         
         console.log('✅ MCP configuration generated with absolute paths');
         
-        // Try to register MCP servers with Claude Code
-        console.log('🔗 Registering MCP servers with Claude Code...');
+        // Copy .mcp.json to current directory for Claude Code
+        console.log('📋 Setting up MCP servers for Claude Code...');
         try {
-          const mcpConfigPath = isGlobalInstall 
+          const sourceMcpPath = isGlobalInstall 
             ? join(__dirname, '..', '.mcp.json')
             : join(targetDir, '.mcp.json');
           
-          // Check if .mcp.json exists
-          if (existsSync(mcpConfigPath)) {
-            const { execSync } = require('child_process');
-            
-            // Use claude mcp add command to register the servers
-            try {
-              console.log('📝 Running: claude mcp add-config .mcp.json');
-              execSync(`claude mcp add-config "${mcpConfigPath}"`, { 
-                stdio: 'inherit'
-              });
-              console.log('✅ MCP servers registered with Claude Code!');
-              console.log('🎉 All 11 Snow-Flow MCP servers are now available');
-              console.log('💡 Type /mcp in Claude Code to see the available servers');
-            } catch (cmdError: any) {
-              // If claude command is not found, provide manual instructions
-              if (cmdError.message.includes('command not found') || cmdError.message.includes('is not recognized')) {
-                console.log('⚠️  Claude Code CLI not found in PATH');
-                console.log('');
-                console.log('📋 Manual registration steps:');
-                console.log(`   1. Run: claude mcp add-config "${mcpConfigPath}"`);
-                console.log('   2. Or copy the .mcp.json to your project and run:');
-                console.log('      claude mcp add-config .mcp.json');
-                console.log('');
-                console.log('💡 Make sure Claude Code is installed and in your PATH');
-              } else {
-                throw cmdError;
-              }
-            }
-          } else {
-            console.error('❌ .mcp.json file not found!');
-            console.log('   Run setup-mcp script first to generate the config');
+          const targetMcpPath = join(targetDir, '.mcp.json');
+          
+          // Only copy if source and target are different
+          if (sourceMcpPath !== targetMcpPath && existsSync(sourceMcpPath)) {
+            await fs.copyFile(sourceMcpPath, targetMcpPath);
+            console.log('✅ Copied .mcp.json to project directory');
           }
-        } catch (error: any) {
-          // Non-critical error, just inform the user
-          console.error('⚠️  Could not auto-register MCP servers:', error.message);
+          
+          console.log('✅ MCP servers configured for Claude Code!');
           console.log('');
-          console.log('📋 Manual registration:');
-          console.log('   claude mcp add-config .mcp.json');
+          console.log('🎉 All 11 Snow-Flow MCP servers are now available');
+          console.log('💡 Open this project in Claude Code to access the MCP servers');
+          console.log('📝 Type /mcp in Claude Code to see available ServiceNow tools');
+          
+        } catch (error: any) {
+          console.error('⚠️  Could not copy MCP configuration:', error.message);
+          console.log('   Manually copy .mcp.json to your project directory');
         }
         
         // Now initialize and start MCP servers
