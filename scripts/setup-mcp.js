@@ -14,7 +14,15 @@ try {
   // .env file not found, that's OK
 }
 
-const projectRoot = process.cwd();
+// Determine if we're in a global npm installation
+const isGlobalInstall = __dirname.includes('node_modules/snow-flow') || 
+                       __dirname.includes('.nvm/versions/node');
+
+// For global installs, use the package directory, not cwd
+const projectRoot = isGlobalInstall 
+  ? path.resolve(__dirname, '..') // Go up from scripts/ to package root
+  : process.cwd();
+
 const templatePath = path.join(projectRoot, '.mcp.json.template');
 const mcpFilePath = path.join(projectRoot, '.mcp.json');
 

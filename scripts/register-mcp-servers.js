@@ -21,71 +21,92 @@ const CLAUDE_CONFIG_PATH = path.join(
 const SNOW_FLOW_SERVERS = {
   "snow-flow-operations": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-operations"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-operations-mcp.js"]
   },
   "snow-flow-automation": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-automation"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-automation-mcp.js"]
   },
   "snow-flow-integration": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-integration"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-integration-mcp.js"]
   },
   "snow-flow-deployment": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-deployment"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-deployment-mcp.js"]
   },
   "snow-flow-platform-development": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-platform-development"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-platform-development-mcp.js"]
   },
   "snow-flow-reporting-analytics": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-reporting-analytics"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-reporting-analytics-mcp.js"]
   },
   "snow-flow-security-compliance": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-security-compliance"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-security-compliance-mcp.js"]
   },
   "snow-flow-flow-composer": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-flow-composer"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-flow-composer-mcp.js"]
   },
   "snow-flow-update-set": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-update-set"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-update-set-mcp.js"]
   },
   "snow-flow-intelligent": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-intelligent"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-intelligent-mcp.js"]
   },
   "snow-flow-graph-memory": {
     "command": "node",
-    "args": ["./mcp-wrapper.sh", "servicenow-graph-memory"],
-    "cwd": "${SNOW_FLOW_PATH}"
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-graph-memory-mcp.js"]
   }
 };
 
 async function registerMCPServers() {
   try {
     // Determine Snow-Flow installation path
-    const snowFlowPath = process.env.SNOW_FLOW_PATH || process.cwd();
+    const isGlobalInstall = __dirname.includes('node_modules/snow-flow') || 
+                           __dirname.includes('.nvm/versions/node');
+    
+    const snowFlowPath = process.env.SNOW_FLOW_PATH || 
+                        (isGlobalInstall ? path.resolve(__dirname, '..') : process.cwd());
     
     // Replace ${SNOW_FLOW_PATH} with actual path
     const servers = JSON.parse(JSON.stringify(SNOW_FLOW_SERVERS));
     Object.keys(servers).forEach(key => {
-      if (servers[key].cwd === '${SNOW_FLOW_PATH}') {
-        servers[key].cwd = snowFlowPath;
+      // Replace path placeholder
+      if (servers[key].args && servers[key].args[0]) {
+        servers[key].args[0] = servers[key].args[0].replace('${SNOW_FLOW_PATH}', snowFlowPath);
+      }
+      
+      // Add environment variables from .env if it exists
+      const envPath = path.join(snowFlowPath, '.env');
+      if (fs.existsSync(envPath)) {
+        try {
+          const envContent = fs.readFileSync(envPath, 'utf8');
+          const envVars = {};
+          
+          envContent.split('\n').forEach(line => {
+            // Skip comments and empty lines
+            if (line.trim() && !line.trim().startsWith('#')) {
+              const [key, ...valueParts] = line.split('=');
+              if (key && valueParts.length > 0) {
+                const value = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
+                envVars[key.trim()] = value;
+              }
+            }
+          });
+          
+          // Add env vars to server config
+          if (Object.keys(envVars).length > 0) {
+            servers[key].env = envVars;
+          }
+        } catch (err) {
+          console.warn('⚠️  Could not read .env file:', err.message);
+        }
       }
     });
 

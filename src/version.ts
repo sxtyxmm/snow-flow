@@ -2,13 +2,19 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.10';
+export const VERSION = '1.1.11';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.11': [
+      'Fixed MCP server paths for global npm installations',
+      'Updated setup-mcp.js to detect global vs local installs',
+      'Enhanced register-mcp-servers.js to add .env variables',
+      'MCP servers now properly work from global installations'
+    ],
     '1.1.10': [
       'Added register-mcp-servers.js script to npm package',
       'Improved MCP registration fallback logic'
@@ -41,6 +47,16 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.11': {
+      date: '2025-01-19',
+      changes: [
+        'Fixed MCP server paths for global npm installations',
+        'setup-mcp.js now correctly detects global vs local installation',
+        'register-mcp-servers.js adds environment variables from .env',
+        'MCP servers now use direct node execution with full paths',
+        'All 11 MCP servers work correctly from npm global install'
+      ]
+    },
     '1.1.10': {
       date: '2025-01-19',
       changes: [
