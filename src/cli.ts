@@ -1961,43 +1961,51 @@ program
         
         console.log('✅ MCP configuration generated with absolute paths');
         
-        // Try to register MCP servers with Claude Code by merging configs
+        // Try to register MCP servers with Claude Code
         console.log('🔗 Registering MCP servers with Claude Code...');
         try {
-          const snowFlowMcpPath = join(targetDir, '.mcp.json');
-          const claudeMcpPath = join(process.env.HOME || process.env.USERPROFILE || '', '.claude', 'mcp_config.json');
+          const mcpConfigPath = isGlobalInstall 
+            ? join(__dirname, '..', '.mcp.json')
+            : join(targetDir, '.mcp.json');
           
-          // Read the generated Snow-Flow MCP config
-          const snowFlowConfig = JSON.parse(await fs.readFile(snowFlowMcpPath, 'utf-8'));
-          
-          // Read existing Claude MCP config if it exists
-          let claudeConfig = { servers: {} };
-          try {
-            claudeConfig = JSON.parse(await fs.readFile(claudeMcpPath, 'utf-8'));
-          } catch (err) {
-            // File doesn't exist or is invalid, start fresh
-            console.log('📝 Creating new Claude MCP configuration');
+          // Check if .mcp.json exists
+          if (existsSync(mcpConfigPath)) {
+            const { execSync } = require('child_process');
+            
+            // Use claude mcp add command to register the servers
+            try {
+              console.log('📝 Running: claude mcp add-config .mcp.json');
+              execSync(`claude mcp add-config "${mcpConfigPath}"`, { 
+                stdio: 'inherit'
+              });
+              console.log('✅ MCP servers registered with Claude Code!');
+              console.log('🎉 All 11 Snow-Flow MCP servers are now available');
+              console.log('💡 Type /mcp in Claude Code to see the available servers');
+            } catch (cmdError: any) {
+              // If claude command is not found, provide manual instructions
+              if (cmdError.message.includes('command not found') || cmdError.message.includes('is not recognized')) {
+                console.log('⚠️  Claude Code CLI not found in PATH');
+                console.log('');
+                console.log('📋 Manual registration steps:');
+                console.log(`   1. Run: claude mcp add-config "${mcpConfigPath}"`);
+                console.log('   2. Or copy the .mcp.json to your project and run:');
+                console.log('      claude mcp add-config .mcp.json');
+                console.log('');
+                console.log('💡 Make sure Claude Code is installed and in your PATH');
+              } else {
+                throw cmdError;
+              }
+            }
+          } else {
+            console.error('❌ .mcp.json file not found!');
+            console.log('   Run setup-mcp script first to generate the config');
           }
-          
-          // Merge Snow-Flow servers into Claude config
-          claudeConfig.servers = {
-            ...claudeConfig.servers,
-            ...snowFlowConfig.servers
-          };
-          
-          // Ensure directory exists
-          await fs.mkdir(dirname(claudeMcpPath), { recursive: true });
-          
-          // Write merged config
-          await fs.writeFile(claudeMcpPath, JSON.stringify(claudeConfig, null, 2));
-          console.log('✅ MCP servers registered with Claude Code!');
-          console.log(`   Configuration saved to: ${claudeMcpPath}`);
-          console.log('   Restart Claude Code to activate the MCP servers');
-          
-        } catch (error) {
+        } catch (error: any) {
           // Non-critical error, just inform the user
-          console.error('⚠️  Could not auto-register MCP servers:', error);
-          console.log('   Try manual registration: claude mcp add-config .mcp.json');
+          console.error('⚠️  Could not auto-register MCP servers:', error.message);
+          console.log('');
+          console.log('📋 Manual registration:');
+          console.log('   claude mcp add-config .mcp.json');
         }
         
         // Now initialize and start MCP servers

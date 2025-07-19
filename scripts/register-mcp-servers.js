@@ -8,13 +8,11 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Claude Desktop config path on macOS
+// Claude Code config path
 const CLAUDE_CONFIG_PATH = path.join(
   os.homedir(),
-  'Library',
-  'Application Support',
-  'Claude',
-  'claude_desktop_config.json'
+  '.claude',
+  'mcp_config.json'
 );
 
 // Snow-Flow MCP servers configuration
@@ -112,7 +110,7 @@ async function registerMCPServers() {
 
     // Check if Claude config exists
     if (!fs.existsSync(CLAUDE_CONFIG_PATH)) {
-      console.log('⚠️  Claude Desktop configuration not found.');
+      console.log('⚠️  Claude Code configuration not found.');
       console.log('📍 Creating new configuration at:', CLAUDE_CONFIG_PATH);
       
       // Ensure directory exists
@@ -121,27 +119,27 @@ async function registerMCPServers() {
         fs.mkdirSync(configDir, { recursive: true });
       }
       
-      // Create new config
+      // Create new config with "servers" (not "mcpServers")
       const newConfig = {
-        mcpServers: servers
+        servers: servers
       };
       
       fs.writeFileSync(CLAUDE_CONFIG_PATH, JSON.stringify(newConfig, null, 2));
-      console.log('✅ Created new Claude configuration with Snow-Flow MCP servers');
+      console.log('✅ Created new Claude Code configuration with Snow-Flow MCP servers');
     } else {
       // Read existing config
       let config = JSON.parse(fs.readFileSync(CLAUDE_CONFIG_PATH, 'utf8'));
       
-      // Initialize mcpServers if not exists
-      if (!config.mcpServers) {
-        config.mcpServers = {};
+      // Initialize servers if not exists (Claude Code uses "servers" not "mcpServers")
+      if (!config.servers) {
+        config.servers = {};
       }
       
       // Add Snow-Flow servers
       let addedCount = 0;
       Object.keys(servers).forEach(key => {
-        if (!config.mcpServers[key]) {
-          config.mcpServers[key] = servers[key];
+        if (!config.servers[key]) {
+          config.servers[key] = servers[key];
           addedCount++;
         }
       });
@@ -150,7 +148,7 @@ async function registerMCPServers() {
       fs.writeFileSync(CLAUDE_CONFIG_PATH, JSON.stringify(config, null, 2));
       
       if (addedCount > 0) {
-        console.log(`✅ Added ${addedCount} Snow-Flow MCP servers to Claude configuration`);
+        console.log(`✅ Added ${addedCount} Snow-Flow MCP servers to Claude Code configuration`);
       } else {
         console.log('✅ All Snow-Flow MCP servers already registered');
       }
@@ -161,8 +159,8 @@ async function registerMCPServers() {
       console.log(`   - ${key}`);
     });
     
-    console.log('\n🔄 Please restart Claude Desktop to load the new MCP servers');
-    console.log('💡 Use /mcp in Claude to verify the servers are available');
+    console.log('\n🔄 MCP servers are now available in Claude Code');
+    console.log('💡 Use /mcp in Claude Code to verify the servers are available');
     
   } catch (error) {
     console.error('❌ Error registering MCP servers:', error.message);

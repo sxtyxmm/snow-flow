@@ -2,13 +2,19 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.11';
+export const VERSION = '1.1.12';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.12': [
+      'Automatic MCP registration with Claude Code using claude mcp add command',
+      'Fixed registration for Claude Code instead of Claude Desktop',
+      'Added create-env.js script to help users set up credentials',
+      'Improved error handling when claude command is not in PATH'
+    ],
     '1.1.11': [
       'Fixed MCP server paths for global npm installations',
       'Updated setup-mcp.js to detect global vs local installs',
@@ -47,6 +53,16 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.12': {
+      date: '2025-01-19',
+      changes: [
+        'Init command now uses claude mcp add-config for automatic registration',
+        'Fixed config paths for Claude Code (~/.claude/mcp_config.json)',
+        'Updated register-mcp-servers.js to use servers format for Claude Code',
+        'Added create-env.js to help users configure ServiceNow credentials',
+        'Better error messages when claude command is not available'
+      ]
+    },
     '1.1.11': {
       date: '2025-01-19',
       changes: [
