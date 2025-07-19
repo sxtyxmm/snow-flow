@@ -2,13 +2,24 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.1.8';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.8': [
+      'Fixed duplicate isGlobalInstall declaration in init command',
+      'Improved global installation detection',
+      'Enhanced MCP setup error handling'
+    ],
+    '1.1.3': [
+      'Automatic MCP server registration with Claude Code',
+      'Fixed MCP config format to use "servers" instead of "mcpServers"',
+      'Dynamic configuration merging for existing MCP servers',
+      'All 11 ServiceNow MCP servers included in init'
+    ],
     '1.1.0': [
       'Enhanced Flow Composer MCP with natural language flow creation',
       'Intelligent template system with context-aware selection',
@@ -21,6 +32,23 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.8': {
+      date: '2025-01-19',
+      changes: [
+        'Fixed duplicate isGlobalInstall declaration causing SyntaxError',
+        'Improved global vs local installation detection',
+        'Enhanced error handling during MCP setup'
+      ]
+    },
+    '1.1.3': {
+      date: '2025-01-19',
+      changes: [
+        'Automatic MCP registration during init command',
+        'Fixed MCP template to use correct "servers" format',
+        'Improved MCP config merging with existing Claude configuration',
+        'All 11 ServiceNow MCP servers properly registered'
+      ]
+    },
     '1.1.0': {
       date: '2025-01-17',
       changes: [

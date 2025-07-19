@@ -6,12 +6,13 @@
 import { Command } from 'commander';
 import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
+import { VERSION } from './version.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,7 +22,7 @@ const program = new Command();
 program
   .name('snow-flow')
   .description('ServiceNow Multi-Agent Development Framework')
-  .version('1.1.0');
+  .version(VERSION);
 
 // Swarm command - the main orchestration command
 program
@@ -33,7 +34,7 @@ program
   .option('--parallel', 'Enable parallel execution')
   .option('--monitor', 'Enable real-time monitoring')
   .action(async (objective: string, options) => {
-    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v1.1.0`);
+    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION}`);
     console.log(`📋 Objective: ${objective}`);
     console.log(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
     console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}\n`);
@@ -187,7 +188,7 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
   
   // Show initial dashboard only once
   console.log('┌─────────────────────────────────────────────────────────────┐');
-  console.log('│               🚀 Snow-Flow Dashboard v1.1.0                 │');
+  console.log(`│               🚀 Snow-Flow Dashboard v${VERSION}                 │`);
   console.log('├─────────────────────────────────────────────────────────────┤');
   console.log(`│ 🤖 Claude Code Status:  ✅ Starting                        │`);
   console.log(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}                            │`);
@@ -817,7 +818,7 @@ program
       }
       
       console.log('┌─────────────────────────────────────────────────────────────┐');
-      console.log('│               🚀 Snow-Flow Monitor v1.1.0                   │');
+      console.log(`│               🚀 Snow-Flow Monitor v${VERSION}                   │`);
       console.log('├─────────────────────────────────────────────────────────────┤');
       console.log(`│ 📊 System Status:       ✅ Online                          │`);
       console.log(`│ ⏱️  Monitor Time:        ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}                          │`);
@@ -1004,7 +1005,7 @@ program
   .description('Show detailed help information')
   .action(() => {
     console.log(`
-🚀 Snow-Flow v1.1.0 - ServiceNow Multi-Agent Development Framework
+🚀 Snow-Flow v${VERSION} - ServiceNow Multi-Agent Development Framework
 
 📋 Available Commands:
   swarm <objective>     Execute multi-agent orchestration
@@ -1916,10 +1917,10 @@ program
       // Check if we're running from npm global install or local dev
       const isGlobalInstall = __dirname.includes('node_modules') || !existsSync(join(targetDir, 'src'));
       
-      if (!isGlobalInstall) {
-        // Only build if we're in development mode with source files
-        console.log('🏗️  Building project (compiling TypeScript)...');
-        try {
+      try {
+        if (!isGlobalInstall) {
+          // Only build if we're in development mode with source files
+          console.log('🏗️  Building project (compiling TypeScript)...');
           const { spawn } = require('child_process');
           const buildProcess = spawn('npm', ['run', 'build'], {
             cwd: targetDir,
@@ -1937,12 +1938,9 @@ program
           });
           
           console.log('✅ Project built successfully');
-        } catch (error) {
-          console.log('⚠️  Build failed - continuing with setup...');
+        } else {
+          console.log('✅ Using pre-built MCP servers from npm package');
         }
-      } else {
-        console.log('✅ Using pre-built MCP servers from npm package');
-      }
         
         // Run MCP setup script to generate .mcp.json
         console.log('🔧 Generating MCP configuration...');
@@ -1962,6 +1960,45 @@ program
         });
         
         console.log('✅ MCP configuration generated with absolute paths');
+        
+        // Try to register MCP servers with Claude Code by merging configs
+        console.log('🔗 Registering MCP servers with Claude Code...');
+        try {
+          const snowFlowMcpPath = join(targetDir, '.mcp.json');
+          const claudeMcpPath = join(process.env.HOME || process.env.USERPROFILE || '', '.claude', 'mcp_config.json');
+          
+          // Read the generated Snow-Flow MCP config
+          const snowFlowConfig = JSON.parse(await fs.readFile(snowFlowMcpPath, 'utf-8'));
+          
+          // Read existing Claude MCP config if it exists
+          let claudeConfig = { servers: {} };
+          try {
+            claudeConfig = JSON.parse(await fs.readFile(claudeMcpPath, 'utf-8'));
+          } catch (err) {
+            // File doesn't exist or is invalid, start fresh
+            console.log('📝 Creating new Claude MCP configuration');
+          }
+          
+          // Merge Snow-Flow servers into Claude config
+          claudeConfig.servers = {
+            ...claudeConfig.servers,
+            ...snowFlowConfig.servers
+          };
+          
+          // Ensure directory exists
+          await fs.mkdir(dirname(claudeMcpPath), { recursive: true });
+          
+          // Write merged config
+          await fs.writeFile(claudeMcpPath, JSON.stringify(claudeConfig, null, 2));
+          console.log('✅ MCP servers registered with Claude Code!');
+          console.log(`   Configuration saved to: ${claudeMcpPath}`);
+          console.log('   Restart Claude Code to activate the MCP servers');
+          
+        } catch (error) {
+          // Non-critical error, just inform the user
+          console.error('⚠️  Could not auto-register MCP servers:', error);
+          console.log('   Try manual registration: claude mcp add-config .mcp.json');
+        }
         
         // Now initialize and start MCP servers
         const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
@@ -1983,27 +2020,8 @@ program
           console.log('⚠️  MCP servers configured but failed to start');
         }
         
-        // Phase 7: Register MCP servers with Claude Code
-        console.log('📡 Registering MCP servers with Claude Code...');
-        try {
-          const { spawn } = require('child_process');
-          
-          const mcpServers = [
-            { name: 'servicenow-deployment', path: join(targetDir, 'dist/mcp/servicenow-deployment-mcp.js') },
-            { name: 'servicenow-flow-composer', path: join(targetDir, 'dist/mcp/servicenow-flow-composer-mcp.js') },
-            { name: 'servicenow-update-set', path: join(targetDir, 'dist/mcp/servicenow-update-set-mcp.js') },
-            { name: 'servicenow-intelligent', path: join(targetDir, 'dist/mcp/servicenow-intelligent-mcp.js') },
-            { name: 'servicenow-graph-memory', path: join(targetDir, 'dist/mcp/servicenow-graph-memory-mcp.js') },
-            { name: 'servicenow-operations', path: join(targetDir, 'dist/mcp/servicenow-operations-mcp.js') },
-            { name: 'servicenow-platform-development', path: join(targetDir, 'dist/mcp/servicenow-platform-development-mcp.js') },
-            { name: 'servicenow-integration', path: join(targetDir, 'dist/mcp/servicenow-integration-mcp.js') },
-            { name: 'servicenow-automation', path: join(targetDir, 'dist/mcp/servicenow-automation-mcp.js') },
-            { name: 'servicenow-security-compliance', path: join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js') },
-            { name: 'servicenow-reporting-analytics', path: join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js') }
-          ];
-          
-          let registeredCount = 0;
-          for (const server of mcpServers) {
+        // Phase 7 is now handled above with merged config approach
+        /*
             try {
               await new Promise((resolve, reject) => {
                 const registerProcess = spawn('claude', ['mcp', 'add', server.name, server.path], {
@@ -2059,6 +2077,7 @@ program
           console.log(`   claude mcp add servicenow-security-compliance "${join(targetDir, 'dist/mcp/servicenow-security-compliance-mcp.js')}"`);
           console.log(`   claude mcp add servicenow-reporting-analytics "${join(targetDir, 'dist/mcp/servicenow-reporting-analytics-mcp.js')}"`);
         }
+        */
         
       } catch (error) {
         if (!isGlobalInstall) {
@@ -2101,7 +2120,8 @@ program
       console.log('🔧 MCP Servers:');
       console.log('   - ✅ All 11 MCP servers have been built and configured');
       console.log('   - ✅ .mcp.json generated with absolute paths and credentials');
-      console.log('   - ✅ Ready to use in Claude Code');
+      console.log('   - ✅ Servers registered with Claude Code (restart Claude to activate)');
+      console.log('   - ℹ️  If registration failed, run: claude mcp add-config .mcp.json');
       console.log('');
       console.log('📡 Available MCP Tools:');
       console.log('   - snow_deploy_widget - Deploy widgets directly');

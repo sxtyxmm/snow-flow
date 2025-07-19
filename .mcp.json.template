@@ -1,5 +1,5 @@
 {
-  "mcpServers": {
+  "servers": {
     "servicenow-deployment": {
       "command": "node",
       "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-deployment-mcp.js"],

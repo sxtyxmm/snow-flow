@@ -7,7 +7,12 @@
 
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+// Try to load .env file if it exists, but don't fail if it doesn't
+try {
+  require('dotenv').config();
+} catch (err) {
+  // .env file not found, that's OK
+}
 
 const projectRoot = process.cwd();
 const templatePath = path.join(projectRoot, '.mcp.json.template');
