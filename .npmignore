@@ -65,6 +65,7 @@ demo/
 scripts/*
 !scripts/postinstall.js
 !scripts/setup-mcp.js
+!scripts/register-mcp-servers.js
 
 # Templates needed for setup
 !.mcp.json.template
