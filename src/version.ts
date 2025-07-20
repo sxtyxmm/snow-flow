@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.55';
+export const VERSION = '1.1.56';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.56': [
+      '🔧 CRITICAL FIX: Flow validation now accepts "actions" array in flow definitions!',
+      '✅ JSON FLEXIBILITY: validateFlowDefinition now accepts "activities", "steps", AND "actions" arrays',
+      '✅ AUTO-CONVERSION: "actions" array automatically converted to ServiceNow standard "activities"',
+      '✅ DEPLOYMENT FIX: deployFlow properly handles auto-corrected definitions with actions',
+      '✅ ERROR ELIMINATION: No more "Missing activities or steps array" for flows with actions',
+      '🎯 USER ISSUE RESOLVED: Flow deployment with "actions" array now works correctly',
+      '📊 SMART VALIDATION: Automatically detects and converts all array name variations',
+      '🚀 BACKWARDS COMPATIBLE: Still supports "activities" and "steps" arrays as before'
+    ],
     '1.1.55': [
       '🔧 CRITICAL FIX: snow_resilient_deployment mock implementation replaced with REAL API calls!',
       '✅ MOCK ELIMINATION: Removed Math.random() fake 70% success rate - now uses actual ServiceNow API',

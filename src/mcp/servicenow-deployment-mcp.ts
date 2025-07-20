@@ -1007,14 +1007,18 @@ Use \`snow_deployment_debug\` for more information about this session.`,
         }
         
         // CRITICAL: Use the corrected definition from validation
-        // The validateFlowDefinition method may have auto-corrected "steps" to "activities"
+        // The validateFlowDefinition method may have auto-corrected "steps" or "actions" to "activities"
         if (validationText.includes('Auto-converted "steps" to "activities"') || 
+            validationText.includes('Auto-converted "actions" to "activities"') ||
             validationText.includes('Smart Auto-Corrections Applied')) {
           // Re-parse the corrected definition from the validation process
           let tempDef = typeof args.flow_definition === 'string' ? JSON.parse(args.flow_definition) : args.flow_definition;
           if (tempDef.steps && !tempDef.activities) {
             tempDef.activities = tempDef.steps;
             delete tempDef.steps;
+          } else if (tempDef.actions && !tempDef.activities) {
+            tempDef.activities = tempDef.actions;
+            delete tempDef.actions;
           }
           validatedDefinition = JSON.stringify(tempDef);
           this.logger.info('Using auto-corrected flow definition for deployment');
@@ -2795,15 +2799,21 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
         corrections.push('✅ Processing nested flow_definition structure');
       }
 
-      // Now check for activities/steps in the working definition
-      if (!workingDefinition.activities && !workingDefinition.steps) {
-        issues.push('❌ Missing "activities" or "steps" array');
+      // Now check for activities/steps/actions in the working definition
+      if (!workingDefinition.activities && !workingDefinition.steps && !workingDefinition.actions) {
+        issues.push('❌ Missing "activities", "steps", or "actions" array');
       } else if (workingDefinition.steps && !workingDefinition.activities) {
         // AUTO-CORRECT: Convert "steps" to "activities"
         workingDefinition.activities = workingDefinition.steps;
         delete workingDefinition.steps;
         corrections.push('✅ Auto-converted "steps" to "activities" (ServiceNow Flow Designer format)');
         info.push('💡 Accepted "steps" array and converted to ServiceNow standard "activities"');
+      } else if (workingDefinition.actions && !workingDefinition.activities) {
+        // AUTO-CORRECT: Convert "actions" to "activities"
+        workingDefinition.activities = workingDefinition.actions;
+        delete workingDefinition.actions;
+        corrections.push('✅ Auto-converted "actions" to "activities" (ServiceNow Flow Designer format)');
+        info.push('💡 Accepted "actions" array and converted to ServiceNow standard "activities"');
       } else if (workingDefinition.activities && !Array.isArray(workingDefinition.activities)) {
         issues.push('❌ "activities" must be an array');
       }
