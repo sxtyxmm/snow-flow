@@ -528,8 +528,30 @@ ${args.notes ? `- **Notes**: ${args.notes}` : ''}
   }
 
   private async addArtifactToSession(args: any) {
+    // Intelligent session management - auto-create session if none exists
     if (!this.currentSession) {
-      throw new Error('No active Update Set session. Create or switch to an Update Set first.');
+      this.logger.info('No active session found, auto-creating Update Set session');
+      
+      try {
+        // Create a default update set with smart naming
+        const defaultName = `AUTO-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-6)}`;
+        const defaultDescription = `Auto-created Update Set for ${args.type} deployment: ${args.name}`;
+        
+        await this.createUpdateSet({
+          name: defaultName,
+          description: defaultDescription,
+          user_story: 'Automated artifact deployment'
+        });
+        
+        this.logger.info('Auto-created Update Set session', { 
+          name: defaultName, 
+          updateSetId: this.currentSession?.update_set_id 
+        });
+        
+      } catch (error) {
+        this.logger.error('Failed to auto-create Update Set session', { error });
+        throw new Error(`No active Update Set session and auto-creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
 
     // Add artifact to session
@@ -542,6 +564,10 @@ ${args.notes ? `- **Notes**: ${args.notes}` : ''}
 
     await this.saveSession();
 
+    const autoCreatedNotice = this.currentSession.name.startsWith('AUTO-') 
+      ? `\n🔄 **Smart Session Management:**\n- ✅ Update Set session auto-created (no manual setup required)\n- 📝 Naming: ${this.currentSession.name}\n- 🎯 Intelligent deployment tracking enabled\n`
+      : '';
+
     return {
       content: [{
         type: 'text',
@@ -551,10 +577,11 @@ ${args.notes ? `- **Notes**: ${args.notes}` : ''}
 - **Type**: ${args.type}
 - **Name**: ${args.name}
 - **Sys ID**: ${args.sys_id}
-
+${autoCreatedNotice}
 📋 **Current Session:**
 - **Update Set**: ${this.currentSession.name}
-- **Total Artifacts**: ${this.currentSession.artifacts.length}`
+- **Total Artifacts**: ${this.currentSession.artifacts.length}
+- **Session ID**: ${this.currentSession.update_set_id}`
       }]
     };
   }

@@ -819,4 +819,302 @@ export class FlowValidationEngine {
 
     this.logger.info('Initialized validation rules', { ruleCount: this.rules.size });
   }
+
+  /**
+   * Validate and auto-correct JSON schema for Flow Designer
+   */
+  validateAndCorrectFlowSchema(flowDefinition: any): {
+    isValid: boolean;
+    correctedDefinition: any;
+    corrections: string[];
+    errors: string[];
+  } {
+    const corrections: string[] = [];
+    const errors: string[] = [];
+    let corrected = JSON.parse(JSON.stringify(flowDefinition));
+
+    try {
+      // Ensure top-level structure
+      if (!corrected.name) {
+        corrected.name = 'Auto Generated Flow';
+        corrections.push('Added missing flow name');
+      }
+
+      if (!corrected.description) {
+        corrected.description = 'Auto-generated flow description';
+        corrections.push('Added missing description');
+      }
+
+      // Ensure correct flow type
+      if (!corrected.type || !['flow', 'subflow', 'action'].includes(corrected.type)) {
+        corrected.type = 'flow';
+        corrections.push('Set flow type to "flow"');
+      }
+
+      // Ensure activities array exists
+      if (!corrected.activities || !Array.isArray(corrected.activities)) {
+        corrected.activities = [];
+        corrections.push('Created missing activities array');
+      }
+
+      // Validate and correct activities
+      corrected.activities = corrected.activities.map((activity: any, index: number) => {
+        const correctedActivity = { ...activity };
+
+        // Ensure activity has required fields
+        if (!correctedActivity.sys_id) {
+          correctedActivity.sys_id = `activity_${index + 1}`;
+          corrections.push(`Added sys_id to activity ${index + 1}`);
+        }
+
+        if (!correctedActivity.name) {
+          correctedActivity.name = `Activity ${index + 1}`;
+          corrections.push(`Added name to activity ${index + 1}`);
+        }
+
+        if (!correctedActivity.type) {
+          correctedActivity.type = 'condition';
+          corrections.push(`Added type to activity ${index + 1}`);
+        }
+
+        // Ensure inputs and outputs are objects/arrays
+        if (!correctedActivity.inputs) {
+          correctedActivity.inputs = {};
+          corrections.push(`Added inputs object to activity ${index + 1}`);
+        }
+
+        if (!correctedActivity.outputs) {
+          correctedActivity.outputs = {};
+          corrections.push(`Added outputs object to activity ${index + 1}`);
+        }
+
+        return correctedActivity;
+      });
+
+      // Ensure trigger exists for main flows
+      if (corrected.type === 'flow') {
+        if (!corrected.trigger) {
+          corrected.trigger = {
+            type: 'manual',
+            table: '',
+            condition: ''
+          };
+          corrections.push('Added missing trigger for flow');
+        }
+
+        // Validate trigger structure
+        if (!corrected.trigger.type) {
+          corrected.trigger.type = 'manual';
+          corrections.push('Set missing trigger type');
+        }
+
+        if (!corrected.trigger.table && corrected.trigger.type !== 'manual') {
+          corrected.trigger.table = 'incident';
+          corrections.push('Set default trigger table');
+        }
+      }
+
+      // Ensure inputs/outputs for subflows
+      if (corrected.type === 'subflow') {
+        if (!corrected.inputs || !Array.isArray(corrected.inputs)) {
+          corrected.inputs = [];
+          corrections.push('Created missing inputs array for subflow');
+        }
+
+        if (!corrected.outputs || !Array.isArray(corrected.outputs)) {
+          corrected.outputs = [];
+          corrections.push('Created missing outputs array for subflow');
+        }
+      }
+
+      // Validate connections
+      if (!corrected.connections || !Array.isArray(corrected.connections)) {
+        corrected.connections = [];
+        corrections.push('Created missing connections array');
+      }
+
+      // Auto-generate basic connections if activities exist but no connections
+      if (corrected.activities.length > 1 && corrected.connections.length === 0) {
+        for (let i = 0; i < corrected.activities.length - 1; i++) {
+          corrected.connections.push({
+            from: corrected.activities[i].sys_id,
+            to: corrected.activities[i + 1].sys_id,
+            condition_type: 'always'
+          });
+        }
+        corrections.push('Auto-generated sequential connections between activities');
+      }
+
+      // Validate variables
+      if (!corrected.variables || !Array.isArray(corrected.variables)) {
+        corrected.variables = [];
+        corrections.push('Created missing variables array');
+      }
+
+      return {
+        isValid: errors.length === 0,
+        correctedDefinition: corrected,
+        corrections,
+        errors
+      };
+
+    } catch (error) {
+      errors.push(`JSON schema correction failed: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        isValid: false,
+        correctedDefinition: flowDefinition,
+        corrections,
+        errors
+      };
+    }
+  }
+
+  /**
+   * Convert flow definition to Business Rule equivalent
+   */
+  convertFlowToBusinessRule(flowDefinition: any, args: any): {
+    businessRuleScript: string;
+    metadata: any;
+  } {
+    const activities = flowDefinition.activities || [];
+    const trigger = flowDefinition.trigger || {};
+    
+    let script = `// Auto-converted from Flow: ${flowDefinition.name || args.name}
+// Original Flow Type: ${flowDefinition.type || 'flow'}
+// Conversion Strategy: Flow Designer → Business Rule
+
+(function executeRule(current, previous /*null when async*/) {
+    
+    try {
+        gs.log('Snow-Flow converted Business Rule executing: ${flowDefinition.name || args.name}', 'INFO');
+        
+        // Variables from flow
+        var flowVars = {};
+        ${(flowDefinition.variables || []).map((v: any) => 
+          `flowVars.${v.name} = ${JSON.stringify(v.defaultValue || null)};`
+        ).join('\n        ')}
+        
+        // Flow activities converted to sequential logic
+        ${this.generateBusinessRuleActivities(activities)}
+        
+        gs.log('Snow-Flow converted Business Rule completed: ${flowDefinition.name || args.name}', 'INFO');
+        
+    } catch (error) {
+        gs.error('Snow-Flow converted Business Rule error in ${flowDefinition.name || args.name}: ' + error.message);
+    }
+    
+})(current, previous);`;
+
+    const metadata = {
+      originalFlowDefinition: flowDefinition,
+      conversionDate: new Date().toISOString(),
+      triggerMapping: {
+        original: trigger,
+        businessRule: {
+          table: args.table || trigger.table || 'sys_user',
+          when: this.mapTriggerToBusinessRuleWhen(trigger.type),
+          condition: args.condition || trigger.condition || ''
+        }
+      },
+      activitiesConverted: activities.length,
+      fallbackReason: 'Flow Designer deployment failed'
+    };
+
+    return {
+      businessRuleScript: script,
+      metadata
+    };
+  }
+
+  /**
+   * Generate Business Rule activities from flow activities
+   */
+  private generateBusinessRuleActivities(activities: any[]): string {
+    if (!activities || activities.length === 0) {
+      return `        // No activities to convert
+        gs.log('Business Rule triggered for record: ' + current.getDisplayValue(), 'INFO');`;
+    }
+
+    return activities.map((activity, index) => {
+      const activityComment = `        // Activity ${index + 1}: ${activity.name || activity.type}`;
+      
+      switch (activity.type) {
+        case 'create_record':
+          return `${activityComment}
+        var record${index} = new GlideRecord('${activity.table || 'sc_request'}');
+        record${index}.newRecord();
+        ${Object.entries(activity.field_values || activity.inputs || {}).map(([field, value]) => 
+          `record${index}.${field} = '${value}';`
+        ).join('\n        ')}
+        var recordId${index} = record${index}.insert();
+        gs.log('Created record: ' + recordId${index}, 'INFO');`;
+
+        case 'update_record':
+          return `${activityComment}
+        var updateRecord${index} = new GlideRecord('${activity.table || 'current.getTableName()'}');
+        if (updateRecord${index}.get(current.sys_id)) {
+            ${Object.entries(activity.field_values || activity.inputs || {}).map(([field, value]) => 
+              `updateRecord${index}.${field} = '${value}';`
+            ).join('\n            ')}
+            updateRecord${index}.update();
+            gs.log('Updated record: ' + current.sys_id, 'INFO');
+        }`;
+
+        case 'notification':
+        case 'send_email':
+          const emailInputs = activity.inputs || {};
+          return `${activityComment}
+        var notification${index} = new GlideEmailOutbound();
+        notification${index}.setTo('${emailInputs.to || 'current.requested_for.email'}');
+        notification${index}.setSubject('${emailInputs.subject || 'Notification'}');
+        notification${index}.setBody('${emailInputs.body || 'Automated notification'}');
+        notification${index}.send();
+        gs.log('Notification sent', 'INFO');`;
+
+        case 'approval':
+          const approvalInputs = activity.inputs || {};
+          return `${activityComment}
+        var approval${index} = new GlideRecord('sysapproval_approver');
+        approval${index}.newRecord();
+        approval${index}.approver = '${approvalInputs.approver || 'admin'}';
+        approval${index}.sysapproval = current.sys_id;
+        approval${index}.state = 'requested';
+        approval${index}.comments = 'Approval required';
+        approval${index}.insert();
+        gs.log('Approval request created', 'INFO');`;
+
+        case 'condition':
+          return `${activityComment}
+        if (${activity.condition || 'true'}) {
+            gs.log('Condition met: ${activity.condition || 'true'}', 'INFO');
+            // Add condition-specific logic here
+        }`;
+
+        default:
+          return `${activityComment}
+        // TODO: Implement ${activity.type} logic
+        gs.log('Activity ${activity.name || activity.type} executed', 'INFO');`;
+      }
+    }).join('\n\n');
+  }
+
+  /**
+   * Map flow trigger type to business rule when
+   */
+  private mapTriggerToBusinessRuleWhen(triggerType: string): string {
+    switch (triggerType) {
+      case 'record_created':
+        return 'after';
+      case 'record_updated':
+        return 'after';
+      case 'record_deleted':
+        return 'before';
+      case 'manual':
+        return 'async';
+      case 'scheduled':
+        return 'async';
+      default:
+        return 'after';
+    }
+  }
 }

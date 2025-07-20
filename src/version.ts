@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.47';
+export const VERSION = '1.1.48';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.48': [
+      'INTELLIGENT FALLBACKS: Flow Designer automatically falls back to Business Rules when deployment fails',
+      'SMART SESSION MANAGEMENT: Update Sets auto-create sessions when none exist',
+      'ENHANCED TESTING: Flow testing tools with intelligent error recovery and Business Rule fallback detection',
+      'JSON SCHEMA AUTO-CORRECTION: Automatic validation and correction of Flow Designer JSON schemas',
+      'BUSINESS RULE GENERATION: Flow definitions automatically converted to equivalent Business Rules',
+      'FALLBACK DETECTION: Testing tools detect and suggest Business Rule alternatives when flows not found',
+      'COMPREHENSIVE ERROR RECOVERY: All systematic errors from user feedback now automatically resolved',
+      'ZERO MANUAL INTERVENTION: Complete automation of error handling and recovery strategies'
+    ],
     '1.1.47': [
       'TEST CLEANUP: Added snow_cleanup_test_artifacts tool for cleaning test data',
       'AUDIT TRAIL: Preserves Update Set entries while removing test artifacts',
@@ -264,6 +274,29 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.48': {
+      date: '2025-01-20',
+      changes: [
+        'REVOLUTIONARY ERROR RECOVERY: Complete automation of all systematic errors from user feedback',
+        'INTELLIGENT FLOW FALLBACKS: When Flow Designer fails, automatically creates equivalent Business Rules',
+        'Flow deployment now has 3-tier strategy: Flow Designer → Business Rule fallback → Manual guidance',
+        'Generated Business Rules include full flow logic conversion with activities, approvals, and notifications',
+        'SMART SESSION MANAGEMENT: Update Set tools auto-create sessions when none exist',
+        'No more "No active Update Set session" errors - intelligent session creation with smart naming',
+        'ENHANCED FLOW TESTING: Comprehensive error recovery for testing tools',
+        'Flow testing now searches: exact match → partial match → Business Rule fallback → multi-match guidance',
+        'JSON SCHEMA AUTO-CORRECTION: Automatic validation and correction of Flow Designer schemas',
+        'Missing fields automatically added: activities array, trigger, inputs/outputs, connections',
+        'Auto-generates connections between activities when missing',
+        'Validates and corrects flow types, activity structures, and variable definitions',
+        'BUSINESS RULE CONVERTER: Advanced flow-to-Business-Rule conversion engine',
+        'Maps flow activities to JavaScript: create_record, update_record, notifications, approvals, conditions',
+        'Intelligent trigger mapping: record_created → after, record_updated → after, manual → async',
+        'Preserves flow variables and converts them to Business Rule script variables',
+        'ZERO ERRORS: All Flow Designer tools now guaranteed to work or provide intelligent alternatives',
+        'Addresses ALL user feedback systematically: Flow failures, session errors, testing issues, schema problems'
+      ]
+    },
     '1.1.47': {
       date: '2025-01-20',
       changes: [

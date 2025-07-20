@@ -2350,11 +2350,56 @@ class ServiceNowOperationsMCP {
     };
     
     try {
-      // Step 1: Find the flow
-      const flowResult = await this.client.searchRecords('sys_hub_flow', `sys_id=${flow_id}^ORname=${flow_id}`, 1);
+      // Step 1: Find the flow with intelligent fallback search
+      let flowResult = await this.client.searchRecords('sys_hub_flow', `sys_id=${flow_id}^ORname=${flow_id}`, 1);
       
+      // If not found, try different search strategies
       if (!flowResult.success || !flowResult.data?.result?.length) {
-        throw new Error(`Flow not found: ${flow_id}`);
+        logger.info('Flow not found with exact match, trying fuzzy search...');
+        
+        // Try partial name matching
+        flowResult = await this.client.searchRecords('sys_hub_flow', `nameCONTAINS${flow_id}`, 5);
+        
+        if (!flowResult.success || !flowResult.data?.result?.length) {
+          // Try searching in Business Rules as fallback
+          logger.info('No flows found, searching for Business Rules as fallback...');
+          const businessRuleResult = await this.client.searchRecords('sys_script', `nameCONTAINS${flow_id}^ORshort_descriptionCONTAINS${flow_id}`, 5);
+          
+          if (businessRuleResult.success && businessRuleResult.data?.result?.length) {
+            testResults.execution_results.status = 'fallback_business_rule';
+            testResults.execution_results.errors.push(`Flow '${flow_id}' not found, but found ${businessRuleResult.data.result.length} related Business Rules. Consider testing the Business Rule directly.`);
+            
+            const businessRules = businessRuleResult.data.result.map((br: any) => ({
+              name: br.name,
+              sys_id: br.sys_id,
+              table: br.collection,
+              when: br.when
+            }));
+            
+            return {
+              content: [{
+                type: 'text',
+                text: `⚠️ **Flow Test - Intelligent Fallback**\n\nFlow '${flow_id}' not found, but discovered related Business Rules:\n\n${businessRules.map((br, i) => `${i+1}. **${br.name}**\n   - Sys ID: ${br.sys_id}\n   - Table: ${br.table}\n   - Trigger: ${br.when}\n`).join('\n')}\n\n💡 **Recommendation:** Test the Business Rule directly as it may provide the same functionality as the intended flow.\n\n🔧 **Next Steps:**\n1. Verify the Business Rule logic matches your flow requirements\n2. Test by creating a record on the ${businessRules[0]?.table || 'target'} table\n3. Monitor System Logs for Business Rule execution`
+              }]
+            };
+          }
+          
+          throw new Error(`Flow not found: ${flow_id}. Tried exact match, partial name match, and Business Rule fallback.`);
+        } else {
+          // Found partial matches, ask user to clarify
+          const matches = flowResult.data.result.map((f: any) => ({
+            name: f.name,
+            sys_id: f.sys_id,
+            active: f.active
+          }));
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `🔍 **Multiple Flow Matches Found**\n\nThe flow identifier '${flow_id}' matched multiple flows:\n\n${matches.map((f, i) => `${i+1}. **${f.name}** (${f.active ? 'Active' : 'Inactive'})\n   - Sys ID: ${f.sys_id}\n`).join('\n')}\n\n💡 **Please specify the exact flow sys_id or unique name to continue testing.**`
+            }]
+          };
+        }
       }
       
       const flow = flowResult.data.result[0];
@@ -3034,9 +3079,9 @@ class ServiceNowOperationsMCP {
       
       // Generate summary
       const totalFound = Object.values(cleanupResults.artifacts_found)
-        .reduce((sum, items) => sum + (Array.isArray(items) ? items.length : 0), 0);
+        .reduce((sum, items) => (typeof sum === 'number' ? sum : 0) + (Array.isArray(items) ? items.length : 0), 0);
       const totalDeleted = Object.values(cleanupResults.artifacts_deleted)
-        .reduce((sum, count) => sum + count, 0);
+        .reduce((sum, count) => sum + (typeof count === 'number' ? count : 0), 0);
       
       cleanupResults.summary = dry_run 
         ? `🔍 Dry Run: Found ${totalFound} test artifacts that would be cleaned up`
