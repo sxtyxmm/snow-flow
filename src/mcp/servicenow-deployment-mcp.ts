@@ -2847,8 +2847,16 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       // Flow type specific validation
       switch (flowType) {
         case 'flow':
-          if (!workingDefinition.trigger && !definition.trigger && !args.trigger_type) {
-            issues.push('❌ Flow must have a trigger defined');
+          // Check for trigger in multiple locations: working definition, main definition, or args
+          const hasTrigger = workingDefinition.trigger || 
+                           definition.trigger || 
+                           args.trigger_type || 
+                           (typeof definition === 'object' && definition.trigger_type);
+          
+          if (!hasTrigger) {
+            // Only require trigger if it's a main flow (not a subflow)
+            warnings.push('⚠️ Main flow should have a trigger defined (will default to manual trigger)');
+            // Don't make this a critical error - we can default to manual trigger
           }
           break;
         case 'subflow':

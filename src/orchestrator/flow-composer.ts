@@ -1005,11 +1005,21 @@ export class EnhancedFlowComposer {
       
       // Step 4: Create subflows if recommended
       const subflowResults: SubflowCreationResult[] = [];
-      if (analysisResult.subflowCandidates.length > 0) {
+      
+      // 🔧 CRITICAL FIX: Only create separate subflows if explicitly requested
+      // Check if instruction explicitly asks for multiple flows or subflows
+      const explicitlyRequestsMultipleFlows = /multiple\s+(flows?|subflows?)|separate\s+(flows?|subflows?)|split\s+into\s+(flows?|subflows?)|different\s+(flows?|subflows?)/i.test(instruction);
+      
+      if (analysisResult.subflowCandidates.length > 0 && explicitlyRequestsMultipleFlows) {
+        this.logger.info('Creating separate subflows as explicitly requested');
         for (const candidate of analysisResult.subflowCandidates) {
           const subflowResult = await this.subflowHandler.createSubflow(candidate);
           subflowResults.push(subflowResult);
         }
+      } else if (analysisResult.subflowCandidates.length > 0) {
+        // If subflow candidates exist but not explicitly requested, 
+        // keep them as activities within the main flow
+        this.logger.info('Keeping subflow candidates as activities within main flow');
       }
       
       // Step 5: Create the main flow structure

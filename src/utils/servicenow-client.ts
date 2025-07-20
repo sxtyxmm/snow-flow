@@ -1040,28 +1040,31 @@ export class ServiceNowClient {
       let triggerInstanceId = null;
       let triggerLogicId = null;
       
-      if (flow.trigger_type) {
-        console.log('📋 Creating flow trigger...');
-        try {
-          const triggerResult = await this.createFlowTrigger(flowId, {
-            type: flow.trigger_type,
-            table: flow.table || 'incident',
-            condition: flow.trigger_condition || flow.condition || ''
-          });
-          triggerInstanceId = triggerResult.sys_id;
-          
-          // Create trigger logic entry
-          console.log('📋 Creating trigger logic...');
-          const triggerLogic = await this.createFlowLogic(flowId, {
-            name: 'Trigger',
-            type: 'trigger',
-            order: 0,
-            instance: triggerInstanceId
-          });
-          triggerLogicId = triggerLogic.sys_id;
-        } catch (triggerError) {
-          console.error('Failed to create trigger:', triggerError);
-        }
+      // 🔧 CRITICAL FIX: Default to manual trigger if no trigger type specified
+      const triggerType = flow.trigger_type || 'manual';
+      
+      console.log(`📋 Creating flow trigger (${triggerType})...`);
+      try {
+        const triggerResult = await this.createFlowTrigger(flowId, {
+          type: triggerType,
+          table: flow.table || 'incident',
+          condition: flow.trigger_condition || flow.condition || ''
+        });
+        triggerInstanceId = triggerResult.sys_id;
+        
+        // Create trigger logic entry
+        console.log('📋 Creating trigger logic...');
+        const triggerLogic = await this.createFlowLogic(flowId, {
+          name: 'Trigger',
+          type: 'trigger',
+          order: 0,
+          instance: triggerInstanceId
+        });
+        triggerLogicId = triggerLogic.sys_id;
+      } catch (triggerError) {
+        console.error('Failed to create trigger:', triggerError);
+        // Don't fail the entire flow creation if trigger fails
+        console.warn('Continuing without trigger...');
       }
       
       // Create flow actions/activities with logic entries

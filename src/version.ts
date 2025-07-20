@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.56';
+export const VERSION = '1.1.57';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.57': [
+      '🔧 CRITICAL FIX: Single flow creation instead of multiple flows for one request!',
+      '✅ FLOW CONSOLIDATION: All activities now stay in ONE flow unless explicitly requested',
+      '✅ TRIGGER FLEXIBILITY: "Flow must have a trigger" is now a warning, not an error',
+      '✅ MANUAL TRIGGER DEFAULT: Flows without trigger_type default to manual trigger',
+      '✅ SUBFLOW LOGIC: Only creates separate subflows when instruction contains "multiple flows/subflows"',
+      '🎯 USER ISSUE RESOLVED: No more unwanted multiple flows when asking for single flow',
+      '📊 SMART DETECTION: Recognizes phrases like "split into", "separate flows", "multiple subflows"',
+      '🚀 INTELLIGENT BEHAVIOR: Keeps approval, notification, script steps as activities in main flow'
+    ],
     '1.1.56': [
       '🔧 CRITICAL FIX: Flow validation now accepts "actions" array in flow definitions!',
       '✅ JSON FLEXIBILITY: validateFlowDefinition now accepts "activities", "steps", AND "actions" arrays',
