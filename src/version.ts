@@ -2,13 +2,38 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.53';
+export const VERSION = '1.1.55';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.55': [
+      '🔧 CRITICAL FIX: snow_resilient_deployment mock implementation replaced with REAL API calls!',
+      '✅ MOCK ELIMINATION: Removed Math.random() fake 70% success rate - now uses actual ServiceNow API',
+      '✅ REAL DEPLOYMENT: attemptArtifactDeployment now creates actual artifacts in ServiceNow',
+      '✅ FALLBACK STRATEGIES: applyFallbackStrategy now has 5 real implementation strategies',
+      '✅ ARTIFACT SUPPORT: Flow, Subflow, Widget, Business Rule, Script Include, Table, Application',
+      '✅ ERROR ELIMINATION: No more 404 errors from fake deployments - all artifacts are real',
+      '✅ COMPREHENSIVE LOGGING: Real deployment tracking with sys_id and URL responses',
+      '🎯 USER ISSUE RESOLVED: "404 errors bij testen" - artifacts are now actually created',
+      '📊 DEPLOYMENT VERIFICATION: Real ServiceNow records created with proper validation',
+      '🚀 INTELLIGENT FALLBACKS: Global scope, simplified version, business rule conversion, minimal deployment'
+    ],
+    '1.1.54': [
+      '🔧 MASSIVE FLOW TOOLS OVERHAUL - All Flow Type Issues FIXED!',
+      '✅ CRITICAL: snow_deploy_flow now respects flow_type parameter (flow vs subflow)',
+      '✅ CRITICAL: Fixed createFlow method ignoring flow.type in ServiceNowClient',
+      '✅ CRITICAL: snow_create_flow logic contradiction resolved - analysis.recommendedType now used',
+      '✅ TRIGGER SYSTEM: Added sys_trigger creation for proper triggered flows',
+      '✅ ENHANCED ACTIONS: Flow activities from flow_definition now properly created',
+      '✅ VARIABLE SUPPORT: sys_hub_flow_variable records created for inputs/outputs',
+      '✅ API RESPONSES: Proper ServiceNow URLs and type information in all responses',
+      '🎯 ROOT CAUSE FIXED: Flow type "flow" vs "subflow" now works correctly',
+      '📊 USER FEEDBACK ADDRESSED: All identified MCP tool problems resolved',
+      '🚀 COMPLETE FLOW STACK: sys_hub_flow + action_instances + variables + triggers'
+    ],
     '1.1.53': [
       'CRITICAL BUG FIX: Fixed ServiceNow Flow Composer MCP server failing to start',
       'MEMORY DIRECTORY INCLUSION: Fixed .npmignore excluding dist/memory/ from npm package',

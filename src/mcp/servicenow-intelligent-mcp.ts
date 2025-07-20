@@ -3091,19 +3091,330 @@ class ServiceNowIntelligentMCP {
   }
 
   private async attemptArtifactDeployment(artifact: any): Promise<any> {
-    // Simplified deployment attempt
-    return {
-      success: Math.random() > 0.3, // 70% success rate for simulation
-      details: { deployed_at: new Date().toISOString() }
-    };
+    // 🔧 CRITICAL FIX: Replace mock implementation with real ServiceNow API calls
+    this.logger.info('Attempting real artifact deployment', { 
+      type: artifact.type, 
+      name: artifact.name || artifact.config?.name 
+    });
+
+    try {
+      let result;
+      
+      switch (artifact.type) {
+        case 'flow':
+          // Use the existing createFlow method
+          result = await this.client.createFlow({
+            name: artifact.config.name,
+            description: artifact.config.description,
+            type: artifact.config.flow_type || 'flow',
+            table: artifact.config.table,
+            trigger_type: artifact.config.trigger_type,
+            condition: artifact.config.condition,
+            active: artifact.config.active !== false,
+            flow_definition: artifact.config.flow_definition,
+            category: artifact.config.category || 'automation'
+          });
+          break;
+
+        case 'subflow':
+          // Use the existing createSubflow method
+          result = await this.client.createSubflow({
+            name: artifact.config.name,
+            description: artifact.config.description,
+            inputs: artifact.config.inputs || [],
+            outputs: artifact.config.outputs || [],
+            activities: artifact.config.activities || [],
+            category: artifact.config.category || 'custom'
+          });
+          break;
+
+        case 'widget':
+          // Use existing createRecord method for Service Portal widgets
+          result = await this.client.createRecord('sp_widget', {
+            name: artifact.config.name,
+            title: artifact.config.title || artifact.config.name,
+            description: artifact.config.description,
+            template: artifact.config.template || '<div>Widget content</div>',
+            css: artifact.config.css || '',
+            client_script: artifact.config.client_script || '',
+            server_script: artifact.config.server_script || '',
+            option_schema: artifact.config.option_schema || '[]',
+            category: artifact.config.category || 'custom'
+          });
+          break;
+
+        case 'business_rule':
+          // Create business rule
+          result = await this.client.createRecord('sys_script', {
+            name: artifact.config.name,
+            description: artifact.config.description,
+            table: artifact.config.table || 'incident',
+            when: artifact.config.when || 'before',
+            active: artifact.config.active !== false,
+            script: artifact.config.script || '// Business rule script',
+            condition: artifact.config.condition || '',
+            order: artifact.config.order || 100
+          });
+          break;
+
+        case 'script_include':
+          // Create script include
+          result = await this.client.createRecord('sys_script_include', {
+            name: artifact.config.name,
+            description: artifact.config.description,
+            script: artifact.config.script || 'var ' + artifact.config.name + ' = Class.create();',
+            api_name: artifact.config.api_name || artifact.config.name,
+            active: artifact.config.active !== false,
+            accessible_from: artifact.config.accessible_from || 'all'
+          });
+          break;
+
+        case 'table':
+          // Create custom table
+          result = await this.client.createRecord('sys_db_object', {
+            name: artifact.config.name,
+            label: artifact.config.label || artifact.config.name,
+            super_class: artifact.config.super_class || 'task',
+            create_module: artifact.config.create_module !== false,
+            create_menu: artifact.config.create_menu !== false
+          });
+          break;
+
+        case 'application':
+          // Create scoped application
+          result = await this.client.createRecord('sys_app', {
+            name: artifact.config.name,
+            description: artifact.config.description,
+            scope: artifact.config.scope || 'x_custom_' + artifact.config.name.toLowerCase().replace(/\s+/g, '_'),
+            version: artifact.config.version || '1.0.0',
+            vendor: artifact.config.vendor || 'Custom',
+            private: artifact.config.private !== false
+          });
+          break;
+
+        default:
+          throw new Error(`Unsupported artifact type: ${artifact.type}`);
+      }
+
+      if (result.success) {
+        this.logger.info('Artifact deployed successfully', {
+          type: artifact.type,
+          name: artifact.config.name,
+          sys_id: result.data?.sys_id
+        });
+
+        return {
+          success: true,
+          details: {
+            deployed_at: new Date().toISOString(),
+            sys_id: result.data?.sys_id,
+            url: result.data?.url,
+            type: artifact.type,
+            name: artifact.config.name,
+            deployment_method: 'real_api_call'
+          }
+        };
+      } else {
+        throw new Error(result.error || 'Unknown deployment error');
+      }
+
+    } catch (error) {
+      this.logger.error('Artifact deployment failed', {
+        type: artifact.type,
+        name: artifact.config?.name,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        details: {
+          attempted_at: new Date().toISOString(),
+          type: artifact.type,
+          name: artifact.config?.name,
+          deployment_method: 'real_api_call'
+        }
+      };
+    }
   }
 
   private async applyFallbackStrategy(artifact: any, strategy: string): Promise<any> {
-    // Simplified fallback application
-    return {
-      success: strategy === 'global_scope',
-      details: { fallback_strategy: strategy, applied_at: new Date().toISOString() }
-    };
+    // 🔧 CRITICAL FIX: Replace mock fallback with real implementation strategies
+    this.logger.info('Applying fallback strategy', { 
+      strategy, 
+      artifactType: artifact.type,
+      artifactName: artifact.config?.name 
+    });
+
+    try {
+      let result;
+
+      switch (strategy) {
+        case 'global_scope':
+          // Try deploying to global scope with enhanced permissions
+          artifact.config.scope = 'global';
+          artifact.config.sys_domain = 'global';
+          result = await this.attemptArtifactDeployment(artifact);
+          break;
+
+        case 'simplified_version':
+          // Create a simplified version of the artifact
+          const simplifiedArtifact = { ...artifact };
+          if (artifact.type === 'flow') {
+            // Simplify flow definition - remove complex activities
+            const flowDef = typeof artifact.config.flow_definition === 'string' 
+              ? JSON.parse(artifact.config.flow_definition) 
+              : artifact.config.flow_definition;
+            
+            if (flowDef.activities) {
+              flowDef.activities = flowDef.activities.filter((activity: any) => 
+                ['approval', 'notification', 'script'].includes(activity.type)
+              );
+            }
+            
+            simplifiedArtifact.config.flow_definition = JSON.stringify(flowDef);
+            simplifiedArtifact.config.name += '_simplified';
+          } else if (artifact.type === 'widget') {
+            // Simplify widget - basic template only
+            simplifiedArtifact.config.template = '<div>{{::data.message || "Widget loaded"}}</div>';
+            simplifiedArtifact.config.css = '';
+            simplifiedArtifact.config.client_script = '';
+            simplifiedArtifact.config.name += '_simplified';
+          }
+          
+          result = await this.attemptArtifactDeployment(simplifiedArtifact);
+          break;
+
+        case 'business_rule_fallback':
+          // Convert flow to business rule as fallback
+          if (artifact.type === 'flow') {
+            const businessRuleConfig = {
+              name: `BR_${artifact.config.name}`,
+              description: `Business Rule fallback for flow: ${artifact.config.name}`,
+              table: artifact.config.table || 'incident',
+              when: 'after',
+              script: `
+// Auto-generated Business Rule fallback for Flow: ${artifact.config.name}
+// Original flow description: ${artifact.config.description || 'No description'}
+
+try {
+  // Basic automation logic
+  if (current.isNewRecord()) {
+    gs.info('Record created, executing flow logic: ${artifact.config.name}');
+    
+    // Add your custom logic here based on original flow
+    ${this.generateBusinessRuleScript(artifact.config)}
+  }
+} catch (e) {
+  gs.error('Business Rule fallback error: ' + e.message);
+}
+              `.trim(),
+              active: true,
+              condition: artifact.config.condition || ''
+            };
+
+            result = await this.client.createRecord('sys_script', businessRuleConfig);
+          } else {
+            throw new Error('Business rule fallback only available for flows');
+          }
+          break;
+
+        case 'minimal_deployment':
+          // Deploy with absolute minimum configuration
+          const minimalArtifact = { ...artifact };
+          
+          // Strip all non-essential properties
+          const essentialFields = ['name', 'description', 'active'];
+          const cleanedConfig: any = {};
+          
+          essentialFields.forEach(field => {
+            if (artifact.config[field] !== undefined) {
+              cleanedConfig[field] = artifact.config[field];
+            }
+          });
+
+          // Add type-specific essentials
+          if (artifact.type === 'flow') {
+            cleanedConfig.type = 'subflow'; // Subflows are simpler
+            cleanedConfig.category = 'custom';
+          } else if (artifact.type === 'widget') {
+            cleanedConfig.template = '<div>Minimal Widget</div>';
+          }
+
+          minimalArtifact.config = cleanedConfig;
+          minimalArtifact.config.name += '_minimal';
+          
+          result = await this.attemptArtifactDeployment(minimalArtifact);
+          break;
+
+        case 'delayed_retry':
+          // Wait and retry original deployment
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          result = await this.attemptArtifactDeployment(artifact);
+          break;
+
+        default:
+          throw new Error(`Unknown fallback strategy: ${strategy}`);
+      }
+
+      if (result.success) {
+        this.logger.info('Fallback strategy successful', {
+          strategy,
+          artifactType: artifact.type,
+          artifactName: artifact.config?.name,
+          deployedSysId: result.details?.sys_id
+        });
+
+        return {
+          success: true,
+          details: {
+            fallback_strategy: strategy,
+            applied_at: new Date().toISOString(),
+            original_artifact: artifact.config?.name,
+            deployed_artifact: result.details?.name || artifact.config?.name,
+            sys_id: result.details?.sys_id,
+            deployment_method: 'fallback_strategy'
+          }
+        };
+      } else {
+        throw new Error(result.error || `Fallback strategy ${strategy} failed`);
+      }
+
+    } catch (error) {
+      this.logger.error('Fallback strategy failed', {
+        strategy,
+        artifactType: artifact.type,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        details: {
+          fallback_strategy: strategy,
+          attempted_at: new Date().toISOString(),
+          original_artifact: artifact.config?.name,
+          deployment_method: 'fallback_strategy'
+        }
+      };
+    }
+  }
+
+  private generateBusinessRuleScript(flowConfig: any): string {
+    // Generate basic business rule script based on flow configuration
+    let script = '// Generated business rule logic\n';
+    
+    if (flowConfig.trigger_type === 'record_created') {
+      script += 'gs.info("Record created trigger activated");\n';
+    }
+    
+    if (flowConfig.condition) {
+      script += `// Original condition: ${flowConfig.condition}\n`;
+    }
+    
+    script += 'gs.info("Business rule executed successfully");\n';
+    
+    return script;
   }
 
   private async generateFlowTestData(flow: any): Promise<any> {

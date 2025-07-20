@@ -2279,6 +2279,20 @@ export class EnhancedFlowComposer {
       // Use the simplified flow structure directly
       const flowDefinition = flowData.flowStructure;
 
+      // 🔧 CRITICAL FIX: Respect the analysis.recommendedType for correct flow type
+      // Map analysis types to ServiceNow flow types
+      let serviceNowFlowType = 'flow'; // default
+      if (flowData.decisionAnalysis?.recommendedType) {
+        const recommendedType = flowData.decisionAnalysis.recommendedType.toLowerCase();
+        if (recommendedType === 'main_flow' || recommendedType === 'flow' || recommendedType === 'triggered_flow') {
+          serviceNowFlowType = 'flow';
+        } else if (recommendedType === 'subflow' || recommendedType === 'reusable_flow') {
+          serviceNowFlowType = 'subflow';
+        } else if (recommendedType === 'action' || recommendedType === 'flow_action') {
+          serviceNowFlowType = 'action';
+        }
+      }
+
       // Create deployment context for scope management
       const deploymentContext: DeploymentContext = {
         artifactType: 'flow',
@@ -2291,6 +2305,8 @@ export class EnhancedFlowComposer {
           active: flowDefinition.active !== false,
           category: flowDefinition.category || 'custom',
           activities: flowDefinition.activities || [],
+          // 🔧 CRITICAL: Pass the correct flow type based on analysis
+          flow_type: serviceNowFlowType,
           // Additional metadata for scope decision
           complexity: this.assessFlowComplexity(flowDefinition),
           crossApplicationIntegration: this.hasCrossApplicationIntegration(flowDefinition),

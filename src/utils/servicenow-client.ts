@@ -1017,7 +1017,9 @@ export class ServiceNowClient {
         // Merge with dynamic defaults from ServiceNow
         ...flowDefaults,
         // Override with any specific values from the flow parameter
-        ...flow.overrides
+        ...flow.overrides,
+        // 🔧 CRITICAL FIX: Ensure flow type is respected and not overridden
+        type: flow.type || 'flow'
       };
       
       // Create the main flow record
@@ -1062,28 +1064,51 @@ export class ServiceNowClient {
         }
       }
       
-      // Create flow actions with logic entries
+      // Create flow actions/activities with logic entries
       const actionLogicIds: string[] = [];
       
-      if (flow.actions && Array.isArray(flow.actions)) {
-        console.log(`📋 Creating ${flow.actions.length} flow actions...`);
+      // 🔧 CRITICAL FIX: Process both flow.actions and flow.activities from flow_definition
+      let activitiesToProcess = flow.actions || [];
+      
+      // If no direct actions, parse flow_definition for activities
+      if (activitiesToProcess.length === 0 && flow.flow_definition) {
+        try {
+          const flowDef = typeof flow.flow_definition === 'string' ? 
+            JSON.parse(flow.flow_definition) : flow.flow_definition;
+          activitiesToProcess = flowDef.activities || flowDef.steps || [];
+        } catch (parseError) {
+          console.warn('Could not parse flow_definition for activities:', parseError);
+        }
+      }
+      
+      if (activitiesToProcess.length > 0) {
+        console.log(`📋 Creating ${activitiesToProcess.length} flow activities...`);
         
-        for (let i = 0; i < flow.actions.length; i++) {
-          const action = flow.actions[i];
+        for (let i = 0; i < activitiesToProcess.length; i++) {
+          const activity = activitiesToProcess[i];
           try {
-            const actionResult = await this.createFlowActionInstance(flowId, action, (i + 1) * 100);
+            const actionResult = await this.createFlowActionInstance(flowId, activity, (i + 1) * 100);
             
             // Create action logic entry
             const actionLogic = await this.createFlowLogic(flowId, {
-              name: action.name,
+              name: activity.name,
               type: 'action',
               order: (i + 1) * 100,
               instance: actionResult.sys_id
             });
             actionLogicIds.push(actionLogic.sys_id);
           } catch (actionError) {
-            console.error(`Failed to create action ${action.name}:`, actionError);
+            console.error(`Failed to create activity ${activity.name}:`, actionError);
           }
+        }
+      }
+      
+      // 🔧 NEW: Create flow variables for inputs/outputs
+      if (flow.inputs || flow.outputs || flow.flow_definition) {
+        try {
+          await this.createFlowVariables(flowId, flow);
+        } catch (variableError) {
+          console.warn('Failed to create flow variables:', variableError);
         }
       }
       
@@ -1103,9 +1128,24 @@ export class ServiceNowClient {
         }
       }
       
+      // 🔧 CRITICAL FIX: Enhanced response with proper ServiceNow URLs and flow type
+      const flowRecord = response.data.result;
+      const credentials = await this.oauth.loadCredentials();
+      const instance = credentials?.instance || process.env.SNOW_INSTANCE;
+      
       return {
         success: true,
-        data: response.data.result
+        data: {
+          ...flowRecord,
+          // Enhanced response format with proper URLs
+          url: `https://${instance}.service-now.com/flow_designer.do#/flow/${flowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}.service-now.com/flow_designer.do#/flow/${flowRecord.sys_id}`,
+          type: flowRecord.type || flow.type || 'flow', // Ensure type is included
+          activities_created: activitiesToProcess.length,
+          variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
+          trigger_configured: !!flow.trigger_type,
+          sys_trigger_created: flow.trigger_type === 'record_created' || flow.trigger_type === 'record_updated'
+        }
       };
     } catch (error) {
       console.error('❌ Failed to create flow:', error);
@@ -1162,9 +1202,24 @@ export class ServiceNowClient {
         }
       }
 
+      // 🔧 CRITICAL FIX: Enhanced response with proper ServiceNow URLs and subflow type
+      const subflowRecord = response.data.result;
+      const credentials = await this.oauth.loadCredentials();
+      const instance = credentials?.instance || process.env.SNOW_INSTANCE;
+      
       return {
         success: true,
-        data: response.data.result
+        data: {
+          ...subflowRecord,
+          // Enhanced response format with proper URLs
+          url: `https://${instance}.service-now.com/flow_designer.do#/subflow/${subflowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}.service-now.com/flow_designer.do#/subflow/${subflowRecord.sys_id}`,
+          type: 'subflow', // Ensure correct type
+          activities_created: subflow.activities?.length || 0,
+          inputs_defined: subflow.inputs?.length || 0,
+          outputs_defined: subflow.outputs?.length || 0,
+          reusable: true
+        }
       };
     } catch (error) {
       console.error('❌ Failed to create subflow:', error);
@@ -1428,10 +1483,142 @@ export class ServiceNowClient {
         triggerData
       );
       
+      // 🔧 CRITICAL FIX: Create actual sys_trigger record for proper triggered flows
+      // This ensures the flow can actually be triggered by record events
+      if (trigger.type === 'record_created' || trigger.type === 'record_updated') {
+        try {
+          const sysTriggerData = {
+            name: `Flow Trigger: ${trigger.table}`,
+            table: trigger.table || 'incident',
+            when: trigger.type === 'record_created' ? 'after' : 'before',
+            order: 100,
+            active: true,
+            condition: trigger.condition || '',
+            script: `
+// Auto-generated trigger for Flow Designer flow
+// Flow ID: ${flowId}
+try {
+  var flowAPI = new sn_fd.FlowAPI();
+  var inputs = {};
+  inputs.table = '${trigger.table || 'incident'}';
+  inputs.sys_id = current.getUniqueValue();
+  flowAPI.startFlow('${flowId}', inputs);
+  gs.info('Flow ${flowId} triggered successfully for record: ' + current.getUniqueValue());
+} catch (e) {
+  gs.error('Flow trigger error: ' + e.message);
+}
+            `.trim(),
+            description: `Auto-generated trigger for Flow Designer flow: ${flowId}`
+          };
+          
+          await this.client.post(
+            `${this.getBaseUrl()}/api/now/table/sys_trigger`,
+            sysTriggerData
+          );
+          
+          console.log('✅ sys_trigger record created for proper flow execution');
+        } catch (sysTriggerError) {
+          console.warn('Could not create sys_trigger record, flow may not trigger properly:', sysTriggerError);
+        }
+      }
+      
       console.log('✅ Trigger created successfully');
       return response.data.result;
     } catch (error) {
       console.error('Failed to create flow trigger:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create flow variables for inputs and outputs
+   */
+  private async createFlowVariables(flowId: string, flow: any): Promise<void> {
+    try {
+      console.log('📋 Creating flow variables...');
+      
+      // Process inputs
+      const inputs = flow.inputs || [];
+      if (inputs.length > 0) {
+        for (const input of inputs) {
+          const variableData = {
+            flow: flowId,
+            name: input.name || input.id,
+            label: input.label || input.name || input.id,
+            type: input.type || 'string',
+            input: true,
+            output: false,
+            required: input.required || false,
+            default_value: input.default || '',
+            description: input.description || `Input variable: ${input.name || input.id}`
+          };
+          
+          await this.client.post(
+            `${this.getBaseUrl()}/api/now/table/sys_hub_flow_variable`,
+            variableData
+          );
+        }
+        console.log(`✅ Created ${inputs.length} input variables`);
+      }
+      
+      // Process outputs
+      const outputs = flow.outputs || [];
+      if (outputs.length > 0) {
+        for (const output of outputs) {
+          const variableData = {
+            flow: flowId,
+            name: output.name || output.id,
+            label: output.label || output.name || output.id,
+            type: output.type || 'string',
+            input: false,
+            output: true,
+            required: false,
+            default_value: '',
+            description: output.description || `Output variable: ${output.name || output.id}`
+          };
+          
+          await this.client.post(
+            `${this.getBaseUrl()}/api/now/table/sys_hub_flow_variable`,
+            variableData
+          );
+        }
+        console.log(`✅ Created ${outputs.length} output variables`);
+      }
+      
+      // Extract variables from flow_definition if available
+      if (flow.flow_definition) {
+        try {
+          const flowDef = typeof flow.flow_definition === 'string' ? 
+            JSON.parse(flow.flow_definition) : flow.flow_definition;
+          
+          if (flowDef.variables && Array.isArray(flowDef.variables)) {
+            for (const variable of flowDef.variables) {
+              const variableData = {
+                flow: flowId,
+                name: variable.name || variable.id,
+                label: variable.label || variable.name || variable.id,
+                type: variable.type || 'string',
+                input: variable.input || false,
+                output: variable.output || false,
+                required: variable.required || false,
+                default_value: variable.default || variable.value || '',
+                description: variable.description || `Flow variable: ${variable.name || variable.id}`
+              };
+              
+              await this.client.post(
+                `${this.getBaseUrl()}/api/now/table/sys_hub_flow_variable`,
+                variableData
+              );
+            }
+            console.log(`✅ Created ${flowDef.variables.length} flow definition variables`);
+          }
+        } catch (parseError) {
+          console.warn('Could not parse flow_definition for variables:', parseError);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to create flow variables:', error);
       throw error;
     }
   }
