@@ -311,6 +311,8 @@ export class FlowPatternTemplates {
       name: customizations.name || template.name,
       description: customizations.description || template.description,
       category: template.category,
+      type: 'flow',  // Explicitly set as flow, not subflow
+      flow_type: 'flow',
       active: true,
       
       // Apply trigger template

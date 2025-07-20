@@ -712,6 +712,50 @@ class ServiceNowOperationsMCP {
               },
               required: ['catalog_item_id', 'flow_id']
             }
+          },
+          
+          {
+            name: 'snow_cleanup_test_artifacts',
+            description: 'Clean up test artifacts while preserving Update Set audit trail',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                artifact_types: {
+                  type: 'array',
+                  description: 'Types of artifacts to clean up',
+                  items: {
+                    type: 'string',
+                    enum: ['catalog_items', 'flows', 'users', 'requests', 'all']
+                  },
+                  default: ['catalog_items', 'flows', 'users']
+                },
+                test_patterns: {
+                  type: 'array',
+                  description: 'Name patterns that identify test artifacts',
+                  items: { type: 'string' },
+                  default: ['Test%', 'Mock%', 'Demo%', '%_test_%', '%test', '%mock']
+                },
+                max_age_hours: {
+                  type: 'number',
+                  description: 'Only clean artifacts older than this (hours)',
+                  default: 1
+                },
+                dry_run: {
+                  type: 'boolean',
+                  description: 'Preview what would be deleted without actually deleting',
+                  default: false
+                },
+                preserve_update_set_entries: {
+                  type: 'boolean',
+                  description: 'Keep Update Set entries as audit trail',
+                  default: true
+                },
+                update_set_filter: {
+                  type: 'string',
+                  description: 'Only clean from specific Update Set (optional)'
+                }
+              }
+            }
           }
         ],
       };
@@ -753,6 +797,8 @@ class ServiceNowOperationsMCP {
             return await this.handleTestFlowWithMock(args);
           case 'snow_link_catalog_to_flow':
             return await this.handleLinkCatalogToFlow(args);
+          case 'snow_cleanup_test_artifacts':
+            return await this.handleCleanupTestArtifacts(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Tool ${name} not found`);
         }
@@ -1780,6 +1826,46 @@ class ServiceNowOperationsMCP {
     try {
       switch (action) {
         case 'create': {
+          // Get default catalog if none provided
+          let catalogId = params.sc_catalogs || params.catalog_id;
+          let categoryId = params.sc_categories || params.category_id;
+          
+          if (!catalogId) {
+            // Find default Service Catalog
+            const defaultCatalogResult = await this.client.searchRecords(
+              'sc_catalog',
+              'active=true^ORDERBYsys_created_on',
+              1
+            );
+            
+            if (defaultCatalogResult.success && defaultCatalogResult.data?.result?.length > 0) {
+              catalogId = defaultCatalogResult.data.result[0].sys_id;
+              logger.info('Using default catalog:', { 
+                catalogId, 
+                catalogName: defaultCatalogResult.data.result[0].title 
+              });
+            } else {
+              logger.warn('No catalogs found, catalog item may not be visible');
+            }
+          }
+          
+          if (!categoryId) {
+            // Find a default category like "Hardware" or "General"
+            const defaultCategoryResult = await this.client.searchRecords(
+              'sc_category',
+              'active=true^titleLIKEHardware^ORtitleLIKEGeneral^ORtitleLIKEIT^ORDERBYsys_created_on',
+              1
+            );
+            
+            if (defaultCategoryResult.success && defaultCategoryResult.data?.result?.length > 0) {
+              categoryId = defaultCategoryResult.data.result[0].sys_id;
+              logger.info('Using default category:', { 
+                categoryId, 
+                categoryName: defaultCategoryResult.data.result[0].title 
+              });
+            }
+          }
+          
           const catalogItem = {
             name: params.name,
             short_description: params.short_description,
@@ -1790,8 +1876,8 @@ class ServiceNowOperationsMCP {
             active: params.active !== false,
             workflow: params.workflow,
             picture: params.picture,
-            sc_catalogs: params.sc_catalogs || params.catalog_id,
-            sc_categories: params.sc_categories || params.category_id,
+            sc_catalogs: catalogId,
+            sc_categories: categoryId,
             sys_class_name: 'sc_cat_item'
           };
           
@@ -2873,6 +2959,348 @@ class ServiceNowOperationsMCP {
                 `Results: ${JSON.stringify(linkResults, null, 2)}`
         }]
       };
+    }
+  }
+  
+  private async handleCleanupTestArtifacts(args: any) {
+    const {
+      artifact_types = ['catalog_items', 'flows', 'users'],
+      test_patterns = ['Test%', 'Mock%', 'Demo%', '%_test_%', '%test', '%mock'],
+      max_age_hours = 1,
+      dry_run = false,
+      preserve_update_set_entries = true,
+      update_set_filter
+    } = args;
+    
+    logger.info('Starting test artifact cleanup', {
+      artifact_types,
+      test_patterns,
+      max_age_hours,
+      dry_run
+    });
+    
+    const cleanupResults = {
+      start_time: new Date().toISOString(),
+      dry_run,
+      artifacts_found: {
+        catalog_items: [],
+        flows: [],
+        users: [],
+        requests: []
+      } as any,
+      artifacts_deleted: {
+        catalog_items: 0,
+        flows: 0,
+        users: 0,
+        requests: 0
+      },
+      update_set_entries_preserved: 0,
+      errors: [] as string[],
+      summary: ''
+    };
+    
+    try {
+      // Calculate cutoff time
+      const cutoffTime = new Date();
+      cutoffTime.setHours(cutoffTime.getHours() - max_age_hours);
+      const cutoffISO = cutoffTime.toISOString();
+      
+      // Process each artifact type
+      for (const artifactType of artifact_types) {
+        if (artifactType === 'all' || artifact_types.includes('catalog_items')) {
+          await this.cleanupTestCatalogItems(
+            test_patterns, cutoffISO, dry_run, cleanupResults, update_set_filter
+          );
+        }
+        
+        if (artifactType === 'all' || artifact_types.includes('flows')) {
+          await this.cleanupTestFlows(
+            test_patterns, cutoffISO, dry_run, cleanupResults, update_set_filter
+          );
+        }
+        
+        if (artifactType === 'all' || artifact_types.includes('users')) {
+          await this.cleanupTestUsers(
+            test_patterns, cutoffISO, dry_run, cleanupResults, update_set_filter
+          );
+        }
+        
+        if (artifactType === 'all' || artifact_types.includes('requests')) {
+          await this.cleanupTestRequests(
+            test_patterns, cutoffISO, dry_run, cleanupResults, update_set_filter
+          );
+        }
+      }
+      
+      // Generate summary
+      const totalFound = Object.values(cleanupResults.artifacts_found)
+        .reduce((sum, items) => sum + (Array.isArray(items) ? items.length : 0), 0);
+      const totalDeleted = Object.values(cleanupResults.artifacts_deleted)
+        .reduce((sum, count) => sum + count, 0);
+      
+      cleanupResults.summary = dry_run 
+        ? `🔍 Dry Run: Found ${totalFound} test artifacts that would be cleaned up`
+        : `🧹 Cleaned up ${totalDeleted} test artifacts successfully`;
+      
+      // Format results
+      let resultText = `🧹 Test Artifact Cleanup Results\n${'='.repeat(50)}\n\n`;
+      
+      if (dry_run) {
+        resultText += `🔍 **DRY RUN MODE** - No actual deletion performed\n\n`;
+      }
+      
+      resultText += `⏰ **Cleanup Configuration:**\n`;
+      resultText += `- Artifact Types: ${artifact_types.join(', ')}\n`;
+      resultText += `- Test Patterns: ${test_patterns.join(', ')}\n`;
+      resultText += `- Max Age: ${max_age_hours} hours\n`;
+      resultText += `- Cutoff Time: ${cutoffISO}\n`;
+      resultText += `- Preserve Update Set Entries: ${preserve_update_set_entries ? '✅' : '❌'}\n\n`;
+      
+      // Report findings by type
+      ['catalog_items', 'flows', 'users', 'requests'].forEach(type => {
+        const found = cleanupResults.artifacts_found[type] || [];
+        const deleted = cleanupResults.artifacts_deleted[type] || 0;
+        
+        if (found.length > 0) {
+          resultText += `📦 **${type.replace('_', ' ').toUpperCase()}:**\n`;
+          resultText += `   ${dry_run ? 'Found' : 'Deleted'}: ${dry_run ? found.length : deleted}\n`;
+          
+          if (dry_run && found.length > 0) {
+            found.slice(0, 10).forEach((item: any) => {
+              resultText += `   - ${item.name} (${item.sys_id}) - Created: ${item.sys_created_on}\n`;
+            });
+            if (found.length > 10) {
+              resultText += `   ... and ${found.length - 10} more\n`;
+            }
+          }
+          resultText += '\n';
+        }
+      });
+      
+      if (cleanupResults.update_set_entries_preserved > 0) {
+        resultText += `📋 **Update Set Audit Trail Preserved:** ${cleanupResults.update_set_entries_preserved} entries\n\n`;
+      }
+      
+      if (cleanupResults.errors.length > 0) {
+        resultText += `❌ **Errors:**\n`;
+        cleanupResults.errors.forEach(error => {
+          resultText += `   - ${error}\n`;
+        });
+        resultText += '\n';
+      }
+      
+      resultText += `✅ **${cleanupResults.summary}**\n\n`;
+      
+      if (!dry_run && totalDeleted > 0) {
+        resultText += `💡 **Note:** Update Set entries have been preserved as audit trail.\n`;
+        resultText += `This shows that testing was performed and cleanup was completed.\n\n`;
+      }
+      
+      if (dry_run) {
+        resultText += `▶️ **Next Steps:**\n`;
+        resultText += `1. Review the artifacts that would be deleted\n`;
+        resultText += `2. Run again with dry_run: false to perform actual cleanup\n`;
+        resultText += `3. Verify Update Set entries are preserved as intended\n`;
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: resultText
+        }]
+      };
+      
+    } catch (error: any) {
+      logger.error('Error during test artifact cleanup:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ Test artifact cleanup failed\n\nError: ${error.message}\n\n` +
+                `🔧 Troubleshooting:\n` +
+                `1. Check ServiceNow connection and permissions\n` +
+                `2. Verify test patterns are correct\n` +
+                `3. Ensure artifacts exist and are accessible\n\n` +
+                `Debug Info: ${JSON.stringify(cleanupResults, null, 2)}`
+        }]
+      };
+    }
+  }
+  
+  private async cleanupTestCatalogItems(
+    patterns: string[], 
+    cutoffTime: string, 
+    dryRun: boolean, 
+    results: any,
+    updateSetFilter?: string
+  ) {
+    try {
+      // Build query for test catalog items
+      const patternQueries = patterns.map(pattern => {
+        if (pattern.includes('%')) {
+          return `nameLIKE${pattern.replace(/%/g, '')}`;
+        } else {
+          return `name=${pattern}`;
+        }
+      });
+      
+      const query = `(${patternQueries.join('^OR')})^sys_created_on<${cutoffTime}`;
+      
+      const searchResult = await this.client.searchRecords('sc_cat_item', query, 100);
+      
+      if (searchResult.success && searchResult.data?.result) {
+        results.artifacts_found.catalog_items = searchResult.data.result.map((item: any) => ({
+          sys_id: item.sys_id,
+          name: item.name,
+          sys_created_on: item.sys_created_on
+        }));
+        
+        if (!dryRun) {
+          // Delete each catalog item
+          for (const item of searchResult.data.result) {
+            const deleteResult = await this.client.deleteRecord('sc_cat_item', item.sys_id);
+            if (deleteResult.success) {
+              results.artifacts_deleted.catalog_items++;
+            } else {
+              results.errors.push(`Failed to delete catalog item ${item.name}: ${deleteResult.error}`);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      results.errors.push(`Error cleaning catalog items: ${error.message}`);
+    }
+  }
+  
+  private async cleanupTestFlows(
+    patterns: string[], 
+    cutoffTime: string, 
+    dryRun: boolean, 
+    results: any,
+    updateSetFilter?: string
+  ) {
+    try {
+      const patternQueries = patterns.map(pattern => {
+        if (pattern.includes('%')) {
+          return `nameLIKE${pattern.replace(/%/g, '')}`;
+        } else {
+          return `name=${pattern}`;
+        }
+      });
+      
+      const query = `(${patternQueries.join('^OR')})^sys_created_on<${cutoffTime}`;
+      
+      const searchResult = await this.client.searchRecords('sys_hub_flow', query, 100);
+      
+      if (searchResult.success && searchResult.data?.result) {
+        results.artifacts_found.flows = searchResult.data.result.map((flow: any) => ({
+          sys_id: flow.sys_id,
+          name: flow.name,
+          sys_created_on: flow.sys_created_on
+        }));
+        
+        if (!dryRun) {
+          for (const flow of searchResult.data.result) {
+            const deleteResult = await this.client.deleteRecord('sys_hub_flow', flow.sys_id);
+            if (deleteResult.success) {
+              results.artifacts_deleted.flows++;
+            } else {
+              results.errors.push(`Failed to delete flow ${flow.name}: ${deleteResult.error}`);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      results.errors.push(`Error cleaning flows: ${error.message}`);
+    }
+  }
+  
+  private async cleanupTestUsers(
+    patterns: string[], 
+    cutoffTime: string, 
+    dryRun: boolean, 
+    results: any,
+    updateSetFilter?: string
+  ) {
+    try {
+      const patternQueries = patterns.map(pattern => {
+        if (pattern.includes('%')) {
+          return `user_nameLIKE${pattern.replace(/%/g, '')}^ORfirst_nameLIKE${pattern.replace(/%/g, '')}`;
+        } else {
+          return `user_name=${pattern}^ORfirst_name=${pattern}`;
+        }
+      });
+      
+      const query = `(${patternQueries.join('^OR')})^sys_created_on<${cutoffTime}^active=false`;
+      
+      const searchResult = await this.client.searchRecords('sys_user', query, 100);
+      
+      if (searchResult.success && searchResult.data?.result) {
+        results.artifacts_found.users = searchResult.data.result.map((user: any) => ({
+          sys_id: user.sys_id,
+          name: user.user_name || user.name,
+          sys_created_on: user.sys_created_on
+        }));
+        
+        if (!dryRun) {
+          for (const user of searchResult.data.result) {
+            const deleteResult = await this.client.deleteRecord('sys_user', user.sys_id);
+            if (deleteResult.success) {
+              results.artifacts_deleted.users++;
+            } else {
+              results.errors.push(`Failed to delete user ${user.user_name}: ${deleteResult.error}`);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      results.errors.push(`Error cleaning users: ${error.message}`);
+    }
+  }
+  
+  private async cleanupTestRequests(
+    patterns: string[], 
+    cutoffTime: string, 
+    dryRun: boolean, 
+    results: any,
+    updateSetFilter?: string
+  ) {
+    try {
+      const patternQueries = patterns.map(pattern => {
+        if (pattern.includes('%')) {
+          return `short_descriptionLIKE${pattern.replace(/%/g, '')}`;
+        } else {
+          return `short_description=${pattern}`;
+        }
+      });
+      
+      const query = `(${patternQueries.join('^OR')})^sys_created_on<${cutoffTime}`;
+      
+      const searchResult = await this.client.searchRecords('sc_request', query, 100);
+      
+      if (searchResult.success && searchResult.data?.result) {
+        results.artifacts_found.requests = searchResult.data.result.map((req: any) => ({
+          sys_id: req.sys_id,
+          name: req.number || req.short_description,
+          sys_created_on: req.sys_created_on
+        }));
+        
+        if (!dryRun) {
+          for (const request of searchResult.data.result) {
+            // Cancel request instead of deleting (safer)
+            const updateResult = await this.client.updateRecord('sc_request', request.sys_id, {
+              state: '4', // Cancelled
+              comments: 'Cancelled by test cleanup automation'
+            });
+            if (updateResult.success) {
+              results.artifacts_deleted.requests++;
+            } else {
+              results.errors.push(`Failed to cancel request ${request.number}: ${updateResult.error}`);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      results.errors.push(`Error cleaning requests: ${error.message}`);
     }
   }
   

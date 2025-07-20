@@ -1116,6 +1116,8 @@ export class EnhancedFlowComposer {
       name: parsedInstruction.flowName,
       description: parsedInstruction.description,
       table: parsedInstruction.table,
+      type: 'flow',  // Explicitly set as flow, not subflow
+      flow_type: 'flow',
       trigger: {
         type: parsedInstruction.trigger.type,
         table: parsedInstruction.table,
@@ -1179,6 +1181,8 @@ export class EnhancedFlowComposer {
       name: parsedInstruction.flowName,
       description: parsedInstruction.description,
       table: parsedInstruction.table,
+      type: 'flow',  // Explicitly set as flow, not subflow
+      flow_type: 'flow',
       trigger_type: parsedInstruction.trigger.type,
       condition: parsedInstruction.trigger.condition,
       active: true,

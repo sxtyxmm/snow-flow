@@ -87,6 +87,17 @@
   },
   "includeCoAuthoredBy": true,
   "enabledMcpjsonServers": [
+    "servicenow-deployment",
+    "servicenow-flow-composer",
+    "servicenow-update-set",
+    "servicenow-intelligent",
+    "servicenow-graph-memory",
+    "servicenow-operations",
+    "servicenow-platform-development",
+    "servicenow-integration",
+    "servicenow-automation",
+    "servicenow-security-compliance",
+    "servicenow-reporting-analytics",
     "claude-flow",
     "ruv-swarm"
   ]

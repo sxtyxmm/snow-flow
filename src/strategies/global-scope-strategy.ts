@@ -395,6 +395,17 @@ export class GlobalScopeStrategy {
       status: 'published'
     };
 
+    // Ensure we're creating a flow, not a subflow
+    globalFlowData.flow_type = 'flow';
+    globalFlowData.sys_class_name = 'sys_hub_flow';
+    
+    this.logger.info('Creating flow with explicit type', { 
+      name: globalFlowData.name, 
+      type: globalFlowData.type, 
+      flow_type: globalFlowData.flow_type,
+      sys_class_name: globalFlowData.sys_class_name
+    });
+    
     return await this.client.createFlow(globalFlowData);
   }
 

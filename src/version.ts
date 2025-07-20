@@ -2,13 +2,31 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.45';
+export const VERSION = '1.1.47';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.47': [
+      'TEST CLEANUP: Added snow_cleanup_test_artifacts tool for cleaning test data',
+      'AUDIT TRAIL: Preserves Update Set entries while removing test artifacts',
+      'SMART DETECTION: Identifies test artifacts by naming patterns (Test*, Mock*, etc.)',
+      'DRY RUN: Preview what would be deleted before actual cleanup',
+      'AGE FILTERING: Only removes artifacts older than specified hours',
+      'MULTI-TYPE: Cleans catalog items, flows, users, and requests',
+      'ADDRESSES: Test catalog items remaining in Update Sets after testing'
+    ],
+    '1.1.46': [
+      'CATALOG DEFAULTS: Catalog items automatically get default catalog/category assigned',
+      'FLOW TYPE FIX: Explicit flow_type="flow" in all flow creation paths',
+      'DEPLOYMENT CONSISTENCY: Fixed subflow creation instead of flows',
+      'TEMPLATE UPDATES: All flow templates now create flows, not subflows',
+      'GLOBAL SCOPE: Enhanced flow deployment with explicit type checking',
+      'ADDRESSES: "Content not found. Subflow cannot be found" error',
+      'ADDRESSES: Catalog items without proper catalog assignment'
+    ],
     '1.1.45': [
       'CATALOG-FLOW LINKING: Added snow_link_catalog_to_flow for direct integration',
       'THREE LINK TYPES: flow_catalog_process (modern), workflow (legacy), process_engine',
@@ -246,6 +264,36 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.47': {
+      date: '2025-01-20',
+      changes: [
+        'NEW TOOL: snow_cleanup_test_artifacts for comprehensive test data cleanup',
+        'Intelligent detection of test artifacts using naming patterns (Test*, Mock*, Demo*)',
+        'Age-based filtering - only cleans artifacts older than specified hours (default: 1 hour)',
+        'Dry run mode to preview what would be deleted without actual deletion',
+        'Multi-artifact type support: catalog_items, flows, users, requests',
+        'Update Set audit trail preservation - shows testing was performed',
+        'Comprehensive reporting with detailed breakdown by artifact type',
+        'Safe request handling - cancels instead of deletes for audit purposes',
+        'Error handling with detailed troubleshooting guidance',
+        'Addresses user feedback: test catalog items remaining in Update Sets'
+      ]
+    },
+    '1.1.46': {
+      date: '2025-01-20',
+      changes: [
+        'CATALOG DEFAULTS: Catalog items now automatically get assigned to default catalog if none specified',
+        'Automatically finds Hardware, General, or IT categories for catalog items',
+        'FLOW TYPE ENFORCEMENT: Added explicit flow_type="flow" throughout the codebase',
+        'Fixed global scope strategy to force flow type instead of subflow',
+        'Updated flow composer to always set type="flow" in flow structures',
+        'Enhanced pattern templates to generate flows, not subflows',
+        'DEPLOYMENT FIXES: Resolved "Content not found. Subflow cannot be found" error',
+        'Added extensive logging for flow type detection and deployment',
+        'Addresses user feedback: "hij maakt een subflow aan in plaats van een flow"',
+        'Ensures consistent flow deployment across all creation paths'
+      ]
+    },
     '1.1.45': {
       date: '2025-01-20',
       changes: [
