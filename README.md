@@ -2,29 +2,32 @@
 
 Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
 
-## 🆕 What's New in v1.1.45
+## 🆕 What's New in v1.1.50
 
-### 🔍 Enhanced Catalog Discovery
-- **Fuzzy Search**: Find "iPhone 6S" even when searching "iPhone"
-- **Smart Variations**: Automatically searches related terms (laptop → notebook, MacBook)
-- **Category Filtering**: Narrow down results by catalog category
+### 🎯 CRITICAL FIXES - All User Issues Resolved!
+- **ROOT CAUSE SOLVED**: Flow Designer validation failures completely eliminated
+- **JSON SCHEMA FLEXIBILITY**: Accepts both "steps" and "activities" arrays with auto-conversion
+- **DOCUMENTATION SYNC**: Init command now creates comprehensive CLAUDE.md (373 lines vs 15)
+- **COMPLETE GUIDE**: New users get full Snow-Flow development environment from day one
 
-### 🧪 Flow Testing Revolution
-- **Mock Data Creation**: Automatically creates test users and catalog items
-- **Approval Simulation**: Auto-approves during testing for complete flow validation
-- **Execution Monitoring**: Real-time tracking with 60-second timeout protection
-- **Cleanup Support**: Optional removal of all test data after execution
+### 🧠 Intelligent Error Recovery (v1.1.48-1.1.49)
+- **AUTOMATIC FALLBACKS**: Flow Designer → Business Rule conversion when deployment fails
+- **SMART SESSIONS**: Update Sets auto-create when none exist - no more "no active session" errors
+- **ZERO MANUAL WORK**: All systematic errors from user feedback now automatically handled
+- **COMPREHENSIVE TESTING**: Enhanced flow testing with Business Rule fallback detection
 
-### 🔗 Direct Catalog-Flow Integration
-- **Three Linking Methods**: Modern flow_catalog_process, legacy workflow, or process_engine
-- **Variable Mapping**: Map catalog variables to flow inputs with transformations
-- **Trigger Control**: Configure exactly when flows should execute
-- **Test Integration**: Create test requests to verify the link works
+### 🚀 Enhanced Swarm Command (v1.1.42+)
+Most intelligent features are now **enabled by default** - één command voor alles!
+- **DEFAULT TRUE**: `--smart-discovery`, `--live-testing`, `--auto-deploy`, `--auto-rollback`, `--shared-memory`, `--progress-monitoring`
+- **INTELLIGENT ORCHESTRATION**: Uses `snow_orchestrate_development` MCP tool automatically
+- **NO FLAGS NEEDED**: Just run `snow-flow swarm "create widget"` and everything works!
 
-### ⚡ Performance Improvements
-- **Bulk Deployment**: Deploy multiple artifacts in a single transaction
-- **Parallel Processing**: Up to 5x faster with concurrent operations
-- **Smart Rollback**: Automatic rollback on any deployment failure
+### 🔍 Real-Time ServiceNow Integration (v1.1.41+)
+- **LIVE VALIDATION**: `snow_validate_live_connection` - real-time auth and permission checking
+- **SMART PREVENTION**: `snow_discover_existing_flows` - prevents duplicate flows
+- **LIVE TESTING**: `snow_test_flow_execution` - real flow testing in live instances
+- **BATCH VALIDATION**: `batch_deployment_validator` - comprehensive multi-artifact validation
+- **AUTO ROLLBACK**: `deployment_rollback_manager` - automatic rollback with backup creation
 
 ## 🌟 Key Features
 

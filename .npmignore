@@ -23,8 +23,9 @@ coverage/
 !README.md
 !LICENSE
 
-# Local data
+# Local data (exclude source but include compiled)
 memory/
+!dist/memory/
 .swarm/
 # Don't ignore .claude/ entirely - we need some config files
 .claude/*

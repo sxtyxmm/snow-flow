@@ -2778,64 +2778,88 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       const corrections: string[] = [];
 
       // SMART SCHEMA CORRECTION - Fix root cause of JSON schema issues
-      // Accept both "activities" and "steps" arrays
-      if (!definition.activities && !definition.steps) {
+      // Handle multiple JSON structure variations: top-level, nested in "flow", nested in "flow_definition"
+      
+      let workingDefinition = definition;
+      
+      // Check if we have a nested structure like { "flow": { "steps": [...] } }
+      if (definition.flow && typeof definition.flow === 'object') {
+        workingDefinition = definition.flow;
+        corrections.push('✅ Processing nested flow structure (definition.flow)');
+        info.push('💡 Detected nested flow definition format - extracting flow content');
+      }
+      
+      // Check if we have nested flow_definition
+      if (definition.flow_definition && typeof definition.flow_definition === 'object') {
+        workingDefinition = definition.flow_definition;
+        corrections.push('✅ Processing nested flow_definition structure');
+      }
+
+      // Now check for activities/steps in the working definition
+      if (!workingDefinition.activities && !workingDefinition.steps) {
         issues.push('❌ Missing "activities" or "steps" array');
-      } else if (definition.steps && !definition.activities) {
+      } else if (workingDefinition.steps && !workingDefinition.activities) {
         // AUTO-CORRECT: Convert "steps" to "activities"
-        definition.activities = definition.steps;
-        delete definition.steps;
+        workingDefinition.activities = workingDefinition.steps;
+        delete workingDefinition.steps;
         corrections.push('✅ Auto-converted "steps" to "activities" (ServiceNow Flow Designer format)');
         info.push('💡 Accepted "steps" array and converted to ServiceNow standard "activities"');
-      } else if (!Array.isArray(definition.activities)) {
+      } else if (workingDefinition.activities && !Array.isArray(workingDefinition.activities)) {
         issues.push('❌ "activities" must be an array');
       }
 
-      // Auto-fix other common schema variations
-      if (definition.flow_definition && !definition.activities) {
-        // Nested flow definition - extract it
-        const nested = definition.flow_definition;
-        if (nested.activities || nested.steps) {
-          definition.activities = nested.activities || nested.steps;
-          corrections.push('✅ Extracted activities from nested flow_definition');
+      // If we processed a nested structure, update the main definition
+      if (workingDefinition !== definition) {
+        if (definition.flow) {
+          definition.flow = workingDefinition;
+        } else if (definition.flow_definition) {
+          definition.flow_definition = workingDefinition;
+        }
+        // Also promote the activities to top level for ServiceNow compatibility
+        if (workingDefinition.activities) {
+          definition.activities = workingDefinition.activities;
+          corrections.push('✅ Promoted activities to top-level for ServiceNow compatibility');
         }
       }
 
-      // Support different trigger formats
-      if (!definition.trigger && (args.trigger_type || args.table)) {
-        definition.trigger = {
+      // Support different trigger formats - check working definition for trigger
+      if (!workingDefinition.trigger && !definition.trigger && (args.trigger_type || args.table)) {
+        const generatedTrigger = {
           type: args.trigger_type || 'manual',
           table: args.table || '',
           condition: args.condition || ''
         };
+        workingDefinition.trigger = generatedTrigger;
+        definition.trigger = generatedTrigger;
         corrections.push('✅ Auto-generated trigger from parameters');
       }
 
       // Flow type specific validation
       switch (flowType) {
         case 'flow':
-          if (!definition.trigger && !args.trigger_type) {
+          if (!workingDefinition.trigger && !definition.trigger && !args.trigger_type) {
             issues.push('❌ Flow must have a trigger defined');
           }
           break;
         case 'subflow':
-          if (!definition.inputs) {
+          if (!workingDefinition.inputs) {
             warnings.push('⚠️ Subflow has no inputs defined');
           }
-          if (!definition.outputs) {
+          if (!workingDefinition.outputs) {
             warnings.push('⚠️ Subflow has no outputs defined');
           }
           break;
         case 'action':
-          if (!definition.action_type) {
+          if (!workingDefinition.action_type) {
             warnings.push('⚠️ Action type not specified');
           }
           break;
       }
 
-      // Activity validation
-      if (definition.activities) {
-        definition.activities.forEach((activity: any, index: number) => {
+      // Activity validation - use the working definition that has the activities
+      const activitiesToValidate = workingDefinition.activities || definition.activities;
+      if (activitiesToValidate) {
+        activitiesToValidate.forEach((activity: any, index: number) => {
           if (!activity.name) {
             issues.push(`❌ Activity ${index + 1} missing required "name" field`);
           }
@@ -2874,7 +2898,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
         content: [
           {
             type: 'text',
-            text: `${status}\n\n📋 **Flow Validation Report:**\n- Flow Type: ${flowType}\n- Activities: ${definition.activities?.length || 0}\n- Status: ${hasErrors ? 'Failed' : 'Passed'}\n${correctionsText}${issues.length > 0 ? `\n🚨 **Critical Issues:**\n${issues.join('\n')}\n\n` : ''}${warnings.length > 0 ? `⚠️ **Warnings:**\n${warnings.join('\n')}\n\n` : ''}${info.length > 0 ? `ℹ️ **Information:**\n${info.join('\n')}\n\n` : ''}${preview ? `\n📊 **Flow Preview:**\n${preview}\n` : ''}${!hasErrors && args.test_mode ? '\n🧪 **Test Mode:** Flow structure is valid for testing\n' : ''}${!hasErrors ? '\n✅ Flow definition is valid and ready for deployment!' : '\n❌ Please fix the issues before deploying.'}`
+            text: `${status}\n\n📋 **Flow Validation Report:**\n- Flow Type: ${flowType}\n- Activities: ${activitiesToValidate?.length || 0}\n- Status: ${hasErrors ? 'Failed' : 'Passed'}\n${correctionsText}${issues.length > 0 ? `\n🚨 **Critical Issues:**\n${issues.join('\n')}\n\n` : ''}${warnings.length > 0 ? `⚠️ **Warnings:**\n${warnings.join('\n')}\n\n` : ''}${info.length > 0 ? `ℹ️ **Information:**\n${info.join('\n')}\n\n` : ''}${preview ? `\n📊 **Flow Preview:**\n${preview}\n` : ''}${!hasErrors && args.test_mode ? '\n🧪 **Test Mode:** Flow structure is valid for testing\n' : ''}${!hasErrors ? '\n✅ Flow definition is valid and ready for deployment!' : '\n❌ Please fix the issues before deploying.'}`
           }
         ]
       };

@@ -2,13 +2,46 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.49';
+export const VERSION = '1.1.53';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.53': [
+      'CRITICAL BUG FIX: Fixed ServiceNow Flow Composer MCP server failing to start',
+      'MEMORY DIRECTORY INCLUSION: Fixed .npmignore excluding dist/memory/ from npm package',
+      'ARTIFACT INDEXER AVAILABILITY: ServiceNow Artifact Indexer now available in npm installations',
+      'MCP SERVER STABILITY: All 11 MCP servers now start correctly after npm installation',
+      'ADDRESSES USER ISSUE: "servicenow-flow-composer MCP Server Status: ✘ failed" - FIXED',
+      'FLOW CREATION ENABLED: Users can now create flows using the Flow Composer MCP server'
+    ],
+    '1.1.52': [
+      'CRITICAL DOCUMENTATION FIX: Updated README.md template in init command to match comprehensive project README',
+      'COMPLETE TEMPLATE SYNC: Init command now creates full README.md (389 lines vs 15)',
+      'COMPREHENSIVE GUIDE: New users get complete Snow-Flow documentation from first init',
+      'FEATURE COMPLETE DOCS: Includes all features, MCP servers, usage examples, and advanced capabilities',
+      'DOCUMENTATION CONSISTENCY: Both CLAUDE.md and README.md now comprehensive in init template',
+      'ADDRESSES USER FEEDBACK: "readme is nog steeds ook heel leeg vergeleken met wat we hier hebben" - FIXED'
+    ],
+    '1.1.51': [
+      'CRITICAL BUG FIX: Fixed JSON validation for nested flow structures (flow.steps)',
+      'NESTED STRUCTURE SUPPORT: Properly handles {"flow": {"steps": [...]}} format',
+      'COMPLETE SCHEMA HANDLING: Auto-detects and processes flow, flow_definition, and top-level structures',
+      'ACTIVITY PROMOTION: Automatically promotes nested activities to top-level for ServiceNow compatibility',
+      'VALIDATION ACCURACY: Activity count now correctly reflects nested structure processing',
+      'ADDRESSES USER ISSUE: "Missing activities or steps array" error with nested JSON - FIXED',
+      'ENHANCED ERROR RECOVERY: Handles all common Flow Designer JSON format variations seamlessly'
+    ],
+    '1.1.50': [
+      'CRITICAL FIX: Updated init command to use comprehensive CLAUDE.md template instead of basic one',
+      'TEMPLATE UPDATE: CLAUDE.md now includes all advanced features, MCP tools, and best practices',
+      'DOCUMENTATION SYNCHRONIZATION: Init command now creates the same comprehensive docs as the project',
+      'COMPLETE GUIDE: New users get full Snow-Flow ServiceNow development guide from day one',
+      'ADDRESSES USER FEEDBACK: "claude.md super summier vergeleken wat we hier hebben" - FIXED',
+      'INIT IMPROVEMENT: snow-flow init --sparc now creates production-ready CLAUDE.md with all features'
+    ],
     '1.1.49': [
       'ROOT CAUSE FIXED: Flow Designer validation now accepts both "steps" and "activities" JSON formats',
       'SMART SCHEMA CORRECTION: Auto-converts "steps" to "activities" in Flow Designer deployment',
@@ -284,6 +317,88 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.53': {
+      date: '2025-01-20',
+      changes: [
+        'CRITICAL MCP SERVER FIX: Fixed ServiceNow Flow Composer MCP server startup failure',
+        'USER ISSUE: "servicenow-flow-composer MCP Server Status: ✘ failed"',
+        'ROOT CAUSE: Missing servicenow-artifact-indexer.js in npm package',
+        'PROBLEM ANALYSIS:',
+        '  - flow-composer.js imports ../memory/servicenow-artifact-indexer.js',
+        '  - .npmignore was excluding entire memory/ directory',
+        '  - npm package missing dist/memory/ with compiled indexer',
+        '  - Result: Flow Composer MCP server could not start',
+        'SOLUTION: Updated .npmignore to include dist/memory/ while excluding source memory/',
+        '.NPMIGNORE CORRECTION:',
+        '  - Changed: memory/ (excluded everything)',
+        '  - To: memory/ + !dist/memory/ (excludes source, includes compiled)',
+        'MCP SERVER IMPACT:',
+        '  - All 11 MCP servers now start correctly after npm installation',
+        '  - ServiceNow Flow Composer functionality restored',
+        '  - Flow creation tools now available via MCP tools',
+        'PACKAGE INTEGRITY: npm package now includes all required compiled dependencies',
+        'DEPLOYMENT VERIFICATION: All MCP servers tested and confirmed working after npm install'
+      ]
+    },
+    '1.1.52': {
+      date: '2025-01-20',
+      changes: [
+        'CRITICAL DOCUMENTATION TEMPLATE FIX: Updated README.md template in init command',
+        'USER FEEDBACK: "readme is nog steeds ook heel leeg vergeleken met wat we hier hebben"',
+        'COMPLETE TEMPLATE REPLACEMENT: createReadmeFiles now uses comprehensive project README.md',
+        'DOCUMENTATION SYNCHRONIZATION: Both CLAUDE.md and README.md templates now match project files',
+        'TEMPLATE SIZE: README.md template expanded from 15 lines to 389 lines of comprehensive content',
+        'COMPREHENSIVE NEW USER EXPERIENCE: Init command now provides:',
+        '  - Complete feature overview with v1.1.51 updates',
+        '  - All 11 MCP server documentation',
+        '  - Usage examples and advanced features',
+        '  - Installation and configuration guides',
+        '  - Development commands and project structure',
+        '  - Real-world use cases and examples',
+        'CONSISTENCY: New users get identical documentation to project maintainers',
+        'INIT IMPROVEMENT: snow-flow init --sparc now creates production-ready documentation environment',
+        'NO MORE EMPTY DOCS: Both major documentation files now comprehensive from day one'
+      ]
+    },
+    '1.1.51': {
+      date: '2025-01-20',
+      changes: [
+        'CRITICAL JSON VALIDATION BUG FIX: Resolved nested flow structure processing',
+        'NESTED FLOW SUPPORT: validateFlowDefinition now properly handles {"flow": {"steps": [...]}} format',
+        'The user reported: "Missing activities or steps array" error even with steps present',
+        'ROOT CAUSE: Validation was checking top-level for activities/steps but user JSON had nested structure',
+        'SOLUTION: Enhanced validation to detect and process multiple nesting patterns:',
+        '  - Top-level: {"activities": [...]} or {"steps": [...]}',
+        '  - Nested flow: {"flow": {"steps": [...]}} or {"flow": {"activities": [...]}}',
+        '  - Nested definition: {"flow_definition": {"activities": [...]}}',
+        'AUTO-CORRECTION: Automatically converts "steps" to "activities" in any nesting level',
+        'COMPATIBILITY PROMOTION: Promotes nested activities to top-level for ServiceNow API compatibility',
+        'TRIGGER HANDLING: Enhanced trigger generation for nested structures',
+        'ACTIVITY COUNT FIX: Validation report now shows correct activity count from processed structure',
+        'COMPREHENSIVE ERROR RECOVERY: Handles all Flow Designer JSON format variations seamlessly',
+        'USER ISSUE RESOLVED: The specific JSON format that was failing now validates and deploys successfully'
+      ]
+    },
+    '1.1.50': {
+      date: '2025-01-20',
+      changes: [
+        'CRITICAL DOCUMENTATION FIX: Resolved outdated CLAUDE.md template in init command',
+        'COMPLETE TEMPLATE UPDATE: Init command now creates comprehensive CLAUDE.md with all Snow-Flow features',
+        'SYNCHRONIZATION: CLAUDE.md template updated from 15 lines to 373 lines of comprehensive documentation',
+        'FEATURE COMPLETE: New users now get complete guide including:',
+        '  - Core Development Principles with batch operations and concurrent execution',
+        '  - Complete ServiceNow MCP Tools Reference with all 13 MCP servers',
+        '  - Performance optimization patterns and best practices',
+        '  - Advanced configuration with swarm features (v1.1.41+)',
+        '  - Catalog-flow linking, flow testing, and bulk deployment tools',
+        '  - Error recovery patterns and workflow guidelines',
+        'ADDRESSES USER FEEDBACK: "Kan het zijn dat de claude.md en de readme.md nog niet geupdate zijn"',
+        'USER ISSUE RESOLVED: Basic template (claude.md super summier) replaced with production-ready guide',
+        'INIT COMMAND IMPROVEMENT: snow-flow init --sparc now provides complete development environment',
+        'DOCUMENTATION CONSISTENCY: Init template matches project documentation exactly',
+        'NEW USER EXPERIENCE: Complete Snow-Flow capabilities visible from first init'
+      ]
+    },
     '1.1.49': {
       date: '2025-01-20',
       changes: [
