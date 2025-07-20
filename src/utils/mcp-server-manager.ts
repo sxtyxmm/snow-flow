@@ -184,8 +184,25 @@ export class MCPServerManager extends EventEmitter {
     this.emit('serverStarting', name);
 
     try {
+      // Determine script path based on installation type
+      let scriptPath = server.script;
+      
+      // If script is a relative path, resolve it
+      if (!scriptPath.startsWith('/')) {
+        // Check if we're in a global npm installation
+        const isGlobalInstall = __dirname.includes('node_modules/snow-flow');
+        
+        if (isGlobalInstall) {
+          // For global installs, use the absolute path from __dirname
+          const packageRoot = __dirname.split('node_modules/snow-flow')[0] + 'node_modules/snow-flow';
+          scriptPath = join(packageRoot, server.script);
+        } else {
+          // For local development, use process.cwd()
+          scriptPath = join(process.cwd(), server.script);
+        }
+      }
+      
       // Check if script exists
-      const scriptPath = join(process.cwd(), server.script);
       await fs.access(scriptPath);
 
       // Start the process

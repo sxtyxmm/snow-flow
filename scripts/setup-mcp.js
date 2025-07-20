@@ -19,11 +19,14 @@ const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
                        __dirname.includes('.nvm/versions/node');
 
 // For global installs, use the package directory, not cwd
-const projectRoot = isGlobalInstall 
+const packageRoot = isGlobalInstall 
   ? path.resolve(__dirname, '..') // Go up from scripts/ to package root
   : process.cwd();
 
-const templatePath = path.join(projectRoot, '.mcp.json.template');
+// The actual project root where we're running the command
+const projectRoot = process.cwd();
+
+const templatePath = path.join(packageRoot, '.mcp.json.template');
 const mcpFilePath = path.join(projectRoot, '.mcp.json');
 
 // Check if template exists
@@ -48,7 +51,7 @@ const template = fs.readFileSync(templatePath, 'utf8');
 
 // Replace placeholders
 const replacements = {
-  '{{PROJECT_ROOT}}': projectRoot,
+  '{{PROJECT_ROOT}}': packageRoot, // Use packageRoot for MCP server paths
   '{{SNOW_INSTANCE}}': process.env.SNOW_INSTANCE || 'your-instance.service-now.com',
   '{{SNOW_CLIENT_ID}}': process.env.SNOW_CLIENT_ID || 'your-oauth-client-id',
   '{{SNOW_CLIENT_SECRET}}': process.env.SNOW_CLIENT_SECRET || 'your-oauth-client-secret',
@@ -81,14 +84,15 @@ const mcpServerFiles = [
 ];
 
 mcpServerFiles.forEach(file => {
-  const filePath = path.join(projectRoot, 'dist/mcp', file);
+  const filePath = path.join(packageRoot, 'dist/mcp', file);
   if (fs.existsSync(filePath)) {
     fs.chmodSync(filePath, '755');
   }
 });
 
 console.log('✅ Generated .mcp.json with dynamic configuration');
-console.log('📁 Project root:', projectRoot);
+console.log('📁 Project directory:', projectRoot);
+console.log('📦 Package directory:', packageRoot);
 console.log('🔧 Environment variables:', requiredEnvVars.filter(v => process.env[v]).length + '/' + requiredEnvVars.length + ' configured');
 console.log('🔐 Made MCP server files executable');
 console.log('📝 Using node + args format for Claude Code compatibility');

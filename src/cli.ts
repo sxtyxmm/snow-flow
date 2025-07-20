@@ -24,23 +24,46 @@ program
   .description('ServiceNow Multi-Agent Development Framework')
   .version(VERSION);
 
-// Swarm command - the main orchestration command
+// Swarm command - the main orchestration command with EVERYTHING
 program
   .command('swarm <objective>')
-  .description('Execute multi-agent orchestration for a ServiceNow task')
+  .description('Execute multi-agent orchestration for a ServiceNow task - één command voor alles!')
   .option('--strategy <strategy>', 'Execution strategy (development, analysis, research)', 'development')
   .option('--mode <mode>', 'Coordination mode (hierarchical, mesh, distributed)', 'hierarchical')
   .option('--max-agents <number>', 'Maximum number of agents', '5')
   .option('--parallel', 'Enable parallel execution')
   .option('--monitor', 'Enable real-time monitoring')
+  .option('--auto-permissions', 'Automatic permission escalation when needed')
+  .option('--smart-discovery', 'Smart artifact discovery and reuse (default: true)', true)
+  .option('--no-smart-discovery', 'Disable smart artifact discovery')
+  .option('--live-testing', 'Enable live testing during development (default: true)', true)
+  .option('--no-live-testing', 'Disable live testing')
+  .option('--auto-deploy', 'Automatic deployment when ready (default: true)', true)
+  .option('--no-auto-deploy', 'Disable automatic deployment')
+  .option('--auto-rollback', 'Automatic rollback on failures (default: true)', true)
+  .option('--no-auto-rollback', 'Disable automatic rollback')
+  .option('--shared-memory', 'Enable shared memory between agents (default: true)', true)
+  .option('--no-shared-memory', 'Disable shared memory')
+  .option('--progress-monitoring', 'Real-time progress monitoring (default: true)', true)
+  .option('--no-progress-monitoring', 'Disable progress monitoring')
   .action(async (objective: string, options) => {
-    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION}`);
+    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION} - één command voor alles!`);
     console.log(`📋 Objective: ${objective}`);
     console.log(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
-    console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}\n`);
+    console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}`);
+    
+    // Show new intelligent features
+    console.log(`\n🧠 Intelligent Features:`);
+    console.log(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
+    console.log(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
+    console.log(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
+    console.log(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ Yes' : '❌ No'}`);
+    console.log(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
+    console.log(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
+    console.log(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
     
     // Analyze the objective using intelligent agent detection
-    const taskAnalysis = analyzeObjective(objective);
+    const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
     
     console.log(`🎯 Task Type: ${taskAnalysis.taskType}`);
     console.log(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
@@ -81,17 +104,53 @@ program
       // Generate the orchestration prompt for Claude Code with ServiceNow integration
       const orchestrationPrompt = buildClaudeCodePrompt(objective, taskAnalysis, options, isAuthenticated);
       
-      console.log('🎯 Executing Claude Code with orchestration prompt...');
-      console.log('💡 Claude Code will now coordinate the multi-agent development');
-      console.log('📋 Use TodoWrite to track progress in real-time');
-      console.log('🤖 Agents will be spawned using Task tool');
-      console.log('💾 Coordination data stored in Memory');
+      console.log('\n🎯 Executing Claude Code with orchestration prompt...');
+      
+      // Check if intelligent features are enabled
+      const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
+        options.liveTesting || options.autoDeploy || options.autoRollback || 
+        options.sharedMemory || options.progressMonitoring;
+      
+      if (hasIntelligentFeatures && isAuthenticated) {
+        console.log('🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
+        console.log('🚀 Using snow_orchestrate_development for unified execution');
+        console.log('\n📋 What will happen automatically:');
+        
+        if (options.autoPermissions) {
+          console.log('  🔐 Permission escalation when needed');
+        }
+        if (options.smartDiscovery) {
+          console.log('  🔍 Smart artifact discovery and reuse');
+        }
+        if (options.liveTesting) {
+          console.log('  🧪 Real-time testing in ServiceNow');
+        }
+        if (options.autoDeploy) {
+          console.log('  🚀 Automatic deployment when ready');
+        }
+        if (options.autoRollback) {
+          console.log('  🔄 Automatic rollback on failures');
+        }
+        if (options.sharedMemory) {
+          console.log('  💾 Shared context across all agents');
+        }
+        if (options.progressMonitoring) {
+          console.log('  📊 Real-time progress monitoring');
+        }
+        
+        console.log('\n✨ Everything will be handled automatically!');
+      } else {
+        console.log('💡 Claude Code will now coordinate the multi-agent development');
+        console.log('📋 Use TodoWrite to track progress in real-time');
+        console.log('🤖 Agents will be spawned using Task tool');
+        console.log('💾 Coordination data stored in Memory');
+      }
       
       if (isAuthenticated) {
-        console.log('🔗 Live ServiceNow integration: ✅ Enabled');
+        console.log('\n🔗 Live ServiceNow integration: ✅ Enabled');
         console.log('📝 Artifacts will be created directly in ServiceNow');
       } else {
-        console.log('🔗 Live ServiceNow integration: ❌ Disabled');
+        console.log('\n🔗 Live ServiceNow integration: ❌ Disabled');
         console.log('📝 Artifacts will be saved to servicenow/ directory');
       }
       
@@ -226,9 +285,24 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   const tempFile = join(process.cwd(), '.snow-flow-prompt.tmp');
   await fs.writeFile(tempFile, prompt);
   
-  const claudeArgs = [
-    '--dangerously-skip-permissions'
-  ];
+  // Check if .mcp.json exists in current directory
+  const mcpConfigPath = join(process.cwd(), '.mcp.json');
+  let hasMcpConfig = false;
+  try {
+    await fs.access(mcpConfigPath);
+    hasMcpConfig = true;
+    console.log('✅ Found MCP configuration in current directory');
+  } catch {
+    console.log('⚠️  No MCP configuration found. Run "snow-flow init --sparc" to set up MCP servers');
+  }
+  
+  const claudeArgs = hasMcpConfig 
+    ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
+    : ['--dangerously-skip-permissions'];
+  
+  if (hasMcpConfig) {
+    console.log('🔧 Starting Claude Code with ServiceNow MCP servers...');
+  }
   
   // Start Claude Code process in interactive mode
   const claudeProcess = spawn(claudeCommand, claudeArgs, {
@@ -296,6 +370,11 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
 
 // Helper function to build Claude Code orchestration prompt
 function buildClaudeCodePrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false): string {
+  // Check if intelligent features are enabled
+  const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
+    options.liveTesting || options.autoDeploy || options.autoRollback || 
+    options.sharedMemory || options.progressMonitoring;
+
   const prompt = `# Snow-Flow ServiceNow Multi-Agent Development
 
 ## Objective
@@ -314,9 +393,26 @@ ${objective}
 ## Configuration
 - **Strategy**: ${options.strategy}
 - **Mode**: ${options.mode}
-- **Max Agents**: ${Math.min(parseInt(options.maxAgents), taskAnalysis.estimatedAgentCount)}
+- **Max Agents**: ${parseInt(options.maxAgents)} (requested) | Estimated: ${taskAnalysis.estimatedAgentCount} | Actual: ${(() => {
+  const userMaxAgents = parseInt(options.maxAgents);
+  const requiredAgents = (taskAnalysis.requiresUpdateSet ? 1 : 0) + (taskAnalysis.requiresApplication ? 1 : 0);
+  const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents);
+  const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
+  return 1 + adjustedSupportingAgents.length + requiredAgents;
+})()}
 - **Parallel**: ${options.parallel ? 'Yes' : 'No'}
 - **Monitor**: ${options.monitor ? 'Yes' : 'No'}
+
+## 🧠 Intelligent Features ${hasIntelligentFeatures ? '✅ ENABLED' : '❌ DISABLED'}
+${hasIntelligentFeatures ? `
+- **🔐 Auto Permissions**: ${options.autoPermissions ? '✅ Enabled - will escalate when needed' : '❌ Disabled'}
+- **🔍 Smart Discovery**: ${options.smartDiscovery ? '✅ Enabled - will reuse existing artifacts' : '❌ Disabled'}
+- **🧪 Live Testing**: ${options.liveTesting ? '✅ Enabled - will test in real-time' : '❌ Disabled'}
+- **🚀 Auto Deploy**: ${options.autoDeploy ? '✅ Enabled - will deploy when ready' : '❌ Disabled'}
+- **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Enabled - will rollback on failures' : '❌ Disabled'}
+- **💾 Shared Memory**: ${options.sharedMemory ? '✅ Enabled - agents share context' : '❌ Disabled'}
+- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Enabled - real-time status' : '❌ Disabled'}
+` : ''}
 
 ## Task Details
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.length > 0 ? taskAnalysis.serviceNowArtifacts.join(', ') : 'None detected'}
@@ -433,13 +529,86 @@ Since ServiceNow integration is not enabled, create artifacts as files in the se
 
 ⚠️ **MANDATORY EXECUTION PATTERN**: You MUST execute ALL of these tools in a SINGLE MESSAGE for parallel agent coordination:
 
+${hasIntelligentFeatures && isAuthenticated ? `
+### 🧠 INTELLIGENT ORCHESTRATION MODE - Use snow_orchestrate_development
+
+Since intelligent features are enabled, use the unified orchestration tool:
+
+\`\`\`typescript
+// Use the intelligent orchestration tool with all features enabled
+await snow_orchestrate_development({
+  objective: "${objective}",
+  auto_permissions: ${options.autoPermissions},
+  smart_discovery: ${options.smartDiscovery},
+  live_testing: ${options.liveTesting},
+  auto_deploy: ${options.autoDeploy},
+  auto_rollback: ${options.autoRollback},
+  shared_memory: ${options.sharedMemory},
+  progress_monitoring: ${options.progressMonitoring},
+  max_agents: ${options.maxAgents},
+  strategy: "${options.strategy}",
+  mode: "${options.mode}",
+  task_analysis: ${JSON.stringify(taskAnalysis, null, 2)}
+});
+\`\`\`
+
+This unified command will:
+- ✅ Automatically analyze requirements with snow_analyze_requirements
+- ✅ Escalate permissions when needed with snow_escalate_permissions
+- ✅ Discover and reuse existing artifacts
+- ✅ Create missing components automatically
+- ✅ Test in real-time with snow_comprehensive_flow_test
+- ✅ Deploy with snow_resilient_deployment
+- ✅ Rollback on failures automatically
+- ✅ Track everything in update sets with snow_smart_update_set
+- ✅ Share context across all agents via memory
+
+### Additional Intelligent Tools Available:
+
+**For Permission Issues:**
+\`\`\`typescript
+await snow_escalate_permissions({
+  required_role: "admin",
+  reason: "Need to create global scope artifacts"
+});
+\`\`\`
+
+**For Smart Discovery:**
+\`\`\`typescript
+const requirements = await snow_analyze_requirements({
+  objective: "${objective}",
+  include_dependencies: true,
+  suggest_reusable: true
+});
+\`\`\`
+
+**For Automatic Testing:**
+\`\`\`typescript
+const testResults = await snow_comprehensive_flow_test({
+  flow_name: "approval_flow",
+  test_scenarios: ["happy_path", "edge_cases", "error_handling"],
+  auto_fix: true
+});
+\`\`\`
+
+**For Resilient Deployment:**
+\`\`\`typescript
+await snow_resilient_deployment({
+  artifacts: ["widget_123", "flow_456"],
+  validation_level: "comprehensive",
+  rollback_on_failure: true,
+  deployment_strategy: "blue_green"
+});
+\`\`\`
+
+` : `
 ### 1. Initialize TodoWrite with ALL tasks (5-10 todos minimum)
 ### 2. Launch ALL Task agents SIMULTANEOUSLY in the same message
 ### 3. Store ALL coordination data in Memory
 ### 4. Execute ALL ServiceNow operations in parallel
 
 **BATCH EXECUTION EXAMPLE:**
-You must use this EXACT pattern in ONE message with multiple tool calls:
+You must use this EXACT pattern in ONE message with multiple tool calls:`}
 
 \`\`\`typescript
 // Tool 1: TodoWrite (5-10 todos in one call)
@@ -494,11 +663,25 @@ TodoWrite([
   }
 ]);
 
-// Tool 2-N: Task agents (ALL launched in same message)
+// Tool 2-N: Task agents (ALL launched in same message) - Respecting user's --max-agents flag
 Task("${taskAnalysis.primaryAgent}", "${AgentDetector.generateAgentPrompt(taskAnalysis.primaryAgent, objective, taskAnalysis)}");
-${taskAnalysis.supportingAgents.map(agent => 
-  `Task("${agent}", "${AgentDetector.generateAgentPrompt(agent, objective, taskAnalysis)}");`
-).join('\n')}
+${(() => {
+  const userMaxAgents = parseInt(options.maxAgents);
+  const requiredAgents = [
+    ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
+    ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
+  ];
+  
+  // Calculate available slots for supporting agents (user max - 1 primary - required agents)
+  const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
+  
+  // Take only the supporting agents that fit within user's limit
+  const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
+  
+  return adjustedSupportingAgents.map(agent => 
+    `Task("${agent}", "${AgentDetector.generateAgentPrompt(agent, objective, taskAnalysis)}");`
+  ).join('\n');
+})()}
 ${taskAnalysis.requiresUpdateSet ? `Task("Update Set Manager", "Create and manage Update Set for change management. Use snow_update_set_create to create Update Set automatically.");` : ''}
 ${taskAnalysis.requiresApplication ? `Task("Application Manager", "Create new ServiceNow Application. Use snow_deploy_application to create new application scope.");` : ''}
 
@@ -507,7 +690,15 @@ Memory.store("snow_flow_session", {
   objective: "${objective}",
   task_type: "${taskAnalysis.taskType}",
   primary_agent: "${taskAnalysis.primaryAgent}",
-  supporting_agents: ${JSON.stringify(taskAnalysis.supportingAgents)},
+  supporting_agents: ${JSON.stringify((() => {
+    const userMaxAgents = parseInt(options.maxAgents);
+    const requiredAgents = [
+      ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
+      ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
+    ];
+    const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
+    return taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
+  })())},
   complexity: "${taskAnalysis.complexity}",
   servicenow_artifacts: ${JSON.stringify(taskAnalysis.serviceNowArtifacts)},
   requires_update_set: ${taskAnalysis.requiresUpdateSet},
@@ -515,7 +706,18 @@ Memory.store("snow_flow_session", {
   strategy: "${options.strategy}",
   mode: "${options.mode}",
   started_at: new Date().toISOString(),
-  agents: ${taskAnalysis.estimatedAgentCount},
+  user_requested_max_agents: ${parseInt(options.maxAgents)},
+  actual_agents_spawned: ${(() => {
+    const userMaxAgents = parseInt(options.maxAgents);
+    const requiredAgents = [
+      ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
+      ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
+    ];
+    const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
+    const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
+    return 1 + adjustedSupportingAgents.length + requiredAgents.length; // primary + supporting + required
+  })()},
+  estimated_agents: ${taskAnalysis.estimatedAgentCount},
   parallel: ${options.parallel},
   authenticated: ${isAuthenticated}
 });
@@ -725,8 +927,8 @@ function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = fa
 }
 
 // Helper function to analyze objectives using intelligent agent detection
-function analyzeObjective(objective: string): TaskAnalysis {
-  return AgentDetector.analyzeTask(objective);
+function analyzeObjective(objective: string, userMaxAgents?: number): TaskAnalysis {
+  return AgentDetector.analyzeTask(objective, userMaxAgents);
 }
 
 function extractName(objective: string, type: string): string {
@@ -1079,7 +1281,7 @@ async function createDirectoryStructure(targetDir: string) {
 
 async function createBasicConfig(targetDir: string) {
   const claudeConfig = {
-    version: '1.0.0',
+    version: VERSION,
     name: 'snow-flow',
     description: 'ServiceNow Multi-Agent Development Framework',
     created: new Date().toISOString(),
@@ -1092,7 +1294,7 @@ async function createBasicConfig(targetDir: string) {
   };
   
   const swarmConfig = {
-    version: '1.0.0',
+    version: VERSION,
     topology: 'hierarchical',
     maxAgents: 8,
     memory: {
@@ -1385,6 +1587,19 @@ async function createMCPConfig(targetDir: string) {
   
   // Create comprehensive Claude Code settings file
   const claudeSettings = {
+    "enabledMcpjsonServers": [
+      "servicenow-deployment",
+      "servicenow-flow-composer",
+      "servicenow-update-set",
+      "servicenow-intelligent",
+      "servicenow-graph-memory",
+      "servicenow-operations",
+      "servicenow-platform-development",
+      "servicenow-integration",
+      "servicenow-automation",
+      "servicenow-security-compliance",
+      "servicenow-reporting-analytics"
+    ],
     "permissions": {
       "allow": [
         "Bash(*)",
@@ -1404,6 +1619,7 @@ async function createMCPConfig(targetDir: string) {
         "Task(*)",
         "ListMcpResourcesTool",
         "ReadMcpResourceTool",
+        "mcp__servicenow-*",
         "mcp__claude-flow__*"
       ],
       "deny": []
@@ -1523,9 +1739,12 @@ program
         case 'list':
           await handleMCPList(manager, options);
           break;
+        case 'debug':
+          await handleMCPDebug(options);
+          break;
         default:
           console.error(`❌ Unknown action: ${action}`);
-          console.log('Available actions: start, stop, restart, status, logs, list');
+          console.log('Available actions: start, stop, restart, status, logs, list, debug');
           process.exit(1);
       }
     } catch (error) {
@@ -1706,6 +1925,80 @@ async function handleMCPList(manager: any, options: any): Promise<void> {
     console.log(`   Status: ${server.status}`);
     console.log('');
   });
+}
+
+async function handleMCPDebug(options: any): Promise<void> {
+  console.log('🔍 MCP Debug Information');
+  console.log('========================\n');
+  
+  const { existsSync, readFileSync } = require('fs');
+  const { join, resolve } = require('path');
+  
+  // Check .mcp.json
+  const mcpJsonPath = join(process.cwd(), '.mcp.json');
+  console.log('📄 .mcp.json:');
+  if (existsSync(mcpJsonPath)) {
+    console.log(`   ✅ Found at: ${mcpJsonPath}`);
+    try {
+      const mcpConfig = JSON.parse(readFileSync(mcpJsonPath, 'utf8'));
+      console.log(`   📊 Servers configured: ${Object.keys(mcpConfig.servers || {}).length}`);
+      
+      // Check if paths exist
+      for (const [name, config] of Object.entries(mcpConfig.servers || {})) {
+        const serverConfig = config as any;
+        if (serverConfig.args && serverConfig.args[0]) {
+          const scriptPath = serverConfig.args[0];
+          const exists = existsSync(scriptPath);
+          console.log(`   ${exists ? '✅' : '❌'} ${name}: ${scriptPath}`);
+        }
+      }
+    } catch (error) {
+      console.log(`   ❌ Error reading: ${error}`);
+    }
+  } else {
+    console.log(`   ❌ Not found at: ${mcpJsonPath}`);
+  }
+  
+  // Check .claude/settings.json
+  console.log('\n📄 .claude/settings.json:');
+  const claudeSettingsPath = join(process.cwd(), '.claude/settings.json');
+  if (existsSync(claudeSettingsPath)) {
+    console.log(`   ✅ Found at: ${claudeSettingsPath}`);
+    try {
+      const settings = JSON.parse(readFileSync(claudeSettingsPath, 'utf8'));
+      const enabledServers = settings.enabledMcpjsonServers || [];
+      console.log(`   📊 Enabled servers: ${enabledServers.length}`);
+      enabledServers.forEach((server: string) => {
+        console.log(`      - ${server}`);
+      });
+    } catch (error) {
+      console.log(`   ❌ Error reading: ${error}`);
+    }
+  } else {
+    console.log(`   ❌ Not found at: ${claudeSettingsPath}`);
+  }
+  
+  // Check environment
+  console.log('\n🔐 Environment:');
+  console.log(`   SNOW_INSTANCE: ${process.env.SNOW_INSTANCE ? '✅ Set' : '❌ Not set'}`);
+  console.log(`   SNOW_CLIENT_ID: ${process.env.SNOW_CLIENT_ID ? '✅ Set' : '❌ Not set'}`);
+  console.log(`   SNOW_CLIENT_SECRET: ${process.env.SNOW_CLIENT_SECRET ? '✅ Set' : '❌ Not set'}`);
+  
+  // Check Claude Code
+  console.log('\n🤖 Claude Code:');
+  const { execSync } = require('child_process');
+  try {
+    execSync('which claude', { stdio: 'ignore' });
+    console.log('   ✅ Claude Code CLI found');
+  } catch {
+    console.log('   ❌ Claude Code CLI not found in PATH');
+  }
+  
+  console.log('\n💡 Tips:');
+  console.log('   1. Make sure Claude Code is started in this directory');
+  console.log('   2. Check if MCP servers appear with /mcp command in Claude Code');
+  console.log('   3. Approve MCP servers when prompted by Claude Code');
+  console.log('   4. Ensure .env file has valid ServiceNow credentials');
 }
 
 // Create Flow command - intelligent flow composition
@@ -1917,6 +2210,8 @@ program
       // Check if we're running from npm global install or local dev
       const isGlobalInstall = __dirname.includes('node_modules') || !existsSync(join(targetDir, 'src'));
       
+      let mcpConfig: any;
+      
       try {
         if (!isGlobalInstall) {
           // Only build if we're in development mode with source files
@@ -1942,50 +2237,151 @@ program
           console.log('✅ Using pre-built MCP servers from npm package');
         }
         
-        // Run MCP setup script to generate .mcp.json
+        // Generate MCP configuration directly
         console.log('🔧 Generating MCP configuration...');
-        const setupProcess = spawn('npm', ['run', 'setup-mcp'], {
-          cwd: targetDir,
-          stdio: 'pipe'
-        });
         
-        await new Promise((resolve, reject) => {
-          setupProcess.on('close', (code: number) => {
-            if (code === 0) {
-              resolve(undefined);
-            } else {
-              reject(new Error(`MCP setup failed with code ${code}`));
+        // Determine the correct path to MCP servers
+        let mcpBasePath: string;
+        if (isGlobalInstall) {
+          // For global installs, find the global npm modules path
+          const { execSync } = require('child_process');
+          const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+          mcpBasePath = join(globalRoot, 'snow-flow', 'dist', 'mcp');
+        } else {
+          // For local installs, use the current directory
+          mcpBasePath = join(targetDir, 'dist', 'mcp');
+        }
+        
+        // Read environment variables from .env if it exists
+        const envPath = join(targetDir, '.env');
+        let envVars: any = {};
+        if (existsSync(envPath)) {
+          const envContent = await fs.readFile(envPath, 'utf8');
+          envContent.split('\n').forEach(line => {
+            const [key, value] = line.split('=');
+            if (key && value) {
+              envVars[key.trim()] = value.trim();
             }
           });
-        });
-        
-        console.log('✅ MCP configuration generated with absolute paths');
-        
-        // Copy .mcp.json to current directory for Claude Code
-        console.log('📋 Setting up MCP servers for Claude Code...');
-        try {
-          const sourceMcpPath = isGlobalInstall 
-            ? join(__dirname, '..', '.mcp.json')
-            : join(targetDir, '.mcp.json');
-          
-          const targetMcpPath = join(targetDir, '.mcp.json');
-          
-          // Only copy if source and target are different
-          if (sourceMcpPath !== targetMcpPath && existsSync(sourceMcpPath)) {
-            await fs.copyFile(sourceMcpPath, targetMcpPath);
-            console.log('✅ Copied .mcp.json to project directory');
-          }
-          
-          console.log('✅ MCP servers configured for Claude Code!');
-          console.log('');
-          console.log('🎉 All 11 Snow-Flow MCP servers are now available');
-          console.log('💡 Open this project in Claude Code to access the MCP servers');
-          console.log('📝 Type /mcp in Claude Code to see available ServiceNow tools');
-          
-        } catch (error: any) {
-          console.error('⚠️  Could not copy MCP configuration:', error.message);
-          console.log('   Manually copy .mcp.json to your project directory');
         }
+        
+        // Generate .mcp.json with correct paths
+        mcpConfig = {
+          mcpServers: {
+            "servicenow-deployment": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-deployment-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-flow-composer": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-flow-composer-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-update-set": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-update-set-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-intelligent": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-intelligent-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-graph-memory": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-graph-memory-mcp.js")],
+              env: {
+                NEO4J_URI: envVars.NEO4J_URI || "bolt://localhost:7687",
+                NEO4J_USER: envVars.NEO4J_USER || "neo4j",
+                NEO4J_PASSWORD: envVars.NEO4J_PASSWORD || "password",
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-operations": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-operations-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-platform-development": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-platform-development-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-integration": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-integration-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-automation": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-automation-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-security-compliance": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-security-compliance-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "servicenow-reporting-analytics": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-reporting-analytics-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
+            "claude-flow": {
+              command: "npx",
+              args: ["claude-flow@alpha", "mcp"],
+              env: {}
+            },
+            "ruv-swarm": {
+              command: "npx",
+              args: ["claude-flow@alpha", "swarm", "--mode", "mcp"],
+              env: {}
+            }
+          }
+        };
         
         // Now initialize and start MCP servers
         const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
@@ -2006,6 +2402,202 @@ program
         } else {
           console.log('⚠️  MCP servers configured but failed to start');
         }
+        
+        // Write .mcp.json to project directory AFTER all initialization
+        const mcpPath = join(targetDir, '.mcp.json');
+        
+        // Check if .mcp.json already exists (might have been copied)
+        if (existsSync(mcpPath)) {
+          console.log('⚠️  Overwriting existing .mcp.json with correct paths...');
+        }
+        
+        await fs.writeFile(mcpPath, JSON.stringify(mcpConfig, null, 2));
+        console.log('✅ MCP configuration generated with correct paths');
+        console.log(`📦 MCP servers location: ${mcpBasePath}`);
+        
+        // Phase 7: Create Claude Code settings with enabledMcpjsonServers
+        let claudeSettingsCreated = false;
+        try {
+          // First try to copy from template if available (in npm package)
+          const templatePath = join(__dirname, '..', '.claude.settings.template');
+          const claudeSettingsPath = join(targetDir, '.claude/settings.json');
+          
+          if (existsSync(templatePath)) {
+            const templateContent = await fs.readFile(templatePath, 'utf8');
+            await fs.writeFile(claudeSettingsPath, templateContent);
+            console.log('✅ Claude Code settings.json created from template');
+            claudeSettingsCreated = true;
+          }
+        } catch (error) {
+          // Template not found, create from scratch
+        }
+        
+        if (!claudeSettingsCreated) {
+          // Create settings from scratch if template not found
+          const claudeSettings = {
+            "enabledMcpjsonServers": [
+              "servicenow-deployment",
+              "servicenow-flow-composer",
+              "servicenow-update-set",
+              "servicenow-intelligent",
+              "servicenow-graph-memory",
+              "servicenow-operations",
+              "servicenow-platform-development",
+              "servicenow-integration",
+              "servicenow-automation",
+              "servicenow-security-compliance",
+              "servicenow-reporting-analytics",
+              "claude-flow",
+              "ruv-swarm"
+            ],
+            "permissions": {
+              "allow": [
+                "Bash(*)",
+                "Read(*)",
+                "Write(*)",
+                "Edit(*)",
+                "MultiEdit(*)",
+                "Glob(*)",
+                "Grep(*)",
+                "LS(*)",
+                "TodoWrite",
+                "Task(*)",
+                "mcp__servicenow-*",
+                "mcp__claude-flow__*"
+              ]
+            },
+            "env": {
+              "BASH_DEFAULT_TIMEOUT_MS": "0",
+              "BASH_MAX_TIMEOUT_MS": "0"
+            }
+          };
+          
+          const claudeSettingsPath = join(targetDir, '.claude/settings.json');
+          await fs.writeFile(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2));
+          console.log('✅ Claude Code settings.json created with MCP server enablement');
+        }
+        
+        // Phase 7.5: Create .claude/mcp-config.json for additional MCP configuration
+        try {
+          const mcpConfigTemplate = join(__dirname, '..', '.claude.mcp-config.template');
+          const mcpConfigPath = join(targetDir, '.claude/mcp-config.json');
+          
+          if (existsSync(mcpConfigTemplate)) {
+            // Read template and replace placeholders
+            let mcpConfigContent = await fs.readFile(mcpConfigTemplate, 'utf8');
+            mcpConfigContent = mcpConfigContent.replace(/\${MCP_PATH}/g, mcpBasePath);
+            
+            await fs.writeFile(mcpConfigPath, mcpConfigContent);
+            console.log('✅ Created .claude/mcp-config.json for additional MCP configuration');
+          }
+        } catch (error) {
+          // Not critical if this fails
+        }
+        
+        // Phase 8: Claude Code will automatically load .mcp.json
+        console.log('\n📡 MCP servers configured for Claude Code');
+        console.log('✅ Claude Code will automatically detect .mcp.json in this directory');
+        console.log('\n🔍 Debug Information:');
+        console.log(`   - .mcp.json location: ${mcpPath}`);
+        console.log(`   - .claude/settings.json location: ${join(targetDir, '.claude/settings.json')}`);
+        console.log(`   - MCP servers path: ${mcpBasePath}`);
+        console.log('\n📡 MCP servers configured for Claude Code');
+        console.log('✅ MCP servers will be available when you run sparc or swarm commands');
+        
+        // Create activation scripts for manual use
+        console.log('\n🚀 Creating MCP activation scripts...');
+        
+        try {
+          const isWindows = process.platform === 'win32';
+          
+          if (isWindows) {
+            // Windows batch script
+            const activationScript = `@echo off
+REM Snow-Flow MCP Activation Script
+echo 🚀 Starting Claude Code with MCP servers...
+echo 📍 Working directory: ${targetDir}
+echo.
+
+REM Change to project directory
+cd /d "${targetDir}"
+
+REM Start Claude Code with MCP config
+claude --mcp-config .mcp.json .
+
+echo.
+echo ✅ Claude Code started with MCP servers!
+echo 💡 Check MCP servers with: /mcp in Claude Code
+`;
+            
+            const scriptPath = join(targetDir, 'activate-mcp.bat');
+            await fs.writeFile(scriptPath, activationScript);
+            
+            // Also create PowerShell script
+            const psScript = `# Snow-Flow MCP Activation Script
+Write-Host "🚀 Starting Claude Code with MCP servers..." -ForegroundColor Green
+Write-Host "📍 Working directory: ${targetDir}"
+Write-Host ""
+
+# Change to project directory
+Set-Location "${targetDir}"
+
+# Start Claude Code with MCP config
+& claude --mcp-config .mcp.json .
+
+Write-Host ""
+Write-Host "✅ Claude Code started with MCP servers!" -ForegroundColor Green
+Write-Host "💡 Check MCP servers with: /mcp in Claude Code" -ForegroundColor Yellow
+`;
+            
+            const psScriptPath = join(targetDir, 'activate-mcp.ps1');
+            await fs.writeFile(psScriptPath, psScript);
+            
+            console.log('✅ Created Windows activation scripts:');
+            console.log(`   - activate-mcp.bat`);
+            console.log(`   - activate-mcp.ps1`);
+            
+          } else {
+            // Unix/Mac bash script
+            const activationScript = `#!/bin/bash
+# Snow-Flow MCP Activation Script
+echo "🚀 Starting Claude Code with MCP servers..."
+echo "📍 Working directory: ${targetDir}"
+echo ""
+
+# Change to project directory
+cd "${targetDir}"
+
+# Start Claude Code with MCP config
+claude --mcp-config .mcp.json .
+
+echo ""
+echo "✅ Claude Code started with MCP servers!"
+echo "💡 Check MCP servers with: /mcp in Claude Code"
+`;
+            
+            const scriptPath = join(targetDir, 'activate-mcp.sh');
+            await fs.writeFile(scriptPath, activationScript);
+            await fs.chmod(scriptPath, '755');
+            
+            console.log('✅ Created activation script: activate-mcp.sh');
+          }
+          
+          console.log('\n💡 To manually activate MCP servers in Claude Code:');
+          if (isWindows) {
+            console.log('   - Double-click activate-mcp.bat');
+            console.log('   - Or run: .\\activate-mcp.ps1 (PowerShell)');
+          } else {
+            console.log('   - Run: ./activate-mcp.sh');
+          }
+          console.log('   - Or run: claude --mcp-config .mcp.json .');
+          
+        } catch (error) {
+          console.log('⚠️  Could not create activation scripts');
+        }
+        
+        console.log('\n💡 MCP servers can also be activated automatically with:');
+        console.log('   - snow-flow sparc "<task>" - Starts Claude Code with MCP for SPARC mode');
+        console.log('   - snow-flow swarm "<objective>" - Starts Claude Code with MCP for swarm mode');
         
         // Phase 7 is now handled above with merged config approach
         /*
@@ -2107,8 +2699,8 @@ program
       console.log('🔧 MCP Servers:');
       console.log('   - ✅ All 11 MCP servers have been built and configured');
       console.log('   - ✅ .mcp.json generated with absolute paths and credentials');
-      console.log('   - ✅ Servers registered with Claude Code (restart Claude to activate)');
-      console.log('   - ℹ️  If registration failed, run: claude mcp add-config .mcp.json');
+      console.log('   - ✅ Claude Code will automatically load servers from .mcp.json');
+      console.log('   - ℹ️  Start Claude Code in this directory to use MCP servers');
       console.log('');
       console.log('📡 Available MCP Tools:');
       console.log('   - snow_deploy_widget - Deploy widgets directly');

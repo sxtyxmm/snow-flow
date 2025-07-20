@@ -335,7 +335,7 @@ export class FlowValidationEngine {
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
         const confidence = context.analysisResult?.confidence || 0;
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         
         let score = 10;
@@ -394,7 +394,7 @@ export class FlowValidationEngine {
         const complexity = context.analysisResult?.criteria.complexity || context.metadata?.candidate?.complexity;
         const recommendedType = context.analysisResult?.recommendedType || context.targetType;
         
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 15;
 
@@ -466,7 +466,7 @@ export class FlowValidationEngine {
         const reusability = context.analysisResult?.criteria.reusability || context.metadata?.candidate?.reusability;
         const recommendedType = context.analysisResult?.recommendedType || context.targetType;
         
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 15;
 
@@ -525,7 +525,7 @@ export class FlowValidationEngine {
       applicableContexts: [],
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 20;
 
@@ -590,7 +590,7 @@ export class FlowValidationEngine {
       applicableContexts: [],
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 10;
 
@@ -651,7 +651,7 @@ export class FlowValidationEngine {
       applicableContexts: [],
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 10;
 
@@ -714,7 +714,7 @@ export class FlowValidationEngine {
       applicableContexts: [],
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 10;
 
@@ -766,7 +766,7 @@ export class FlowValidationEngine {
       applicableContexts: [],
       applicableTypes: [FlowType.MAIN_FLOW, FlowType.SUBFLOW],
       validator: (context) => {
-        const issues: Omit<ValidationIssue, 'ruleId'>[] = [];
+        const issues: Omit<ValidationIssue, 'ruleId' | 'id'>[] = [];
         const recommendations: Omit<ValidationRecommendation, 'id'>[] = [];
         let score = 15;
 

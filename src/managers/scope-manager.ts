@@ -395,9 +395,7 @@ export class ScopeManager {
     // Override with user preferences
     return {
       ...config,
-      ...context.userPreferences,
-      // Preserve original analysis for fallback
-      originalType: config.type
+      ...context.userPreferences
     };
   }
 

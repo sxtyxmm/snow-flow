@@ -26,7 +26,14 @@ coverage/
 # Local data
 memory/
 .swarm/
-.claude/
+# Don't ignore .claude/ entirely - we need some config files
+.claude/*
+!.claude/mcp-config.json
+!.claude/config.json
+!.claude/claude-settings.json
+!.claude/settings.json
+!.claude/settings.local.json
+!.claude/commands/
 .snow-flow/
 coordination/
 servicenow/
@@ -71,6 +78,11 @@ scripts/*
 # Templates needed for setup
 !.mcp.json.template
 !.env.example
+!.claude.settings.template
+!.claude.mcp-config.template
+
+# Ignore generated .mcp.json files
+.mcp.json
 
 # Keep only essential files:
 # - dist/ (compiled code)

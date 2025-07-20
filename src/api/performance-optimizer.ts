@@ -179,7 +179,7 @@ export class PerformanceOptimizer {
    * Batch multiple API requests for better performance
    */
   async batchAPIRequests<T>(requests: APIRequest[]): Promise<APIResponse<T>[]> {
-    const batchId = this.generateBatchId();
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const batchRequest: BatchRequest = {
       id: batchId,
       requests: requests.sort((a, b) => b.priority - a.priority),
@@ -382,6 +382,7 @@ export class PerformanceOptimizer {
    */
   private async executeAPICall<T>(request: APIRequest): Promise<APIResponse<T>> {
     const connection = this.getPooledConnection(request.url);
+    const startTime = Date.now();
     
     try {
       let response;
@@ -407,7 +408,10 @@ export class PerformanceOptimizer {
       return {
         success: response.success,
         data: response.data,
-        error: response.error
+        error: response.error,
+        cached: false,
+        response_time: Date.now() - startTime,
+        cache_hit: false
       };
       
     } finally {

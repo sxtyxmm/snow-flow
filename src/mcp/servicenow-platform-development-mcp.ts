@@ -188,6 +188,21 @@ class ServiceNowPlatformDevelopmentMCP {
             },
             required: ['tableName']
           }
+        },
+        {
+          name: 'snow_table_schema_discovery',
+          description: 'Comprehensive table schema discovery - structure, relationships, indexes, constraints',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              tableName: { type: 'string', description: 'Table name to analyze' },
+              includeRelated: { type: 'boolean', description: 'Include related table information' },
+              includeIndexes: { type: 'boolean', description: 'Include index information' },
+              includeExtensions: { type: 'boolean', description: 'Include table extensions/hierarchy' },
+              maxDepth: { type: 'number', description: 'Max depth for relationship discovery (default: 2)' }
+            },
+            required: ['tableName']
+          }
         }
       ]
     }));
@@ -222,6 +237,8 @@ class ServiceNowPlatformDevelopmentMCP {
             return await this.discoverPlatformTables(args);
           case 'snow_discover_table_fields':
             return await this.discoverTableFields(args);
+          case 'snow_table_schema_discovery':
+            return await this.discoverTableSchema(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -665,6 +682,213 @@ class ServiceNowPlatformDevelopmentMCP {
     } catch (error) {
       this.logger.error(`Failed to discover required fields for ${tableName}:`, error);
       return [];
+    }
+  }
+
+  /**
+   * Comprehensive table schema discovery
+   */
+  private async discoverTableSchema(args: any) {
+    try {
+      const { tableName, includeRelated = true, includeIndexes = true, includeExtensions = true, maxDepth = 2 } = args;
+      this.logger.info(`Discovering comprehensive schema for table: ${tableName}`);
+
+      // Get table information
+      const tableInfo = await this.getTableInfo(tableName);
+      if (!tableInfo) {
+        throw new Error(`Table not found: ${tableName}`);
+      }
+
+      // Get detailed table metadata
+      const tableDetailsResponse = await this.client.getRecord('sys_db_object', tableInfo.sys_id);
+      if (!tableDetailsResponse.success) {
+        throw new Error(`Failed to get table details: ${tableDetailsResponse.error}`);
+      }
+
+      const tableDetails = tableDetailsResponse.data;
+
+      // Get all fields with detailed information
+      const fieldsResponse = await this.client.searchRecords(
+        'sys_dictionary',
+        `name=${tableInfo.name}^element!=NULL`,
+        200
+      );
+
+      if (!fieldsResponse.success || !fieldsResponse.data) {
+        throw new Error(`Failed to get fields for table: ${tableName}`);
+      }
+
+      const fields = fieldsResponse.data.result.map((field: any) => ({
+        name: field.element,
+        label: field.column_label,
+        type: field.internal_type,
+        dataType: field.internal_type,
+        maxLength: field.max_length,
+        mandatory: field.mandatory === 'true',
+        readOnly: field.read_only === 'true',
+        display: field.display === 'true',
+        active: field.active === 'true',
+        array: field.array === 'true',
+        reference: field.reference,
+        referenceQual: field.reference_qual,
+        defaultValue: field.default_value,
+        choice: field.choice,
+        calculated: field.virtual === 'true',
+        attributes: field.attributes,
+        comments: field.comments
+      }));
+
+      // Analyze relationships
+      const relationships = fields
+        .filter((field: any) => field.reference)
+        .map((field: any) => ({
+          field: field.name,
+          targetTable: field.reference,
+          label: field.label,
+          referenceQual: field.referenceQual
+        }));
+
+      // Get table hierarchy if requested
+      let hierarchy: any = null;
+      if (includeExtensions) {
+        hierarchy = {
+          extends: tableDetails.super_class?.display_value || null,
+          extendsTable: tableDetails.super_class?.value || null,
+          isExtendable: tableDetails.is_extendable === 'true',
+          extensionModel: tableDetails.extension_model
+        };
+
+        // Find tables that extend this one
+        const childTablesResponse = await this.client.searchRecords(
+          'sys_db_object',
+          `super_class=${tableInfo.sys_id}`,
+          50
+        );
+
+        if (childTablesResponse.success && childTablesResponse.data) {
+          hierarchy.extendedBy = childTablesResponse.data.result.map((child: any) => ({
+            name: child.name,
+            label: child.label,
+            sys_id: child.sys_id
+          }));
+        }
+      }
+
+      // Get indexes if requested
+      let indexes: any[] = [];
+      if (includeIndexes) {
+        const indexResponse = await this.client.searchRecords(
+          'sys_db_index',
+          `table=${tableInfo.sys_id}`,
+          50
+        );
+
+        if (indexResponse.success && indexResponse.data) {
+          indexes = indexResponse.data.result.map((index: any) => ({
+            name: index.name,
+            unique: index.unique === 'true',
+            clustered: index.clustered === 'true',
+            fields: index.fields
+          }));
+        }
+      }
+
+      // Get related tables if requested
+      let relatedTables: any[] = [];
+      if (includeRelated && relationships.length > 0) {
+        const uniqueRelatedTables = [...new Set(relationships.map((rel: any) => rel.targetTable))];
+        
+        for (const relTable of uniqueRelatedTables.slice(0, 10)) { // Limit to prevent too many queries
+          const relTableInfo = await this.getTableInfo(String(relTable));
+          if (relTableInfo) {
+            relatedTables.push({
+              name: relTableInfo.name,
+              label: relTableInfo.label,
+              referencedBy: relationships
+                .filter((rel: any) => rel.targetTable === relTable)
+                .map((rel: any) => rel.field)
+            });
+          }
+        }
+      }
+
+      // Compile comprehensive schema information
+      const schema = {
+        table: {
+          name: tableInfo.name,
+          label: tableInfo.label,
+          sys_id: tableInfo.sys_id,
+          isExtendable: tableDetails.is_extendable === 'true',
+          isSystemTable: tableDetails.sys_scope?.display_value === 'global',
+          created: tableDetails.sys_created_on,
+          updated: tableDetails.sys_updated_on,
+          recordCount: tableDetails.row_count || 'Unknown',
+          accessControls: tableDetails.access || 'Not specified'
+        },
+        hierarchy,
+        fields: {
+          total: fields.length,
+          mandatory: fields.filter((f: any) => f.mandatory).length,
+          references: fields.filter((f: any) => f.reference).length,
+          calculated: fields.filter((f: any) => f.calculated).length,
+          list: fields
+        },
+        relationships: {
+          total: relationships.length,
+          list: relationships,
+          relatedTables
+        },
+        indexes: {
+          total: indexes.length,
+          list: indexes
+        }
+      };
+
+      return {
+        content: [{
+          type: 'text',
+          text: `🔍 **Comprehensive Schema Discovery for ${tableInfo.label} (${tableInfo.name})**\n\n` +
+                `📊 **Table Overview:**\n` +
+                `- Label: ${schema.table.label}\n` +
+                `- Name: ${schema.table.name}\n` +
+                `- System ID: ${schema.table.sys_id}\n` +
+                `- Extendable: ${schema.table.isExtendable ? 'Yes' : 'No'}\n` +
+                `- System Table: ${schema.table.isSystemTable ? 'Yes' : 'No'}\n` +
+                `- Record Count: ${schema.table.recordCount}\n\n` +
+                
+                (hierarchy ? `🔗 **Table Hierarchy:**\n` +
+                `- Extends: ${hierarchy.extends || 'None'}\n` +
+                `- Extended By: ${hierarchy.extendedBy?.length || 0} tables\n` +
+                (hierarchy.extendedBy?.length > 0 ? 
+                  hierarchy.extendedBy.map((t: any) => `  - ${t.label} (${t.name})`).join('\n') + '\n' : '') +
+                '\n' : '') +
+                
+                `📋 **Fields Summary:**\n` +
+                `- Total Fields: ${schema.fields.total}\n` +
+                `- Mandatory Fields: ${schema.fields.mandatory}\n` +
+                `- Reference Fields: ${schema.fields.references}\n` +
+                `- Calculated Fields: ${schema.fields.calculated}\n\n` +
+                
+                `🔗 **Relationships:**\n` +
+                `- Total References: ${schema.relationships.total}\n` +
+                (schema.relationships.list.length > 0 ?
+                  schema.relationships.list.map((rel: any) => 
+                    `  - ${rel.field} → ${rel.targetTable} (${rel.label})`
+                  ).join('\n') + '\n' : '') +
+                '\n' +
+                
+                (indexes.length > 0 ? `🔑 **Indexes:**\n` +
+                indexes.map((idx: any) => 
+                  `- ${idx.name} (${idx.unique ? 'Unique' : 'Non-unique'}) on: ${idx.fields}`
+                ).join('\n') + '\n\n' : '') +
+                
+                `\n📝 **Full Schema Details:**\n\`\`\`json\n${JSON.stringify(schema, null, 2)}\n\`\`\`\n\n` +
+                `✨ All schema information discovered dynamically from ServiceNow!`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to discover table schema:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to discover table schema: ${error}`);
     }
   }
 

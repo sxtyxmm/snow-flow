@@ -2,6 +2,30 @@
 
 Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
 
+## 🆕 What's New in v1.1.45
+
+### 🔍 Enhanced Catalog Discovery
+- **Fuzzy Search**: Find "iPhone 6S" even when searching "iPhone"
+- **Smart Variations**: Automatically searches related terms (laptop → notebook, MacBook)
+- **Category Filtering**: Narrow down results by catalog category
+
+### 🧪 Flow Testing Revolution
+- **Mock Data Creation**: Automatically creates test users and catalog items
+- **Approval Simulation**: Auto-approves during testing for complete flow validation
+- **Execution Monitoring**: Real-time tracking with 60-second timeout protection
+- **Cleanup Support**: Optional removal of all test data after execution
+
+### 🔗 Direct Catalog-Flow Integration
+- **Three Linking Methods**: Modern flow_catalog_process, legacy workflow, or process_engine
+- **Variable Mapping**: Map catalog variables to flow inputs with transformations
+- **Trigger Control**: Configure exactly when flows should execute
+- **Test Integration**: Create test requests to verify the link works
+
+### ⚡ Performance Improvements
+- **Bulk Deployment**: Deploy multiple artifacts in a single transaction
+- **Parallel Processing**: Up to 5x faster with concurrent operations
+- **Smart Rollback**: Automatic rollback on any deployment failure
+
 ## 🌟 Key Features
 
 ### 🤖 11 Specialized MCP Servers
@@ -80,6 +104,33 @@ SNOW_PASSWORD=your-password
 snow-flow auth login
 ```
 
+### 🎯 MCP Server Activation (v1.1.25+)
+
+Snow-Flow now includes **automatic MCP server activation** for Claude Code! During initialization, you'll be prompted to automatically start Claude Code with all 11 MCP servers pre-loaded:
+
+```bash
+snow-flow init --sparc
+
+# You'll see:
+# 🚀 Would you like to start Claude Code with MCP servers automatically? (Y/n)
+# Press Y to launch Claude Code with all MCP servers ready to use!
+```
+
+The MCP servers are automatically:
+- ✅ Configured with correct paths for global npm installations
+- ✅ Registered in Claude Code's settings
+- ✅ Activated without manual approval steps
+- ✅ Ready to use immediately after initialization
+
+If you need to manually activate MCP servers later:
+```bash
+# For Mac/Linux:
+claude --mcp-config .mcp.json .
+
+# For Windows:
+claude.exe --mcp-config .mcp.json .
+```
+
 ## 💡 Usage Examples
 
 ### Create a Complex Flow with Natural Language
@@ -94,7 +145,22 @@ snow-flow sparc "Create and deploy a widget that shows all critical incidents wi
 
 ### Start a Multi-Agent Swarm for Complex Projects
 ```bash
-snow-flow swarm "Build a complete incident management system with dashboard, workflows, and notifications" --strategy development --parallel
+# Most intelligent features are enabled by default!
+snow-flow swarm "Build a complete incident management system with dashboard, workflows, and notifications"
+
+# Default settings:
+# ✅ --smart-discovery (true) - Reuses existing artifacts
+# ✅ --live-testing (true) - Tests in real-time
+# ✅ --auto-deploy (true) - Deploys automatically (safe with update sets)
+# ✅ --auto-rollback (true) - Rollbacks on failures
+# ✅ --shared-memory (true) - Agents share context
+# ✅ --progress-monitoring (true) - Real-time status
+
+# Add --auto-permissions to enable automatic permission escalation
+snow-flow swarm "Create enterprise workflow" --auto-permissions
+
+# Disable specific features with --no- prefix
+snow-flow swarm "Test workflow" --no-auto-deploy --no-live-testing
 ```
 
 ### Intelligent Artifact Discovery
@@ -138,6 +204,79 @@ Recognizes common patterns and applies best practices:
 - Fulfillment processes
 - Notification systems
 - Integration patterns
+
+## 🔧 New MCP Tools (v1.1.44+)
+
+### Catalog Item Search with Fuzzy Matching
+Find catalog items even when you don't know the exact name:
+```javascript
+// In Claude Code with MCP tools
+snow_catalog_item_search({
+  query: "iPhone",          // Finds iPhone 6S, iPhone 7, etc.
+  fuzzy_match: true,       // Intelligent variations
+  category_filter: "mobile devices",
+  include_variables: true  // Get catalog variables
+});
+```
+
+### Flow Testing with Mock Data
+Test flows without affecting production data:
+```javascript
+snow_test_flow_with_mock({
+  flow_id: "equipment_provisioning_flow",
+  create_test_user: true,      // Auto-creates test user
+  mock_catalog_items: true,    // Creates test items
+  mock_catalog_data: [
+    {
+      name: "Test iPhone 6S",
+      price: "699.00"
+    }
+  ],
+  simulate_approvals: true,    // Auto-approves
+  cleanup_after_test: true     // Removes test data
+});
+```
+
+### Direct Catalog-Flow Linking
+Link catalog items directly to flows for automated fulfillment:
+```javascript
+snow_link_catalog_to_flow({
+  catalog_item_id: "iPhone 6S",
+  flow_id: "mobile_provisioning_flow",
+  link_type: "flow_catalog_process",  // Modern approach
+  variable_mapping: [
+    {
+      catalog_variable: "phone_model",
+      flow_input: "device_type"
+    },
+    {
+      catalog_variable: "user_department",
+      flow_input: "department"
+    }
+  ],
+  trigger_condition: 'current.stage == "request_approved"',
+  execution_options: {
+    run_as: "system",
+    wait_for_completion: true
+  },
+  test_link: true  // Creates test request
+});
+```
+
+### Bulk Deployment
+Deploy multiple artifacts in a single transaction:
+```javascript
+snow_bulk_deploy({
+  artifacts: [
+    { type: "widget", data: widgetData },
+    { type: "flow", data: flowData },
+    { type: "script", data: scriptData }
+  ],
+  transaction_mode: true,  // All-or-nothing deployment
+  parallel: true,         // Deploy simultaneously
+  dry_run: false
+});
+```
 
 ## 📁 Project Structure
 
@@ -222,6 +361,20 @@ We welcome contributions! Please see our contributing guidelines (coming soon).
 - [ ] AI-powered code review
 - [ ] Automated testing framework
 - [ ] Performance optimization recommendations
+
+## 🆕 What's New in v1.1.25
+
+### Automatic MCP Server Activation 🎯
+- **Interactive Prompt**: During `snow-flow init --sparc`, you're now prompted to automatically start Claude Code with all MCP servers
+- **Zero Manual Steps**: No more manual MCP approval in Claude Code - servers load automatically using `claude --mcp-config`
+- **Cross-Platform Support**: Works on Mac, Linux, and Windows with platform-specific activation scripts
+- **Instant Availability**: All 11 ServiceNow MCP servers are immediately available in Claude Code after initialization
+
+### Previous Updates
+- **v1.1.24**: Added `snow-flow mcp debug` command for troubleshooting MCP configurations
+- **v1.1.23**: Fixed .npmignore to include essential .claude configuration files
+- **v1.1.22**: Verified global npm installation correctly registers all MCP servers
+- **v1.1.20**: Added enabledMcpjsonServers to ensure MCP visibility in Claude Code
 
 ## 📝 License
 

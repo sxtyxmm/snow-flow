@@ -181,7 +181,7 @@ export class FlowDesignerAPI {
         await this.createFlowErrorHandling(flowId, errorHandler);
       }
 
-      const credentials = await this.client.credentials;
+      const credentials = this.client.credentialsInstance;
       const flowUrl = `https://${credentials?.instance}/flow-designer/flow/${flowId}`;
 
       return {

@@ -33,6 +33,16 @@ const operationalTableMapping = {
   problem: 'problem',
   change_request: 'change_request',
   
+  // Service Catalog
+  catalog: 'sc_catalog',
+  catalog_item: 'sc_cat_item',
+  catalog_category: 'sc_category',
+  catalog_variable: 'item_option_new',
+  catalog_variable_set: 'io_set_item',
+  catalog_ui_policy: 'catalog_ui_policy',
+  catalog_client_script: 'catalog_script_client',
+  catalog_template: 'sc_template',
+  
   // Task Management
   task: 'task',
   incident_task: 'incident_task',
@@ -62,10 +72,6 @@ const operationalTableMapping = {
   // Knowledge Management
   knowledge_base: 'kb_knowledge_base',
   knowledge: 'kb_knowledge',
-  
-  // Service Catalog
-  catalog: 'sc_catalog',
-  catalog_item: 'sc_cat_item',
   
   // Metrics & Analytics
   metric: 'sys_metric',
@@ -437,6 +443,275 @@ class ServiceNowOperationsMCP {
               },
               required: ['prediction_type']
             }
+          },
+          
+          // Service Catalog Management
+          {
+            name: 'snow_catalog_item_manager',
+            description: 'Manage service catalog items - create, update, configure variables and workflows',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                action: {
+                  type: 'string',
+                  description: 'Action to perform',
+                  enum: ['create', 'update', 'list', 'get', 'add_variable', 'set_workflow', 'publish', 'retire']
+                },
+                catalog_id: {
+                  type: 'string',
+                  description: 'Catalog sys_id (for create action)'
+                },
+                category_id: {
+                  type: 'string',
+                  description: 'Category sys_id'
+                },
+                item_id: {
+                  type: 'string',
+                  description: 'Catalog item sys_id (for update/get actions)'
+                },
+                name: {
+                  type: 'string',
+                  description: 'Catalog item name'
+                },
+                short_description: {
+                  type: 'string',
+                  description: 'Short description'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Full description'
+                },
+                price: {
+                  type: 'string',
+                  description: 'Item price (e.g., "100.00")'
+                },
+                recurring_price: {
+                  type: 'string',
+                  description: 'Recurring price if applicable'
+                },
+                picture: {
+                  type: 'string',
+                  description: 'Picture attachment sys_id'
+                },
+                workflow: {
+                  type: 'string',
+                  description: 'Workflow to attach'
+                },
+                variable_set: {
+                  type: 'string',
+                  description: 'Variable set sys_id to attach'
+                },
+                variables: {
+                  type: 'array',
+                  description: 'Variables to add',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      label: { type: 'string' },
+                      type: { 
+                        type: 'string',
+                        enum: ['single_line_text', 'multi_line_text', 'select_box', 'checkbox', 'reference', 'date', 'datetime']
+                      },
+                      mandatory: { type: 'boolean' },
+                      default_value: { type: 'string' },
+                      choices: { type: 'array', items: { type: 'string' } }
+                    }
+                  }
+                },
+                active: {
+                  type: 'boolean',
+                  description: 'Whether the item is active',
+                  default: true
+                },
+                billable: {
+                  type: 'boolean',
+                  description: 'Whether the item is billable',
+                  default: false
+                },
+                sc_catalogs: {
+                  type: 'string',
+                  description: 'Comma-separated catalog sys_ids'
+                },
+                sc_categories: {
+                  type: 'string',
+                  description: 'Comma-separated category sys_ids'
+                }
+              },
+              required: ['action']
+            }
+          },
+          
+          {
+            name: 'snow_catalog_item_search',
+            description: 'Search for catalog items with intelligent matching and discovery',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query (e.g., "iPhone", "laptop", "mobile device")'
+                },
+                include_inactive: {
+                  type: 'boolean',
+                  description: 'Include inactive catalog items',
+                  default: false
+                },
+                fuzzy_match: {
+                  type: 'boolean',
+                  description: 'Enable fuzzy matching for similar items',
+                  default: true
+                },
+                category_filter: {
+                  type: 'string',
+                  description: 'Filter by category name or sys_id'
+                },
+                limit: {
+                  type: 'number',
+                  description: 'Maximum results to return',
+                  default: 50
+                },
+                include_variables: {
+                  type: 'boolean',
+                  description: 'Include catalog item variables in results',
+                  default: false
+                }
+              },
+              required: ['query']
+            }
+          },
+          
+          {
+            name: 'snow_test_flow_with_mock',
+            description: 'Test flows with mock data - create test users, mock catalog items, and simulate flow execution',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                flow_id: {
+                  type: 'string',
+                  description: 'Flow sys_id or name to test'
+                },
+                create_test_user: {
+                  type: 'boolean',
+                  description: 'Create a test user for the flow',
+                  default: true
+                },
+                test_user_data: {
+                  type: 'object',
+                  description: 'Test user details',
+                  properties: {
+                    user_name: { type: 'string' },
+                    first_name: { type: 'string' },
+                    last_name: { type: 'string' },
+                    email: { type: 'string' },
+                    department: { type: 'string' },
+                    manager: { type: 'string' }
+                  }
+                },
+                mock_catalog_items: {
+                  type: 'boolean',
+                  description: 'Create mock catalog items for testing',
+                  default: true
+                },
+                mock_catalog_data: {
+                  type: 'array',
+                  description: 'Mock catalog items to create',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      short_description: { type: 'string' },
+                      price: { type: 'string' },
+                      variables: { type: 'array' }
+                    }
+                  }
+                },
+                test_inputs: {
+                  type: 'object',
+                  description: 'Input values to test the flow with'
+                },
+                simulate_approvals: {
+                  type: 'boolean',
+                  description: 'Automatically approve any approval requests',
+                  default: true
+                },
+                cleanup_after_test: {
+                  type: 'boolean',
+                  description: 'Remove test data after testing',
+                  default: true
+                }
+              },
+              required: ['flow_id']
+            }
+          },
+          
+          {
+            name: 'snow_link_catalog_to_flow',
+            description: 'Link catalog items directly to flows - configure flow as fulfillment process',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                catalog_item_id: {
+                  type: 'string',
+                  description: 'Catalog item sys_id or name'
+                },
+                flow_id: {
+                  type: 'string',
+                  description: 'Flow sys_id or name to use for fulfillment'
+                },
+                link_type: {
+                  type: 'string',
+                  description: 'Type of link to create',
+                  enum: ['workflow', 'flow_catalog_process', 'process_engine'],
+                  default: 'flow_catalog_process'
+                },
+                variable_mapping: {
+                  type: 'array',
+                  description: 'Map catalog variables to flow inputs',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      catalog_variable: { type: 'string', description: 'Catalog variable name' },
+                      flow_input: { type: 'string', description: 'Flow input name' },
+                      transform: { type: 'string', description: 'Optional transformation script' }
+                    }
+                  }
+                },
+                trigger_condition: {
+                  type: 'string',
+                  description: 'Condition for when to trigger the flow',
+                  default: 'current.stage == "request_approved"'
+                },
+                execution_options: {
+                  type: 'object',
+                  description: 'Flow execution options',
+                  properties: {
+                    run_as: { 
+                      type: 'string', 
+                      description: 'User context for flow execution',
+                      enum: ['requester', 'system', 'fulfiller'],
+                      default: 'system'
+                    },
+                    wait_for_completion: {
+                      type: 'boolean',
+                      description: 'Wait for flow to complete before closing request',
+                      default: true
+                    },
+                    update_request_on_progress: {
+                      type: 'boolean',
+                      description: 'Update request item with flow progress',
+                      default: true
+                    }
+                  }
+                },
+                test_link: {
+                  type: 'boolean',
+                  description: 'Test the link by creating a sample request',
+                  default: false
+                }
+              },
+              required: ['catalog_item_id', 'flow_id']
+            }
           }
         ],
       };
@@ -470,6 +745,14 @@ class ServiceNowOperationsMCP {
             return await this.handleKnowledgeSearch(args);
           case 'snow_predictive_analysis':
             return await this.handlePredictiveAnalysis(args);
+          case 'snow_catalog_item_manager':
+            return await this.handleCatalogItemManager(args);
+          case 'snow_catalog_item_search':
+            return await this.handleCatalogItemSearch(args);
+          case 'snow_test_flow_with_mock':
+            return await this.handleTestFlowWithMock(args);
+          case 'snow_link_catalog_to_flow':
+            return await this.handleLinkCatalogToFlow(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Tool ${name} not found`);
         }
@@ -1487,6 +1770,1115 @@ class ServiceNowOperationsMCP {
         confidence: 0.6
       }
     ];
+  }
+
+  private async handleCatalogItemManager(args: any) {
+    const { action, item_id, ...params } = args;
+    
+    logger.info(`Catalog item manager action: ${action}`, { item_id, params });
+    
+    try {
+      switch (action) {
+        case 'create': {
+          const catalogItem = {
+            name: params.name,
+            short_description: params.short_description,
+            description: params.description,
+            price: params.price || '0',
+            recurring_price: params.recurring_price || '0',
+            billable: params.billable || false,
+            active: params.active !== false,
+            workflow: params.workflow,
+            picture: params.picture,
+            sc_catalogs: params.sc_catalogs || params.catalog_id,
+            sc_categories: params.sc_categories || params.category_id,
+            sys_class_name: 'sc_cat_item'
+          };
+          
+          const result = await this.client.createRecord('sc_cat_item', catalogItem);
+          
+          if (result.success && params.variables && params.variables.length > 0) {
+            // Add variables to the catalog item
+            for (const variable of params.variables) {
+              await this.createCatalogVariable(result.data.sys_id, variable);
+            }
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: result.success
+                ? `✅ Catalog item created successfully!\n\nSys ID: ${result.data.sys_id}\nName: ${result.data.name}\n\nView at: ${this.getServiceNowUrl()}/nav_to.do?uri=sc_cat_item.do?sys_id=${result.data.sys_id}`
+                : `❌ Failed to create catalog item: ${result.error}`
+            }]
+          };
+        }
+        
+        case 'update': {
+          if (!item_id) {
+            throw new Error('item_id is required for update action');
+          }
+          
+          const updateData: any = {};
+          if (params.name) updateData.name = params.name;
+          if (params.short_description) updateData.short_description = params.short_description;
+          if (params.description) updateData.description = params.description;
+          if (params.price) updateData.price = params.price;
+          if (params.recurring_price) updateData.recurring_price = params.recurring_price;
+          if (params.billable !== undefined) updateData.billable = params.billable;
+          if (params.active !== undefined) updateData.active = params.active;
+          if (params.workflow) updateData.workflow = params.workflow;
+          if (params.sc_catalogs) updateData.sc_catalogs = params.sc_catalogs;
+          if (params.sc_categories) updateData.sc_categories = params.sc_categories;
+          
+          const result = await this.client.updateRecord('sc_cat_item', item_id, updateData);
+          
+          return {
+            content: [{
+              type: 'text',
+              text: result.success
+                ? `✅ Catalog item updated successfully!\n\nSys ID: ${item_id}\n\nView at: ${this.getServiceNowUrl()}/nav_to.do?uri=sc_cat_item.do?sys_id=${item_id}`
+                : `❌ Failed to update catalog item: ${result.error}`
+            }]
+          };
+        }
+        
+        case 'list': {
+          const query = params.category_id ? `sc_categories=${params.category_id}` : 'active=true';
+          const result = await this.client.searchRecords('sc_cat_item', query, 50);
+          
+          if (result.success) {
+            const items = result.data.result.map((item: any) => ({
+              sys_id: item.sys_id,
+              name: item.name,
+              short_description: item.short_description,
+              price: item.price,
+              active: item.active,
+              category: item.category?.display_value
+            }));
+            
+            return {
+              content: [{
+                type: 'text',
+                text: `📋 Found ${items.length} catalog items:\n\n${JSON.stringify(items, null, 2)}`
+              }]
+            };
+          } else {
+            throw new Error(`Failed to list catalog items: ${result.error}`);
+          }
+        }
+        
+        case 'get': {
+          if (!item_id) {
+            throw new Error('item_id is required for get action');
+          }
+          
+          const result = await this.client.getRecord('sc_cat_item', item_id);
+          
+          if (result.success) {
+            // Get variables for the item
+            const variables = await this.client.searchRecords('item_option_new', `cat_item=${item_id}`, 50);
+            
+            return {
+              content: [{
+                type: 'text',
+                text: `📋 Catalog Item Details:\n\n${JSON.stringify(result.data, null, 2)}\n\n📊 Variables:\n${JSON.stringify(variables.data?.result || [], null, 2)}`
+              }]
+            };
+          } else {
+            throw new Error(`Failed to get catalog item: ${result.error}`);
+          }
+        }
+        
+        case 'add_variable': {
+          if (!item_id) {
+            throw new Error('item_id is required for add_variable action');
+          }
+          
+          if (!params.variables || params.variables.length === 0) {
+            throw new Error('variables array is required');
+          }
+          
+          const results = [];
+          for (const variable of params.variables) {
+            const result = await this.createCatalogVariable(item_id, variable);
+            results.push(result);
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `✅ Added ${results.length} variables to catalog item ${item_id}`
+            }]
+          };
+        }
+        
+        case 'set_workflow': {
+          if (!item_id) {
+            throw new Error('item_id is required for set_workflow action');
+          }
+          
+          if (!params.workflow) {
+            throw new Error('workflow is required');
+          }
+          
+          const result = await this.client.updateRecord('sc_cat_item', item_id, {
+            workflow: params.workflow
+          });
+          
+          return {
+            content: [{
+              type: 'text',
+              text: result.success
+                ? `✅ Workflow set successfully for catalog item ${item_id}`
+                : `❌ Failed to set workflow: ${result.error}`
+            }]
+          };
+        }
+        
+        case 'publish': {
+          if (!item_id) {
+            throw new Error('item_id is required for publish action');
+          }
+          
+          const result = await this.client.updateRecord('sc_cat_item', item_id, {
+            active: true
+          });
+          
+          return {
+            content: [{
+              type: 'text',
+              text: result.success
+                ? `✅ Catalog item ${item_id} published successfully`
+                : `❌ Failed to publish catalog item: ${result.error}`
+            }]
+          };
+        }
+        
+        case 'retire': {
+          if (!item_id) {
+            throw new Error('item_id is required for retire action');
+          }
+          
+          const result = await this.client.updateRecord('sc_cat_item', item_id, {
+            active: false
+          });
+          
+          return {
+            content: [{
+              type: 'text',
+              text: result.success
+                ? `✅ Catalog item ${item_id} retired successfully`
+                : `❌ Failed to retire catalog item: ${result.error}`
+            }]
+          };
+        }
+        
+        default:
+          throw new Error(`Unknown action: ${action}`);
+      }
+    } catch (error) {
+      logger.error('Error in catalog item manager:', error);
+      throw new McpError(ErrorCode.InternalError, `Catalog item manager error: ${error}`);
+    }
+  }
+  
+  private async createCatalogVariable(catalogItemId: string, variable: any) {
+    const variableData: any = {
+      cat_item: catalogItemId,
+      name: variable.name,
+      question_text: variable.label || variable.name,
+      type: this.mapVariableType(variable.type),
+      mandatory: variable.mandatory || false,
+      default_value: variable.default_value || '',
+      order: variable.order || 100
+    };
+    
+    // Handle select box choices
+    if (variable.type === 'select_box' && variable.choices) {
+      variableData.lookup_table = 'question_choice';
+      // Note: In a real implementation, you'd need to create choice records
+    }
+    
+    return await this.client.createRecord('item_option_new', variableData);
+  }
+  
+  private mapVariableType(type: string): string {
+    const typeMap: Record<string, string> = {
+      'single_line_text': '6',  // Single Line Text
+      'multi_line_text': '2',   // Multi Line Text
+      'select_box': '3',        // Select Box
+      'checkbox': '7',          // Checkbox
+      'reference': '8',         // Reference
+      'date': '9',              // Date
+      'datetime': '10'          // Date/Time
+    };
+    
+    return typeMap[type] || '6'; // Default to single line text
+  }
+  
+  private async handleCatalogItemSearch(args: any) {
+    const { query, include_inactive = false, fuzzy_match = true, category_filter, limit = 50, include_variables = false } = args;
+    
+    logger.info(`Searching catalog items for: ${query}`, { fuzzy_match, category_filter, limit });
+    
+    try {
+      // Build search queries
+      const searchQueries = [];
+      
+      // Exact match
+      searchQueries.push(`name=${query}`);
+      
+      // Contains match
+      searchQueries.push(`nameLIKE${query}`);
+      searchQueries.push(`short_descriptionLIKE${query}`);
+      
+      // Fuzzy matching for similar items
+      if (fuzzy_match) {
+        // Handle common variations
+        const variations = this.generateSearchVariations(query);
+        variations.forEach(variation => {
+          searchQueries.push(`nameLIKE${variation}`);
+          searchQueries.push(`short_descriptionLIKE${variation}`);
+        });
+      }
+      
+      // Add active filter
+      const activeFilter = include_inactive ? '' : '^active=true';
+      
+      // Add category filter if provided
+      let categoryFilter = '';
+      if (category_filter) {
+        // First try to find the category
+        const categoryResult = await this.client.searchRecords('sc_category', `name=${category_filter}^ORsys_id=${category_filter}`, 1);
+        if (categoryResult.success && categoryResult.data?.result?.length > 0) {
+          categoryFilter = `^sc_categories=${categoryResult.data.result[0].sys_id}`;
+        }
+      }
+      
+      // Execute searches
+      const allResults = new Map();
+      
+      for (const searchQuery of searchQueries) {
+        const fullQuery = searchQuery + activeFilter + categoryFilter;
+        const result = await this.client.searchRecords('sc_cat_item', fullQuery, limit);
+        
+        if (result.success && result.data?.result) {
+          result.data.result.forEach((item: any) => {
+            if (!allResults.has(item.sys_id)) {
+              allResults.set(item.sys_id, {
+                sys_id: item.sys_id,
+                name: item.name,
+                short_description: item.short_description,
+                price: item.price,
+                recurring_price: item.recurring_price,
+                active: item.active,
+                category: item.sc_categories?.display_value,
+                catalog: item.sc_catalogs?.display_value,
+                model_number: item.model,
+                manufacturer: item.vendor,
+                variables: []
+              });
+            }
+          });
+        }
+      }
+      
+      // Get variables if requested
+      if (include_variables && allResults.size > 0) {
+        for (const [sys_id, item] of allResults) {
+          const variablesResult = await this.client.searchRecords('item_option_new', `cat_item=${sys_id}`, 50);
+          if (variablesResult.success && variablesResult.data?.result) {
+            item.variables = variablesResult.data.result.map((v: any) => ({
+              name: v.name,
+              label: v.question_text,
+              type: v.type,
+              mandatory: v.mandatory,
+              default_value: v.default_value
+            }));
+          }
+        }
+      }
+      
+      const resultsArray = Array.from(allResults.values());
+      
+      // Sort by relevance (exact matches first)
+      resultsArray.sort((a, b) => {
+        const aExact = a.name.toLowerCase() === query.toLowerCase();
+        const bExact = b.name.toLowerCase() === query.toLowerCase();
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        return 0;
+      });
+      
+      if (resultsArray.length === 0) {
+        // Provide suggestions if no results found
+        const suggestions = this.generateSearchSuggestions(query);
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ No catalog items found for "${query}"\n\n` +
+                  `💡 Suggestions:\n` +
+                  suggestions.map(s => `- Try searching for "${s}"`).join('\n') +
+                  `\n\n💡 Tips:\n` +
+                  `- Check if the item name is spelled correctly\n` +
+                  `- Try searching with partial names (e.g., "iPhone" instead of "iPhone 6S")\n` +
+                  `- Use category filter to narrow down results\n` +
+                  `- Enable include_inactive if looking for retired items`
+          }]
+        };
+      }
+      
+      // Format results
+      let resultText = `🔍 Found ${resultsArray.length} catalog items matching "${query}":\n\n`;
+      
+      resultsArray.forEach((item, index) => {
+        resultText += `${index + 1}. **${item.name}** (${item.sys_id})\n`;
+        resultText += `   📝 ${item.short_description || 'No description'}\n`;
+        resultText += `   💰 Price: $${item.price || '0'} ${item.recurring_price ? `(+ $${item.recurring_price}/month)` : ''}\n`;
+        resultText += `   📁 Category: ${item.category || 'Uncategorized'}\n`;
+        resultText += `   📚 Catalog: ${item.catalog || 'Default'}\n`;
+        if (item.model_number) {
+          resultText += `   🔢 Model: ${item.model_number}\n`;
+        }
+        if (item.manufacturer) {
+          resultText += `   🏭 Manufacturer: ${item.manufacturer}\n`;
+        }
+        resultText += `   ✅ Status: ${item.active ? 'Active' : 'Inactive'}\n`;
+        
+        if (item.variables && item.variables.length > 0) {
+          resultText += `   📋 Variables (${item.variables.length}):\n`;
+          item.variables.forEach((v: any) => {
+            resultText += `      - ${v.label} (${v.name}) - ${v.type}${v.mandatory ? ' *Required' : ''}\n`;
+          });
+        }
+        
+        resultText += '\n';
+      });
+      
+      resultText += `\n💡 Use snow_catalog_item_manager to create or update catalog items`;
+      
+      return {
+        content: [{
+          type: 'text',
+          text: resultText
+        }]
+      };
+    } catch (error) {
+      logger.error('Error searching catalog items:', error);
+      throw new McpError(ErrorCode.InternalError, `Catalog search error: ${error}`);
+    }
+  }
+  
+  private generateSearchVariations(query: string): string[] {
+    const variations = [];
+    
+    // Handle common product variations
+    if (query.toLowerCase().includes('iphone')) {
+      // Add variations without spaces, with different numbers
+      const baseModel = query.replace(/iphone\s*/i, 'iPhone ');
+      variations.push(baseModel);
+      variations.push(baseModel.replace(' ', ''));
+      
+      // Try different model numbers
+      const modelMatch = query.match(/\d+/);
+      if (modelMatch) {
+        const modelNum = parseInt(modelMatch[0]);
+        variations.push(query.replace(modelNum.toString(), (modelNum + 1).toString()));
+        variations.push(query.replace(modelNum.toString(), (modelNum - 1).toString()));
+      }
+    }
+    
+    // Handle laptop/computer variations
+    if (query.toLowerCase().includes('laptop') || query.toLowerCase().includes('computer')) {
+      variations.push('notebook', 'macbook', 'thinkpad', 'dell', 'hp');
+    }
+    
+    // Handle phone variations
+    if (query.toLowerCase().includes('phone') || query.toLowerCase().includes('mobile')) {
+      variations.push('smartphone', 'android', 'samsung', 'pixel');
+    }
+    
+    return variations;
+  }
+  
+  private generateSearchSuggestions(query: string): string[] {
+    const suggestions = [];
+    
+    if (query.toLowerCase().includes('iphone')) {
+      suggestions.push('iPhone', 'Apple iPhone', 'iOS device', 'Apple mobile');
+    } else if (query.toLowerCase().includes('laptop')) {
+      suggestions.push('notebook', 'computer', 'workstation', 'MacBook', 'ThinkPad');
+    } else if (query.toLowerCase().includes('software')) {
+      suggestions.push('license', 'application', 'subscription', 'SaaS');
+    } else {
+      // Generic suggestions
+      suggestions.push(
+        query.split(' ')[0], // First word only
+        query.substring(0, Math.floor(query.length / 2)), // First half
+        'hardware', 'software', 'equipment', 'device'
+      );
+    }
+    
+    return [...new Set(suggestions)].filter(s => s && s !== query);
+  }
+  
+  private async handleTestFlowWithMock(args: any) {
+    const {
+      flow_id,
+      create_test_user = true,
+      test_user_data,
+      mock_catalog_items = true,
+      mock_catalog_data,
+      test_inputs = {},
+      simulate_approvals = true,
+      cleanup_after_test = true
+    } = args;
+    
+    logger.info(`Testing flow ${flow_id} with mock data`, {
+      create_test_user,
+      mock_catalog_items,
+      simulate_approvals,
+      cleanup_after_test
+    });
+    
+    const testResults = {
+      flow_id,
+      test_run_id: `test_${Date.now()}`,
+      created_data: {
+        test_user: null,
+        catalog_items: [],
+        test_requests: []
+      },
+      execution_results: {
+        status: 'pending',
+        start_time: new Date().toISOString(),
+        end_time: null,
+        duration_ms: 0,
+        execution_id: null as string | null,
+        steps_executed: [],
+        errors: [],
+        approvals_simulated: []
+      },
+      cleanup_status: null
+    };
+    
+    try {
+      // Step 1: Find the flow
+      const flowResult = await this.client.searchRecords('sys_hub_flow', `sys_id=${flow_id}^ORname=${flow_id}`, 1);
+      
+      if (!flowResult.success || !flowResult.data?.result?.length) {
+        throw new Error(`Flow not found: ${flow_id}`);
+      }
+      
+      const flow = flowResult.data.result[0];
+      testResults.flow_id = flow.sys_id;
+      
+      // Step 2: Create test user if requested
+      if (create_test_user) {
+        const userData = test_user_data || {
+          user_name: `test_user_${Date.now()}`,
+          first_name: 'Test',
+          last_name: 'User',
+          email: `test_${Date.now()}@example.com`,
+          department: 'IT',
+          active: true
+        };
+        
+        const userResult = await this.client.createRecord('sys_user', userData);
+        
+        if (userResult.success && userResult.data?.result) {
+          testResults.created_data.test_user = {
+            sys_id: userResult.data.result.sys_id,
+            user_name: userData.user_name,
+            email: userData.email
+          };
+          logger.info('Created test user:', testResults.created_data.test_user);
+        }
+      }
+      
+      // Step 3: Create mock catalog items if requested
+      if (mock_catalog_items) {
+        const catalogData = mock_catalog_data || [
+          {
+            name: 'Test iPhone 6S',
+            short_description: 'Test mobile device for flow testing',
+            price: '699.00',
+            active: true,
+            billable: true
+          },
+          {
+            name: 'Test Laptop',
+            short_description: 'Test laptop for equipment provisioning',
+            price: '1299.00',
+            active: true,
+            billable: true
+          }
+        ];
+        
+        for (const item of catalogData) {
+          const catalogResult = await this.client.createRecord('sc_cat_item', item);
+          
+          if (catalogResult.success && catalogResult.data?.result) {
+            testResults.created_data.catalog_items.push({
+              sys_id: catalogResult.data.result.sys_id,
+              name: item.name,
+              price: item.price
+            });
+            logger.info('Created mock catalog item:', item.name);
+          }
+        }
+      }
+      
+      // Step 4: Execute the flow with test data
+      try {
+        // Prepare test inputs
+        const flowInputs = {
+          ...test_inputs,
+          test_mode: true,
+          test_run_id: testResults.test_run_id
+        };
+        
+        // If we created a test user, use them as the requested_for
+        if (testResults.created_data.test_user) {
+          flowInputs.requested_for = testResults.created_data.test_user.sys_id;
+          flowInputs.opened_by = testResults.created_data.test_user.sys_id;
+        }
+        
+        // If we created catalog items, use the first one
+        if (testResults.created_data.catalog_items.length > 0) {
+          flowInputs.cat_item = testResults.created_data.catalog_items[0].sys_id;
+        }
+        
+        // Execute flow via REST API
+        const executeResult = await this.executeFlowViaAPI(flow.sys_id, flowInputs);
+        
+        if (executeResult.success) {
+          testResults.execution_results.status = 'running';
+          testResults.execution_results.execution_id = executeResult.execution_id;
+          
+          // Monitor flow execution
+          const executionStatus = await this.monitorFlowExecution(executeResult.execution_id, simulate_approvals);
+          
+          testResults.execution_results = {
+            ...testResults.execution_results,
+            ...executionStatus
+          };
+        } else {
+          testResults.execution_results.status = 'failed';
+          testResults.execution_results.errors.push(executeResult.error || 'Unknown execution error');
+        }
+      } catch (execError: any) {
+        testResults.execution_results.status = 'error';
+        testResults.execution_results.errors.push(execError.message);
+        logger.error('Flow execution error:', execError);
+      }
+      
+      // Step 5: Cleanup if requested
+      if (cleanup_after_test) {
+        const cleanupResults = {
+          user_deleted: false,
+          catalog_items_deleted: 0,
+          requests_cancelled: 0
+        };
+        
+        // Delete test user
+        if (testResults.created_data.test_user) {
+          const deleteUserResult = await this.client.deleteRecord('sys_user', testResults.created_data.test_user.sys_id);
+          cleanupResults.user_deleted = deleteUserResult.success;
+        }
+        
+        // Delete catalog items
+        for (const item of testResults.created_data.catalog_items) {
+          const deleteItemResult = await this.client.deleteRecord('sc_cat_item', item.sys_id);
+          if (deleteItemResult.success) {
+            cleanupResults.catalog_items_deleted++;
+          }
+        }
+        
+        testResults.cleanup_status = cleanupResults;
+      }
+      
+      // Format results
+      const resultText = this.formatTestResults(testResults);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: resultText
+        }]
+      };
+      
+    } catch (error: any) {
+      logger.error('Error testing flow with mock data:', error);
+      testResults.execution_results.status = 'error';
+      testResults.execution_results.errors.push(error.message);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ Flow test failed\n\nError: ${error.message}\n\nTest Results:\n${JSON.stringify(testResults, null, 2)}`
+        }]
+      };
+    }
+  }
+  
+  private async executeFlowViaAPI(flowId: string, inputs: any): Promise<any> {
+    try {
+      // Use the ServiceNow Flow API to execute the flow
+      const result = await this.client.createRecord('sys_flow_context', {
+        flow: flowId,
+        inputs: JSON.stringify(inputs),
+        state: 'executing'
+      });
+      
+      if (result.success && result.data?.result) {
+        return {
+          success: true,
+          execution_id: result.data.result.sys_id
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'Failed to start flow execution'
+      };
+    } catch (error: any) {
+      logger.error('Error executing flow via API:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  
+  private async monitorFlowExecution(executionId: string, simulateApprovals: boolean): Promise<any> {
+    const maxWaitTime = 60000; // 60 seconds
+    const pollInterval = 2000; // 2 seconds
+    const startTime = Date.now();
+    const executionResults: any = {
+      status: 'running',
+      steps_executed: [],
+      approvals_simulated: [],
+      errors: [],
+      end_time: null,
+      duration_ms: 0
+    };
+    
+    while (Date.now() - startTime < maxWaitTime) {
+      try {
+        // Check flow context status
+        const contextResult = await this.client.getRecord('sys_flow_context', executionId);
+        
+        if (!contextResult.success || !contextResult.data?.result) {
+          executionResults.errors.push('Failed to get flow context');
+          break;
+        }
+        
+        const context = contextResult.data.result;
+        executionResults.status = context.state;
+        
+        // Check for completed state
+        if (context.state === 'complete' || context.state === 'cancelled' || context.state === 'error') {
+          executionResults.end_time = context.sys_updated_on;
+          executionResults.duration_ms = Date.now() - startTime;
+          break;
+        }
+        
+        // Check for approvals if simulating
+        if (simulateApprovals) {
+          const approvalResult = await this.client.searchRecords(
+            'sysapproval_approver',
+            `source_table=sys_flow_context^document_id=${executionId}^state=requested`,
+            10
+          );
+          
+          if (approvalResult.success && approvalResult.data?.result?.length > 0) {
+            for (const approval of approvalResult.data.result) {
+              // Auto-approve
+              const approveResult = await this.client.updateRecord('sysapproval_approver', approval.sys_id, {
+                state: 'approved',
+                comments: 'Auto-approved by test framework'
+              });
+              
+              if (approveResult.success) {
+                executionResults.approvals_simulated.push({
+                  sys_id: approval.sys_id,
+                  approver: approval.approver.display_value,
+                  approved_at: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+        
+        // Wait before next poll
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+      } catch (error: any) {
+        executionResults.errors.push(error.message);
+        executionResults.status = 'error';
+        break;
+      }
+    }
+    
+    if (executionResults.status === 'running') {
+      executionResults.status = 'timeout';
+      executionResults.errors.push('Flow execution timed out after 60 seconds');
+    }
+    
+    return executionResults;
+  }
+  
+  private formatTestResults(testResults: any): string {
+    let text = `🧪 Flow Test Results\n${'='.repeat(50)}\n\n`;
+    
+    text += `**Flow ID:** ${testResults.flow_id}\n`;
+    text += `**Test Run ID:** ${testResults.test_run_id}\n\n`;
+    
+    // Test Data Created
+    text += `📋 **Test Data Created:**\n`;
+    if (testResults.created_data.test_user) {
+      text += `  ✅ Test User: ${testResults.created_data.test_user.user_name} (${testResults.created_data.test_user.sys_id})\n`;
+    }
+    
+    if (testResults.created_data.catalog_items.length > 0) {
+      text += `  ✅ Catalog Items: ${testResults.created_data.catalog_items.length} created\n`;
+      testResults.created_data.catalog_items.forEach((item: any) => {
+        text += `     - ${item.name} ($${item.price})\n`;
+      });
+    }
+    
+    // Execution Results
+    text += `\n🚀 **Execution Results:**\n`;
+    text += `  Status: ${testResults.execution_results.status === 'complete' ? '✅' : '❌'} ${testResults.execution_results.status}\n`;
+    
+    if (testResults.execution_results.start_time) {
+      text += `  Start Time: ${testResults.execution_results.start_time}\n`;
+    }
+    
+    if (testResults.execution_results.end_time) {
+      text += `  End Time: ${testResults.execution_results.end_time}\n`;
+    }
+    
+    if (testResults.execution_results.duration_ms) {
+      text += `  Duration: ${(testResults.execution_results.duration_ms / 1000).toFixed(2)}s\n`;
+    }
+    
+    if (testResults.execution_results.approvals_simulated.length > 0) {
+      text += `\n  ✅ Approvals Simulated: ${testResults.execution_results.approvals_simulated.length}\n`;
+      testResults.execution_results.approvals_simulated.forEach((approval: any) => {
+        text += `     - ${approval.approver} at ${approval.approved_at}\n`;
+      });
+    }
+    
+    if (testResults.execution_results.errors.length > 0) {
+      text += `\n  ❌ Errors:\n`;
+      testResults.execution_results.errors.forEach((error: string) => {
+        text += `     - ${error}\n`;
+      });
+    }
+    
+    // Cleanup Status
+    if (testResults.cleanup_status) {
+      text += `\n🧹 **Cleanup Status:**\n`;
+      text += `  User Deleted: ${testResults.cleanup_status.user_deleted ? '✅' : '❌'}\n`;
+      text += `  Catalog Items Deleted: ${testResults.cleanup_status.catalog_items_deleted}\n`;
+      text += `  Requests Cancelled: ${testResults.cleanup_status.requests_cancelled}\n`;
+    }
+    
+    // Recommendations
+    text += `\n💡 **Recommendations:**\n`;
+    if (testResults.execution_results.status === 'complete') {
+      text += `  ✅ Flow executed successfully! Ready for production use.\n`;
+    } else if (testResults.execution_results.status === 'timeout') {
+      text += `  ⚠️ Flow execution timed out. Consider:\n`;
+      text += `     - Checking for infinite loops\n`;
+      text += `     - Reviewing wait conditions\n`;
+      text += `     - Optimizing flow performance\n`;
+    } else {
+      text += `  ❌ Flow execution failed. Please:\n`;
+      text += `     - Review error messages above\n`;
+      text += `     - Check flow configuration\n`;
+      text += `     - Verify all dependencies exist\n`;
+    }
+    
+    return text;
+  }
+  
+  private async handleLinkCatalogToFlow(args: any) {
+    const {
+      catalog_item_id,
+      flow_id,
+      link_type = 'flow_catalog_process',
+      variable_mapping = [],
+      trigger_condition = 'current.stage == "request_approved"',
+      execution_options = {},
+      test_link = false
+    } = args;
+    
+    logger.info(`Linking catalog item ${catalog_item_id} to flow ${flow_id}`, {
+      link_type,
+      variable_mapping_count: variable_mapping.length
+    });
+    
+    const linkResults = {
+      catalog_item: null as any,
+      flow: null as any,
+      link_created: false,
+      link_details: null as any,
+      variable_mappings: [],
+      test_results: null as any,
+      errors: [] as string[]
+    };
+    
+    try {
+      // Step 1: Find the catalog item
+      const catalogResult = await this.client.searchRecords(
+        'sc_cat_item',
+        `sys_id=${catalog_item_id}^ORname=${catalog_item_id}`,
+        1
+      );
+      
+      if (!catalogResult.success || !catalogResult.data?.result?.length) {
+        throw new Error(`Catalog item not found: ${catalog_item_id}`);
+      }
+      
+      linkResults.catalog_item = {
+        sys_id: catalogResult.data.result[0].sys_id,
+        name: catalogResult.data.result[0].name,
+        category: catalogResult.data.result[0].sc_categories?.display_value
+      };
+      
+      // Step 2: Find the flow
+      const flowResult = await this.client.searchRecords(
+        'sys_hub_flow',
+        `sys_id=${flow_id}^ORname=${flow_id}`,
+        1
+      );
+      
+      if (!flowResult.success || !flowResult.data?.result?.length) {
+        throw new Error(`Flow not found: ${flow_id}`);
+      }
+      
+      linkResults.flow = {
+        sys_id: flowResult.data.result[0].sys_id,
+        name: flowResult.data.result[0].name,
+        type: flowResult.data.result[0].type
+      };
+      
+      // Step 3: Create the link based on link_type
+      switch (link_type) {
+        case 'flow_catalog_process': {
+          // Modern approach: Use Flow Designer catalog process
+          const processData = {
+            catalog_item: linkResults.catalog_item.sys_id,
+            flow: linkResults.flow.sys_id,
+            active: true,
+            condition: trigger_condition,
+            run_as: execution_options.run_as || 'system',
+            wait_for_completion: execution_options.wait_for_completion !== false
+          };
+          
+          const processResult = await this.client.createRecord('sc_cat_item_producer', processData);
+          
+          if (processResult.success && processResult.data?.result) {
+            linkResults.link_created = true;
+            linkResults.link_details = {
+              type: 'flow_catalog_process',
+              sys_id: processResult.data.result.sys_id,
+              table: 'sc_cat_item_producer'
+            };
+            
+            // Create variable mappings
+            for (const mapping of variable_mapping) {
+              const mappingData = {
+                producer: processResult.data.result.sys_id,
+                catalog_variable: mapping.catalog_variable,
+                flow_input: mapping.flow_input,
+                transform_script: mapping.transform || ''
+              };
+              
+              const mappingResult = await this.client.createRecord('sc_cat_item_producer_mapping', mappingData);
+              
+              if (mappingResult.success) {
+                linkResults.variable_mappings.push({
+                  catalog_variable: mapping.catalog_variable,
+                  flow_input: mapping.flow_input,
+                  mapping_sys_id: mappingResult.data?.result?.sys_id
+                });
+              }
+            }
+          }
+          break;
+        }
+        
+        case 'workflow': {
+          // Legacy approach: Direct workflow assignment
+          const updateData = {
+            workflow: linkResults.flow.sys_id,
+            no_order: false,
+            no_proceed_checkout: false,
+            no_quantity: false,
+            no_delivery_time: false
+          };
+          
+          const updateResult = await this.client.updateRecord(
+            'sc_cat_item',
+            linkResults.catalog_item.sys_id,
+            updateData
+          );
+          
+          if (updateResult.success) {
+            linkResults.link_created = true;
+            linkResults.link_details = {
+              type: 'workflow',
+              field: 'workflow',
+              value: linkResults.flow.sys_id
+            };
+          }
+          break;
+        }
+        
+        case 'process_engine': {
+          // Process Engine approach
+          const engineData = {
+            catalog_item: linkResults.catalog_item.sys_id,
+            engine_type: 'flow',
+            engine_id: linkResults.flow.sys_id,
+            active: true,
+            order: 100,
+            condition: trigger_condition
+          };
+          
+          const engineResult = await this.client.createRecord('sc_process_flow', engineData);
+          
+          if (engineResult.success && engineResult.data?.result) {
+            linkResults.link_created = true;
+            linkResults.link_details = {
+              type: 'process_engine',
+              sys_id: engineResult.data.result.sys_id,
+              table: 'sc_process_flow'
+            };
+          }
+          break;
+        }
+      }
+      
+      // Step 4: Test the link if requested
+      if (test_link && linkResults.link_created) {
+        logger.info('Testing catalog-flow link with sample request');
+        
+        const testRequestData = {
+          cat_item: linkResults.catalog_item.sys_id,
+          requested_for: 'admin', // Default to admin user
+          quantity: 1,
+          comments: `Test request for catalog-flow link verification [${new Date().toISOString()}]`
+        };
+        
+        // Add any mapped variables with test values
+        for (const mapping of linkResults.variable_mappings) {
+          testRequestData[`variables.${mapping.catalog_variable}`] = 'Test Value';
+        }
+        
+        const testResult = await this.client.createRecord('sc_request', testRequestData);
+        
+        if (testResult.success && testResult.data?.result) {
+          linkResults.test_results = {
+            request_created: true,
+            request_number: testResult.data.result.number,
+            request_sys_id: testResult.data.result.sys_id,
+            status: 'Check the request in ServiceNow to verify flow execution'
+          };
+        } else {
+          linkResults.test_results = {
+            request_created: false,
+            error: 'Failed to create test request'
+          };
+        }
+      }
+      
+      // Format results
+      let resultText = `🔗 Catalog-Flow Link Results\n${'='.repeat(50)}\n\n`;
+      
+      resultText += `**Catalog Item:** ${linkResults.catalog_item.name} (${linkResults.catalog_item.sys_id})\n`;
+      resultText += `**Flow:** ${linkResults.flow.name} (${linkResults.flow.sys_id})\n`;
+      resultText += `**Link Type:** ${link_type}\n\n`;
+      
+      if (linkResults.link_created) {
+        resultText += `✅ **Link Created Successfully!**\n`;
+        resultText += `   Type: ${linkResults.link_details.type}\n`;
+        
+        if (linkResults.link_details.sys_id) {
+          resultText += `   Record: ${linkResults.link_details.table} (${linkResults.link_details.sys_id})\n`;
+        }
+        
+        if (linkResults.variable_mappings.length > 0) {
+          resultText += `\n📋 **Variable Mappings Created:**\n`;
+          linkResults.variable_mappings.forEach(mapping => {
+            resultText += `   - ${mapping.catalog_variable} → ${mapping.flow_input}\n`;
+          });
+        }
+        
+        if (linkResults.test_results) {
+          resultText += `\n🧪 **Test Results:**\n`;
+          if (linkResults.test_results.request_created) {
+            resultText += `   ✅ Test request created: ${linkResults.test_results.request_number}\n`;
+            resultText += `   📍 ${linkResults.test_results.status}\n`;
+          } else {
+            resultText += `   ❌ ${linkResults.test_results.error}\n`;
+          }
+        }
+        
+        resultText += `\n💡 **Next Steps:**\n`;
+        resultText += `1. Test the catalog item by creating a request\n`;
+        resultText += `2. Verify the flow executes with correct inputs\n`;
+        resultText += `3. Monitor the request fulfillment process\n`;
+        
+        if (link_type === 'flow_catalog_process') {
+          resultText += `\n📝 **Note:** Using modern Flow Designer catalog process\n`;
+          resultText += `   - Flow will trigger on: ${trigger_condition}\n`;
+          resultText += `   - Execution context: ${execution_options.run_as || 'system'}\n`;
+        }
+      } else {
+        resultText += `❌ **Failed to create link**\n`;
+        if (linkResults.errors.length > 0) {
+          resultText += `\nErrors:\n`;
+          linkResults.errors.forEach(error => {
+            resultText += `   - ${error}\n`;
+          });
+        }
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: resultText
+        }]
+      };
+      
+    } catch (error: any) {
+      logger.error('Error linking catalog to flow:', error);
+      linkResults.errors.push(error.message);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ Failed to link catalog to flow\n\nError: ${error.message}\n\n` +
+                `💡 Troubleshooting:\n` +
+                `1. Verify catalog item exists: ${catalog_item_id}\n` +
+                `2. Verify flow exists: ${flow_id}\n` +
+                `3. Check permissions for creating ${link_type} links\n` +
+                `4. Ensure flow is active and published\n\n` +
+                `Results: ${JSON.stringify(linkResults, null, 2)}`
+        }]
+      };
+    }
+  }
+  
+  private getServiceNowUrl(): string {
+    // This would need to get the instance URL from credentials
+    return 'https://instance.service-now.com';
   }
 
   async run() {

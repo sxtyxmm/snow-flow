@@ -31,19 +31,19 @@ export class AgentDetector {
       requiredFor: ['applications', 'complex_systems', 'integrations']
     },
     coder: {
-      keywords: ['implement', 'code', 'script', 'function', 'api', 'endpoint', 'logic', 'algorithm', 'business_rule', 'schrijf', 'write', 'develop', 'programmeer'],
+      keywords: ['implement', 'code', 'script', 'function', 'api', 'endpoint', 'logic', 'algorithm', 'business_rule', 'schrijf', 'write', 'develop', 'programmeer', 'implementeer', 'maak', 'bouw', 'build', 'create', 'codeer'],
       confidence: 0.8,
       description: 'Code implementation and development',
       requiredFor: ['scripts', 'functions', 'business_rules', 'apis']
     },
     researcher: {
-      keywords: ['research', 'analyze', 'investigate', 'study', 'explore', 'understand', 'learn', 'discover'],
+      keywords: ['research', 'analyze', 'investigate', 'study', 'explore', 'understand', 'learn', 'discover', 'onderzoek', 'analyseer', 'bestudeer', 'ontdek', 'begrijp'],
       confidence: 0.7,
       description: 'Research and analysis',
       requiredFor: ['requirements', 'best_practices', 'patterns']
     },
     tester: {
-      keywords: ['test', 'verify', 'validate', 'check', 'ensure', 'quality', 'bug', 'debug'],
+      keywords: ['test', 'verify', 'validate', 'check', 'ensure', 'quality', 'bug', 'debug', 'controleer', 'valideer', 'kwaliteit', 'testen'],
       confidence: 0.8,
       description: 'Testing and quality assurance',
       requiredFor: ['validation', 'quality_control', 'debugging']
@@ -68,13 +68,13 @@ export class AgentDetector {
     },
     // ServiceNow specific agents
     flow_designer: {
-      keywords: ['flow', 'workflow', 'process', 'automation', 'approval', 'routing', 'trigger'],
+      keywords: ['flow', 'workflow', 'process', 'automation', 'approval', 'routing', 'trigger', 'proces', 'goedkeuring', 'automatisering', 'automatiseer', 'doorloop', 'stroom'],
       confidence: 0.9,
       description: 'ServiceNow Flow Designer specialist',
       requiredFor: ['flows', 'workflows', 'approvals', 'automation']
     },
     widget_builder: {
-      keywords: ['widget', 'portal', 'dashboard', 'ui', 'interface', 'frontend', 'display'],
+      keywords: ['widget', 'portal', 'dashboard', 'ui', 'interface', 'frontend', 'display', 'weergave', 'scherm', 'component', 'homepage'],
       confidence: 0.9,
       description: 'Service Portal widget development',
       requiredFor: ['widgets', 'portals', 'dashboards', 'ui_components']
@@ -107,7 +107,7 @@ export class AgentDetector {
     'dashboard': ['widget_builder', 'database_expert', 'coder']
   };
 
-  static analyzeTask(objective: string): TaskAnalysis {
+  static analyzeTask(objective: string, userMaxAgents?: number): TaskAnalysis {
     const lowerObjective = objective.toLowerCase();
     const words = lowerObjective.split(/\s+/);
     
@@ -118,7 +118,7 @@ export class AgentDetector {
     const primaryAgent = this.determinePrimaryAgent(agentCapabilities);
     
     // Determine supporting agents
-    const supportingAgents = this.determineSupportingAgents(agentCapabilities, primaryAgent);
+    const supportingAgents = this.determineSupportingAgents(agentCapabilities, primaryAgent, userMaxAgents);
     
     // Assess complexity
     const complexity = this.assessComplexity(objective, agentCapabilities);
@@ -189,21 +189,50 @@ export class AgentDetector {
     return capabilities[0].type;
   }
 
-  private static determineSupportingAgents(capabilities: AgentCapability[], primaryAgent: string): string[] {
-    const supportingAgents = capabilities
+  private static determineSupportingAgents(capabilities: AgentCapability[], primaryAgent: string, userMaxAgents?: number): string[] {
+    // Calculate how many supporting agents we need based on user request
+    const requestedSupportingCount = userMaxAgents ? Math.max(userMaxAgents - 1, 1) : 5; // -1 for primary agent
+    
+    // Start with high-confidence agents (confidence > 0.3)
+    let supportingAgents = capabilities
       .filter(c => c.type !== primaryAgent && c.confidence > 0.3)
-      .slice(0, 5) // Max 5 supporting agents
+      .slice(0, requestedSupportingCount)
       .map(c => c.type);
     
-    // Always include orchestrator for complex tasks
-    if (capabilities.length > 3 && !supportingAgents.includes('orchestrator')) {
-      supportingAgents.push('orchestrator');
+    // If user wants more agents and we have fewer than requested, add lower-confidence agents
+    if (userMaxAgents && supportingAgents.length < requestedSupportingCount) {
+      const remainingSlots = requestedSupportingCount - supportingAgents.length;
+      const lowConfidenceAgents = capabilities
+        .filter(c => c.type !== primaryAgent && c.confidence <= 0.3 && c.confidence > 0)
+        .slice(0, remainingSlots)
+        .map(c => c.type);
+      
+      supportingAgents = [...supportingAgents, ...lowConfidenceAgents];
     }
     
-    // Always include tester for development tasks
+    // Always include orchestrator for complex tasks (if not already included)
+    if (capabilities.length > 3 && !supportingAgents.includes('orchestrator')) {
+      // Only add if we have room or if no max specified
+      if (!userMaxAgents || supportingAgents.length < requestedSupportingCount) {
+        supportingAgents.push('orchestrator');
+      }
+    }
+    
+    // Always include tester for development tasks (if not already included)
     const developmentAgents = ['coder', 'architect', 'flow_designer', 'widget_builder'];
     if (developmentAgents.includes(primaryAgent) && !supportingAgents.includes('tester')) {
-      supportingAgents.push('tester');
+      // Only add if we have room or if no max specified
+      if (!userMaxAgents || supportingAgents.length < requestedSupportingCount) {
+        supportingAgents.push('tester');
+      } else if (userMaxAgents && supportingAgents.length >= requestedSupportingCount) {
+        // Replace least relevant agent with tester for development tasks
+        supportingAgents[supportingAgents.length - 1] = 'tester';
+      }
+    }
+    
+    // Ensure we don't exceed the requested count
+    if (userMaxAgents && supportingAgents.length > requestedSupportingCount) {
+      supportingAgents = supportingAgents.slice(0, requestedSupportingCount);
     }
     
     return supportingAgents;
@@ -230,35 +259,87 @@ export class AgentDetector {
     const artifacts: string[] = [];
     const lowerObjective = objective.toLowerCase();
     
-    // Check for explicit artifact mentions
-    for (const [artifact, _] of Object.entries(this.SERVICENOW_ARTIFACTS)) {
-      if (lowerObjective.includes(artifact)) {
-        artifacts.push(artifact);
+    // Enhanced artifact detection with Dutch support and context
+    const artifactPatterns = {
+      'widget': [
+        'widget', 'widgets', 
+        'service portal', 'portal component', 'dashboard component',
+        'ui component', 'interface', 'display', 'homepage'
+      ],
+      'flow': [
+        'flow', 'flows', 'workflow', 'workflows',
+        'process', 'processes', 'automation', 'automate',
+        'approval', 'approvals', 'routing', 'trigger'
+      ],
+      'application': [
+        'application', 'applications', 'app', 'apps',
+        'applicatie', 'applicaties', 'system', 'systeem',
+        'complete', 'comprehensive', 'full solution'
+      ],
+      'script': [
+        'script', 'scripts', 'code', 'function', 'functions',
+        'business rule', 'business rules', 'client script', 'server script',
+        'script include', 'javascript', 'logic', 'programmeer'
+      ],
+      'business_rule': [
+        'business rule', 'business rules', 'business_rule',
+        'rule', 'rules', 'validation', 'trigger logic',
+        'bedrijfsregel', 'regel', 'regels'
+      ],
+      'integration': [
+        'integration', 'integrations', 'api', 'apis',
+        'rest', 'soap', 'webhook', 'external', 'third party',
+        'integratie', 'koppeling', 'verbinding'
+      ],
+      'table': [
+        'table', 'tables', 'database', 'data',
+        'record', 'records', 'field', 'fields',
+        'tabel', 'tabellen', 'gegevens'
+      ],
+      'report': [
+        'report', 'reports', 'reporting', 'analytics',
+        'dashboard', 'chart', 'graph', 'metrics',
+        'rapport', 'rapporten', 'rapportage'
+      ]
+    };
+
+    // Check each artifact type with enhanced patterns
+    for (const [artifactType, patterns] of Object.entries(artifactPatterns)) {
+      for (const pattern of patterns) {
+        if (lowerObjective.includes(pattern)) {
+          if (!artifacts.includes(artifactType)) {
+            artifacts.push(artifactType);
+          }
+          break; // Found one pattern for this type, move to next type
+        }
       }
     }
-    
-    // Check for business rule specifically
-    if (lowerObjective.includes('business rule') || lowerObjective.includes('business_rule')) {
-      if (!artifacts.includes('business_rule')) {
-        artifacts.push('business_rule');
+
+    // Context-based detection for common development terms
+    const developmentContext = {
+      'widget': ['voor', 'voor een', 'show', 'display', 'interface', 'homepage', 'portal'],
+      'flow': ['goedkeuring', 'approval', 'proces', 'automatiseer', 'trigger', 'wanneer'],
+      'script': ['implementeer', 'implement', 'schrijf', 'write', 'code', 'function'],
+      'table': ['opslaan', 'save', 'store', 'data', 'informatie', 'gegevens'],
+      'report': ['analyse', 'analyze', 'overview', 'overzicht', 'statistieken', 'metrics']
+    };
+
+    // Add context-based detection
+    for (const [artifactType, contextWords] of Object.entries(developmentContext)) {
+      for (const contextWord of contextWords) {
+        if (lowerObjective.includes(contextWord) && !artifacts.includes(artifactType)) {
+          // Only add if we have creation/development intent
+          const creationWords = ['create', 'maak', 'bouw', 'build', 'develop', 'implementeer', 'schrijf', 'write'];
+          if (creationWords.some(word => lowerObjective.includes(word))) {
+            artifacts.push(artifactType);
+            break;
+          }
+        }
       }
     }
-    
-    // Check for script include
-    if (lowerObjective.includes('script include') || lowerObjective.includes('script_include')) {
-      if (!artifacts.includes('script')) {
-        artifacts.push('script');
-      }
-    }
-    
-    // Check for client script
-    if (lowerObjective.includes('client script') || lowerObjective.includes('client_script')) {
-      if (!artifacts.includes('script')) {
-        artifacts.push('script');
-      }
-    }
-    
-    return artifacts;
+
+    // Remove duplicates and return
+    return [...new Set(artifacts)];
   }
 
   private static requiresUpdateSet(objective: string, artifacts: string[]): boolean {
@@ -268,8 +349,10 @@ export class AgentDetector {
     const developmentKeywords = [
       'create', 'build', 'implement', 'develop', 'make', 'generate', 'add', 
       'bouw', 'maak', 'schrijf', 'write', 'update', 'modify', 'change',
+      'implementeer', 'ontwikkel', 'codeer', 'programmeer', 'stel', 'wijzig',
       'business rule', 'script', 'flow', 'widget', 'workflow', 'client script',
-      'ui action', 'scheduled job', 'transform', 'integration'
+      'ui action', 'scheduled job', 'transform', 'integration',
+      'bedrijfsregel', 'proces', 'goedkeuring', 'automatisering'
     ];
     const hasDevelopmentKeywords = developmentKeywords.some(keyword => lowerObjective.includes(keyword));
     
@@ -290,7 +373,11 @@ export class AgentDetector {
 
   private static requiresApplication(objective: string, artifacts: string[]): boolean {
     // Require new application for comprehensive systems
-    const applicationKeywords = ['application', 'app', 'system', 'complete', 'full', 'comprehensive', 'applicatie'];
+    const applicationKeywords = [
+      'application', 'app', 'system', 'complete', 'full', 'comprehensive', 
+      'applicatie', 'applicaties', 'systeem', 'volledig', 'compleet',
+      'totaal', 'geheel', 'pakket', 'oplossing', 'solution'
+    ];
     const hasApplicationKeywords = applicationKeywords.some(keyword => objective.toLowerCase().includes(keyword));
     
     // Or if multiple complex artifacts are involved
@@ -310,13 +397,19 @@ export class AgentDetector {
     if (artifacts.includes('report') || artifacts.includes('dashboard')) return 'reporting_development';
     
     // Fallback to general development
-    const developmentKeywords = ['create', 'build', 'implement', 'develop', 'make', 'generate', 'bouw', 'maak'];
+    const developmentKeywords = [
+      'create', 'build', 'implement', 'develop', 'make', 'generate', 
+      'bouw', 'maak', 'schrijf', 'implementeer', 'ontwikkel', 'codeer'
+    ];
     const hasDevelopmentKeywords = developmentKeywords.some(keyword => objective.toLowerCase().includes(keyword));
     
     if (hasDevelopmentKeywords) return 'general_development';
     
     // Research or analysis tasks
-    const researchKeywords = ['research', 'analyze', 'investigate', 'study', 'explore'];
+    const researchKeywords = [
+      'research', 'analyze', 'investigate', 'study', 'explore',
+      'onderzoek', 'analyseer', 'bestudeer', 'ontdek'
+    ];
     const hasResearchKeywords = researchKeywords.some(keyword => objective.toLowerCase().includes(keyword));
     
     if (hasResearchKeywords) return 'research_task';

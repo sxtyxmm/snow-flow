@@ -626,6 +626,7 @@ export class GlobalScopeStrategy {
       scope: `x_temp_${Date.now()}`,
       version: '1.0.0',
       short_description: `Temporary application for ${baseName}`,
+      description: `Temporary application for scoped deployment of ${baseName}`,
       vendor: 'System',
       vendor_prefix: 'x',
       active: true

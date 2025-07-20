@@ -103,6 +103,17 @@ export class EnhancedFlowComposer {
   }
 
   /**
+   * Public getters for accessing private components
+   */
+  public get scopeManagerInstance(): ScopeManager {
+    return this.scopeManager;
+  }
+
+  public get patternTemplatesInstance(): FlowPatternTemplates {
+    return this.patternTemplates;
+  }
+
+  /**
    * Analyze artifact API to understand inputs/outputs
    */
   async analyzeArtifactAPI(artifact: any): Promise<ArtifactInterface> {

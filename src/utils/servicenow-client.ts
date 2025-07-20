@@ -72,44 +72,82 @@ export class ServiceNowClient {
     });
     this.actionTypeCache = new ActionTypeCache(this);
     
-    // Add request interceptor for authentication
+    // Add request interceptor for authentication with automatic token refresh
     this.client.interceptors.request.use(async (config) => {
       await this.ensureAuthenticated();
       
-      if (this.credentials?.accessToken) {
-        config.headers['Authorization'] = `Bearer ${this.credentials.accessToken}`;
+      // Get fresh access token (automatically refreshes if expired)
+      const accessToken = await this.oauth.getAccessToken();
+      
+      if (accessToken) {
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
+        // Update local credentials with fresh token
+        if (this.credentials) {
+          this.credentials.accessToken = accessToken;
+        }
+      } else {
+        console.warn('⚠️ No access token available - request may fail');
       }
       
       return config;
     });
     
-    // Add response interceptor for error handling
+    // Add response interceptor for error handling with retry logic
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
-          console.log('🔄 Access token expired, refreshing...');
+        const originalRequest = error.config;
+        
+        // Check if this is a 401 error and we haven't already tried to refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          console.log('🔄 Received 401 error, attempting token refresh...');
           const refreshResult = await this.oauth.refreshAccessToken();
+          
           if (refreshResult.success && refreshResult.accessToken) {
+            console.log('✅ Token refreshed successfully, retrying request...');
+            
+            // Update local credentials
+            if (this.credentials) {
+              this.credentials.accessToken = refreshResult.accessToken;
+            }
+            
             // Update the authorization header with new token
-            error.config.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`;
+            originalRequest.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`;
+            
             // Retry the original request
-            return this.client.request(error.config);
+            return this.client.request(originalRequest);
+          } else {
+            console.error('❌ Token refresh failed:', refreshResult.error);
+            console.log('💡 Please run "snow-flow auth login" to re-authenticate');
           }
         }
+        
+        // Log other errors for debugging
+        if (error.response?.status === 403) {
+          console.error('❌ 403 Forbidden - Check ServiceNow permissions');
+        } else if (error.response?.status >= 500) {
+          console.error('❌ ServiceNow server error:', error.response.status);
+        }
+        
         return Promise.reject(error);
       }
     );
   }
 
   /**
+   * Public getter for credentials
+   */
+  public get credentialsInstance(): ServiceNowCredentials | null {
+    return this.credentials;
+  }
+
+  /**
    * Ensure we have valid authentication
    */
   private async ensureAuthenticated(): Promise<void> {
-    console.log('🔐 Checking authentication...');
-    
     if (!this.credentials) {
-      console.log('🔍 Loading credentials...');
       this.credentials = await this.oauth.loadCredentials();
     }
     
@@ -118,14 +156,49 @@ export class ServiceNowClient {
       throw new Error('No ServiceNow credentials found. Please run "snow-flow auth login" first.');
     }
     
-    console.log('✅ Credentials loaded, checking if authenticated...');
+    // The OAuth service will handle token refresh automatically
     const isAuth = await this.oauth.isAuthenticated();
     if (!isAuth) {
-      console.error('❌ Authentication expired');
+      console.error('❌ Authentication expired and refresh failed');
       throw new Error('ServiceNow authentication expired. Please run "snow-flow auth login" again.');
     }
-    
-    console.log('✅ Authentication successful');
+  }
+
+  /**
+   * Proactively refresh token if it's about to expire
+   * Useful for long-running operations
+   */
+  public async refreshTokenIfNeeded(): Promise<boolean> {
+    try {
+      const tokens = await this.oauth.loadTokens();
+      if (!tokens) return false;
+      
+      const expiresAt = new Date(tokens.expiresAt);
+      const now = new Date();
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      
+      // If token expires in the next 5 minutes, refresh it
+      if (expiresAt <= fiveMinutesFromNow) {
+        console.log('🔄 Token expiring soon, refreshing proactively...');
+        const refreshResult = await this.oauth.refreshAccessToken();
+        
+        if (refreshResult.success) {
+          console.log('✅ Token refreshed proactively');
+          if (this.credentials && refreshResult.accessToken) {
+            this.credentials.accessToken = refreshResult.accessToken;
+          }
+          return true;
+        } else {
+          console.error('❌ Proactive token refresh failed');
+          return false;
+        }
+      }
+      
+      return true; // Token still valid
+    } catch (error) {
+      console.error('Error checking token expiry:', error);
+      return false;
+    }
   }
 
   /**
@@ -135,7 +208,11 @@ export class ServiceNowClient {
     if (!this.credentials) {
       throw new Error('No credentials available');
     }
-    return `https://${this.credentials.instance}`;
+    
+    // Remove trailing slash from instance URL to prevent double slashes in API calls
+    const instance = this.credentials.instance.replace(/\/$/, '');
+    
+    return `https://${instance}`;
   }
 
   /**
@@ -149,6 +226,166 @@ export class ServiceNowClient {
       .replace(/_+/g, '_')           // Replace multiple underscores with single
       .replace(/^_|_$/g, '')         // Remove leading/trailing underscores
       .substring(0, 80);             // Limit length to 80 characters
+  }
+
+  /**
+   * Validate deployment permissions and diagnose authentication issues
+   */
+  async validateDeploymentPermissions(): Promise<ServiceNowAPIResponse<any>> {
+    const diagnostics: any = {
+      instance_url: this.getBaseUrl(),
+      timestamp: new Date().toISOString(),
+      tests: {}
+    };
+
+    const tests = [
+      {
+        name: 'Read Access',
+        description: 'Test basic read permissions',
+        test: async () => {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/sys_user?sysparm_limit=1`);
+          return { success: true, data: response.data };
+        }
+      },
+      {
+        name: 'Widget Read Access',
+        description: 'Test Service Portal widget read access',
+        test: async () => {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/sp_widget?sysparm_limit=1`);
+          return { success: true, data: response.data };
+        }
+      },
+      {
+        name: 'Update Set Access',
+        description: 'Test Update Set management permissions',
+        test: async () => {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/sys_update_set?sysparm_limit=1`);
+          return { success: true, data: response.data };
+        }
+      },
+      {
+        name: 'Widget Write Test',
+        description: 'Test Service Portal widget write permissions (dry run)',
+        test: async () => {
+          // Try to create a minimal test widget that we'll immediately delete
+          const testWidget = {
+            name: `test_widget_${Date.now()}`,
+            id: `test_${Date.now()}`,
+            title: 'Test Widget (Will be deleted)',
+            template: '<div>Test</div>',
+            css: '',
+            script: '',
+            option_schema: '[]'
+          };
+          
+          try {
+            const createResponse = await this.client.post(`${this.getBaseUrl()}/api/now/table/sp_widget`, testWidget);
+            const sys_id = createResponse.data.result.sys_id;
+            
+            // Immediately delete the test widget
+            await this.client.delete(`${this.getBaseUrl()}/api/now/table/sp_widget/${sys_id}`);
+            
+            return { success: true, data: { message: 'Widget write permissions confirmed' } };
+          } catch (error) {
+            throw error;
+          }
+        }
+      },
+      {
+        name: 'User Role Check',
+        description: 'Check user roles and permissions',
+        test: async () => {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/sys_user_role?sysparm_query=user=javascript:gs.getUserID()`);
+          return { success: true, data: { roles: response.data.result.map((r: any) => r.role?.display_value || r.role) } };
+        }
+      }
+    ];
+
+    for (const test of tests) {
+      try {
+        console.log(`Running diagnostic: ${test.name}...`);
+        const result = await test.test();
+        diagnostics.tests[test.name] = {
+          status: '✅ PASS',
+          description: test.description,
+          result: result.data,
+          error: null
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        diagnostics.tests[test.name] = {
+          status: '❌ FAIL',
+          description: test.description,
+          result: null,
+          error: errorMessage,
+          http_status: this.extractHttpStatus(errorMessage)
+        };
+      }
+    }
+
+    // Analyze results
+    const failedTests = Object.values(diagnostics.tests).filter((test: any) => test.status.includes('FAIL'));
+    const passedTests = Object.values(diagnostics.tests).filter((test: any) => test.status.includes('PASS'));
+
+    diagnostics.summary = {
+      total_tests: tests.length,
+      passed: passedTests.length,
+      failed: failedTests.length,
+      overall_status: failedTests.length === 0 ? '✅ ALL SYSTEMS GO' : '⚠️ ISSUES DETECTED'
+    };
+
+    // Generate recommendations
+    diagnostics.recommendations = this.generateAuthRecommendations(diagnostics.tests);
+
+    return {
+      success: failedTests.length === 0,
+      data: diagnostics,
+      error: failedTests.length > 0 ? 'Some deployment permissions are missing' : null
+    };
+  }
+
+  /**
+   * Extract HTTP status from error message
+   */
+  private extractHttpStatus(errorMessage: string): number | null {
+    const statusMatch = errorMessage.match(/status code (\d+)/i);
+    return statusMatch ? parseInt(statusMatch[1], 10) : null;
+  }
+
+  /**
+   * Generate authentication recommendations based on test results
+   */
+  private generateAuthRecommendations(tests: any): string[] {
+    const recommendations = [];
+    
+    if (tests['Widget Write Test']?.status.includes('FAIL')) {
+      const error = tests['Widget Write Test'].error;
+      if (error.includes('403')) {
+        recommendations.push('🔐 Widget deployment failed with 403 Forbidden. Check OAuth scopes: ensure \'useraccount\' and \'glide_system_administration\' scopes are enabled');
+        recommendations.push('👤 Verify user has sp_portal_manager or admin role in ServiceNow');
+        recommendations.push('🛡️ Check if instance has deployment restrictions for external applications');
+      }
+      if (error.includes('401')) {
+        recommendations.push('🔑 Authentication failed. Re-run: snow-flow auth login');
+      }
+    }
+
+    if (tests['User Role Check']?.status.includes('PASS')) {
+      const roles = tests['User Role Check'].result?.roles || [];
+      if (!roles.some((role: string) => role.includes('admin') || role.includes('sp_portal'))) {
+        recommendations.push('⚠️ User lacks admin or portal management roles. Contact ServiceNow admin to assign appropriate roles');
+      }
+    }
+
+    if (tests['Update Set Access']?.status.includes('FAIL')) {
+      recommendations.push('📦 Update Set access failed. Ensure user has update_set_manager or admin role');
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('✅ All authentication checks passed! Deployment should work correctly');
+    }
+
+    return recommendations;
   }
 
   /**
@@ -221,7 +458,7 @@ export class ServiceNowClient {
           template: widget.template,
           css: widget.css,
           client_script: widget.client_script,
-          server_script: widget.server_script,
+          script: widget.server_script, // Service Portal uses 'script' not 'server_script'
           option_schema: widget.option_schema || '[]',
           demo_data: widget.demo_data || '{}',
           has_preview: widget.has_preview || false,
@@ -255,9 +492,16 @@ export class ServiceNowClient {
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
       
+      // Map fields for Service Portal widget API
+      const mappedWidget: any = { ...widget };
+      if (mappedWidget.server_script !== undefined) {
+        mappedWidget.script = mappedWidget.server_script;
+        delete mappedWidget.server_script;
+      }
+      
       const response = await this.client.patch(
         `${this.getBaseUrl()}/api/now/table/sp_widget/${sysId}`,
-        widget
+        mappedWidget
       );
       
       console.log('✅ Widget updated successfully!');
@@ -632,6 +876,55 @@ export class ServiceNowClient {
   }
 
   /**
+   * Update a record in any ServiceNow table
+   */
+  async updateRecord(table: string, sysId: string, data: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      await this.ensureAuthenticated();
+      
+      const response = await this.client.patch(
+        `${this.getBaseUrl()}/api/now/table/${table}/${sysId}`,
+        data
+      );
+      
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error(`Failed to update record in ${table}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Delete a record from any ServiceNow table
+   */
+  async deleteRecord(table: string, sysId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      await this.ensureAuthenticated();
+      
+      const response = await this.client.delete(
+        `${this.getBaseUrl()}/api/now/table/${table}/${sysId}`
+      );
+      
+      return {
+        success: true,
+        data: response.data || {}
+      };
+    } catch (error) {
+      console.error(`Failed to delete record from ${table}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
    * Search for available flow actions in ServiceNow
    */
   async searchFlowActions(searchTerm: string): Promise<any> {
@@ -824,9 +1117,113 @@ export class ServiceNowClient {
   }
 
   /**
-   * Create a flow action using discovered ServiceNow action types
+   * Create a Subflow in ServiceNow
    */
-  private async createFlowAction(flowId: string, action: any, order: number): Promise<any> {
+  async createSubflow(subflow: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🔄 Creating Subflow...');
+      console.log(`📋 Subflow: ${subflow.name}`);
+      
+      // Ensure Update Set
+      const updateSetResult = await this.ensureUpdateSet();
+      
+      // Create subflow with inputs/outputs
+      const subflowData = {
+        name: subflow.name,
+        description: subflow.description || `Subflow: ${subflow.name}`,
+        active: subflow.active !== false,
+        internal_name: this.sanitizeInternalName(subflow.name),
+        category: subflow.category || 'custom',
+        type: 'subflow',
+        inputs: JSON.stringify(subflow.inputs || []),
+        outputs: JSON.stringify(subflow.outputs || []),
+        run_as: 'user_who_calls'
+      };
+
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow`,
+        subflowData
+      );
+
+      const subflowId = response.data.result.sys_id;
+
+      // Process flow definition if provided
+      if (subflow.flow_definition) {
+        const definition = typeof subflow.flow_definition === 'string' 
+          ? JSON.parse(subflow.flow_definition) 
+          : subflow.flow_definition;
+
+        // Create activities for the subflow
+        if (definition.activities) {
+          for (let i = 0; i < definition.activities.length; i++) {
+            const activity = definition.activities[i];
+            await this.createFlowActionInstance(subflowId, activity, (i + 1) * 100);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create subflow:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a Flow Action (reusable component)
+   */
+  async createFlowAction(action: any): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('⚡ Creating Flow Action...');
+      console.log(`📋 Action: ${action.name}`);
+      
+      // Ensure Update Set
+      const updateSetResult = await this.ensureUpdateSet();
+      
+      // Create action with inputs/outputs
+      const actionData = {
+        name: action.name,
+        description: action.description || `Action: ${action.name}`,
+        active: action.active !== false,
+        internal_name: this.sanitizeInternalName(action.name),
+        category: action.category || 'custom',
+        type: 'action',
+        action_type: action.action_type || 'custom',
+        inputs: JSON.stringify(action.inputs || []),
+        outputs: JSON.stringify(action.outputs || []),
+        script: action.script || '',
+        accessible_from: 'all' // Make available to all flows
+      };
+
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_action_type_definition`,
+        actionData
+      );
+
+      return {
+        success: true,
+        data: response.data.result
+      };
+    } catch (error) {
+      console.error('❌ Failed to create flow action:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+
+  /**
+   * Create a flow action using discovered ServiceNow action types (private method)
+   */
+  private async createFlowActionPrivate(flowId: string, action: any, order: number): Promise<any> {
     try {
       console.log(`Creating flow action: ${action.type} - ${action.name}`);
       
@@ -1572,6 +1969,43 @@ export class ServiceNowClient {
   }
 
   /**
+   * Activate an Update Set by setting it as current
+   */
+  async activateUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🔄 Activating Update Set...');
+      
+      // Set the update set as current
+      const result = await this.setCurrentUpdateSet(updateSetId);
+      
+      if (result.success) {
+        // Also ensure the update set is in progress state
+        const updateResponse = await this.client.patch(
+          `${this.getBaseUrl()}/api/now/table/sys_update_set/${updateSetId}`,
+          {
+            state: 'in_progress'
+          }
+        );
+        
+        console.log('✅ Update Set activated successfully!');
+        
+        return {
+          success: true,
+          data: updateResponse.data.result
+        };
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to activate Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
    * Preview Update Set changes
    */
   async previewUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
@@ -1801,6 +2235,76 @@ export class ServiceNowClient {
       console.error('Failed to create flow connection:', error);
       // Don't throw - connections might work differently in some versions
       return null;
+    }
+  }
+
+  /**
+   * Generic GET method for ServiceNow API calls
+   */
+  async get(endpoint: string, params?: any): Promise<any> {
+    try {
+      await this.ensureAuthenticated();
+      const url = endpoint.startsWith('http') ? endpoint : `${this.getBaseUrl()}${endpoint}`;
+      const response = await this.client.get(url, { params });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generic POST method for ServiceNow API calls
+   */
+  async post(endpoint: string, data?: any): Promise<any> {
+    try {
+      await this.ensureAuthenticated();
+      const url = endpoint.startsWith('http') ? endpoint : `${this.getBaseUrl()}${endpoint}`;
+      const response = await this.client.post(url, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generic PUT method for ServiceNow API calls
+   */
+  async put(endpoint: string, data?: any): Promise<any> {
+    try {
+      await this.ensureAuthenticated();
+      const url = endpoint.startsWith('http') ? endpoint : `${this.getBaseUrl()}${endpoint}`;
+      const response = await this.client.put(url, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generic PATCH method for ServiceNow API calls
+   */
+  async patch(endpoint: string, data?: any): Promise<any> {
+    try {
+      await this.ensureAuthenticated();
+      const url = endpoint.startsWith('http') ? endpoint : `${this.getBaseUrl()}${endpoint}`;
+      const response = await this.client.patch(url, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generic DELETE method for ServiceNow API calls
+   */
+  async delete(endpoint: string): Promise<any> {
+    try {
+      await this.ensureAuthenticated();
+      const url = endpoint.startsWith('http') ? endpoint : `${this.getBaseUrl()}${endpoint}`;
+      const response = await this.client.delete(url);
+      return response.data;
+    } catch (error) {
+      throw error;
     }
   }
 }

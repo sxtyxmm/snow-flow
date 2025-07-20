@@ -1138,7 +1138,7 @@ ${flowInstruction.recommendations?.map((rec: string, index: number) => `${index 
       };
 
       // Use the composer's scope manager for analysis
-      const scopeAnalysis = await this.composer.scopeManager?.analyzeOptimalScope(deploymentContext);
+      const scopeAnalysis = await this.composer.scopeManagerInstance.makeScopeDecision(deploymentContext);
 
       return {
         content: [
@@ -1211,7 +1211,7 @@ ${scopeAnalysis?.recommendations?.map((rec: string, index: number) => `${index +
         minimumConfidence: args.minimum_confidence || 0.6
       });
 
-      const matchingResults = await this.composer.patternTemplates?.findMatchingTemplates(args.instruction);
+      const matchingResults = await this.composer.patternTemplatesInstance.findMatchingTemplates(args.instruction);
 
       // Filter by minimum confidence if specified
       const filteredResults = matchingResults?.filter((result: any) => 
