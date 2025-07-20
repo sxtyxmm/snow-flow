@@ -2351,7 +2351,7 @@ export class EnhancedFlowComposer {
           table: flowDefinition.table,
           scope: deploymentResult.scope,
           domain: deploymentResult.domain,
-          url: `https://${process.env.SNOW_INSTANCE}/$flow-designer.do#/flow/${deploymentResult.artifactId}`,
+          url: `https://${process.env.SNOW_INSTANCE}/nav_to.do?uri=sys_hub_flow.do?sys_id=${deploymentResult.artifactId}`,
           actions_created: flowDefinition.activities?.length || 0,
           scope_strategy: {
             selectedScope: deploymentResult.scope,

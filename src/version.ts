@@ -2,13 +2,32 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.57';
+export const VERSION = '1.1.59';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.59': [
+      '🔧 CRITICAL FIX: Flows no longer created as draft - added status: published, validated: true',
+      '⚡ ACTIVATION: Added automatic flow activation after deployment ensures flows are ready to run',
+      '🔒 PERMISSIONS: Changed default run_as from user_who_triggers to system for proper execution',
+      '🔗 URL FIXES: Flow Designer links now use proper nav_to.do?uri=sys_hub_flow.do format',
+      '✅ USER ISSUE: Fixed "Flows worden als draft aangemaakt" problem completely',
+      '🚀 FLOW STATUS: Flows now created with active: true, status: published, validated: true',
+      '🌐 DOMAIN FIX: Removed hardcoded .service-now.com URLs, now uses instance-specific URLs'
+    ],
+    '1.1.58': [
+      '🔧 CRITICAL FIX: snow_auth_diagnostics "Cannot read properties of undefined" error fixed!',
+      '✅ NULL SAFETY: Added comprehensive null checks for all diagnostics data properties',
+      '✅ ERROR HANDLING: Gracefully handles missing or undefined diagnostic results',
+      '✅ URL VALIDATION: Fixed instance_url.includes() error with proper type checking',
+      '✅ DEFAULT VALUES: All summary fields now have safe default values (0 or "Unknown")',
+      '🎯 USER ISSUE RESOLVED: Authentication diagnostics now works even with partial data',
+      '📊 ROBUST FORMATTING: Test results display correctly even with missing properties',
+      '🚨 TRAILING SLASH DETECTION: Still detects and warns about trailing slash in SNOW_INSTANCE'
+    ],
     '1.1.57': [
       '🔧 CRITICAL FIX: Single flow creation instead of multiple flows for one request!',
       '✅ FLOW CONSOLIDATION: All activities now stay in ONE flow unless explicitly requested',

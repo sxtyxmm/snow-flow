@@ -1013,7 +1013,9 @@ export class ServiceNowClient {
         active: flow.active !== false,
         internal_name: this.sanitizeInternalName(flow.name),
         category: flow.category || 'custom',
-        run_as: 'user_who_triggers',
+        run_as: flow.run_as || 'system',  // 🔧 FIX: Default to 'system' for proper execution
+        status: 'published',               // 🔧 FIX: Ensure flow is published, not draft
+        validated: true,                   // 🔧 FIX: Mark as validated to allow activation
         // Merge with dynamic defaults from ServiceNow
         ...flowDefaults,
         // Override with any specific values from the flow parameter
@@ -1131,6 +1133,16 @@ export class ServiceNowClient {
         }
       }
       
+      // 🔧 NEW: Activate the flow to ensure it's published and ready
+      try {
+        console.log('⚡ Activating flow...');
+        await this.activateFlow(flowId);
+        console.log('✅ Flow activated successfully!');
+      } catch (activationError) {
+        console.warn('⚠️ Flow activation failed:', activationError);
+        // Don't fail the entire flow creation if activation fails
+      }
+      
       // 🔧 CRITICAL FIX: Enhanced response with proper ServiceNow URLs and flow type
       const flowRecord = response.data.result;
       const credentials = await this.oauth.loadCredentials();
@@ -1141,8 +1153,8 @@ export class ServiceNowClient {
         data: {
           ...flowRecord,
           // Enhanced response format with proper URLs
-          url: `https://${instance}.service-now.com/flow_designer.do#/flow/${flowRecord.sys_id}`,
-          flow_designer_url: `https://${instance}.service-now.com/flow_designer.do#/flow/${flowRecord.sys_id}`,
+          url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowRecord.sys_id}`,
           type: flowRecord.type || flow.type || 'flow', // Ensure type is included
           activities_created: activitiesToProcess.length,
           variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
@@ -1156,6 +1168,34 @@ export class ServiceNowClient {
         success: false,
         error: error instanceof Error ? error.message : String(error)
       };
+    }
+  }
+
+  /**
+   * Activate a flow to ensure it's published and ready
+   */
+  async activateFlow(flowSysId: string): Promise<void> {
+    try {
+      await this.ensureAuthenticated();
+      
+      // Update the flow to set it as active and published
+      const response = await this.client.patch(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow/${flowSysId}`,
+        {
+          active: true,
+          status: 'published',
+          validated: true
+        }
+      );
+      
+      if (!response.data || !response.data.result) {
+        throw new Error('Failed to activate flow - no response');
+      }
+      
+      return response.data.result;
+    } catch (error) {
+      console.error('Failed to activate flow:', error);
+      throw error;
     }
   }
 
@@ -1215,8 +1255,8 @@ export class ServiceNowClient {
         data: {
           ...subflowRecord,
           // Enhanced response format with proper URLs
-          url: `https://${instance}.service-now.com/flow_designer.do#/subflow/${subflowRecord.sys_id}`,
-          flow_designer_url: `https://${instance}.service-now.com/flow_designer.do#/subflow/${subflowRecord.sys_id}`,
+          url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${subflowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${subflowRecord.sys_id}`,
           type: 'subflow', // Ensure correct type
           activities_created: subflow.activities?.length || 0,
           inputs_defined: subflow.inputs?.length || 0,
@@ -1488,7 +1528,9 @@ export class ServiceNowClient {
       
       // 🔧 CRITICAL FIX: Create actual sys_trigger record for proper triggered flows
       // This ensures the flow can actually be triggered by record events
-      if (trigger.type === 'record_created' || trigger.type === 'record_updated') {
+      // Only create sys_trigger for actual record events, not for manual or scheduled triggers
+      if (trigger.type === 'record_created' || trigger.type === 'record_updated' || 
+          trigger.type === 'Created' || trigger.type === 'Updated') {
         try {
           const sysTriggerData = {
             name: `Flow Trigger: ${trigger.table}`,

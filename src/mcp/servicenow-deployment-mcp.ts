@@ -1167,7 +1167,7 @@ Use \`snow_deployment_debug\` for more information about this session.`,
       const flowUrl = result.success && result.data 
         ? (usedFallback 
            ? `https://${credentials?.instance}/sys_script.do?sys_id=${result.data.sys_id}`
-           : `https://${credentials?.instance}/$flow-designer.do#/flow/${result.data.sys_id}`)
+           : `https://${credentials?.instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${result.data.sys_id}`)
         : `https://${credentials?.instance}/$flow-designer.do`;
 
       const artifactSummary = deployedArtifacts.length > 0 
@@ -1245,7 +1245,7 @@ Snow-Flow automatically detected Flow Designer issues and created a functionally
 ${artifactSummary}${activitySummary}
 🔗 **Direct Links:**
 - Flow Designer: ${flowUrl}
-- Flow Designer Home: https://${credentials?.instance}/$flow-designer.do
+- Flow Designer Home: https://${credentials?.instance}/$flow-designer.do?sysparm_nostack=true
 
 📝 **Flow Components Created:**
 1. ✅ Trigger configured (${args.trigger_type})
@@ -1951,15 +1951,20 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
         this.logger.warn('Authentication diagnostics found issues:', diagnostics.data);
       }
 
-      const data = diagnostics.data;
-      const { tests, summary, recommendations } = data;
+      const data = diagnostics.data || {};
+      const { tests = {}, summary = {}, recommendations = [] } = data;
+
+      // 🔧 CRITICAL FIX: Add null checks for all properties
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid diagnostics data received from ServiceNow');
+      }
 
       // Format test results
       const testResults = Object.entries(tests).map(([name, result]: [string, any]) => 
-        `**${name}:** ${result.status}
-  - ${result.description}
-  ${result.error ? `- Error: ${result.error}` : ''}
-  ${result.http_status ? `- HTTP Status: ${result.http_status}` : ''}`
+        `**${name}:** ${result?.status || 'Unknown'}
+  - ${result?.description || 'No description'}
+  ${result?.error ? `- Error: ${result.error}` : ''}
+  ${result?.http_status ? `- HTTP Status: ${result.http_status}` : ''}`
       ).join('\n\n');
 
       // Format recommendations
@@ -1968,7 +1973,7 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
         : '';
 
       // Generate URL fix recommendation if we detect the trailing slash issue
-      const urlFixRecommendation = data.instance_url.includes('//')
+      const urlFixRecommendation = data.instance_url && typeof data.instance_url === 'string' && data.instance_url.includes('//')
         ? '\n\n**🚨 CRITICAL URL ISSUE DETECTED:**\n- Your SNOW_INSTANCE in .env has a trailing slash\n- This causes malformed URLs like https://instance.com//api/\n- Remove the trailing slash from SNOW_INSTANCE=your-instance.com/'
         : '';
 
@@ -1978,23 +1983,23 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
             type: 'text',
             text: `🔐 **Authentication & Deployment Diagnostics**
 
-**Instance:** ${data.instance_url}
-**Timestamp:** ${data.timestamp}
+**Instance:** ${data.instance_url || 'Unknown'}
+**Timestamp:** ${data.timestamp || new Date().toISOString()}
 
 **📊 Summary:**
-- Total Tests: ${summary.total_tests}
-- Passed: ${summary.passed} ✅
-- Failed: ${summary.failed} ${summary.failed > 0 ? '❌' : ''}
-- Overall Status: ${summary.overall_status}
+- Total Tests: ${summary.total_tests || 0}
+- Passed: ${summary.passed || 0} ✅
+- Failed: ${summary.failed || 0} ${(summary.failed || 0) > 0 ? '❌' : ''}
+- Overall Status: ${summary.overall_status || 'Unknown'}
 
 **🧪 Detailed Test Results:**
 
-${testResults}${recommendationText}${urlFixRecommendation}
+${testResults || 'No test results available'}${recommendationText}${urlFixRecommendation}
 
 **💡 Next Steps:**
-${summary.failed === 0 
+${(summary.failed || 0) === 0 && summary.total_tests > 0
   ? '✅ All authentication tests passed! Your deployment should work correctly.' 
-  : `❌ ${summary.failed} test(s) failed. Follow the recommendations above to fix the issues.`}
+  : `❌ ${summary.failed || 0} test(s) failed. Follow the recommendations above to fix the issues.`}
 
 **🛠️ Quick Fixes:**
 1. If 403 errors persist: Check OAuth scopes in ServiceNow (System OAuth > Application Registry)
