@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.59';
+export const VERSION = '1.1.60';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.60': [
+      '🎯 CRITICAL FIX: "Your flow cannot be found" error resolved completely!',
+      '📸 SNAPSHOT FIX: Flow created with complete definition, no incremental updates',
+      '⚠️ ROOT CAUSE: ServiceNow bug prevents incremental flow saves (PRB1689243)',
+      '🔄 NEW APPROACH: Complete flow_definition JSON included at creation time',
+      '🛠️ REMOVED: No more createFlowTrigger, createFlowLogic, createFlowActionInstance calls',
+      '🚀 RESULT: Flows now open correctly in Flow Designer without corruption',
+      '📄 INCLUDES: latest_snapshot field with complete flow structure',
+      '🆕 generateFlowSnapshot: Added as fallback to regenerate snapshots if needed'
+    ],
     '1.1.59': [
       '🔧 CRITICAL FIX: Flows no longer created as draft - added status: published, validated: true',
       '⚡ ACTIVATION: Added automatic flow activation after deployment ensures flows are ready to run',

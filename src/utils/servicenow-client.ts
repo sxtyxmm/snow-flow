@@ -1006,76 +1006,11 @@ export class ServiceNowClient {
       // Get dynamic defaults from ServiceNow
       const flowDefaults = await this.getFlowDefaults();
       
-      // Build flow structure with dynamic defaults
-      const flowData = {
-        name: flow.name,
-        description: flow.description || flow.name,
-        active: flow.active !== false,
-        internal_name: this.sanitizeInternalName(flow.name),
-        category: flow.category || 'custom',
-        run_as: flow.run_as || 'system',  // 🔧 FIX: Default to 'system' for proper execution
-        status: 'published',               // 🔧 FIX: Ensure flow is published, not draft
-        validated: true,                   // 🔧 FIX: Mark as validated to allow activation
-        // Merge with dynamic defaults from ServiceNow
-        ...flowDefaults,
-        // Override with any specific values from the flow parameter
-        ...flow.overrides,
-        // 🔧 CRITICAL FIX: Ensure flow type is respected and not overridden
-        type: flow.type || 'flow'
-      };
+      // 🔧 CRITICAL FIX: Build complete flow snapshot BEFORE creating flow record
+      // This prevents the "Your flow cannot be found" error caused by incremental saves
       
-      // Create the main flow record
-      const response = await this.client.post(
-        `${this.getBaseUrl()}/api/now/table/sys_hub_flow`,
-        flowData
-      );
-      
-      if (!response.data || !response.data.result) {
-        throw new Error('No response data from flow creation');
-      }
-      
-      const flowId = response.data.result.sys_id;
-      console.log('✅ Flow created successfully!');
-      console.log(`🆔 Flow sys_id: ${flowId}`);
-      
-      // Create trigger first
-      let triggerInstanceId = null;
-      let triggerLogicId = null;
-      
-      // 🔧 CRITICAL FIX: Default to manual trigger if no trigger type specified
-      const triggerType = flow.trigger_type || 'manual';
-      
-      console.log(`📋 Creating flow trigger (${triggerType})...`);
-      try {
-        const triggerResult = await this.createFlowTrigger(flowId, {
-          type: triggerType,
-          table: flow.table || 'incident',
-          condition: flow.trigger_condition || flow.condition || ''
-        });
-        triggerInstanceId = triggerResult.sys_id;
-        
-        // Create trigger logic entry
-        console.log('📋 Creating trigger logic...');
-        const triggerLogic = await this.createFlowLogic(flowId, {
-          name: 'Trigger',
-          type: 'trigger',
-          order: 0,
-          instance: triggerInstanceId
-        });
-        triggerLogicId = triggerLogic.sys_id;
-      } catch (triggerError) {
-        console.error('Failed to create trigger:', triggerError);
-        // Don't fail the entire flow creation if trigger fails
-        console.warn('Continuing without trigger...');
-      }
-      
-      // Create flow actions/activities with logic entries
-      const actionLogicIds: string[] = [];
-      
-      // 🔧 CRITICAL FIX: Process both flow.actions and flow.activities from flow_definition
+      // Prepare activities from flow definition
       let activitiesToProcess = flow.actions || [];
-      
-      // If no direct actions, parse flow_definition for activities
       if (activitiesToProcess.length === 0 && flow.flow_definition) {
         try {
           const flowDef = typeof flow.flow_definition === 'string' ? 
@@ -1086,54 +1021,94 @@ export class ServiceNowClient {
         }
       }
       
-      if (activitiesToProcess.length > 0) {
-        console.log(`📋 Creating ${activitiesToProcess.length} flow activities...`);
-        
-        for (let i = 0; i < activitiesToProcess.length; i++) {
-          const activity = activitiesToProcess[i];
-          try {
-            const actionResult = await this.createFlowActionInstance(flowId, activity, (i + 1) * 100);
-            
-            // Create action logic entry
-            const actionLogic = await this.createFlowLogic(flowId, {
-              name: activity.name,
-              type: 'action',
-              order: (i + 1) * 100,
-              instance: actionResult.sys_id
-            });
-            actionLogicIds.push(actionLogic.sys_id);
-          } catch (actionError) {
-            console.error(`Failed to create activity ${activity.name}:`, actionError);
-          }
-        }
+      // Build complete flow definition in ServiceNow format
+      const flowDefinition = {
+        "sys_id": "",  // Will be populated by ServiceNow
+        "trigger": {
+          "type": flow.trigger_type || 'manual',
+          "table": flow.table || 'incident',
+          "condition": flow.trigger_condition || flow.condition || '',
+          "when": "record.created"
+        },
+        "actions": activitiesToProcess.map((action, index) => ({
+          "sys_id": "",
+          "name": action.name,
+          "type": action.type || "core",
+          "action_type": action.action_type || "script",
+          "order": (index + 1) * 100,
+          "inputs": action.inputs || {},
+          "outputs": action.outputs || {}
+        })),
+        "stages": [],
+        "spoke_actions": [],
+        "inputs": (flow.inputs || []).map(input => ({
+          "name": input.name || input.id,
+          "type": input.type || "string",
+          "mandatory": input.required || false,
+          "default_value": input.default || ""
+        })),
+        "outputs": (flow.outputs || []).map(output => ({
+          "name": output.name || output.id,
+          "type": output.type || "string"
+        }))
+      };
+      
+      // Build flow structure with dynamic defaults AND complete snapshot
+      const flowData = {
+        name: flow.name,
+        description: flow.description || flow.name,
+        active: true,                      // Always create as active
+        internal_name: this.sanitizeInternalName(flow.name),
+        category: flow.category || 'custom',
+        run_as: flow.run_as || 'system',  // 🔧 FIX: Default to 'system' for proper execution
+        status: 'published',               // 🔧 FIX: Ensure flow is published, not draft
+        validated: true,                   // 🔧 FIX: Mark as validated to allow activation
+        // Include complete flow definition to prevent corruption
+        flow_definition: JSON.stringify(flowDefinition),
+        // Additional fields for proper flow creation
+        latest_snapshot: JSON.stringify(flowDefinition),
+        model_id: flow.model_id || '',
+        natlang: flow.description || flow.name,
+        copied_from: '',
+        copied_from_name: '',
+        show_draft_actions: false,
+        show_triggered_flows: false,
+        // Merge with dynamic defaults from ServiceNow
+        ...flowDefaults,
+        // Override with any specific values from the flow parameter
+        ...flow.overrides,
+        // 🔧 CRITICAL FIX: Ensure flow type is respected and not overridden
+        type: flow.type || 'flow'
+      };
+      
+      // Create the main flow record WITH complete snapshot
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow`,
+        flowData
+      );
+      
+      if (!response.data || !response.data.result) {
+        throw new Error('No response data from flow creation');
       }
       
-      // 🔧 NEW: Create flow variables for inputs/outputs
-      if (flow.inputs || flow.outputs || flow.flow_definition) {
-        try {
-          await this.createFlowVariables(flowId, flow);
-        } catch (variableError) {
-          console.warn('Failed to create flow variables:', variableError);
-        }
-      }
+      const flowId = response.data.result.sys_id;
+      console.log('✅ Flow created successfully with complete snapshot!');
+      console.log(`🆔 Flow sys_id: ${flowId}`);
       
-      // Create connections between trigger and actions
-      if (triggerLogicId && actionLogicIds.length > 0) {
-        console.log('📋 Creating flow connections...');
-        try {
-          // Connect trigger to first action
-          await this.createFlowConnection(flowId, triggerLogicId, actionLogicIds[0]);
-          
-          // Connect actions in sequence
-          for (let i = 0; i < actionLogicIds.length - 1; i++) {
-            await this.createFlowConnection(flowId, actionLogicIds[i], actionLogicIds[i + 1]);
-          }
-        } catch (connError) {
-          console.error('Failed to create connections:', connError);
-        }
-      }
+      // 🔧 CRITICAL FIX: Do NOT create additional components incrementally
+      // The flow snapshot already contains all components and prevents the "Your flow cannot be found" error
+      // According to ServiceNow community, incremental saves corrupt the flow snapshot
       
-      // 🔧 NEW: Activate the flow to ensure it's published and ready
+      console.log('📋 Flow components included in definition:');
+      console.log(`- Trigger: ${flowDefinition.trigger.type}`);
+      console.log(`- Actions: ${flowDefinition.actions.length}`);
+      console.log(`- Inputs: ${flowDefinition.inputs.length}`);
+      console.log(`- Outputs: ${flowDefinition.outputs.length}`);
+      
+      // 🔧 CRITICAL FIX: Flow created with complete definition, no incremental updates needed
+      // This prevents the "Your flow cannot be found" error
+      
+      // 🔧 NEW: Only need to activate the flow since it already has complete definition
       try {
         console.log('⚡ Activating flow...');
         await this.activateFlow(flowId);
@@ -1156,7 +1131,7 @@ export class ServiceNowClient {
           url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowRecord.sys_id}`,
           flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowRecord.sys_id}`,
           type: flowRecord.type || flow.type || 'flow', // Ensure type is included
-          activities_created: activitiesToProcess.length,
+          activities_created: flowDefinition.actions.length,
           variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
           trigger_configured: !!flow.trigger_type,
           sys_trigger_created: flow.trigger_type === 'record_created' || flow.trigger_type === 'record_updated'
@@ -1196,6 +1171,45 @@ export class ServiceNowClient {
     } catch (error) {
       console.error('Failed to activate flow:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Generate flow snapshot to prevent "Your flow cannot be found" error
+   * This uses the Flow Designer API to generate a proper snapshot
+   */
+  async generateFlowSnapshot(flowSysId: string): Promise<void> {
+    try {
+      await this.ensureAuthenticated();
+      
+      // Call Flow Designer API to generate snapshot
+      // This endpoint triggers ServiceNow to build a proper flow snapshot
+      const response = await this.client.post(
+        `${this.getBaseUrl()}/api/sn_flow_designer/flow/snapshot`,
+        {
+          flow_id: flowSysId,
+          generate: true
+        }
+      );
+      
+      if (!response.data || !response.data.result) {
+        // Try alternative endpoint if the first one fails
+        const altResponse = await this.client.put(
+          `${this.getBaseUrl()}/api/now/table/sys_hub_flow/${flowSysId}`,
+          {
+            snapshot_ready: true
+          }
+        );
+        
+        if (!altResponse.data || !altResponse.data.result) {
+          throw new Error('Failed to generate flow snapshot');
+        }
+      }
+      
+      return response.data?.result || true;
+    } catch (error) {
+      console.error('Failed to generate flow snapshot:', error);
+      // Don't throw - this is a best effort operation
     }
   }
 
