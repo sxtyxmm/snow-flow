@@ -817,27 +817,76 @@ ${args.flow_instruction.requiredArtifacts.map((artifact: any, index: number) => 
       
       switch (status) {
         case 401:
-          errorMessage = 'Authentication failed';
+          errorMessage = `🚨 Authentication Error (401) - Token Expired or Invalid
+
+📍 Possible Causes:
+• OAuth token expired or invalid
+• ServiceNow instance URL incorrect
+• Credentials not properly configured
+
+🔧 Troubleshooting Steps:
+1. Run diagnostics: snow_auth_diagnostics()
+2. Re-authenticate: snow-flow auth login
+3. Check credentials: Verify SNOW_INSTANCE, CLIENT_ID, CLIENT_SECRET
+4. Verify instance URL format: https://dev123456.service-now.com
+
+💡 Quick Fix: Run snow_auth_diagnostics() for detailed analysis`;
           troubleshooting = [
-            'Run `snow-flow auth login` to re-authenticate',
-            'Check your OAuth credentials in .env file',
-            'Verify ServiceNow instance URL is correct'
+            'Run snow_auth_diagnostics() for detailed analysis',
+            'Re-authenticate with snow-flow auth login',
+            'Verify .env file OAuth credentials',
+            'Check ServiceNow instance URL format'
           ];
           break;
         case 403:
-          errorMessage = 'Insufficient permissions';
+          errorMessage = `🚨 Permission Error (403) - Insufficient Access Rights
+
+📍 Possible Causes:
+• Insufficient permissions for flow operations
+• Missing required ServiceNow roles
+• Application scope restrictions
+
+🔧 Troubleshooting Steps:
+1. Run diagnostics: snow_auth_diagnostics()
+2. Check required roles: flow_designer, admin, itil
+3. Contact ServiceNow administrator for role assignment
+4. Verify application scope permissions
+
+💡 Required Roles:
+• flow_designer: For flow operations
+• admin: For Update Set management  
+• itil: For incident/request operations`;
           troubleshooting = [
-            'Contact ServiceNow administrator for Flow Designer permissions',
-            'Verify your user has the necessary roles',
+            'Run snow_auth_diagnostics() to check permissions',
+            'Verify user has flow_designer, admin, itil roles',
+            'Contact ServiceNow administrator for role assignment',
             'Check application scope permissions'
           ];
           break;
         case 404:
-          errorMessage = 'Resource not found';
+          errorMessage = `🚨 Flow Testing failed: Endpoint not found (404)
+
+📍 Possible Causes:
+• Flow sys_id format incorrect or invalid
+• API endpoint not available on this ServiceNow instance
+• Insufficient permissions for this operation
+• Flow not properly created or activated
+
+🔧 Troubleshooting Steps:
+1. Verify artifact exists: snow_get_by_sysid("your-sys-id")
+2. Check Update Set tracking: snow_update_set_current()
+3. Try alternative: snow_test_flow_with_mock()
+4. Verify permissions: snow_auth_diagnostics()
+
+💡 Alternative Tools:
+• For flow testing: Use snow_test_flow_with_mock (always works)
+• For verification: Use snow_get_by_sysid first
+• For comprehensive testing: Only after basic tests pass`;
           troubleshooting = [
-            'Verify ServiceNow instance is correct',
-            'Check if the requested resource exists',
-            'Ensure API endpoints are available'
+            'Use snow_test_flow_with_mock() for reliable testing',
+            'Verify flow exists with snow_get_by_sysid()',
+            'Check Update Set status with snow_update_set_current()',
+            'Run snow_auth_diagnostics() to check permissions'
           ];
           break;
         case 429:

@@ -2548,7 +2548,25 @@ class ServiceNowOperationsMCP {
       return {
         content: [{
           type: 'text',
-          text: `❌ Flow test failed\n\nError: ${error.message}\n\nTest Results:\n${JSON.stringify(testResults, null, 2)}`
+          text: `❌ Flow test failed
+
+🚨 Error: ${error.message}
+
+🔧 Troubleshooting Steps:
+1. Check authentication: snow_auth_diagnostics()
+2. Verify flow exists: snow_get_by_sysid("${flow_id}")
+3. Check Update Set: snow_update_set_current()
+4. Try alternative: snow_test_flow_with_mock() (always works)
+
+💡 Alternative Tools:
+• For reliable testing: snow_test_flow_with_mock()
+• For verification: snow_get_by_sysid()
+• For comprehensive testing: snow_comprehensive_flow_test()
+
+📋 Test Results:
+${JSON.stringify(testResults, null, 2)}
+
+📚 Documentation: See CLAUDE.md for Flow Testing Guidelines`
         }]
       };
     }

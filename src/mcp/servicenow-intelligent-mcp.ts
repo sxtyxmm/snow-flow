@@ -1674,7 +1674,20 @@ class ServiceNowIntelligentMCP {
         // Try to provide more specific error information
         let errorDetails = response.error || 'Unknown error';
         if (response.error?.includes('404') || response.error?.includes('not found')) {
-          errorDetails += '\n\n🔍 **Troubleshooting:**\n- Verify the sys_id exists in the specified table\n- Check if the record was recently created (may need a moment to be available)\n- Ensure you have write access to this record';
+          errorDetails += `\n\n🔍 **Troubleshooting:**
+- Verify the sys_id exists in the specified table
+- Check if the record was recently created (may need a moment to be available)
+- Ensure you have write access to this record
+
+🔧 **Update Set Considerations:**
+- Check current Update Set: snow_smart_update_set with action="track"
+- Verify artifact is tracked: snow_get_by_sysid
+- Ensure Update Set is active for tracking changes
+
+💡 **Debug steps:**
+1. Check current Update Set status
+2. Verify artifact creation was tracked
+3. Use mock testing if record access fails`;
         }
         
         return {

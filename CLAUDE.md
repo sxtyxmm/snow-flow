@@ -11,10 +11,24 @@
 
 ### ServiceNow Development Best Practices
 1. **Never hardcode credentials** - Use OAuth and environment variables
-2. **Always work in Update Sets** - Provides rollback safety
+2. **Always work in Update Sets** - MANDATORY SEQUENCE:
+   a. FIRST: Create update set with `snow_update_set_create`
+   b. THEN: Switch to it with `snow_update_set_switch`  
+   c. TRACK: Every artifact with `snow_update_set_add_artifact`
+   d. CHECK: Current status with `snow_update_set_current`
+   e. COMPLETE: Mark complete with `snow_update_set_complete`
 3. **Test before deploy** - Use mock testing tools for validation
 4. **Validate permissions** - Check OAuth scopes before operations
 5. **Use fuzzy search** - ServiceNow names can vary (iPhone vs iPhone 6S)
+6. **Track all artifacts** - Use snow_update_set_add_artifact after EVERY deployment
+7. **Test with mock first** - Use snow_test_flow_with_mock before comprehensive testing
+8. **Verify before test** - Check artifact exists with snow_get_by_sysid before testing
+
+### Update Set Best Practices
+- NEVER deploy without active update set
+- ALWAYS track artifacts immediately after deployment
+- CHECK current update set before starting work
+- COMPLETE update sets before moving between environments
 
 ## 📋 Essential MCP Tool Patterns
 
@@ -167,6 +181,32 @@ snow_pattern_analysis({
   analysis_type: "incident_patterns",
   timeframe: "month"
 });
+```
+
+## Flow Testing Guidelines
+
+### Test Flow Hierarchy (use in this order):
+1. **snow_test_flow_with_mock** - Always works, use for basic validation
+2. **snow_get_by_sysid** - Verify flow exists before advanced testing  
+3. **snow_comprehensive_flow_test** - Only if above work (often 404)
+
+### Flow Creation Best Practices
+❌ NEVER use snow_deploy_flow with manual JSON
+✅ ALWAYS use snow_create_flow with natural language
+✅ OR use snow_flow_wizard for step-by-step
+
+Example:
+```javascript
+// GOOD - Natural language
+snow_create_flow({
+  instruction: "create approval flow for user provisioning",
+  deploy_immediately: true
+})
+
+// BAD - Manual JSON (vaak leeg resultaat!)
+snow_deploy_flow({
+  flow_definition: {...} // Dit werkt vaak niet!
+})
 ```
 
 ## ⚡ Performance Optimization

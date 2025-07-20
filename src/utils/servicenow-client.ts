@@ -445,6 +445,17 @@ export class ServiceNowClient {
       console.log('🎨 Creating ServiceNow widget...');
       console.log(`📋 Widget Name: ${widget.name}`);
       
+      // Add pre-deployment validation for widgets
+      if (!widget.name || widget.name.trim() === '') {
+        throw new Error('Widget name is required');
+      }
+      if (!widget.title || widget.title.trim() === '') {
+        throw new Error('Widget title is required');
+      }
+      if (!widget.template || widget.template.trim() === '') {
+        console.warn('⚠️ Widget has no template content - this may result in an empty widget');
+      }
+      
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
       
@@ -468,6 +479,9 @@ export class ServiceNowClient {
       
       console.log('✅ Widget created successfully!');
       console.log(`🆔 Widget ID: ${response.data.result.sys_id}`);
+      
+      // Add post-deployment verification
+      await this.verifyDeployment(response.data.result.sys_id, 'widget');
       
       return {
         success: true,
@@ -992,6 +1006,157 @@ export class ServiceNowClient {
   }
 
   /**
+   * Validate flow definition before deployment
+   */
+  private validateFlowBeforeDeployment(flow: any): void {
+    const errors: string[] = [];
+    
+    if (!flow.name || flow.name.trim() === '') {
+      errors.push('Flow name is required');
+    }
+    
+    if (!flow.description || flow.description.trim() === '') {
+      errors.push('Flow description is required');
+    }
+    
+    // Validate activities/actions
+    const activities = flow.activities || flow.actions || flow.steps || [];
+    if (activities.length === 0) {
+      errors.push(`
+No activities found in flow definition.
+
+💡 Common fixes:
+• Use natural language: snow_create_flow({ instruction: "..." })
+• Check flow_definition format
+• Ensure activities array is properly populated
+      `);
+    }
+    
+    // Validate activity structure
+    activities.forEach((activity: any, index: number) => {
+      if (!activity.name) {
+        errors.push(`Activity ${index + 1} missing name`);
+      }
+      if (!activity.type && !activity.operation) {
+        errors.push(`Activity ${index + 1} missing type or operation`);
+      }
+    });
+    
+    if (errors.length > 0) {
+      throw new Error(`
+🚨 Flow Validation Failed:
+
+${errors.map(error => `• ${error}`).join('\n')}
+
+🔧 Recommended approach:
+Use snow_create_flow with natural language instead of manual JSON.
+      `);
+    }
+  }
+
+  /**
+   * Verify deployment was successful and artifact has content
+   */
+  private async verifyDeployment(sysId: string, expectedType: string): Promise<void> {
+    try {
+      let endpoint = '';
+      
+      // Determine the correct endpoint based on artifact type
+      switch (expectedType) {
+        case 'flow':
+        case 'subflow':
+          endpoint = `/api/now/table/sys_hub_flow/${sysId}`;
+          break;
+        case 'widget':
+          endpoint = `/api/now/table/sp_widget/${sysId}`;
+          break;
+        case 'action':
+          endpoint = `/api/now/table/sys_hub_action_type_definition/${sysId}`;
+          break;
+        default:
+          endpoint = `/api/now/table/sys_hub_flow/${sysId}`;
+      }
+      
+      // Get the deployed artifact
+      const response = await this.client.get(`${this.getBaseUrl()}${endpoint}`);
+      
+      if (!response.data?.result) {
+        throw new Error(`Deployed ${expectedType} not found: ${sysId}`);
+      }
+      
+      const artifact = response.data.result;
+      
+      // Type-specific content validation
+      if (expectedType === 'flow' || expectedType === 'subflow') {
+        const flowDef = artifact.flow_definition ? JSON.parse(artifact.flow_definition || '{}') : {};
+        const activities = flowDef.activities || flowDef.actions || flowDef.steps || [];
+        
+        if (activities.length === 0) {
+          console.warn(`
+⚠️  ${expectedType} deployed but appears empty: ${artifact.name}
+
+🔍 This usually means:
+• Flow definition format was incorrect
+• Activities were not properly mapped
+• ServiceNow rejected the flow structure
+
+💡 Try recreating with:
+snow_create_flow({
+  instruction: "recreate ${artifact.name} with proper activities",
+  deploy_immediately: true
+})
+          `);
+        } else {
+          console.log(`✅ ${expectedType} has ${activities.length} activities`);
+        }
+      } else if (expectedType === 'widget') {
+        const hasContent = artifact.template || artifact.client_script || artifact.script;
+        if (!hasContent) {
+          console.warn(`⚠️  Widget deployed but appears to have no content: ${artifact.name}`);
+        }
+      }
+      
+      console.log(`✅ Deployment verified: ${artifact.name} (${sysId})`);
+      
+    } catch (error) {
+      console.error(`❌ Deployment verification failed for ${sysId}:`, error);
+    }
+  }
+
+  /**
+   * Check if a flow has actual content (not empty)
+   */
+  async checkFlowContent(sysId: string): Promise<{hasContent: boolean, details: any}> {
+    try {
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow/${sysId}`
+      );
+      
+      const flow = response.data?.result;
+      if (!flow) {
+        return { hasContent: false, details: 'Flow not found' };
+      }
+      
+      const flowDef = JSON.parse(flow.flow_definition || '{}');
+      const activities = flowDef.activities || flowDef.actions || flowDef.steps || [];
+      
+      return {
+        hasContent: activities.length > 0,
+        details: {
+          name: flow.name,
+          activities_count: activities.length,
+          has_trigger: !!flowDef.trigger,
+          status: flow.status || 'unknown',
+          active: flow.active
+        }
+      };
+      
+    } catch (error) {
+      return { hasContent: false, details: `Error: ${error.message}` };
+    }
+  }
+
+  /**
    * Create a simple Flow Designer flow
    * Focusing on basic flow creation with simple actions
    */
@@ -999,6 +1164,9 @@ export class ServiceNowClient {
     try {
       console.log('🔄 Creating Flow Designer flow...');
       console.log(`📋 Flow: ${flow.name}`);
+      
+      // Add pre-deployment validation
+      this.validateFlowBeforeDeployment(flow);
       
       // First, ensure we have an Update Set
       const updateSetResult = await this.ensureUpdateSet();
@@ -1010,7 +1178,7 @@ export class ServiceNowClient {
       // This prevents the "Your flow cannot be found" error caused by incremental saves
       
       // Prepare activities from flow definition
-      let activitiesToProcess = flow.actions || [];
+      let activitiesToProcess = flow.activities || flow.actions || [];
       if (activitiesToProcess.length === 0 && flow.flow_definition) {
         try {
           const flowDef = typeof flow.flow_definition === 'string' ? 
@@ -1021,36 +1189,39 @@ export class ServiceNowClient {
         }
       }
       
-      // Build complete flow definition in ServiceNow format
+      // Build complete flow definition in ServiceNow Flow Designer format
       const flowDefinition = {
-        "sys_id": "",  // Will be populated by ServiceNow
+        "name": flow.name,
+        "description": flow.description || flow.name,
         "trigger": {
           "type": flow.trigger_type || 'manual',
-          "table": flow.table || 'incident',
-          "condition": flow.trigger_condition || flow.condition || '',
-          "when": "record.created"
+          "table": flow.table || 'incident', 
+          "condition": flow.trigger_condition || flow.condition || ''
         },
-        "actions": activitiesToProcess.map((action, index) => ({
-          "sys_id": "",
+        "activities": activitiesToProcess.map((action, index) => ({
           "name": action.name,
+          "label": action.label || action.name,
           "type": action.type || "core",
-          "action_type": action.action_type || "script",
-          "order": (index + 1) * 100,
+          "operation": action.operation || "script",
           "inputs": action.inputs || {},
-          "outputs": action.outputs || {}
+          "outputs": action.outputs || {},
+          "order": (index + 1) * 100,
+          "active": true
         })),
-        "stages": [],
-        "spoke_actions": [],
         "inputs": (flow.inputs || []).map(input => ({
           "name": input.name || input.id,
+          "label": input.label || input.name || input.id,
           "type": input.type || "string",
           "mandatory": input.required || false,
           "default_value": input.default || ""
         })),
         "outputs": (flow.outputs || []).map(output => ({
           "name": output.name || output.id,
+          "label": output.label || output.name || output.id,
           "type": output.type || "string"
-        }))
+        })),
+        "variables": flow.variables || [],
+        "version": "1.0"
       };
       
       // Build flow structure with dynamic defaults AND complete snapshot
@@ -1101,7 +1272,7 @@ export class ServiceNowClient {
       
       console.log('📋 Flow components included in definition:');
       console.log(`- Trigger: ${flowDefinition.trigger.type}`);
-      console.log(`- Actions: ${flowDefinition.actions.length}`);
+      console.log(`- Activities: ${flowDefinition.activities.length}`);
       console.log(`- Inputs: ${flowDefinition.inputs.length}`);
       console.log(`- Outputs: ${flowDefinition.outputs.length}`);
       
@@ -1117,6 +1288,9 @@ export class ServiceNowClient {
         console.warn('⚠️ Flow activation failed:', activationError);
         // Don't fail the entire flow creation if activation fails
       }
+
+      // Add post-deployment verification
+      await this.verifyDeployment(flowId, 'flow');
       
       // 🔧 CRITICAL FIX: Enhanced response with proper ServiceNow URLs and flow type
       const flowRecord = response.data.result;
@@ -1131,7 +1305,7 @@ export class ServiceNowClient {
           url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowRecord.sys_id}`,
           flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowRecord.sys_id}`,
           type: flowRecord.type || flow.type || 'flow', // Ensure type is included
-          activities_created: flowDefinition.actions.length,
+          activities_created: flowDefinition.activities.length,
           variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
           trigger_configured: !!flow.trigger_type,
           sys_trigger_created: flow.trigger_type === 'record_created' || flow.trigger_type === 'record_updated'
@@ -1221,6 +1395,9 @@ export class ServiceNowClient {
       console.log('🔄 Creating Subflow...');
       console.log(`📋 Subflow: ${subflow.name}`);
       
+      // Add pre-deployment validation
+      this.validateFlowBeforeDeployment(subflow);
+      
       // Ensure Update Set
       const updateSetResult = await this.ensureUpdateSet();
       
@@ -1259,6 +1436,9 @@ export class ServiceNowClient {
         }
       }
 
+      // Add post-deployment verification
+      await this.verifyDeployment(subflowId, 'subflow');
+
       // 🔧 CRITICAL FIX: Enhanced response with proper ServiceNow URLs and subflow type
       const subflowRecord = response.data.result;
       const credentials = await this.oauth.loadCredentials();
@@ -1295,6 +1475,14 @@ export class ServiceNowClient {
       console.log('⚡ Creating Flow Action...');
       console.log(`📋 Action: ${action.name}`);
       
+      // Add pre-deployment validation (adapted for actions)
+      if (!action.name || action.name.trim() === '') {
+        throw new Error('Flow Action name is required');
+      }
+      if (!action.description || action.description.trim() === '') {
+        throw new Error('Flow Action description is required');
+      }
+      
       // Ensure Update Set
       const updateSetResult = await this.ensureUpdateSet();
       
@@ -1317,6 +1505,11 @@ export class ServiceNowClient {
         `${this.getBaseUrl()}/api/now/table/sys_hub_action_type_definition`,
         actionData
       );
+
+      // Add basic verification for action creation
+      if (response.data.result?.sys_id) {
+        console.log(`✅ Flow Action created: ${action.name} (${response.data.result.sys_id})`);
+      }
 
       return {
         success: true,

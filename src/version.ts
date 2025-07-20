@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.60';
+export const VERSION = '1.1.61';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.61': [
+      '📚 DOCUMENTATION: Updated CLAUDE.md with concrete Update Set management steps',
+      '🔧 AUTO-TRACKING: Added automatic Update Set tracking to all deployment tools',
+      '🚨 ERROR HANDLING: Enhanced error messages with detailed troubleshooting guidance',
+      '✅ VALIDATION: Added pre and post deployment validation to prevent empty artifacts',
+      '🔍 404 ERRORS: Now include specific causes, solutions, and alternative tools',
+      '📋 UPDATE SETS: Automatic creation and artifact tracking prevents empty Update Sets',
+      '💡 FLOW GUIDANCE: Clear distinction between snow_create_flow vs snow_deploy_flow',
+      '🛠️ COMPREHENSIVE: Five parallel improvements addressing all user-reported issues'
+    ],
     '1.1.60': [
       '🎯 CRITICAL FIX: "Your flow cannot be found" error resolved completely!',
       '📸 SNAPSHOT FIX: Flow created with complete definition, no incremental updates',

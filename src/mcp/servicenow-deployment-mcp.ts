@@ -503,7 +503,19 @@ class ServiceNowDeploymentMCP {
       };
     }
     
-    // No current Update Set - create one automatically
+    // No current Update Set - show guidance and create one automatically
+    console.warn(`
+⚠️  No Active Update Set Detected
+
+🔧 Auto-creating Update Set for deployment safety...
+
+💡 Best Practice: Always start with:
+1. snow_update_set_create()
+2. snow_update_set_switch() 
+3. Deploy your artifacts
+4. snow_update_set_add_artifact() (automatic)
+5. snow_update_set_complete()
+    `);
     const updateSetName = `Auto: ${artifactType} - ${artifactName} - ${new Date().toISOString().split('T')[0]}`;
     const createResult = await this.client.createUpdateSet({
       name: updateSetName,
@@ -527,6 +539,74 @@ class ServiceNowDeploymentMCP {
       updateSetId: createResult.data.sys_id,
       updateSetName: updateSetName
     };
+  }
+
+  /**
+   * Ensure artifact is tracked in current Update Set
+   */
+  private async ensureUpdateSetTracking(artifact: any): Promise<void> {
+    try {
+      // Check if we have an active update set
+      const currentSet = await this.client.getCurrentUpdateSet();
+      
+      if (!currentSet || !currentSet.data || !currentSet.data.sys_id) {
+        console.warn('⚠️ No active Update Set - creating one automatically');
+        const newSet = await this.client.createUpdateSet({
+          name: `AUTO-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-6)}`,
+          description: 'Automatically created for artifact deployment',
+          state: 'in_progress'
+        });
+        
+        if (newSet.success && newSet.data) {
+          await this.client.setCurrentUpdateSet(newSet.data.sys_id);
+        }
+      }
+      
+      // Track the artifact by creating a sys_update_xml record
+      if (artifact.sys_id && artifact.type && artifact.name) {
+        const updateXmlData = {
+          name: artifact.name,
+          type: artifact.type,
+          target_name: artifact.name,
+          action: 'INSERT_OR_UPDATE',
+          table: artifact.table || this.getTableForType(artifact.type),
+          target_sys_id: artifact.sys_id,
+          category: 'customer',
+          update_set: currentSet?.data?.sys_id
+        };
+
+        // Create the sys_update_xml record to track the artifact
+        const trackingResult = await this.client.createRecord('sys_update_xml', updateXmlData);
+        
+        if (trackingResult.success) {
+          console.log(`✅ Artifact tracked in Update Set: ${artifact.name} (${artifact.sys_id})`);
+        } else {
+          console.warn(`⚠️ Failed to track artifact in Update Set: ${trackingResult.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to track artifact in Update Set:', error);
+      // Don't fail the deployment, just warn
+    }
+  }
+
+  /**
+   * Get ServiceNow table name for artifact type
+   */
+  private getTableForType(type: string): string {
+    const tableMap: { [key: string]: string } = {
+      'flow': 'sys_hub_flow',
+      'widget': 'sp_widget',
+      'script': 'sys_script_include',
+      'business_rule': 'sys_script',
+      'workflow': 'wf_workflow',
+      'application': 'sys_app',
+      'ui_action': 'sys_ui_action',
+      'ui_page': 'sys_ui_page',
+      'script_include': 'sys_script_include',
+      'processor': 'sys_processor'
+    };
+    return tableMap[type] || 'sys_metadata';
   }
 
   private async deployWidget(args: any) {
@@ -867,6 +947,14 @@ Use \`snow_deployment_debug\` for more information about this session.`,
         );
         trackedArtifact.updateSetId = updateSetId;
 
+        // ENHANCED: Ensure artifact is tracked in Update Set
+        await this.ensureUpdateSetTracking({
+          sys_id: result.data.sys_id,
+          type: 'Widget',
+          name: args.name,
+          table: 'sp_widget'
+        });
+
         // Record successful deployment operation
         artifactTracker.recordOperation(
           result.data.sys_id,
@@ -957,10 +1045,42 @@ Use \`snow_deployment_debug\` for more information about this session.`,
           `Widget deployment failed: ${result.error}`,
           result.error
         );
-        throw new Error(result.error || 'Failed to deploy widget');
+        const enhancedError = `🚨 Widget Deployment Failed
+
+📍 Error: ${result.error || 'Unknown deployment error'}
+
+🔧 Troubleshooting Steps:
+1. Check authentication: snow_auth_diagnostics()
+2. Verify Update Set: snow_update_set_current()
+3. Check permissions: Ensure user has sp_admin role
+4. Try widget preview: snow_preview_widget()
+
+💡 Alternative Approaches:
+• Use snow_deploy_widget with smaller components first
+• Test with snow_widget_test() before deployment
+• Check dependencies with check_dependencies: true
+
+📚 Documentation: See CLAUDE.md for Widget Deployment Guidelines`;
+        throw new Error(enhancedError);
       }
     } catch (error) {
-      throw new Error(`Widget deployment failed: ${error instanceof Error ? error.message : String(error)}`);
+      const enhancedError = `🚨 Widget Deployment System Error
+
+📍 Error: ${error instanceof Error ? error.message : String(error)}
+
+🔧 Troubleshooting Steps:
+1. Check authentication: snow_auth_diagnostics()
+2. Verify ServiceNow connectivity
+3. Check Update Set status: snow_update_set_current()
+4. Validate widget structure before deployment
+
+💡 Alternative Approaches:
+• Use snow_preview_widget() to test first
+• Deploy components separately
+• Use snow_widget_test() for validation
+
+📚 Documentation: See CLAUDE.md for Widget Deployment Guidelines`;
+      throw new Error(enhancedError);
     }
   }
 
@@ -1155,10 +1275,25 @@ Use \`snow_deployment_debug\` for more information about this session.`,
             fallbackError 
           });
           throw new Error(
-            `Flow deployment failed and fallback unsuccessful:\n` +
-            `- Flow Designer Error: ${flowError instanceof Error ? flowError.message : String(flowError)}\n` +
-            `- Business Rule Fallback Error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}\n\n` +
-            `Please check your flow definition JSON format or create a Business Rule manually.`
+            `🚨 Flow deployment failed and fallback unsuccessful:
+
+📍 **Errors:**
+- Flow Designer Error: ${flowError instanceof Error ? flowError.message : String(flowError)}
+- Business Rule Fallback Error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}
+
+🔧 **Update Set Troubleshooting:**
+1. Check current Update Set: snow_smart_update_set with action="track"
+2. Verify Update Set is active for tracking
+3. Use mock testing: snow_test_flow_with_mock instead
+4. Check flow exists: snow_get_by_sysid
+
+💡 **Alternative Solutions:**
+- Use snow_test_flow_with_mock for safe testing
+- Verify flow creation with snow_get_by_sysid
+- Check Update Set contains the flow artifact
+- Create Business Rule manually if needed
+
+📚 Please check your flow definition JSON format or use manual deployment.`
           );
         }
       }
@@ -1275,6 +1410,16 @@ ${isComposedFlow ? `
 - Multi-artifact dependency resolution
 - Natural language configuration`;
 
+      // ENHANCED: Ensure artifact is tracked in Update Set
+      if (result.success && result.data) {
+        await this.ensureUpdateSetTracking({
+          sys_id: result.data.sys_id,
+          type: usedFallback ? 'Business Rule' : 'Flow',
+          name: args.name,
+          table: usedFallback ? 'sys_script' : 'sys_hub_flow'
+        });
+      }
+
       return {
         content: [
           {
@@ -1284,7 +1429,24 @@ ${isComposedFlow ? `
         ],
       };
     } catch (error) {
-      throw new Error(`Flow deployment failed: ${error instanceof Error ? error.message : String(error)}`);
+      const enhancedError = `🚨 Flow Deployment Failed
+
+📍 Error: ${error instanceof Error ? error.message : String(error)}
+
+🔧 Troubleshooting Steps:
+1. Check authentication: snow_auth_diagnostics()
+2. Validate flow definition: snow_validate_flow_definition()
+3. Check Update Set: snow_update_set_current()
+4. Verify flow_designer role permissions
+
+💡 Alternative Approaches:
+• Use snow_create_flow with natural language (recommended)
+• Test with snow_test_flow_with_mock() first
+• Use snow_flow_wizard for step-by-step creation
+• Try Business Rule fallback if flow creation fails
+
+📚 Documentation: See CLAUDE.md for Flow Development Guidelines`;
+      throw new Error(enhancedError);
     }
   }
 
@@ -1449,6 +1611,16 @@ ${isComposedFlow ? `
 
       if (!deploymentResult.success) {
         throw new Error(deploymentResult.message || 'Failed to deploy application');
+      }
+
+      // ENHANCED: Ensure artifact is tracked in Update Set
+      if (deploymentResult.artifactId) {
+        await this.ensureUpdateSetTracking({
+          sys_id: deploymentResult.artifactId,
+          type: 'Application',
+          name: args.name,
+          table: 'sys_app'
+        });
       }
 
       const credentials = await this.oauth.loadCredentials();
@@ -2804,10 +2976,81 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
         corrections.push('✅ Processing nested flow_definition structure');
       }
 
-      // Now check for activities/steps/actions in the working definition
+      // Check for empty flow definition first
       if (!workingDefinition.activities && !workingDefinition.steps && !workingDefinition.actions) {
-        issues.push('❌ Missing "activities", "steps", or "actions" array');
-      } else if (workingDefinition.steps && !workingDefinition.activities) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `🚨 Flow Definition Error: No activities found
+
+📍 Common Causes:
+• Used snow_deploy_flow with manual JSON (often fails)
+• Incorrect flow_definition format
+• Activities not properly mapped from actions/steps
+
+🔧 Recommended Solutions:
+✅ Use snow_create_flow with natural language:
+   snow_create_flow({
+     instruction: "create approval flow for...",
+     deploy_immediately: true
+   })
+
+✅ Or use snow_flow_wizard for step-by-step creation
+
+❌ Avoid: Manual JSON flow definitions (unreliable)
+
+💡 Alternative Approach:
+1. Use snow_create_flow for natural language creation
+2. Use snow_test_flow_with_mock for testing
+3. Use snow_deploy_flow only for pre-validated definitions`
+            }
+          ]
+        };
+      }
+
+      // Check for activities that exist but are empty
+      const activitiesArray = workingDefinition.activities || workingDefinition.steps || workingDefinition.actions;
+      if (activitiesArray && Array.isArray(activitiesArray) && activitiesArray.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `🚨 Flow Definition Error: Empty activities array
+
+📍 Problem: Flow has an activities array but no actual activities defined.
+
+🔧 Recommended Solutions:
+✅ Use snow_create_flow with natural language:
+   snow_create_flow({
+     instruction: "create flow that sends email when incident priority is high",
+     deploy_immediately: true
+   })
+
+✅ Or define activities manually:
+   {
+     "activities": [
+       {
+         "name": "Check Priority",
+         "type": "condition",
+         "condition": "current.priority == 1"
+       },
+       {
+         "name": "Send Alert",
+         "type": "notification",
+         "recipients": "incident.assigned_to"
+       }
+     ]
+   }
+
+💡 Best Practice: Use natural language flow creation instead of manual JSON`
+            }
+          ]
+        };
+      }
+
+      // Now check for activities/steps/actions in the working definition
+      if (workingDefinition.steps && !workingDefinition.activities) {
         // AUTO-CORRECT: Convert "steps" to "activities"
         workingDefinition.activities = workingDefinition.steps;
         delete workingDefinition.steps;
