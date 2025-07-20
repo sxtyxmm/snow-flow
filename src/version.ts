@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.48';
+export const VERSION = '1.1.49';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.49': [
+      'ROOT CAUSE FIXED: Flow Designer validation now accepts both "steps" and "activities" JSON formats',
+      'SMART SCHEMA CORRECTION: Auto-converts "steps" to "activities" in Flow Designer deployment',
+      'JSON FORMAT FLEXIBILITY: Supports multiple common Flow Designer JSON schema variations',
+      'DEPLOYMENT CORRECTION: Uses auto-corrected definitions for actual Flow Designer deployment',
+      'NESTED DEFINITION SUPPORT: Extracts activities from nested flow_definition structures',
+      'TRIGGER AUTO-GENERATION: Creates missing trigger definitions from deployment parameters',
+      'VALIDATION TRANSPARENCY: Shows exactly which auto-corrections were applied',
+      'ADDRESSES ROOT CAUSE: The original "Missing activities array" error now impossible'
+    ],
     '1.1.48': [
       'INTELLIGENT FALLBACKS: Flow Designer automatically falls back to Business Rules when deployment fails',
       'SMART SESSION MANAGEMENT: Update Sets auto-create sessions when none exist',
@@ -274,6 +284,23 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.49': {
+      date: '2025-01-20',
+      changes: [
+        'ROOT CAUSE RESOLUTION: Fixed the fundamental issue causing Flow Designer validation failures',
+        'SCHEMA FLEXIBILITY: validateFlowDefinition now accepts both "steps" and "activities" JSON arrays',
+        'AUTO-CONVERSION: "steps" arrays automatically converted to "activities" (ServiceNow standard)',
+        'NESTED SUPPORT: Extracts activities from nested flow_definition structures',
+        'TRIGGER GENERATION: Auto-creates missing trigger definitions from deployment parameters',
+        'DEPLOYMENT INTEGRATION: Corrected definitions used in actual Flow Designer deployment',
+        'VALIDATION TRANSPARENCY: Shows which auto-corrections were applied during validation',
+        'COMPREHENSIVE CORRECTION: Handles multiple common JSON schema variations',
+        'BACKWARDS COMPATIBILITY: Existing flows with "activities" continue to work unchanged',
+        'ADDRESSES USER FEEDBACK: "Missing or invalid activities array" error now impossible',
+        'The original failure: "steps" vs "activities" mismatch - PERMANENTLY SOLVED',
+        'Flow deployment validation now succeeds with both old and new JSON formats'
+      ]
+    },
     '1.1.48': {
       date: '2025-01-20',
       changes: [

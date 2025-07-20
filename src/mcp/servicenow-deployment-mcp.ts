@@ -983,6 +983,7 @@ Use \`snow_deployment_debug\` for more information about this session.`,
       this.logger.info(`Deploying ${flowType} to ServiceNow`, { name: args.name, type: flowType });
 
       // Validate flow definition first if requested
+      let validatedDefinition = args.flow_definition;
       if (args.validate_before_deploy !== false) {
         const validationResult = await this.validateFlowDefinition({
           definition: args.flow_definition,
@@ -1003,6 +1004,20 @@ Use \`snow_deployment_debug\` for more information about this session.`,
               }
             ]
           };
+        }
+        
+        // CRITICAL: Use the corrected definition from validation
+        // The validateFlowDefinition method may have auto-corrected "steps" to "activities"
+        if (validationText.includes('Auto-converted "steps" to "activities"') || 
+            validationText.includes('Smart Auto-Corrections Applied')) {
+          // Re-parse the corrected definition from the validation process
+          let tempDef = typeof args.flow_definition === 'string' ? JSON.parse(args.flow_definition) : args.flow_definition;
+          if (tempDef.steps && !tempDef.activities) {
+            tempDef.activities = tempDef.steps;
+            delete tempDef.steps;
+          }
+          validatedDefinition = JSON.stringify(tempDef);
+          this.logger.info('Using auto-corrected flow definition for deployment');
         }
       }
 
@@ -1030,7 +1045,8 @@ Use \`snow_deployment_debug\` for more information about this session.`,
       }
 
       // Parse flow definition to inject deployed artifact references
-      let flowDefinition = args.flow_definition;
+      // Use the validated and corrected definition
+      let flowDefinition = validatedDefinition;
       if (typeof flowDefinition === 'string') {
         flowDefinition = JSON.parse(flowDefinition);
       }
@@ -2759,10 +2775,40 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       const issues: string[] = [];
       const warnings: string[] = [];
       const info: string[] = [];
+      const corrections: string[] = [];
 
-      // Basic structure validation
-      if (!definition.activities || !Array.isArray(definition.activities)) {
-        issues.push('❌ Missing or invalid "activities" array');
+      // SMART SCHEMA CORRECTION - Fix root cause of JSON schema issues
+      // Accept both "activities" and "steps" arrays
+      if (!definition.activities && !definition.steps) {
+        issues.push('❌ Missing "activities" or "steps" array');
+      } else if (definition.steps && !definition.activities) {
+        // AUTO-CORRECT: Convert "steps" to "activities"
+        definition.activities = definition.steps;
+        delete definition.steps;
+        corrections.push('✅ Auto-converted "steps" to "activities" (ServiceNow Flow Designer format)');
+        info.push('💡 Accepted "steps" array and converted to ServiceNow standard "activities"');
+      } else if (!Array.isArray(definition.activities)) {
+        issues.push('❌ "activities" must be an array');
+      }
+
+      // Auto-fix other common schema variations
+      if (definition.flow_definition && !definition.activities) {
+        // Nested flow definition - extract it
+        const nested = definition.flow_definition;
+        if (nested.activities || nested.steps) {
+          definition.activities = nested.activities || nested.steps;
+          corrections.push('✅ Extracted activities from nested flow_definition');
+        }
+      }
+
+      // Support different trigger formats
+      if (!definition.trigger && (args.trigger_type || args.table)) {
+        definition.trigger = {
+          type: args.trigger_type || 'manual',
+          table: args.table || '',
+          condition: args.condition || ''
+        };
+        corrections.push('✅ Auto-generated trigger from parameters');
       }
 
       // Flow type specific validation
@@ -2822,11 +2868,13 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       const hasErrors = issues.length > 0;
       const status = hasErrors ? '❌ VALIDATION FAILED' : '✅ VALIDATION PASSED';
 
+      const correctionsText = corrections.length > 0 ? `\n🔧 **Smart Auto-Corrections Applied:**\n${corrections.join('\n')}\n` : '';
+
       return {
         content: [
           {
             type: 'text',
-            text: `${status}\n\n📋 **Flow Validation Report:**\n- Flow Type: ${flowType}\n- Activities: ${definition.activities?.length || 0}\n- Status: ${hasErrors ? 'Failed' : 'Passed'}\n\n${issues.length > 0 ? `🚨 **Critical Issues:**\n${issues.join('\n')}\n\n` : ''}${warnings.length > 0 ? `⚠️ **Warnings:**\n${warnings.join('\n')}\n\n` : ''}${info.length > 0 ? `ℹ️ **Information:**\n${info.join('\n')}\n\n` : ''}${preview ? `\n📊 **Flow Preview:**\n${preview}\n` : ''}${!hasErrors && args.test_mode ? '\n🧪 **Test Mode:** Flow structure is valid for testing\n' : ''}${!hasErrors ? '\n✅ Flow definition is valid and ready for deployment!' : '\n❌ Please fix the issues before deploying.'}`
+            text: `${status}\n\n📋 **Flow Validation Report:**\n- Flow Type: ${flowType}\n- Activities: ${definition.activities?.length || 0}\n- Status: ${hasErrors ? 'Failed' : 'Passed'}\n${correctionsText}${issues.length > 0 ? `\n🚨 **Critical Issues:**\n${issues.join('\n')}\n\n` : ''}${warnings.length > 0 ? `⚠️ **Warnings:**\n${warnings.join('\n')}\n\n` : ''}${info.length > 0 ? `ℹ️ **Information:**\n${info.join('\n')}\n\n` : ''}${preview ? `\n📊 **Flow Preview:**\n${preview}\n` : ''}${!hasErrors && args.test_mode ? '\n🧪 **Test Mode:** Flow structure is valid for testing\n' : ''}${!hasErrors ? '\n✅ Flow definition is valid and ready for deployment!' : '\n❌ Please fix the issues before deploying.'}`
           }
         ]
       };
