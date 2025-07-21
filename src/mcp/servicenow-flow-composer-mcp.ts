@@ -405,7 +405,7 @@ class ServiceNowFlowComposerMCP {
       }
 
       const credentials = await this.oauth.loadCredentials();
-      const flowUrl = `https://${credentials?.instance}/flow-designer/flow/${flowInstruction.flowStructure.name}`;
+      const flowUrl = `https://${credentials?.instance}/flow-designer/flow/${flowInstruction.flowStructure?.name || 'unknown'}`;
 
       // Format the intelligent analysis results
       const intelligentAnalysis = this.formatIntelligentAnalysis(flowInstruction);
@@ -417,10 +417,10 @@ class ServiceNowFlowComposerMCP {
             text: `🧠 ServiceNow Intelligent Flow Created Successfully!
 
 🎯 **Flow Details:**
-- **Name**: ${flowInstruction.flowStructure.name}
-- **Description**: ${flowInstruction.flowStructure.description}
-- **Activities**: ${flowInstruction.flowStructure.activities.length}
-- **Trigger**: ${flowInstruction.flowStructure.trigger.type} on ${flowInstruction.flowStructure.trigger.table}
+- **Name**: ${flowInstruction.flowStructure?.name || 'Unknown'}
+- **Description**: ${flowInstruction.flowStructure?.description || 'No description'}
+- **Activities**: ${flowInstruction.flowStructure?.activities?.length || 0}
+- **Trigger**: ${flowInstruction.flowStructure?.trigger?.type || 'Unknown'} on ${flowInstruction.flowStructure?.trigger?.table || 'Unknown'}
 
 ${intelligentAnalysis}
 
@@ -428,7 +428,7 @@ ${intelligentAnalysis}
 ${flowInstruction.requiredArtifacts?.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**: ${artifact.name}`).join('\n') || 'No specific artifacts required'}
 
 🏗️ **Flow Structure:**
-${flowInstruction.flowStructure.activities.map((activity: any, index: number) => `${index + 1}. **${activity.name}** (${activity.type})${activity.artifact_reference ? ` - Uses: ${activity.artifact_reference.name}` : ''}${activity.subflow_reference ? ` - Subflow: ${activity.subflow_reference.name}` : ''}`).join('\n')}
+${flowInstruction.flowStructure?.activities?.map((activity: any, index: number) => `${index + 1}. **${activity.name}** (${activity.type})${activity.artifact_reference ? ` - Uses: ${activity.artifact_reference.name}` : ''}${activity.subflow_reference ? ` - Subflow: ${activity.subflow_reference.name}` : ''}`)?.join('\n') || 'No activities'}
 
 🔄 **Data Flow:**
 ${flowInstruction.parsedIntent?.dataFlow?.join(' → ') || 'Linear flow processing'}
@@ -502,32 +502,32 @@ The flow is now ready to handle your workflow requirements with enterprise-grade
 "${args.instruction}"
 
 🧠 **Parsed Intent:**
-- **Flow Name**: ${flowInstruction.parsedIntent.flowName}
-- **Table**: ${flowInstruction.parsedIntent.table}
-- **Trigger Type**: ${flowInstruction.parsedIntent.trigger.type}
-- **Condition**: ${flowInstruction.parsedIntent.trigger.condition || 'None'}
-- **Intents**: ${flowInstruction.parsedIntent.intents.join(', ') || 'None'}
-- **Data Flow**: ${flowInstruction.parsedIntent.dataFlow.join(' → ')}
+- **Flow Name**: ${flowInstruction.parsedIntent?.flowName || 'Auto-generated'}
+- **Table**: ${flowInstruction.parsedIntent?.table || 'Unknown'}
+- **Trigger Type**: ${flowInstruction.parsedIntent?.trigger?.type || 'Unknown'}
+- **Condition**: ${flowInstruction.parsedIntent?.trigger?.condition || 'None'}
+- **Intents**: ${flowInstruction.parsedIntent?.intents?.join(', ') || 'None'}
+- **Data Flow**: ${flowInstruction.parsedIntent?.dataFlow?.join(' → ') || 'None'}
 
 🔧 **Required Artifacts:**
-${flowInstruction.requiredArtifacts.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**
+${flowInstruction.requiredArtifacts?.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**
    - Name: ${artifact.name}
    - Sys ID: ${artifact.sys_id}
-   - Inputs: ${artifact.inputs.length} input(s)
-   - Outputs: ${artifact.outputs.length} output(s)`).join('\n\n')}
+   - Inputs: ${artifact.inputs?.length || 0} input(s)
+   - Outputs: ${artifact.outputs?.length || 0} output(s)`)?.join('\n\n') || 'No required artifacts'}
 
 🏗️ **Flow Structure Preview:**
-- **Name**: ${flowInstruction.flowStructure.name}
-- **Trigger**: ${flowInstruction.flowStructure.trigger.type} on ${flowInstruction.flowStructure.trigger.table}
-- **Activities**: ${flowInstruction.flowStructure.activities.length}
-- **Variables**: ${flowInstruction.flowStructure.variables.length}
-- **Error Handling**: ${flowInstruction.flowStructure.error_handling.length} rules
+- **Name**: ${flowInstruction.flowStructure?.name || 'Unknown'}
+- **Trigger**: ${flowInstruction.flowStructure?.trigger?.type || 'Unknown'} on ${flowInstruction.flowStructure?.trigger?.table || 'Unknown'}
+- **Activities**: ${flowInstruction.flowStructure?.activities?.length || 0}
+- **Variables**: ${flowInstruction.flowStructure?.variables?.length || 0}
+- **Error Handling**: ${flowInstruction.flowStructure?.error_handling?.length || 0} rules
 
 📊 **Complexity Analysis:**
-- **Artifact Dependencies**: ${flowInstruction.requiredArtifacts.length}
-- **Processing Steps**: ${flowInstruction.flowStructure.activities.length}
-- **Integration Points**: ${flowInstruction.requiredArtifacts.length}
-- **Data Flow Steps**: ${flowInstruction.parsedIntent.dataFlow.length}
+- **Artifact Dependencies**: ${flowInstruction.requiredArtifacts?.length || 0}
+- **Processing Steps**: ${flowInstruction.flowStructure?.activities?.length || 0}
+- **Integration Points**: ${flowInstruction.requiredArtifacts?.length || 0}
+- **Data Flow Steps**: ${flowInstruction.parsedIntent?.dataFlow?.length || 0}
 
 ✅ **Analysis Complete!** The instruction has been successfully parsed and all required components identified.`,
           },
@@ -560,7 +560,7 @@ ${flowInstruction.requiredArtifacts.map((artifact: any, index: number) => `${ind
       // Filter by specific artifact types if requested
       let artifactsToShow = flowInstruction.requiredArtifacts;
       if (args.artifact_types && args.artifact_types.length > 0) {
-        artifactsToShow = flowInstruction.requiredArtifacts.filter((a: any) => 
+        artifactsToShow = flowInstruction.requiredArtifacts?.filter((a: any) => 
           args.artifact_types.includes(a.type)
         );
       }
@@ -730,14 +730,14 @@ ${this.analyzeDataFlow(flowStructure.activities)}
 🎯 **Deployed Flow Details:**
 - **Name**: ${args.flow_instruction.flowStructure.name}
 - **Activities**: ${args.flow_instruction.flowStructure.activities.length}
-- **Artifacts**: ${args.flow_instruction.requiredArtifacts.length}
+- **Artifacts**: ${args.flow_instruction.requiredArtifacts?.length || 0}
 
 🔗 **ServiceNow Links:**
 - Flow Designer: https://${credentials?.instance}/flow-designer/flow/${args.flow_instruction.flowStructure.name}
 - Flow Designer Home: https://${credentials?.instance}/flow-designer
 
 📊 **Deployment Summary:**
-${args.flow_instruction.requiredArtifacts.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**: ${artifact.purpose} - ${artifact.required ? 'Required' : 'Optional'}`).join('\n')}
+${args.flow_instruction.requiredArtifacts?.map((artifact: any, index: number) => `${index + 1}. **${artifact.type}**: ${artifact.purpose} - ${artifact.required ? 'Required' : 'Optional'}`)?.join('\n') || 'No artifacts'}
 
 ✅ **Deployment Complete!** Your complex ServiceNow flow with multi-artifact orchestration is now active.`,
           },
@@ -760,7 +760,7 @@ ${args.flow_instruction.requiredArtifacts.map((artifact: any, index: number) => 
   }
 
   private getFlowStepForArtifact(artifact: any, flowInstruction: FlowInstruction): string {
-    const step = flowInstruction.flowStructure.activities.find((a: any) => 
+    const step = flowInstruction.flowStructure?.activities?.find((a: any) => 
       a.artifact_reference && a.artifact_reference.type === artifact.type
     );
     return step ? step.name : 'Not used in flow';

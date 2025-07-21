@@ -2,13 +2,22 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.66';
+export const VERSION = '1.1.67';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.67': [
+      '🔧 CRITICAL MCP ERROR FIX: Fixed "Cannot read properties of undefined (reading flowName)" error',
+      '✅ NULL SAFETY: Added comprehensive null safety checks to flow composer MCP server',
+      '🏗️ CLI MODERNIZATION: Updated verouderde CLI instructions to team-based SPARC architecture',
+      '👥 TEAM-BASED PROMPTS: CLI now promotes specialized teams instead of generic agents',
+      '📋 SERVICENOW BEST PRACTICES: Added specific guidance for sys_user_group table usage',
+      '🚨 FIXED GROUP CREATION: Documents correct approach - use sys_user_group, NOT CMDB search',
+      '⚡ IMPROVED STABILITY: Flow composer now handles undefined parsedIntent gracefully'
+    ],
     '1.1.66': [
       '🔧 CRITICAL NPM PACKAGE FIX: Added CLAUDE.md to .npmignore exceptions',
       '📦 PACKAGE INCLUSION: CLAUDE.md now included in npm package (was excluded by *.md rule)',

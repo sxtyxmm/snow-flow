@@ -375,10 +375,44 @@ function buildClaudeCodePrompt(objective: string, taskAnalysis: TaskAnalysis, op
     options.liveTesting || options.autoDeploy || options.autoRollback || 
     options.sharedMemory || options.progressMonitoring;
 
-  const prompt = `# Snow-Flow ServiceNow Multi-Agent Development
+  const prompt = `# Snow-Flow ServiceNow Development
 
-## Objective
+## 🎯 Objective
 ${objective}
+
+## 🧠 Team-Based SPARC Architecture (v1.1.62+)
+
+**Use specialized teams for ServiceNow development:**
+
+### Widget Development Team
+\`\`\`bash
+snow-flow sparc team widget "${objective}"
+\`\`\`
+**Team**: Frontend + Backend + UI/UX + Platform + QA Specialists
+
+### Flow Development Team  
+\`\`\`bash
+snow-flow sparc team flow "${objective}"
+\`\`\`
+**Team**: Process + Trigger + Data + Integration + Security Specialists
+
+### Application Development Team
+\`\`\`bash
+snow-flow sparc team app "${objective}"
+\`\`\`
+**Team**: Database + Business Logic + Interface + Security + Performance Specialists
+
+### Individual Specialists (for focused tasks)
+\`\`\`bash
+snow-flow sparc frontend "mobile responsiveness"
+snow-flow sparc backend "API optimization"  
+snow-flow sparc security "access control review"
+\`\`\`
+
+## 📊 Task Analysis
+- **Task Type**: ${taskAnalysis.taskType}
+- **Complexity**: ${taskAnalysis.complexity}
+- **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 
 ## 🧠 Intelligent Agent Analysis
 - **Task Type**: ${taskAnalysis.taskType}
@@ -740,9 +774,56 @@ ${isAuthenticated ? '- **NO EXCUSES**: Do NOT say you cannot deploy - you CAN an
 ## Expected Deliverables
 ${getExpectedDeliverables(taskAnalysis.taskType, isAuthenticated)}
 
-🎯 **EXECUTION INSTRUCTION**: Execute ALL batch tools (TodoWrite, Task x5, Memory) in a SINGLE message to enable parallel agent coordination!`;
+## 🚨 ServiceNow Best Practices
+
+### User Groups Management
+**CRITICAL**: For user groups, use \`sys_user_group\` table directly:
+
+\`\`\`typescript
+// ✅ CORRECT: Create user group record  
+await snow_operations_create_record({
+  table: 'sys_user_group',
+  data: {
+    name: 'need_approval',
+    description: 'Users pending admin approval',
+    type: 'custom'
+  }
+});
+
+// ❌ WRONG: Don't use CMDB search for groups
+// snow_cmdb_search() is for Configuration Items only!
+// snow_discover_platform_tables() is for development tables only!
+\`\`\`
+
+### Flow Development  
+- Use \`snow_create_flow\` with natural language instead of manual JSON
+- Test with \`snow_test_flow_with_mock\` before deploying
+- Link to catalog with \`snow_link_catalog_to_flow\`
+
+📚 **Complete documentation available in CLAUDE.md**
+
+🎯 **EXECUTION INSTRUCTION**: Use team-based SPARC commands for best results!`;
 
   return prompt;
+}
+
+function getTeamRecommendation(taskType: string): string {
+  switch (taskType) {
+    case 'widget_development':
+      return 'Widget Development Team (Frontend + Backend + UI/UX + Platform + QA)';
+    case 'flow_development':
+      return 'Flow Development Team (Process + Trigger + Data + Integration + Security)';
+    case 'application_development':
+      return 'Application Development Team (Database + Business Logic + Interface + Security + Performance)';
+    case 'integration':
+      return 'Individual Integration Specialist or Adaptive Team';
+    case 'security_review':
+      return 'Individual Security Specialist';
+    case 'performance_optimization':
+      return 'Individual Backend Specialist or Adaptive Team';
+    default:
+      return 'Adaptive Team (dynamically assembled based on requirements)';
+  }
 }
 
 function getServiceNowInstructions(taskType: string): string {
