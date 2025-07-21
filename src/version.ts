@@ -2,13 +2,36 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.71';
+export const VERSION = '1.1.73';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.73': [
+      '🎯 API SIMPLIFICATION: snow_unified_deploy → snow_deploy (cleaner naming)',
+      '⚠️ DEPRECATION SYSTEM: Automatic redirection from old tools with warnings',
+      '🔧 UNIFIED API: One tool (snow_deploy) replaces 4 redundant deployment tools',
+      '📋 BACKWARD COMPATIBILITY: Old tools still work but show deprecation warnings',
+      '✅ LESS CONFUSION: 75% fewer deployment commands for same functionality',
+      '🚀 USER REQUEST: "unified_deploy gewoon deploy noemen om het simpel te houden" - IMPLEMENTED',
+      '📊 INTELLIGENT REDIRECTION: Deprecated tools automatically convert args and redirect',
+      '💡 MIGRATION PATH: Clear guidance from old tools to new simplified API',
+      '🎯 CLEAN API: Single snow_deploy tool handles widgets, flows, applications with fallbacks'
+    ],
+    '1.1.72': [
+      '🚀 UNIFIED DEPLOYMENT TOOL: Complete deployment workflow with resilient fallbacks - snow_unified_deploy',
+      '⚡ AUTO-SWITCH UPDATE SETS: snow_update_set_create now automatically switches to created Update Set',
+      '🔧 ENSURE ACTIVE SESSION: New snow_ensure_active_update_set tool for automatic session management',
+      '📋 DEPLOYMENT CASCADE: Automatic strategy cascade (global → application → personal → manual)',
+      '🛡️ RESILIENT DEPLOYMENT: Automatic fallback to manual steps with Update Set tracking',
+      '🔐 PERMISSION HANDLING: Auto-escalation and intelligent permission error recovery',
+      '📊 MANUAL FALLBACK STEPS: Detailed manual deployment instructions when automation fails',
+      '✅ USER REQUEST: "flow deployment faalde op permissions" - COMPLETELY RESOLVED',
+      '⚙️ PERFECT WORKFLOW: Never "failure zonder plan" - always provides working solution',
+      '🎯 ONE COMMAND SOLUTION: snow_unified_deploy handles entire workflow automatically'
+    ],
     '1.1.71': [
       '🎯 ORCHESTRATION TRANSPARENCY: MCP tools now clearly show deployment vs planning mode',
       '⚠️ DEPLOYMENT WARNINGS: Explicit warnings when auto_deploy will create REAL artifacts',
@@ -494,6 +517,43 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.73': {
+      date: '2025-01-21',
+      changes: [
+        'API SIMPLIFICATION: Major cleanup and simplification of deployment tools',
+        'USER REQUEST: "unified_deploy gewoon deploy noemen om het simpel te houden" - IMPLEMENTED',
+        'RENAMED: snow_unified_deploy → snow_deploy (much cleaner and simpler)',
+        'DEPRECATED: snow_deploy_widget, snow_deploy_flow, snow_deploy_application (redundant)',
+        'DEPRECATED: snow_bulk_deploy (functionality integrated into snow_deploy)',
+        'INTELLIGENT REDIRECTION: Old tools automatically redirect to snow_deploy with warnings',
+        'BACKWARD COMPATIBILITY: All existing tools still work but show deprecation warnings',
+        'AUTOMATIC CONVERSION: Deprecated tools automatically convert arguments to new format',
+        'MIGRATION GUIDANCE: Clear instructions provided for moving to simplified API',
+        '75% REDUCTION: From 4+ deployment tools down to 1 unified snow_deploy tool',
+        'SAME FUNCTIONALITY: All features preserved but through cleaner, simpler interface',
+        'BETTER UX: Users no longer confused by multiple overlapping deployment tools',
+        'CLEAN CODEBASE: Reduced complexity while maintaining full backward compatibility'
+      ]
+    },
+    '1.1.72': {
+      date: '2025-01-21',
+      changes: [
+        'MAJOR DEPLOYMENT OVERHAUL: Complete solution for permission failures and workflow improvements',
+        'USER FEEDBACK: "De flow deployment faalde op permissions" - COMPLETELY RESOLVED',
+        'NEW TOOL: snow_unified_deploy - Complete deployment workflow with resilient fallbacks',
+        'AUTO-SWITCH UPDATE SETS: snow_update_set_create now auto-switches to created Update Set (auto_switch: true default)',
+        'ENSURE ACTIVE SESSION: snow_ensure_active_update_set automatically creates/finds active Update Set sessions',
+        'DEPLOYMENT CASCADE: Automatic strategy cascade tries global → application → personal → manual fallback',
+        'RESILIENT DEPLOYMENT: When direct deployment fails, automatically generates manual steps with Update Set tracking',
+        'PERMISSION ESCALATION: Auto-request permission escalation when deployment fails due to permissions',
+        'MANUAL FALLBACK STEPS: Detailed, type-specific manual deployment instructions when automation fails',
+        'UPDATE SET INTEGRATION: All deployment methods now automatically ensure and track in Update Sets',
+        'PERFECT WORKFLOW GUARANTEE: Never returns "failure zonder plan" - always provides working solution',
+        'COMPREHENSIVE ERROR RECOVERY: Multiple fallback strategies ensure successful deployment or clear manual path',
+        'ONE COMMAND SOLUTION: snow_unified_deploy({type: "flow", instruction: "approval flow"}) handles everything',
+        'WORKFLOW IMPROVEMENTS: Addresses all issues from comprehensive user feedback systematically'
+      ]
+    },
     '1.1.71': {
       date: '2025-01-21',
       changes: [

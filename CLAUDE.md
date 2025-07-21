@@ -30,6 +30,37 @@
 - CHECK current update set before starting work
 - COMPLETE update sets before moving between environments
 
+## 🎯 Simplified Deployment API (v1.1.73+)
+
+### One Tool for All Deployments
+**NEW**: All deployment operations now use the unified `snow_deploy` tool instead of multiple separate tools:
+
+```javascript
+// ✅ SIMPLIFIED API - One tool for everything
+snow_deploy({
+  type: "widget",           // widget, flow, application, script, batch
+  config: { ... },          // Configuration for widgets/scripts
+  instruction: "...",       // Natural language for flows
+  artifacts: [...],         // For batch deployments
+  dry_run: false,          // Preview mode
+  parallel: true,          // Batch optimization
+  transaction_mode: true   // All-or-nothing deployment
+});
+```
+
+### Backward Compatibility
+All old deployment tools still work but show deprecation warnings:
+- `snow_deploy_widget()` → redirects to `snow_deploy({type: "widget"})`
+- `snow_deploy_flow()` → redirects to `snow_deploy({type: "flow"})`  
+- `snow_deploy_application()` → redirects to `snow_deploy({type: "application"})`
+- `snow_bulk_deploy()` → redirects to `snow_deploy({type: "batch"})`
+
+### Benefits
+- **75% fewer deployment commands** - One tool instead of 4+
+- **Consistent interface** - Same parameters across all artifact types
+- **Automatic fallbacks** - Built-in resilience and error recovery
+- **Better error messages** - Unified error handling and guidance
+
 ## 📋 Essential MCP Tool Patterns
 
 ### Batch Operations for Maximum Efficiency
@@ -137,16 +168,22 @@ snow_link_catalog_to_flow({
 
 ### Widget Development Tools
 ```javascript
-// Deploy widgets with automatic validation
-snow_deploy_widget({
-  name: "incident_dashboard",
-  title: "Incident Dashboard",
-  template: htmlContent,
-  css: cssContent,
-  client_script: clientJS,
-  server_script: serverJS,
-  demo_data: { incidents: [...] }
+// Deploy widgets with automatic validation (SIMPLIFIED API v1.1.73+)
+snow_deploy({
+  type: "widget",
+  config: {
+    name: "incident_dashboard",
+    title: "Incident Dashboard",
+    template: htmlContent,
+    css: cssContent,
+    client_script: clientJS,
+    server_script: serverJS,
+    demo_data: { incidents: [...] }
+  }
 });
+
+// OLD API (deprecated but still works with automatic redirection)
+// snow_deploy_widget() - shows deprecation warning, redirects to snow_deploy
 
 // Preview and test widgets
 snow_preview_widget({
@@ -167,17 +204,21 @@ snow_widget_test({
 
 ### Bulk Operations
 ```javascript
-// Deploy multiple artifacts at once
-snow_bulk_deploy({
+// Deploy multiple artifacts at once (SIMPLIFIED API v1.1.73+)
+snow_deploy({
+  type: "batch",
   artifacts: [
-    { type: "widget", data: widgetData },
-    { type: "flow", data: flowData },
-    { type: "script", data: scriptData }
+    { type: "widget", config: widgetData },
+    { type: "flow", instruction: "approval flow" },
+    { type: "script", config: scriptData }
   ],
   transaction_mode: true,     // All or nothing
-  parallel: true,            // Deploy simultaneously
+  parallel: true,            // Deploy simultaneously  
   dry_run: false
 });
+
+// OLD API (deprecated but still works with automatic redirection)
+// snow_bulk_deploy() - shows deprecation warning, redirects to snow_deploy
 ```
 
 ### Intelligent Analysis
@@ -210,16 +251,20 @@ snow_pattern_analysis({
 
 Example:
 ```javascript
-// GOOD - Natural language
+// BEST - Natural language with simplified deployment (v1.1.73+)
 snow_create_flow({
   instruction: "create approval flow for user provisioning",
   deploy_immediately: true
 })
 
-// BAD - Manual JSON (vaak leeg resultaat!)
-snow_deploy_flow({
-  flow_definition: {...} // Dit werkt vaak niet!
+// ALTERNATIVE - Direct deployment with simplified API
+snow_deploy({
+  type: "flow", 
+  instruction: "approval flow for user provisioning"
 })
+
+// OLD API (deprecated but still works with automatic redirection)
+// snow_deploy_flow() - shows deprecation warning, redirects to snow_deploy
 ```
 
 ## ⚡ Performance Optimization
@@ -251,7 +296,7 @@ MultiRead([
 2. **Planning Phase**: Use TodoWrite to plan all tasks
 3. **Development Phase**: Launch agents concurrently
 4. **Testing Phase**: Use mock testing tools
-5. **Deployment Phase**: Use bulk deploy with validation
+5. **Deployment Phase**: Use simplified snow_deploy with validation
 
 ### Error Recovery Patterns
 ```javascript

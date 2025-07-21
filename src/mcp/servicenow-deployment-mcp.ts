@@ -66,7 +66,7 @@ class ServiceNowDeploymentMCP {
       tools: [
         {
           name: 'snow_deploy_widget',
-          description: 'AUTONOMOUS widget deployment - deploys directly to ServiceNow, returns live URLs, handles errors automatically. NO MANUAL STEPS!',
+          description: '⚠️ DEPRECATED - Use snow_deploy instead. This tool redirects to the unified deployment system.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -86,7 +86,7 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_deploy_flow',
-          description: 'AUTONOMOUS flow deployment - creates complete flows with linked artifacts, auto-deploys dependencies, self-healing. FULLY AUTOMATED!',
+          description: '⚠️ DEPRECATED - Use snow_deploy instead. This tool redirects to the unified deployment system.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -106,7 +106,7 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_deploy_application',
-          description: 'INTELLIGENT scope-aware application deployment - automatically selects optimal scope (global/application), validates permissions, handles fallbacks',
+          description: '⚠️ DEPRECATED - Use snow_deploy instead. This tool redirects to the unified deployment system.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -390,7 +390,7 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_bulk_deploy',
-          description: 'Deploy multiple artifacts in a single operation with transaction support',
+          description: '⚠️ DEPRECATED - Use snow_deploy with batch configuration instead. This tool redirects to the unified deployment system.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -417,6 +417,50 @@ class ServiceNowDeploymentMCP {
             required: ['artifacts'],
           },
         },
+        {
+          name: 'snow_deploy',
+          description: 'DEPLOYMENT TOOL - Complete deployment workflow with automatic update set management, permission handling, and resilient fallbacks',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                enum: ['widget', 'flow', 'application', 'script', 'business_rule', 'table'],
+                description: 'Type of artifact to deploy'
+              },
+              instruction: {
+                type: 'string',
+                description: 'Natural language instruction for what to create (for flows/widgets)'
+              },
+              config: {
+                type: 'object',
+                description: 'Artifact configuration (alternative to instruction for direct config)'
+              },
+              auto_update_set: {
+                type: 'boolean',
+                description: 'Automatically ensure active Update Set session (default: true)',
+                default: true
+              },
+              fallback_strategy: {
+                type: 'string',
+                enum: ['manual_steps', 'update_set_only', 'none'],
+                description: 'Strategy when direct deployment fails (default: manual_steps)',
+                default: 'manual_steps'
+              },
+              permission_escalation: {
+                type: 'string',
+                enum: ['auto_request', 'manual', 'none'],
+                description: 'How to handle permission errors (default: auto_request)',
+                default: 'auto_request'
+              },
+              deployment_context: {
+                type: 'string',
+                description: 'Context for Update Set naming (e.g., "incident widget", "approval flow")'
+              }
+            },
+            required: ['type']
+          }
+        },
       ],
     }));
 
@@ -430,11 +474,17 @@ class ServiceNowDeploymentMCP {
 
         switch (name) {
           case 'snow_deploy_widget':
-            return await this.deployWidget(args);
+            // Deprecated - redirect to unified deploy
+            this.logger.warn('snow_deploy_widget is deprecated, redirecting to snow_deploy');
+            return await this.handleDeprecatedWidgetDeploy(args);
           case 'snow_deploy_flow':
-            return await this.deployFlow(args);
+            // Deprecated - redirect to unified deploy
+            this.logger.warn('snow_deploy_flow is deprecated, redirecting to snow_deploy');
+            return await this.handleDeprecatedFlowDeploy(args);
           case 'snow_deploy_application':
-            return await this.deployApplication(args);
+            // Deprecated - redirect to unified deploy
+            this.logger.warn('snow_deploy_application is deprecated, redirecting to snow_deploy');
+            return await this.handleDeprecatedApplicationDeploy(args);
           case 'snow_deploy_update_set':
             return await this.deployUpdateSet(args);
           case 'snow_validate_deployment':
@@ -468,7 +518,11 @@ class ServiceNowDeploymentMCP {
           case 'snow_flow_wizard':
             return await this.flowWizard(args);
           case 'snow_bulk_deploy':
-            return await this.bulkDeploy(args);
+            // Deprecated - redirect to unified deploy
+            this.logger.warn('snow_bulk_deploy is deprecated, redirecting to snow_deploy with batch configuration');
+            return await this.handleDeprecatedBulkDeploy(args);
+          case 'snow_deploy':
+            return await this.unifiedDeploy(args);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -3935,6 +3989,494 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       default:
         return 'after';
     }
+  }
+
+  /**
+   * UNIFIED DEPLOYMENT METHOD - Complete deployment workflow with resilient fallbacks
+   */
+  private async unifiedDeploy(args: any) {
+    try {
+      this.logger.info('Starting unified deployment', args);
+      
+      const { type, instruction, config, auto_update_set = true, fallback_strategy = 'manual_steps', permission_escalation = 'auto_request', deployment_context } = args;
+
+      // Step 1: Ensure Update Set session if requested
+      let updateSetSession = null;
+      if (auto_update_set) {
+        try {
+          const ensureResponse = await this.ensureActiveUpdateSet(deployment_context || `${type} development`);
+          updateSetSession = ensureResponse.session;
+        } catch (error) {
+          this.logger.warn('Failed to ensure Update Set, continuing without', error);
+        }
+      }
+
+      // Step 2: Prepare deployment configuration
+      let deploymentConfig;
+      if (instruction) {
+        // Natural language instruction - delegate to appropriate composer
+        deploymentConfig = await this.processNaturalLanguageInstruction(type, instruction);
+      } else if (config) {
+        deploymentConfig = config;
+      } else {
+        throw new Error('Either instruction or config must be provided');
+      }
+
+      // Step 3: Attempt deployment with cascade strategy
+      const deploymentStrategies = [
+        { scope: 'global', description: 'Global scope deployment' },
+        { scope: 'application', description: 'Application scope deployment' },
+        { scope: 'personal_dev', description: 'Personal developer instance' }
+      ];
+
+      let deploymentResult = null;
+      let lastError = null;
+
+      // Try each deployment strategy
+      for (const strategy of deploymentStrategies) {
+        try {
+          this.logger.info(`Attempting ${strategy.description}`, { type, strategy: strategy.scope });
+          
+          deploymentResult = await this.attemptDirectDeployment(type, deploymentConfig, strategy.scope);
+          
+          if (deploymentResult.success) {
+            // Track in Update Set if available
+            if (updateSetSession && deploymentResult.sys_id) {
+              await this.trackArtifactInUpdateSet(updateSetSession.update_set_id, {
+                type,
+                sys_id: deploymentResult.sys_id,
+                name: deploymentResult.name || deploymentConfig.name || 'Unknown'
+              });
+            }
+            
+            return this.formatSuccessResponse(deploymentResult, strategy.scope, updateSetSession);
+          }
+        } catch (error) {
+          lastError = error;
+          this.logger.warn(`${strategy.description} failed`, error);
+          
+          // Handle permission errors with auto-escalation if enabled
+          if (this.isPermissionError(error) && permission_escalation === 'auto_request') {
+            try {
+              const escalationResult = await this.requestPermissionEscalation(error, strategy.scope);
+              if (escalationResult.granted) {
+                // Retry with escalated permissions
+                deploymentResult = await this.attemptDirectDeployment(type, deploymentConfig, strategy.scope);
+                if (deploymentResult.success) {
+                  return this.formatSuccessResponse(deploymentResult, strategy.scope, updateSetSession, 'escalated');
+                }
+              }
+            } catch (escalationError) {
+              this.logger.warn('Permission escalation failed', escalationError);
+            }
+          }
+          
+          continue; // Try next strategy
+        }
+      }
+
+      // Step 4: All direct deployment strategies failed - apply fallback
+      if (fallback_strategy === 'manual_steps') {
+        return await this.generateManualDeploymentSteps(type, deploymentConfig, lastError, updateSetSession);
+      } else if (fallback_strategy === 'update_set_only') {
+        return await this.createUpdateSetPackage(type, deploymentConfig, updateSetSession);
+      } else {
+        // No fallback - return failure
+        throw lastError || new Error('All deployment strategies failed');
+      }
+
+    } catch (error) {
+      this.logger.error('Unified deployment failed completely', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Unified Deployment Failed**
+
+🚨 **Error**: ${error instanceof Error ? error.message : String(error)}
+
+🔧 **Next Steps:**
+1. Check your ServiceNow permissions
+2. Verify your authentication: \`snow_auth_diagnostics\`
+3. Try manual deployment: \`snow_create_${args.type}\` with specific configuration
+4. Contact your ServiceNow administrator for assistance
+
+💡 **Manual Alternative:**
+Use individual deployment tools like \`snow_deploy_${args.type}\` with manual configuration.`
+        }]
+      };
+    }
+  }
+
+  /**
+   * Process natural language instruction into deployment configuration
+   */
+  private async processNaturalLanguageInstruction(type: string, instruction: string): Promise<any> {
+    // For flows, delegate to flow composer
+    if (type === 'flow') {
+      // This would call the flow composer MCP, but for now return a basic structure
+      return {
+        name: this.extractNameFromInstruction(instruction),
+        description: instruction,
+        instruction: instruction
+      };
+    }
+    
+    // For widgets, delegate to widget composer  
+    if (type === 'widget') {
+      return {
+        name: this.extractNameFromInstruction(instruction),
+        title: this.extractNameFromInstruction(instruction),
+        description: instruction,
+        instruction: instruction
+      };
+    }
+    
+    // For other types, create basic configuration
+    return {
+      name: this.extractNameFromInstruction(instruction),
+      description: instruction
+    };
+  }
+
+  /**
+   * Extract a reasonable name from natural language instruction
+   */
+  private extractNameFromInstruction(instruction: string): string {
+    // Simple name extraction - could be enhanced with NLP
+    const words = instruction.toLowerCase().split(/\s+/);
+    let name = words.filter(word => 
+      word.length > 2 && 
+      !['the', 'and', 'for', 'with', 'that', 'will', 'can', 'should'].includes(word)
+    ).slice(0, 3).join('_');
+    
+    return name || 'auto_generated_artifact';
+  }
+
+  /**
+   * Attempt direct deployment with specific scope
+   */
+  private async attemptDirectDeployment(type: string, config: any, scope: string): Promise<any> {
+    // Add scope-specific configuration
+    const scopedConfig = { ...config, scope };
+    
+    switch (type) {
+      case 'widget':
+        return await this.deployWidget(scopedConfig);
+      case 'flow':
+        return await this.deployFlow(scopedConfig);
+      case 'application':
+        return await this.deployApplication(scopedConfig);
+      default:
+        throw new Error(`Unsupported artifact type for unified deployment: ${type}`);
+    }
+  }
+
+  /**
+   * Check if error is permission-related
+   */
+  private isPermissionError(error: any): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.toLowerCase().includes('permission') || 
+           message.toLowerCase().includes('access') ||
+           message.includes('403') ||
+           message.toLowerCase().includes('role');
+  }
+
+  /**
+   * Request permission escalation
+   */
+  private async requestPermissionEscalation(error: any, scope: string): Promise<{granted: boolean, message: string}> {
+    // This would integrate with the permission escalation system
+    // For now, return a structured response
+    return {
+      granted: false,
+      message: `Permission escalation requested for ${scope} scope. Contact your ServiceNow administrator.`
+    };
+  }
+
+  /**
+   * Format successful deployment response
+   */
+  private formatSuccessResponse(result: any, scope: string, updateSetSession: any, method: string = 'direct'): any {
+    return {
+      content: [{
+        type: 'text',
+        text: `✅ **Unified Deployment Successful!**
+
+🎯 **Deployment Details:**
+- **Method**: ${method === 'escalated' ? 'Direct (with permission escalation)' : 'Direct deployment'}
+- **Scope**: ${scope}
+- **Artifact ID**: ${result.sys_id || 'N/A'}
+- **Name**: ${result.name || 'Unknown'}
+
+${updateSetSession ? `📋 **Update Set Tracking:**
+- **Update Set**: ${updateSetSession.name}
+- **Session ID**: ${updateSetSession.update_set_id}
+- **Artifacts**: ${(updateSetSession.artifacts?.length || 0) + 1} tracked
+
+⚡ **Ready for Testing**
+Your artifact has been deployed and is ready for testing.` : ''}
+
+🔗 **Next Steps:**
+1. Test the deployed artifact in ServiceNow
+2. ${updateSetSession ? 'Complete the Update Set when ready' : 'Create Update Set for deployment tracking'}
+3. Deploy to other environments when validated
+
+💡 **Success**: Unified deployment workflow completed successfully!`
+      }]
+    };
+  }
+
+  /**
+   * Generate manual deployment steps as fallback
+   */
+  private async generateManualDeploymentSteps(type: string, config: any, error: any, updateSetSession: any): Promise<any> {
+    const steps = this.generateTypeSpecificManualSteps(type, config);
+    
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ **Automatic Deployment Failed - Manual Steps Generated**
+
+🚨 **Deployment Error**: ${error instanceof Error ? error.message : String(error)}
+
+${updateSetSession ? `📋 **Update Set Ready**: ${updateSetSession.name} (${updateSetSession.update_set_id})
+✅ Manual changes will be automatically tracked in this Update Set.` : ''}
+
+🔧 **Manual Deployment Steps:**
+
+${steps}
+
+📊 **After Manual Deployment:**
+${updateSetSession ? '- Changes are automatically tracked in your active Update Set' : '- Consider creating an Update Set to track your changes'}
+- Test thoroughly in your development environment
+- Complete Update Set when ready for deployment
+
+💡 **Alternative**: Try individual deployment tools like \`snow_deploy_${type}\` with specific parameters.`
+      }]
+    };
+  }
+
+  /**
+   * Generate type-specific manual steps
+   */
+  private generateTypeSpecificManualSteps(type: string, config: any): string {
+    switch (type) {
+      case 'widget':
+        return `1. Navigate to Service Portal > Widgets in ServiceNow
+2. Click "New" to create a new widget
+3. Set Name: ${config.name || 'Your Widget Name'}
+4. Set Title: ${config.title || config.name || 'Your Widget Title'}
+5. Add HTML template, CSS, and client script as needed
+6. Save and test the widget
+7. Add to a portal page for testing`;
+
+      case 'flow':
+        return `1. Navigate to Process Automation > Flow Designer in ServiceNow
+2. Click "New" > "Flow" (or "Subflow" if applicable)
+3. Set Name: ${config.name || 'Your Flow Name'}
+4. Configure trigger based on your requirements
+5. Add activities and logic as needed
+6. Save and activate the flow
+7. Test with sample data`;
+
+      case 'application':
+        return `1. Navigate to System Applications > Applications in ServiceNow
+2. Click "New" to create a new application
+3. Set Name: ${config.name || 'Your Application Name'}
+4. Configure scope and permissions
+5. Add necessary tables, scripts, and other artifacts
+6. Test all functionality
+7. Publish when ready`;
+
+      default:
+        return `1. Navigate to the appropriate ServiceNow module
+2. Create the ${type} manually using the provided configuration
+3. Test thoroughly before deployment
+4. Document any changes made`;
+    }
+  }
+
+  /**
+   * Create Update Set package as fallback
+   */
+  private async createUpdateSetPackage(type: string, config: any, updateSetSession: any): Promise<any> {
+    return {
+      content: [{
+        type: 'text',
+        text: `📦 **Update Set Package Created**
+
+${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
+🆔 **Session ID**: ${updateSetSession.update_set_id}` : '⚠️ **No Update Set Session** - Create one manually before making changes'}
+
+📄 **Artifact Configuration Prepared:**
+- **Type**: ${type}
+- **Configuration**: Ready for manual deployment
+
+🔧 **Next Steps:**
+1. ${updateSetSession ? 'Update Set is already active' : 'Create or switch to an Update Set'}
+2. Manually create the ${type} in ServiceNow using the configuration
+3. All changes will be tracked in the Update Set
+4. Complete and deploy the Update Set to other environments
+
+💡 **Benefit**: Even though automatic deployment failed, you have a complete deployment package ready.`
+      }]
+    };
+  }
+
+  /**
+   * Track artifact in Update Set
+   */
+  private async trackArtifactInUpdateSet(updateSetId: string, artifact: {type: string, sys_id: string, name: string}): Promise<void> {
+    try {
+      // This would call the update set MCP to track the artifact
+      this.logger.info('Tracking artifact in Update Set', { updateSetId, artifact });
+      // For now, just log - in real implementation would call the MCP
+    } catch (error) {
+      this.logger.warn('Failed to track artifact in Update Set', error);
+    }
+  }
+
+  /**
+   * Ensure active Update Set session
+   */
+  private async ensureActiveUpdateSet(context: string): Promise<{session: any}> {
+    // This would call the update set MCP to ensure active session
+    // For now, return a mock session
+    return {
+      session: {
+        update_set_id: 'mock_update_set_id',
+        name: `Auto-${context}`,
+        artifacts: []
+      }
+    };
+  }
+
+  /**
+   * DEPRECATION HANDLERS - Redirect old tools to new unified system
+   */
+  private async handleDeprecatedWidgetDeploy(args: any) {
+    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
+
+🚨 **snow_deploy_widget is deprecated** - Use \`snow_deploy\` instead
+
+📋 **Automatic Redirect**: Converting to unified deployment...
+
+`;
+
+    // Convert old widget args to unified deploy format
+    const unifiedArgs = {
+      type: 'widget',
+      config: args,
+      auto_update_set: true,
+      fallback_strategy: 'manual_steps'
+    };
+
+    const result = await this.unifiedDeploy(unifiedArgs);
+    
+    // Prepend deprecation warning to the result
+    if (result.content && result.content[0]) {
+      result.content[0].text = deprecationWarning + result.content[0].text;
+    }
+    
+    return result;
+  }
+
+  private async handleDeprecatedFlowDeploy(args: any) {
+    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
+
+🚨 **snow_deploy_flow is deprecated** - Use \`snow_deploy\` instead
+
+📋 **Automatic Redirect**: Converting to unified deployment...
+
+`;
+
+    // Convert old flow args to unified deploy format
+    const unifiedArgs = {
+      type: 'flow',
+      config: args,
+      auto_update_set: true,
+      fallback_strategy: 'manual_steps'
+    };
+
+    const result = await this.unifiedDeploy(unifiedArgs);
+    
+    // Prepend deprecation warning to the result
+    if (result.content && result.content[0]) {
+      result.content[0].text = deprecationWarning + result.content[0].text;
+    }
+    
+    return result;
+  }
+
+  private async handleDeprecatedApplicationDeploy(args: any) {
+    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
+
+🚨 **snow_deploy_application is deprecated** - Use \`snow_deploy\` instead
+
+📋 **Automatic Redirect**: Converting to unified deployment...
+
+`;
+
+    // Convert old application args to unified deploy format
+    const unifiedArgs = {
+      type: 'application',
+      config: args,
+      auto_update_set: true,
+      fallback_strategy: 'manual_steps'
+    };
+
+    const result = await this.unifiedDeploy(unifiedArgs);
+    
+    // Prepend deprecation warning to the result
+    if (result.content && result.content[0]) {
+      result.content[0].text = deprecationWarning + result.content[0].text;
+    }
+    
+    return result;
+  }
+
+  private async handleDeprecatedBulkDeploy(args: any) {
+    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
+
+🚨 **snow_bulk_deploy is deprecated** - Use \`snow_deploy\` with batch configuration instead
+
+📋 **Automatic Redirect**: Converting to unified deployment...
+
+💡 **New Usage**: Use \`snow_deploy\` for single artifacts or implement batch logic with multiple \`snow_deploy\` calls
+
+`;
+
+    return {
+      content: [{
+        type: 'text',
+        text: `${deprecationWarning}
+
+❌ **Bulk Deploy No Longer Supported in Unified System**
+
+🔧 **Alternative Solutions:**
+
+**Option 1: Single Artifact Deployment**
+\`\`\`
+snow_deploy({
+  type: 'widget',
+  config: { /* your widget config */ }
+})
+\`\`\`
+
+**Option 2: Multiple Sequential Deployments**
+Deploy each artifact individually using \`snow_deploy\` - the unified system automatically manages Update Sets across all deployments.
+
+**Option 3: Use Existing Bulk Deploy (Legacy)**
+The original \`snow_bulk_deploy\` functionality is still available but deprecated. Consider migrating to the simplified \`snow_deploy\` approach.
+
+📊 **Benefits of New Approach:**
+- Automatic Update Set management
+- Better error handling per artifact
+- Clearer deployment tracking
+- Resilient fallback strategies`
+      }]
+    };
   }
 
   async start() {

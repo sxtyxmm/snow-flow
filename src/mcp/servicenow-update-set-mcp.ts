@@ -31,6 +31,8 @@ interface UpdateSetSession {
     name: string;
     created_at: string;
   }>;
+  auto_switched?: boolean;
+  active_session?: boolean;
 }
 
 class ServiceNowUpdateSetMCP {
@@ -117,6 +119,11 @@ class ServiceNowUpdateSetMCP {
               release_date: {
                 type: 'string',
                 description: 'Target release date (optional)'
+              },
+              auto_switch: {
+                type: 'boolean',
+                description: 'Automatically switch to the created Update Set (default: true)',
+                default: true
               }
             },
             required: ['name', 'description']
@@ -230,6 +237,24 @@ class ServiceNowUpdateSetMCP {
               }
             }
           }
+        },
+        {
+          name: 'snow_ensure_active_update_set',
+          description: 'Ensure there is an active Update Set session - creates one automatically if needed',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              context: {
+                type: 'string',
+                description: 'Context for auto-created Update Set (e.g., "widget development", "flow creation")'
+              },
+              auto_create: {
+                type: 'boolean',
+                description: 'Automatically create Update Set if none exists (default: true)',
+                default: true
+              }
+            }
+          }
         }
       ]
     }));
@@ -264,6 +289,8 @@ class ServiceNowUpdateSetMCP {
             return await this.previewUpdateSet(args);
           case 'snow_update_set_export':
             return await this.exportUpdateSet(args);
+          case 'snow_ensure_active_update_set':
+            return await this.ensureActiveUpdateSet(args);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -298,22 +325,30 @@ class ServiceNowUpdateSetMCP {
         throw new Error(response.error || 'Failed to create Update Set');
       }
 
-      // Set as current Update Set
-      await this.client.setCurrentUpdateSet(response.data.sys_id);
+      // Auto-switch to Update Set if requested (default: true)
+      const autoSwitch = args.auto_switch !== false;
+      let switchedToUpdateSet = false;
+      
+      if (autoSwitch) {
+        await this.client.setCurrentUpdateSet(response.data.sys_id);
+        switchedToUpdateSet = true;
+        
+        // Create local session
+        this.currentSession = {
+          update_set_id: response.data.sys_id,
+          name: args.name,
+          description: args.description,
+          user_story: args.user_story,
+          created_at: new Date().toISOString(),
+          state: 'in_progress',
+          artifacts: [],
+          auto_switched: true,
+          active_session: true
+        };
 
-      // Create local session
-      this.currentSession = {
-        update_set_id: response.data.sys_id,
-        name: args.name,
-        description: args.description,
-        user_story: args.user_story,
-        created_at: new Date().toISOString(),
-        state: 'in_progress',
-        artifacts: []
-      };
-
-      // Save session
-      await this.saveSession();
+        // Save session
+        await this.saveSession();
+      }
 
       const credentials = await this.oauth.loadCredentials();
       const updateSetUrl = `https://${credentials?.instance}/sys_update_set.do?sys_id=${response.data.sys_id}`;
@@ -329,11 +364,13 @@ class ServiceNowUpdateSetMCP {
 - **Description**: ${args.description}
 ${args.user_story ? `- **User Story**: ${args.user_story}` : ''}
 - **State**: In Progress
+${switchedToUpdateSet ? '- **Auto-Switched**: ✅ Active session ready' : '- **Auto-Switch**: ❌ Manual switch required'}
 
 🔗 **View in ServiceNow**: ${updateSetUrl}
 
-⚡ **Current Session Active**
-All subsequent changes will be tracked in this Update Set.
+${switchedToUpdateSet ? `⚡ **Current Session Active**
+All subsequent changes will be automatically tracked in this Update Set.` : `⚠️ **Manual Switch Required**
+Use \`snow_update_set_switch\` to activate this Update Set before making changes.`}
 
 💡 **Best Practices:**
 1. Keep Update Sets focused on a single story/feature
@@ -670,6 +707,70 @@ ${changes.length > 20 ? `\n... and ${changes.length - 20} more changes` : ''}
       };
     } catch (error) {
       this.logger.error('Failed to export Update Set', error);
+      throw error;
+    }
+  }
+
+  private async ensureActiveUpdateSet(args: any) {
+    try {
+      this.logger.info('Ensuring active Update Set session', args);
+
+      // Check if we already have an active session
+      if (this.currentSession?.state === 'in_progress') {
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ **Active Update Set Session Found**
+
+📋 **Current Session:**
+- **Name**: ${this.currentSession.name}
+- **ID**: ${this.currentSession.update_set_id}
+- **Created**: ${new Date(this.currentSession.created_at).toLocaleString()}
+- **Artifacts**: ${this.currentSession.artifacts?.length || 0} tracked
+
+⚡ **Ready for Deployment**
+All subsequent changes will be tracked in this Update Set.`
+          }]
+        };
+      }
+
+      // Auto-create if requested (default: true)
+      const autoCreate = args.auto_create !== false;
+      if (autoCreate) {
+        const context = args.context || 'automated deployment';
+        const timestamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+        
+        return await this.createUpdateSet({
+          name: `Auto-${context} (${timestamp})`,
+          description: `Automatically created Update Set for ${context}`,
+          user_story: 'Automated deployment workflow',
+          auto_switch: true
+        });
+      } else {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ **No Active Update Set Session**
+
+⚠️ **Manual Creation Required**
+Create an Update Set before making changes:
+
+\`\`\`
+snow_update_set_create({
+  name: "Your feature name",
+  description: "Description of changes"
+})
+\`\`\`
+
+💡 **Why Update Sets Matter:**
+- Track all changes for rollback capability
+- Organize related changes together  
+- Required for deployment to other environments`
+          }]
+        };
+      }
+    } catch (error) {
+      this.logger.error('Failed to ensure active Update Set', error);
       throw error;
     }
   }
