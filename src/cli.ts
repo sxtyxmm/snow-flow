@@ -3459,6 +3459,115 @@ echo "💡 Check MCP servers with: /mcp in Claude Code"
     }
   });
 
+// SPARC Command with Subcommands
+const sparc = program.command('sparc');
+sparc.description('SPARC development system - team and specialist modes');
+
+// SPARC Team Subcommand
+sparc
+  .command('team <teamType> <task>')
+  .description('Execute team-based SPARC development')
+  .option('--parallel', 'Enable parallel execution')
+  .option('--monitor', 'Real-time progress monitoring')
+  .option('--shared-memory', 'Enable shared context between agents', true)
+  .option('--no-shared-memory', 'Disable shared context')
+  .option('--validation', 'Enable quality gates between handoffs', true)
+  .option('--no-validation', 'Disable quality gates')
+  .option('--dry-run', 'Preview team assembly without execution')
+  .option('--max-agents <number>', 'Maximum number of agents', '5')
+  .action(async (teamType: string, task: string, options) => {
+    try {
+      const { TeamSparcExecutor } = await import('./sparc/team-sparc.js');
+      
+      console.log(`\n🚀 SPARC Team Mode: ${teamType.toUpperCase()}`);
+      console.log(`📋 Task: ${task}\n`);
+      
+      const result = await TeamSparcExecutor.execute(teamType, task, {
+        parallel: options.parallel,
+        monitor: options.monitor,
+        sharedMemory: options.sharedMemory,
+        validation: options.validation,
+        dryRun: options.dryRun,
+        maxAgents: parseInt(options.maxAgents)
+      });
+      
+      if (result.success) {
+        console.log(`✅ Team execution completed successfully!`);
+        console.log(`🎯 Coordinator: ${result.coordinator}`);
+        console.log(`👥 Team: ${result.specialists.join(', ')}`);
+        console.log(`📦 Artifacts: ${result.artifacts.length}`);
+        console.log(`⏱️  Duration: ${result.executionTime}ms`);
+        
+        if (result.warnings && result.warnings.length > 0) {
+          console.log(`⚠️  Warnings: ${result.warnings.length}`);
+          result.warnings.forEach(warning => console.log(`   - ${warning}`));
+        }
+      } else {
+        console.error(`❌ Team execution failed!`);
+        if (result.errors) {
+          result.errors.forEach(error => console.error(`   - ${error}`));
+        }
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('❌ SPARC team execution failed:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// SPARC Specialist Subcommands
+const specialistTypes = ['frontend', 'backend', 'security', 'database', 'process', 'trigger', 'data', 'logic', 'interface', 'uiux', 'platform'];
+
+specialistTypes.forEach(specialistType => {
+  sparc
+    .command(`${specialistType} <task>`)
+    .description(`Execute ${specialistType} specialist task`)
+    .option('--dry-run', 'Preview execution without running')
+    .option('--monitor', 'Real-time progress monitoring')
+    .action(async (task: string, options) => {
+      try {
+        const { TeamSparcExecutor } = await import('./sparc/team-sparc.js');
+        
+        console.log(`\n👨‍💻 SPARC ${specialistType.toUpperCase()} Specialist`);
+        console.log(`📋 Task: ${task}\n`);
+        
+        const result = await TeamSparcExecutor.executeSpecialist(specialistType, task, {
+          dryRun: options.dryRun,
+          monitor: options.monitor
+        });
+        
+        if (result.success) {
+          console.log(`✅ Specialist execution completed successfully!`);
+          console.log(`🎯 Specialist: ${result.coordinator}`);
+          console.log(`📦 Artifacts: ${result.artifacts.length}`);
+          console.log(`⏱️  Duration: ${result.executionTime}ms`);
+        } else {
+          console.error(`❌ Specialist execution failed!`);
+          if (result.errors) {
+            result.errors.forEach(error => console.error(`   - ${error}`));
+          }
+          process.exit(1);
+        }
+      } catch (error) {
+        console.error(`❌ SPARC ${specialistType} execution failed:`, error instanceof Error ? error.message : String(error));
+        process.exit(1);
+      }
+    });
+});
+
+// SPARC Detailed Help Command
+program
+  .command('sparc-help')
+  .description('Show detailed SPARC help information')
+  .action(async () => {
+    try {
+      const { displayTeamHelp } = await import('./sparc/sparc-help.js');
+      displayTeamHelp();
+    } catch (error) {
+      console.error('❌ Failed to load SPARC help:', error instanceof Error ? error.message : String(error));
+    }
+  });
+
 program.parse(process.argv);
 
 // Show help if no command provided
