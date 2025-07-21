@@ -1745,12 +1745,14 @@ This mode provides specialized ${mode} capabilities for ServiceNow development p
   try {
     // First try to find the CLAUDE.md in the source directory (for global installs)
     const sourceClaudeFiles = [
-      // Try the current package directory structure
+      // Try the project root (when running from dist/)
       join(__dirname, '..', 'CLAUDE.md'),
-      join(__dirname, '..', '..', 'CLAUDE.md'),
-      // Try npm global installation paths
+      // Try when running directly from src/
+      join(__dirname, 'CLAUDE.md'), 
+      // Try npm global installation paths  
       join(__dirname, '..', '..', '..', 'CLAUDE.md'),
-      // Try current working directory
+      join(__dirname, '..', '..', '..', '..', 'CLAUDE.md'),
+      // Try current working directory as fallback
       join(process.cwd(), 'CLAUDE.md')
     ];
     

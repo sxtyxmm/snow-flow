@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.63';
+export const VERSION = '1.1.64';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.64': [
+      '🔧 FIXED INIT COMMAND: Now correctly finds and uses actual CLAUDE.md file',
+      '📄 CORRECT DOCUMENTATION: Users get complete 22K+ character CLAUDE.md with all features',
+      '🔍 IMPROVED PATH DETECTION: Better search algorithm for finding source files',
+      '✅ SPARC COMMANDS VERIFIED: All team and specialist commands working correctly',
+      '🎯 COMPLETE TEAM FEATURES: Full team-based SPARC architecture documentation included'
+    ],
     '1.1.63': [
       '🔧 INIT COMMAND FIX: Now uses actual CLAUDE.md file instead of hardcoded template',
       '📄 DYNAMIC CLAUDE.MD: Init command now copies the real project documentation',
@@ -421,6 +428,17 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.64': {
+      date: '2025-01-21',
+      changes: [
+        'FIXED INIT COMMAND: Now correctly finds and uses actual CLAUDE.md file',
+        'CORRECT DOCUMENTATION: Users get complete 22K+ character CLAUDE.md with all features',
+        'IMPROVED PATH DETECTION: Better search algorithm for finding source files in dist/ and src/',
+        'SPARC COMMANDS VERIFIED: All team and specialist commands working correctly as documented',
+        'COMPLETE TEAM FEATURES: Full team-based SPARC architecture documentation included',
+        'REMOVED DEBUG LOGS: Cleaned up init command output for better user experience'
+      ]
+    },
     '1.1.63': {
       date: '2025-01-21',
       changes: [
