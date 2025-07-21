@@ -2302,9 +2302,15 @@ class ServiceNowOperationsMCP {
       let categoryFilter = '';
       if (category_filter) {
         // First try to find the category
-        const categoryResult = await this.client.searchRecords('sc_category', `name=${category_filter}^ORsys_id=${category_filter}`, 1);
+        const categoryResult = await this.client.searchRecords('sc_category', 
+          `nameLIKE${category_filter}^ORtitle=${category_filter}^ORsys_id=${category_filter}`, 
+          10);
         if (categoryResult.success && categoryResult.data?.result?.length > 0) {
-          categoryFilter = `^sc_categories=${categoryResult.data.result[0].sys_id}`;
+          // Try to find the most relevant category
+          const exactMatch = categoryResult.data.result.find((c: any) => 
+            c.name.toLowerCase() === category_filter.toLowerCase());
+          const category = exactMatch || categoryResult.data.result[0];
+          categoryFilter = `^sc_categoriesLIKE${category.sys_id}`;
         }
       }
       
@@ -2318,6 +2324,15 @@ class ServiceNowOperationsMCP {
         if (result.success && result.data?.result) {
           result.data.result.forEach((item: any) => {
             if (!allResults.has(item.sys_id)) {
+              // Filter out items that don't make sense for the search
+              const itemName = (item.name || '').toLowerCase();
+              const itemDesc = (item.short_description || '').toLowerCase();
+              
+              // Skip items that are clearly not what the user is looking for
+              if (this.shouldExcludeItem(query, itemName, itemDesc)) {
+                return;
+              }
+              
               allResults.set(item.sys_id, {
                 sys_id: item.sys_id,
                 name: item.name,
@@ -2424,9 +2439,10 @@ class ServiceNowOperationsMCP {
   
   private generateSearchVariations(query: string): string[] {
     const variations = [];
+    const lowerQuery = query.toLowerCase();
     
     // Handle common product variations
-    if (query.toLowerCase().includes('iphone')) {
+    if (lowerQuery.includes('iphone')) {
       // Add variations without spaces, with different numbers
       const baseModel = query.replace(/iphone\s*/i, 'iPhone ');
       variations.push(baseModel);
@@ -2442,37 +2458,127 @@ class ServiceNowOperationsMCP {
     }
     
     // Handle laptop/computer variations
-    if (query.toLowerCase().includes('laptop') || query.toLowerCase().includes('computer')) {
+    if (lowerQuery.includes('laptop') || lowerQuery.includes('computer')) {
       variations.push('notebook', 'macbook', 'thinkpad', 'dell', 'hp');
     }
     
     // Handle phone variations
-    if (query.toLowerCase().includes('phone') || query.toLowerCase().includes('mobile')) {
+    if (lowerQuery.includes('phone') || lowerQuery.includes('mobile')) {
       variations.push('smartphone', 'android', 'samsung', 'pixel');
     }
     
-    return variations;
+    // Handle monitor/display variations
+    if (lowerQuery.includes('monitor') || lowerQuery.includes('display') || 
+        lowerQuery.includes('screen') || lowerQuery.includes('lcd')) {
+      variations.push('monitor', 'display', 'screen', 'lcd', 'led', 'desktop monitor', 
+                      'computer monitor', 'external display', 'lcd monitor', 'led monitor',
+                      'dell monitor', 'hp monitor', 'samsung monitor', 'lg monitor');
+    }
+    
+    // Handle desktop/workstation variations
+    if (lowerQuery.includes('desktop') || lowerQuery.includes('workstation')) {
+      variations.push('desktop computer', 'workstation', 'pc', 'desktop pc', 
+                      'dell desktop', 'hp desktop', 'lenovo desktop');
+    }
+    
+    // Handle specific hardware terms
+    if (lowerQuery.includes('hardware') || lowerQuery.includes('equipment')) {
+      // Extract specific items from the query
+      const specificItems = [];
+      if (lowerQuery.includes('monitor') || lowerQuery.includes('display') || lowerQuery.includes('screen')) {
+        specificItems.push('monitor', 'display');
+      }
+      if (lowerQuery.includes('desktop')) {
+        specificItems.push('desktop', 'computer');
+      }
+      if (lowerQuery.includes('laptop')) {
+        specificItems.push('laptop', 'notebook');
+      }
+      
+      // If we found specific items, use those instead of generic "hardware"
+      if (specificItems.length > 0) {
+        variations.push(...specificItems);
+      }
+    }
+    
+    // Remove duplicates and empty strings
+    return [...new Set(variations)].filter(v => v && v.length > 0);
   }
   
   private generateSearchSuggestions(query: string): string[] {
     const suggestions = [];
+    const lowerQuery = query.toLowerCase();
     
-    if (query.toLowerCase().includes('iphone')) {
+    if (lowerQuery.includes('iphone')) {
       suggestions.push('iPhone', 'Apple iPhone', 'iOS device', 'Apple mobile');
-    } else if (query.toLowerCase().includes('laptop')) {
+    } else if (lowerQuery.includes('laptop')) {
       suggestions.push('notebook', 'computer', 'workstation', 'MacBook', 'ThinkPad');
-    } else if (query.toLowerCase().includes('software')) {
+    } else if (lowerQuery.includes('software')) {
       suggestions.push('license', 'application', 'subscription', 'SaaS');
+    } else if (lowerQuery.includes('monitor') || lowerQuery.includes('display') || 
+               lowerQuery.includes('screen') || lowerQuery.includes('lcd')) {
+      suggestions.push('monitor', 'display', 'external monitor', 'desktop monitor', 
+                       'Dell monitor', 'HP monitor', 'Samsung monitor');
+    } else if (lowerQuery.includes('desktop')) {
+      suggestions.push('desktop computer', 'workstation', 'PC', 'desktop PC', 
+                       'Dell desktop', 'HP desktop');
+    } else if (lowerQuery.includes('hardware')) {
+      // For hardware searches, suggest specific item types
+      suggestions.push('monitor', 'keyboard', 'mouse', 'laptop', 'desktop', 
+                       'printer', 'scanner', 'docking station', 'headset');
     } else {
-      // Generic suggestions
-      suggestions.push(
-        query.split(' ')[0], // First word only
-        query.substring(0, Math.floor(query.length / 2)), // First half
-        'hardware', 'software', 'equipment', 'device'
-      );
+      // Generic suggestions based on the query
+      const words = query.split(' ');
+      if (words.length > 1) {
+        // Try individual words
+        suggestions.push(...words.filter(w => w.length > 3));
+        // Try first and last word
+        suggestions.push(words[0], words[words.length - 1]);
+      }
+      
+      // Add generic category suggestions
+      suggestions.push('hardware', 'software', 'equipment', 'device', 'accessory');
     }
     
-    return [...new Set(suggestions)].filter(s => s && s !== query);
+    return [...new Set(suggestions)].filter(s => s && s !== query && s.length > 0);
+  }
+  
+  private shouldExcludeItem(query: string, itemName: string, itemDesc: string): boolean {
+    const lowerQuery = query.toLowerCase();
+    
+    // If searching for hardware/monitors/displays, exclude service/process items
+    if ((lowerQuery.includes('hardware') || lowerQuery.includes('monitor') || 
+         lowerQuery.includes('display') || lowerQuery.includes('screen') || 
+         lowerQuery.includes('desktop') || lowerQuery.includes('equipment')) &&
+        (itemName.includes('decommission') || itemName.includes('service') || 
+         itemName.includes('process') || itemName.includes('request') ||
+         itemName.includes('removal') || itemName.includes('decomm') ||
+         itemDesc.includes('decommission') || itemDesc.includes('service process'))) {
+      return true;
+    }
+    
+    // If searching for specific hardware, exclude unrelated items
+    if (lowerQuery.includes('monitor') || lowerQuery.includes('display') || lowerQuery.includes('screen')) {
+      // Exclude items that are clearly not monitors
+      if ((itemName.includes('server') || itemName.includes('controller') || 
+           itemName.includes('software') || itemName.includes('license') ||
+           itemName.includes('training') || itemName.includes('support')) &&
+          !itemName.includes('monitor') && !itemName.includes('display') && 
+          !itemName.includes('screen')) {
+        return true;
+      }
+    }
+    
+    // If searching for desktops, exclude non-desktop items
+    if (lowerQuery.includes('desktop')) {
+      if ((itemName.includes('mobile') || itemName.includes('phone') || 
+           itemName.includes('tablet') || itemName.includes('service')) &&
+          !itemName.includes('desktop')) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   private async handleTestFlowWithMock(args: any) {

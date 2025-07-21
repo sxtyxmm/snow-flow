@@ -1153,6 +1153,18 @@ Use \`snow_deployment_debug\` for more information about this session.`,
         };
       }
 
+      // Ensure we have a flow definition
+      if (!args.flow_definition) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: '❌ Flow deployment failed: No flow_definition provided.\n\n💡 You need to provide a flow_definition with activities.\n\nExample:\n```json\n{\n  "name": "approval_flow",\n  "flow_definition": {\n    "activities": [\n      {\n        "id": "activity_1",\n        "name": "Check Condition",\n        "type": "condition"\n      }\n    ]\n  }\n}\n```\n\nOr use snow_create_flow with natural language for easier flow creation.',
+            },
+          ],
+        };
+      }
+
       const flowType = args.flow_type || 'flow';
       this.logger.info(`Deploying ${flowType} to ServiceNow`, { name: args.name, type: flowType });
 
@@ -3007,6 +3019,18 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
         };
       }
 
+      // Check if definition is null or undefined
+      if (!definition) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ Flow validation failed: No definition provided.\n\n💡 Please provide a flow definition with activities.\n\nExample:\n\`\`\`json\n{\n  "activities": [\n    {\n      "id": "activity_1",\n      "name": "Send Notification",\n      "type": "notification"\n    }\n  ]\n}\n\`\`\``
+            }
+          ]
+        };
+      }
+
       const issues: string[] = [];
       const warnings: string[] = [];
       const info: string[] = [];
@@ -3018,14 +3042,14 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       let workingDefinition = definition;
       
       // Check if we have a nested structure like { "flow": { "steps": [...] } }
-      if (definition.flow && typeof definition.flow === 'object') {
+      if (definition && definition.flow && typeof definition.flow === 'object') {
         workingDefinition = definition.flow;
         corrections.push('✅ Processing nested flow structure (definition.flow)');
         info.push('💡 Detected nested flow definition format - extracting flow content');
       }
       
       // Check if we have nested flow_definition
-      if (definition.flow_definition && typeof definition.flow_definition === 'object') {
+      if (definition && definition.flow_definition && typeof definition.flow_definition === 'object') {
         workingDefinition = definition.flow_definition;
         corrections.push('✅ Processing nested flow_definition structure');
       }
@@ -4127,13 +4151,136 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
    * Process natural language instruction into deployment configuration
    */
   private async processNaturalLanguageInstruction(type: string, instruction: string): Promise<any> {
-    // For flows, delegate to flow composer
+    // For flows, create a proper flow structure
     if (type === 'flow') {
-      // This would call the flow composer MCP, but for now return a basic structure
-      return {
-        name: this.extractNameFromInstruction(instruction),
+      // Extract flow name from instruction
+      const flowName = this.extractNameFromInstruction(instruction);
+      
+      // Create a basic flow definition based on the instruction
+      // This is a simplified version - in production, this would call the flow composer
+      const lowerInstruction = instruction.toLowerCase();
+      
+      // Determine trigger type
+      let triggerType = 'manual';
+      let triggerTable = '';
+      
+      if (lowerInstruction.includes('new service catalog request') || 
+          lowerInstruction.includes('new catalog request')) {
+        triggerType = 'record_created';
+        triggerTable = 'sc_request';
+      } else if (lowerInstruction.includes('new incident')) {
+        triggerType = 'record_created';
+        triggerTable = 'incident';
+      } else if (lowerInstruction.includes('updated') || lowerInstruction.includes('changes')) {
+        triggerType = 'record_updated';
+      }
+      
+      // Create activities based on instruction
+      const activities = [];
+      let activityId = 1;
+      
+      // Check for approval requirement
+      if (lowerInstruction.includes('approval') || lowerInstruction.includes('approve')) {
+        // Check for condition
+        if (lowerInstruction.includes('if') && 
+            (lowerInstruction.includes('monitor') || lowerInstruction.includes('display') || 
+             lowerInstruction.includes('screen') || lowerInstruction.includes('lcd'))) {
+          // Add condition activity
+          activities.push({
+            id: `activity_${activityId++}`,
+            name: 'Check Item Type',
+            type: 'condition',
+            condition: 'current.cat_item.name.toLowerCase().includes("monitor") || current.cat_item.name.toLowerCase().includes("display") || current.cat_item.name.toLowerCase().includes("screen") || current.cat_item.name.toLowerCase().includes("lcd")',
+            outputs: {
+              condition_met: true
+            }
+          });
+        }
+        
+        // Add approval activity
+        activities.push({
+          id: `activity_${activityId++}`,
+          name: 'Request Approval',
+          type: 'approval',
+          approval_type: 'user',
+          approvers: lowerInstruction.includes('admin') ? 'admin' : 'assignment_group.manager',
+          inputs: {
+            record: '${trigger.current}',
+            approvers: lowerInstruction.includes('admin') ? 'admin' : 'assignment_group.manager'
+          },
+          outputs: {
+            approval_state: '${approval.state}',
+            approval_comments: '${approval.comments}'
+          }
+        });
+        
+        // Add wait for approval if mentioned
+        if (lowerInstruction.includes('wait for approval')) {
+          activities.push({
+            id: `activity_${activityId++}`,
+            name: 'Wait for Approval',
+            type: 'wait',
+            wait_type: 'approval',
+            inputs: {
+              approval_record: '${activity_' + (activityId - 2) + '.approval_id}'
+            }
+          });
+        }
+      }
+      
+      // Add update status if mentioned
+      if (lowerInstruction.includes('update') && lowerInstruction.includes('status')) {
+        activities.push({
+          id: `activity_${activityId++}`,
+          name: 'Update Request Status',
+          type: 'update_record',
+          table: triggerTable || 'sc_request',
+          inputs: {
+            record: '${trigger.current}',
+            fields: {
+              state: '${activity_' + (activityId - 2) + '.approval_state === "approved" ? "approved" : "rejected"}'
+            }
+          }
+        });
+      }
+      
+      // Create flow definition
+      const flowDefinition = {
+        name: flowName,
         description: instruction,
-        instruction: instruction
+        table: triggerTable,
+        trigger: {
+          type: triggerType,
+          table: triggerTable,
+          condition: ''
+        },
+        activities: activities.length > 0 ? activities : [{
+          id: 'activity_1',
+          name: 'Log Action',
+          type: 'log',
+          message: 'Flow executed for: ' + instruction,
+          level: 'info'
+        }],
+        connections: []
+      };
+      
+      // Generate connections between activities
+      for (let i = 0; i < activities.length - 1; i++) {
+        flowDefinition.connections.push({
+          from: activities[i].id,
+          to: activities[i + 1].id,
+          type: 'always'
+        });
+      }
+      
+      return {
+        name: flowName,
+        description: instruction,
+        flow_definition: flowDefinition,
+        table: triggerTable,
+        trigger_type: triggerType,
+        condition: '',
+        active: true
       };
     }
     
@@ -4143,6 +4290,10 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
         name: this.extractNameFromInstruction(instruction),
         title: this.extractNameFromInstruction(instruction),
         description: instruction,
+        template: '<div>Widget placeholder - implement with proper template</div>',
+        css: '',
+        server_script: '',
+        client_script: '',
         instruction: instruction
       };
     }

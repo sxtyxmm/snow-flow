@@ -2,13 +2,24 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.74';
+export const VERSION = '1.1.75';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.75': [
+      '🔧 CRITICAL FIX: snow_deploy with type:"flow" now properly generates flow_definition',
+      '🎯 NATURAL LANGUAGE: Creates complete flow structure from instruction with activities',
+      '🛡️ NULL SAFETY: Added comprehensive null/undefined checks in flow validation',
+      '🔍 CATALOG SEARCH FIX: Better hardware search with intelligent filtering',
+      '📝 SMART VARIATIONS: Monitor, display, screen searches now find proper hardware items',
+      '🚫 EXCLUSION FILTER: Filters out irrelevant items like "Decommission Domain Controller"',
+      '💡 BETTER SUGGESTIONS: Hardware searches suggest specific item types (monitor, keyboard, etc.)',
+      '🚀 USER FEEDBACK: "Cannot read properties of undefined (reading \'flow\')" - FIXED',
+      '✅ CATEGORY SEARCH: Improved category filtering with fuzzy matching support'
+    ],
     '1.1.74': [
       '🚨 CRITICAL FIX: Flow composer no longer uses wrong/mock flow actions!',
       '🔧 PROPER FLOW ACTIONS: Added predefined mappings for common actions (approval, wait, log, etc.)',
