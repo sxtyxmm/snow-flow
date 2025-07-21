@@ -1740,8 +1740,37 @@ This mode provides specialized ${mode} capabilities for ServiceNow development p
     await fs.writeFile(join(targetDir, `.claude/commands/sparc/${mode}.md`), content);
   }
   
-  // Create CLAUDE.md with comprehensive documentation (v1.1.49)
-  const claudeMd = `# Snow-Flow Development with Claude Code
+  // Create CLAUDE.md by copying from source (v1.1.62+)
+  let claudeMdContent = '';
+  try {
+    // First try to find the CLAUDE.md in the source directory (for global installs)
+    const sourceClaudeFiles = [
+      // Try the current package directory structure
+      join(__dirname, '..', 'CLAUDE.md'),
+      join(__dirname, '..', '..', 'CLAUDE.md'),
+      // Try npm global installation paths
+      join(__dirname, '..', '..', '..', 'CLAUDE.md'),
+      // Try current working directory
+      join(process.cwd(), 'CLAUDE.md')
+    ];
+    
+    let foundSource = false;
+    
+    for (const sourcePath of sourceClaudeFiles) {
+      try {
+        claudeMdContent = await fs.readFile(sourcePath, 'utf8');
+        foundSource = true;
+        console.log(`✅ Found CLAUDE.md source at: ${sourcePath}`);
+        break;
+      } catch {
+        // Continue to next path
+      }
+    }
+    
+    if (!foundSource) {
+      // Fallback to a minimal CLAUDE.md if source not found
+      console.log('⚠️  Could not find CLAUDE.md source, creating minimal version');
+      claudeMdContent = `# Snow-Flow Development with Claude Code
 
 ## 🚀 Core Development Principles
 
@@ -1780,8 +1809,7 @@ TodoWrite([task2]);
 Use Memory to coordinate information across agents:
 \`\`\`javascript
 // Store architecture decisions
-mcp__claude-flow__memory_usage({
-  action: "store",
+snow_memory_store({
   key: "widget_architecture",
   value: "Service Portal widget with Chart.js for data visualization"
 });
@@ -2112,10 +2140,34 @@ With concurrent execution and batch operations:
 
 ---
 
-*This configuration ensures optimal use of Claude Code's batch tools for Snow-Flow ServiceNow development with maximum efficiency and safety.*
+This is a minimal CLAUDE.md file. The full documentation should be available in your Snow-Flow installation.
+
+## Quick Start
+1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+2. Configure ServiceNow credentials in .env file  
+3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth
+4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
+
+For full documentation, visit: https://github.com/groeimetai/snow-flow
 `;
-  
-  await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMd);
+    }
+    
+    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdContent);
+  } catch (error) {
+    console.log('⚠️  Error copying CLAUDE.md, creating minimal version');
+    // Minimal fallback
+    const claudeMdFallback = `# Snow-Flow Development with Claude Code
+
+## Quick Start  
+1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+2. Configure ServiceNow credentials in .env file
+3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth  
+4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
+
+For full documentation, visit: https://github.com/groeimetai/snow-flow
+`;
+    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdFallback);
+  }
 }
 
 async function createEnvFile(targetDir: string) {
@@ -2335,7 +2387,7 @@ async function createMCPConfig(targetDir: string) {
         "ListMcpResourcesTool",
         "ReadMcpResourceTool",
         "mcp__servicenow-*",
-        "mcp__claude-flow__*"
+        "mcp__snow-flow__*"
       ],
       "deny": []
     },
@@ -3085,14 +3137,14 @@ program
                 SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
               }
             },
-            "claude-flow": {
+            "snow-flow": {
               command: "npx",
-              args: ["claude-flow@alpha", "mcp"],
+              args: ["snow-flow@alpha", "mcp"],
               env: {}
             },
             "ruv-swarm": {
               command: "npx",
-              args: ["claude-flow@alpha", "swarm", "--mode", "mcp"],
+              args: ["snow-flow@alpha", "swarm", "--mode", "mcp"],
               env: {}
             }
           }
@@ -3162,7 +3214,7 @@ program
               "servicenow-automation",
               "servicenow-security-compliance",
               "servicenow-reporting-analytics",
-              "claude-flow",
+              "snow-flow",
               "ruv-swarm"
             ],
             "permissions": {
@@ -3178,7 +3230,7 @@ program
                 "TodoWrite",
                 "Task(*)",
                 "mcp__servicenow-*",
-                "mcp__claude-flow__*"
+                "mcp__snow-flow__*"
               ]
             },
             "env": {

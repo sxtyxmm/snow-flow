@@ -339,7 +339,7 @@ export class AgentDetector {
     }
 
     // Remove duplicates and return
-    return [...new Set(artifacts)];
+    return Array.from(new Set(artifacts));
   }
 
   private static requiresUpdateSet(objective: string, artifacts: string[]): boolean {

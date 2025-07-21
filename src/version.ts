@@ -2,13 +2,33 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.61';
+export const VERSION = '1.1.63';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.63': [
+      '🔧 INIT COMMAND FIX: Now uses actual CLAUDE.md file instead of hardcoded template',
+      '📄 DYNAMIC CLAUDE.MD: Init command now copies the real project documentation',
+      '🏷️ BRAND CONSISTENCY: Replaced all claude-flow references with snow-flow throughout codebase',
+      '📚 DOCUMENTATION SYNC: Users now get the complete up-to-date CLAUDE.md with team features',
+      '🛡️ IMPROVED INITIALIZATION: Better fallback when CLAUDE.md source cannot be found'
+    ],
+    '1.1.62': [
+      '🚀 TEAM-BASED SPARC ARCHITECTURE: Complete implementation of specialized development teams',
+      '👥 WIDGET TEAM: Frontend, Backend, UI/UX, Platform, and QA specialists for widgets',
+      '🔄 FLOW TEAM: Process, Trigger, Data, Integration, and Security specialists for flows',
+      '🏗️ APPLICATION TEAM: Database, Business Logic, Interface, Security, and Performance specialists',
+      '🤖 ADAPTIVE TEAM: Dynamic specialist assembly based on task analysis',
+      '👨‍💻 INDIVIDUAL SPECIALISTS: 11 focused specialists for quick targeted tasks',
+      '🎯 TEAMCOORDINATOR: Intelligent task routing between individuals, teams, or adaptive approach',
+      '✅ QUALITY GATES: Automatic validation between specialist handoffs',
+      '💾 SHARED MEMORY: Cross-team context and coordination system',
+      '📊 CLI INTEGRATION: sparc team widget/flow/app/adaptive and sparc specialist commands',
+      '🚨 BREAKING: None - All existing commands continue to work'
+    ],
     '1.1.61': [
       '📚 DOCUMENTATION: Updated CLAUDE.md with concrete Update Set management steps',
       '🔧 AUTO-TRACKING: Added automatic Update Set tracking to all deployment tools',
@@ -193,7 +213,7 @@ export const VERSION_INFO = {
       'HIERARCHY ANALYSIS: Shows table inheritance, extensions, and relationships',
       'INDEX DISCOVERY: Lists all indexes and their configurations',
       'RELATIONSHIP MAPPING: Visual representation of table dependencies',
-      'MEMORY FIX: Clarified that shared memory uses existing claude-flow memory system',
+      'MEMORY FIX: Clarified that shared memory uses existing snow-flow memory system',
       'Fixed TypeScript errors in deployment and operations MCP servers'
     ],
     '1.1.42': [
@@ -304,8 +324,8 @@ export const VERSION_INFO = {
       'All 13 MCP servers now fully operational and tested'
     ],
     '1.1.29': [
-      'Added claude-flow and ruv-swarm MCP servers to configuration',
-      'Claude-flow MCP provides advanced orchestration capabilities',
+      'Added snow-flow and ruv-swarm MCP servers to configuration',
+      'Snow-flow MCP provides advanced orchestration capabilities',
       'Ruv-swarm MCP enables distributed swarm coordination',
       'Expanded to 13 total MCP servers for comprehensive development'
     ],
@@ -401,6 +421,39 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.63': {
+      date: '2025-01-21',
+      changes: [
+        'INIT COMMAND FIX: Now uses actual CLAUDE.md file instead of hardcoded template',
+        'DYNAMIC CLAUDE.MD: Init command copies real project documentation dynamically',
+        'BRAND CONSISTENCY: Replaced all claude-flow references with snow-flow throughout codebase',
+        'DOCUMENTATION SYNC: Users now get complete up-to-date CLAUDE.md with team features',
+        'IMPROVED INITIALIZATION: Better fallback when CLAUDE.md source cannot be found',
+        'VERSION MANAGEMENT: Comprehensive search paths for finding source CLAUDE.md file'
+      ]
+    },
+    '1.1.62': {
+      date: '2025-01-21',
+      changes: [
+        'REVOLUTIONARY UPDATE: Team-based SPARC architecture implementation complete!',
+        'NEW ARCHITECTURE: Replaced monolithic agents with specialized development teams',
+        'WIDGET TEAM: 5 specialists - Frontend, Backend, UI/UX, Platform, QA - working together',
+        'FLOW TEAM: 5 specialists - Process, Trigger, Data, Integration, Security - coordinated execution',
+        'APPLICATION TEAM: 5 specialists - Database, Business Logic, Interface, Security, Performance',
+        'ADAPTIVE TEAM: Dynamic specialist assembly based on task analysis and scoring',
+        'INDIVIDUAL SPECIALISTS: 11 standalone specialists for focused, quick tasks',
+        'TEAMCOORDINATOR: Intelligent routing - analyzes tasks to select optimal approach',
+        'QUALITY GATES: Automatic validation between specialist handoffs ensures quality',
+        'SHARED MEMORY: Teams share context and coordinate through intelligent memory system',
+        'CLI COMMANDS: sparc team widget/flow/app/adaptive "<task>" - full team execution',
+        'CLI COMMANDS: sparc frontend/backend/security/etc "<task>" - individual specialist',
+        'OPTIONS: --parallel, --monitor, --shared-memory, --validation, --dry-run',
+        'REAL-WORLD ALIGNMENT: Teams mirror actual software development structures',
+        'INTELLIGENT COORDINATION: Sequential, parallel, or hybrid execution patterns',
+        'ERROR RECOVERY: Graceful handling of specialist failures with fallback strategies',
+        'BACKWARD COMPATIBLE: All existing commands continue to work unchanged'
+      ]
+    },
     '1.1.53': {
       date: '2025-01-20',
       changes: [
@@ -594,7 +647,7 @@ export const VERSION_INFO = {
         'Discovers fields, relationships, indexes, hierarchy, and dependencies',
         'Shows table extensions and which tables extend the current one',
         'Comprehensive field metadata including types, constraints, and references',
-        'MEMORY CLARIFICATION: Shared memory feature uses existing claude-flow memory system',
+        'MEMORY CLARIFICATION: Shared memory feature uses existing snow-flow memory system',
         'Fixed duplicate catalog table entries in operations MCP',
         'Fixed TypeScript type errors in platform development MCP',
         'Fixed ensureUpdateSet parameter mismatch in bulk deploy'
@@ -777,10 +830,10 @@ export const VERSION_INFO = {
     '1.1.29': {
       date: '2025-01-19',
       changes: [
-        'Added claude-flow MCP server using npx claude-flow@alpha mcp',
-        'Added ruv-swarm MCP server using npx claude-flow@alpha swarm --mode mcp',
+        'Added snow-flow MCP server using npx snow-flow@alpha mcp',
+        'Added ruv-swarm MCP server using npx snow-flow@alpha swarm --mode mcp',
         'Both servers integrate with Claude Code for enhanced orchestration',
-        'Updated enabledMcpjsonServers to include claude-flow and ruv-swarm',
+        'Updated enabledMcpjsonServers to include snow-flow and ruv-swarm',
         'Total of 13 MCP servers now available'
       ]
     },
@@ -800,7 +853,7 @@ export const VERSION_INFO = {
         'Removed automatic Claude Code startup from init command',
         'Added MCP server auto-activation to swarm and create-flow commands',
         'MCP servers now activate only when running operational commands',
-        'Investigated claude-flow MCP integration - they use a different architecture',
+        'Investigated external MCP integration - some use different architectures',
         'Improved initialization flow - cleaner and faster setup'
       ]
     },

@@ -51,8 +51,7 @@ TodoWrite([task2]);
 Use Memory to coordinate information across agents:
 ```javascript
 // Store architecture decisions
-mcp__claude-flow__memory_usage({
-  action: "store",
+snow_memory_store({
   key: "widget_architecture",
   value: "Service Portal widget with Chart.js for data visualization"
 });
@@ -60,6 +59,20 @@ mcp__claude-flow__memory_usage({
 // All agents can reference this
 Task("Frontend Dev", "Implement widget based on widget_architecture in memory");
 Task("Backend Dev", "Create REST endpoints for widget_architecture requirements");
+```
+
+### Team-Driven Development Coordination
+Use specialized teams for complex ServiceNow development:
+
+```bash
+# Team with shared memory and quality gates
+snow-flow sparc team widget "dashboard" --shared-memory --validation --monitor
+
+# Store team requirements and coordination data
+snow-flow memory store "team_requirements" "Dashboard with real-time KPIs and mobile responsiveness"
+
+# All team specialists can access shared context
+snow-flow memory get "team_requirements"
 ```
 
 ## 🛠️ Complete ServiceNow MCP Tools Reference
@@ -360,11 +373,262 @@ snow_smart_update_set({
 });
 ```
 
-## 🎯 Quick Start
+## 🚀 NEW: Team-Based Agent Architecture (v1.1.62+)
+
+### Specialized Development Teams
+
+Snow-Flow now uses specialized teams that mirror real software development teams, replacing monolithic agents with expert specialists:
+
+#### **Widget Development Team**
+```bash
+# Complete widget development with specialized roles
+snow-flow sparc team widget "create incident dashboard with charts and filters"
+```
+
+**Team Composition:**
+- 🎨 **Frontend Developer**: HTML templates, CSS styling, responsive design
+- ⚙️ **Backend Developer**: Server scripts, API calls, data processing
+- 🖼️ **UI/UX Designer**: User experience, design patterns, accessibility
+- 🔧 **ServiceNow Specialist**: Platform integration, best practices
+- 🧪 **QA Tester**: Widget testing, validation, edge cases
+
+#### **Flow Development Team**
+```bash
+# Complete flow development with process experts
+snow-flow sparc team flow "build approval process for equipment requests"
+```
+
+**Team Composition:**
+- 🔄 **Process Designer**: Business logic, workflow design
+- 🎯 **Trigger Specialist**: Event handling, conditions, automation
+- 📊 **Data Specialist**: Variables, transformations, integrations
+- 🔗 **Integration Expert**: APIs, external systems, data sync
+- 🛡️ **Security Reviewer**: Permissions, validation, compliance
+
+#### **Application Development Team**
+```bash
+# Complete application development with enterprise specialists
+snow-flow sparc team app "create complete ITSM solution with custom tables"
+```
+
+**Team Composition:**
+- 🏗️ **Database Designer**: Tables, relationships, indexes, performance
+- 🎯 **Business Logic Developer**: Rules, scripts, calculations
+- 🎨 **Interface Designer**: Forms, lists, UI components
+- 🔐 **Security Engineer**: ACLs, roles, access control
+- 📈 **Performance Optimizer**: Queries, caching, efficiency
+
+#### **Adaptive Team (Generic Scenario)**
+```bash
+# For unknown/custom tasks - dynamically assembled specialists
+snow-flow sparc team adaptive "create integration between ServiceNow and external API"
+```
+
+**Dynamic Assembly:**
+- 🤖 **Task Analyzer**: Understands requirements and assembles optimal team
+- 🔧 **Specialist Pool**: Data, Integration, Automation, Security, Reporting specialists
+- 📋 **Coordination Patterns**: Sequential, parallel, or hybrid execution
+- 🎯 **Quality Gates**: Validation checkpoints between specialist handoffs
+
+### Team Coordination Features
+
+#### **Shared Memory System**
+Teams share context and communicate through intelligent memory:
+```bash
+# Enable shared memory (default: true)
+snow-flow sparc team widget "dashboard" --shared-memory
+```
+
+- **Context Sharing**: All specialists access shared requirements and progress
+- **Version Control**: Track changes and enable rollback if needed
+- **Real-time Updates**: Specialists notified when dependencies complete
+
+#### **Quality Gates**
+Automated validation between specialist handoffs:
+```bash
+# Enable validation gates (recommended)
+snow-flow sparc team flow "approval" --validation
+```
+
+**Quality Gate Types:**
+- **Code Quality**: Syntax, standards, best practices
+- **Security Review**: Vulnerability scanning, access controls
+- **Performance Check**: Query optimization, response times
+- **Accessibility**: WCAG compliance, usability testing
+
+#### **Execution Patterns**
+Teams automatically select optimal coordination:
+
+**Sequential Pattern** (Dependencies):
+```
+Architecture → Database → Business Logic → Interface → Testing
+```
+
+**Parallel Pattern** (Independent work):
+```
+Frontend ⟷ Backend ⟷ Security ⟷ Testing (simultaneously)
+```
+
+**Hybrid Pattern** (Optimized):
+```
+Phase 1: Architecture (sequential)
+Phase 2: Frontend + Backend + Security (parallel)  
+Phase 3: Integration + Testing (sequential)
+```
+
+### Individual Specialist Modes
+
+Access specific specialists directly for focused tasks:
+
+```bash
+# Frontend specialist
+snow-flow sparc frontend "optimize widget responsiveness for mobile"
+
+# Backend specialist  
+snow-flow sparc backend "optimize database queries for performance"
+
+# Security specialist
+snow-flow sparc security "review application access controls"
+
+# Data specialist
+snow-flow sparc data "design table relationships for ITSM"
+
+# Integration specialist
+snow-flow sparc integration "create REST API for external system"
+```
+
+### Team Command Options
+
+```bash
+# Basic team execution
+snow-flow sparc team widget "create dashboard"
+
+# Advanced coordination options
+snow-flow sparc team widget "dashboard" \
+  --parallel \           # Enable parallel execution
+  --monitor \           # Real-time progress monitoring
+  --shared-memory \     # Enable context sharing (default: true)
+  --validation \        # Enable quality gates (recommended)
+  --dry-run            # Preview team assembly and plan
+
+# Specialist-specific options
+snow-flow sparc frontend "template" \
+  --responsive \        # Focus on mobile responsiveness
+  --accessibility      # WCAG compliance focus
+```
+
+### Team vs Individual Agent Comparison
+
+| Scenario | Old Approach | New Team Approach |
+|----------|-------------|-------------------|
+| **Widget Creation** | Single agent does everything | Frontend + Backend + UI/UX + Platform specialists |
+| **Flow Development** | Flow agent handles all aspects | Process + Trigger + Data + Security specialists |
+| **Complex Integration** | Generic coder attempts everything | Adaptive team assembles: Integration + Data + Security + Testing |
+| **Quality Assurance** | No systematic validation | Quality gates between each specialist handoff |
+| **Knowledge Sharing** | Isolated agent knowledge | Shared memory with version control |
+
+### Best Practices for Team Usage
+
+#### **When to Use Teams vs Individual Agents**
+
+**✅ Use Teams For:**
+- Complete widget/flow/application development
+- Complex multi-component tasks
+- Production-quality deliverables
+- When you need multiple expertise areas
+
+```bash
+# Good: Complete solution
+snow-flow sparc team widget "create executive dashboard with KPIs"
+
+# Good: Complex process
+snow-flow sparc team flow "multi-step approval with integrations"
+```
+
+**✅ Use Individual Specialists For:**
+- Focused single-component tasks
+- Quick fixes or optimizations
+- Specific expertise needed
+- Learning/exploration
+
+```bash
+# Good: Focused task
+snow-flow sparc frontend "fix mobile responsiveness issue"
+
+# Good: Specific expertise
+snow-flow sparc security "review permissions for table X"
+```
+
+#### **Team Coordination Guidelines**
+
+1. **Let the Architect Lead**: Team coordinators (architects) analyze requirements and manage specialists
+2. **Enable Shared Memory**: Always use `--shared-memory` for complex tasks
+3. **Use Quality Gates**: Enable `--validation` for production deployments
+4. **Monitor Progress**: Use `--monitor` for long-running team tasks
+5. **Dry Run First**: Use `--dry-run` to preview team assembly for complex tasks
+
+#### **Error Handling and Recovery**
+
+Teams include automatic error recovery:
+- **Quality Gate Failures**: Automatic retry with specialist feedback
+- **Specialist Errors**: Fallback to alternative approaches
+- **Dependency Issues**: Intelligent rescheduling and re-coordination
+- **Shared Memory Conflicts**: Version control and conflict resolution
+
+### Migration from Old Agent System
+
+**Old Command → New Team Command:**
+```bash
+# Old: Monolithic approach
+snow-flow sparc coder "create widget" 
+# New: Specialized team
+snow-flow sparc team widget "create widget"
+
+# Old: Generic development
+snow-flow sparc designer "create flow"
+# New: Process-focused team  
+snow-flow sparc team flow "create flow"
+
+# Old: Single agent application
+snow-flow sparc architect "design app"
+# New: Full development team
+snow-flow sparc team app "design app"
+```
+
+**Backward Compatibility:**
+- All existing individual SPARC modes still work
+- Old commands automatically suggest team alternatives
+- Gradual migration path available
+
+## 🎯 Quick Start Workflows
+
+### 🚀 Team-Based Development (v1.1.62+)
+
+```bash
+# Widget Development Team
+snow-flow sparc team widget "create incident dashboard"
+
+# Flow Development Team  
+snow-flow sparc team flow "build approval workflow"
+
+# Application Development Team
+snow-flow sparc team app "create ITSM solution"
+
+# Adaptive Team (for custom/unknown tasks)
+snow-flow sparc team adaptive "create complex integration"
+
+# Individual Specialists
+snow-flow sparc frontend "mobile responsiveness"
+snow-flow sparc backend "API optimization"  
+snow-flow sparc security "access control review"
+```
+
+### 🎯 Quick Start
 1. `snow-flow init --sparc` - Initialize project with SPARC environment
 2. Configure ServiceNow credentials in .env file
 3. `snow-flow auth login` - Authenticate with ServiceNow OAuth
 4. `snow-flow swarm "create a widget for incident management"` - Everything automatic!
+5. `snow-flow sparc team widget "create dashboard"` - NEW: Use specialized teams!
 
 ## 💡 Important Notes
 
@@ -375,6 +639,7 @@ snow_smart_update_set({
 - ✅ Test with mock data before deploying
 - ✅ Work within Update Sets for safety
 - ✅ Use fuzzy search for finding artifacts
+- ✅ Write out code thats important for the whole objective to work
 
 ### Don'ts
 - ❌ Don't make sequential tool calls when batch is possible
@@ -382,6 +647,7 @@ snow_smart_update_set({
 - ❌ Don't deploy without testing
 - ❌ Don't ignore OAuth permission errors
 - ❌ Don't create artifacts without checking if they exist
+- ❌ Don't use mock data or placeholder code
 
 ## 🚀 Performance Benchmarks
 
@@ -401,11 +667,26 @@ With concurrent execution and batch operations:
 - **servicenow-platform-development**: Scripts, rules, and policies
 
 ### SPARC Modes
+
+#### **Individual SPARC Modes**
 - `orchestrator`: Coordinates complex multi-step tasks
 - `coder`: Focused code implementation
 - `researcher`: Deep analysis and discovery
 - `tester`: Comprehensive testing strategies
 - `architect`: System design and architecture
+
+#### **Team SPARC Modes (v1.1.62+)**
+- `team widget`: Widget development with Frontend + Backend + UI/UX + Platform + QA specialists
+- `team flow`: Flow development with Process + Trigger + Data + Integration + Security specialists
+- `team app`: Application development with Database + Business Logic + Interface + Security + Performance specialists
+- `team adaptive`: Dynamic team assembly based on task requirements
+
+#### **Individual Specialist Modes (v1.1.62+)**
+- `frontend`: HTML templates, CSS styling, responsive design
+- `backend`: Server scripts, API calls, data processing, performance optimization
+- `security`: Access controls, permissions, vulnerability assessment, compliance review
+- `data`: Database design, table relationships, data transformations
+- `integration`: APIs, external systems, data synchronization
 
 ---
 

@@ -171,3 +171,7 @@ export interface ServiceNowUpdateSet {
   release_date?: Date;
   sys_id?: string;
 }
+
+// Re-export coordination framework types
+export * from './snow-flow.types';
+export * from '../coordination/types';
