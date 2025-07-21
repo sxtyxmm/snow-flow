@@ -42,7 +42,7 @@ interface IndexedArtifact {
   modificationPoints: any[];
 }
 
-class ServiceNowIntelligentMCP {
+export class ServiceNowIntelligentMCP {
   private server: Server;
   private client: ServiceNowClient;
   private logger: Logger;

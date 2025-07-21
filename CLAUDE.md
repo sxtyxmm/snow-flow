@@ -405,13 +405,23 @@ if (deployment.failed) {
 - `snow-flow swarm "<objective>"`: Start multi-agent swarm - één command voor alles!
 - `snow-flow sparc <mode> "<task>"`: Run specific SPARC mode
 
-## Enhanced Swarm Command (v1.1.41+)
-The swarm command now includes intelligent features that are **enabled by default**:
+## Enhanced Swarm Command with Queen Agent Orchestration (v1.1.75+)
+
+### 👑 Queen Agent Architecture
+The swarm command now uses Queen Agent orchestration, where a master coordinator spawns and manages specialized agents through Claude Code:
 
 ```bash
-# Simple usage - all intelligent features enabled!
+# Simple usage - Queen Agent handles everything!
 snow-flow swarm "create incident management dashboard"
 ```
+
+### What Happens:
+1. **Memory Initialization**: SQLite-based swarm memory system starts
+2. **Session Creation**: Unique session ID generated for tracking
+3. **Queen Agent Launch**: Master coordinator analyzes objective
+4. **Agent Spawning**: Specialized agents created via Task tool
+5. **Memory Coordination**: Agents communicate through shared memory
+6. **Progress Monitoring**: Real-time status updates via TodoWrite
 
 ### Default Settings (no flags needed):
 - ✅ `--smart-discovery` - Automatically discovers and reuses existing artifacts
@@ -430,14 +440,33 @@ snow-flow swarm "create global workflow" --auto-permissions
 # Disable specific features
 snow-flow swarm "test widget" --no-auto-deploy --no-live-testing
 
-# Full control
+# Full control with Queen Agent
 snow-flow swarm "complex integration" \
   --max-agents 8 \
   --strategy development \
-  --mode distributed \
+  --mode hierarchical \
   --parallel \
   --auto-permissions
 ```
+
+### Monitoring Swarm Progress:
+```bash
+# Check status of a running swarm
+snow-flow swarm-status <sessionId>
+
+# Continuously monitor progress
+snow-flow swarm-status <sessionId> --watch --interval 10
+
+# List recent swarm sessions
+snow-flow swarm-status
+```
+
+### Queen Agent Memory Patterns:
+The Queen Agent uses these memory keys for coordination:
+- `swarm_session_<sessionId>` - Main session data
+- `agent_<type>_progress` - Individual agent progress
+- `agent_<type>_complete` - Agent completion status
+- `swarm_session_<sessionId>_results` - Final results
 
 
 ## New MCP Tools (v1.1.44+)

@@ -11,6 +11,7 @@ import * as fs from 'fs';
 export class QueenMemorySystem {
   private db: Database;
   private memory: QueenMemory;
+  private dbPath: string;
 
   constructor(dbPath?: string) {
     const memoryDir = path.join(process.cwd(), '.claude-flow', 'queen');
@@ -18,9 +19,8 @@ export class QueenMemorySystem {
       fs.mkdirSync(memoryDir, { recursive: true });
     }
 
-    this.db = new (require('better-sqlite3'))(
-      dbPath || path.join(memoryDir, 'queen-memory.db')
-    );
+    this.dbPath = dbPath || path.join(memoryDir, 'queen-memory.db');
+    this.db = new (require('better-sqlite3'))(this.dbPath);
     
     this.initializeDatabase();
     this.memory = this.loadMemory();
@@ -55,6 +55,11 @@ export class QueenMemorySystem {
         value TEXT NOT NULL,
         confidence REAL NOT NULL,
         updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS context (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS task_history (
@@ -165,19 +170,32 @@ export class QueenMemorySystem {
   }
 
   // Store learning from task execution
-  storeLearning(key: string, value: string, confidence: number = 1.0): void {
+  storeLearning(key: string, value: any, confidence: number = 1.0): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO learnings (key, value, confidence, updated_at)
       VALUES (?, ?, ?, ?)
     `);
     
-    stmt.run(key, value, confidence, new Date().toISOString());
-    this.memory.learnings.set(key, value);
+    const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+    stmt.run(key, valueStr, confidence, new Date().toISOString());
+    this.memory.learnings.set(key, valueStr);
   }
 
   // Get learning
-  getLearning(key: string): string | null {
-    return this.memory.learnings.get(key) || null;
+  getLearning(key: string): any | null {
+    const value = this.memory.learnings.get(key);
+    if (!value) return null;
+    
+    // Try to parse JSON if it looks like JSON
+    try {
+      if (value.startsWith('{') || value.startsWith('[')) {
+        return JSON.parse(value);
+      }
+    } catch {
+      // If parsing fails, return as string
+    }
+    
+    return value;
   }
 
   // Record task completion for learning
@@ -309,6 +327,34 @@ export class QueenMemorySystem {
       agentHistory: new Map(),
       learnings: new Map()
     };
+  }
+
+  // Store data in context (key-value store)
+  storeInContext(key: string, value: any): void {
+    const stmt = this.db.prepare('INSERT OR REPLACE INTO context (key, value) VALUES (?, ?)');
+    stmt.run(key, JSON.stringify(value));
+  }
+
+  // Get data from context
+  getFromContext(key: string): any {
+    const stmt = this.db.prepare('SELECT value FROM context WHERE key = ?');
+    const row = stmt.get(key) as any;
+    return row ? JSON.parse(row.value) : null;
+  }
+
+  // Store generic data (alias for storeInContext for compatibility)
+  store(key: string, value: any): void {
+    this.storeInContext(key, value);
+  }
+
+  // Get generic data (alias for getFromContext for compatibility)
+  get(key: string): any {
+    return this.getFromContext(key);
+  }
+
+  // Get database path
+  getDbPath(): string {
+    return this.dbPath;
   }
 
   // Close database connection

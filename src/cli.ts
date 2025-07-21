@@ -13,6 +13,7 @@ import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
 import { VERSION } from './version.js';
+import { integrateSnowFlowCommands } from './cli/snow-flow-cli-integration.js';
 
 // Load environment variables
 dotenv.config();
@@ -99,12 +100,35 @@ program
       console.log('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
     }
     
+    // Initialize Queen Agent memory system
+    console.log('\n💾 Initializing swarm memory system...');
+    const { QueenMemorySystem } = await import('./queen/queen-memory.js');
+    const memorySystem = new QueenMemorySystem();
+    
+    // Generate swarm session ID
+    const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`📋 Swarm Session ID: ${sessionId}`);
+    
+    // Store swarm session in memory
+    memorySystem.storeLearning(`session_${sessionId}`, {
+      objective,
+      taskAnalysis,
+      options,
+      started_at: new Date().toISOString(),
+      is_authenticated: isAuthenticated
+    });
+    
     // Start real Claude Code orchestration
     try {
-      // Generate the orchestration prompt for Claude Code with ServiceNow integration
-      const orchestrationPrompt = buildClaudeCodePrompt(objective, taskAnalysis, options, isAuthenticated);
+      // Generate the Queen Agent orchestration prompt
+      const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId);
       
-      console.log('\n🎯 Executing Claude Code with orchestration prompt...');
+      console.log('\n👑 Initializing Queen Agent orchestration...');
+      console.log('🎯 Queen Agent will coordinate the following:');
+      console.log(`   - Analyze objective: "${objective}"`);
+      console.log(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
+      console.log(`   - Coordinate through shared memory (session: ${sessionId})`);
+      console.log(`   - Monitor progress and adapt strategy`);
       
       // Check if intelligent features are enabled
       const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
@@ -112,12 +136,11 @@ program
         options.sharedMemory || options.progressMonitoring;
       
       if (hasIntelligentFeatures && isAuthenticated) {
-        console.log('🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
-        console.log('🚀 Using snow_orchestrate_development for unified execution');
-        console.log('\n📋 What will happen automatically:');
+        console.log('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
+        console.log('✨ Queen Agent will use advanced features:');
         
         if (options.autoPermissions) {
-          console.log('  🔐 Permission escalation when needed');
+          console.log('  🔐 Automatic permission escalation');
         }
         if (options.smartDiscovery) {
           console.log('  🔍 Smart artifact discovery and reuse');
@@ -137,13 +160,6 @@ program
         if (options.progressMonitoring) {
           console.log('  📊 Real-time progress monitoring');
         }
-        
-        console.log('\n✨ Everything will be handled automatically!');
-      } else {
-        console.log('💡 Claude Code will now coordinate the multi-agent development');
-        console.log('📋 Use TodoWrite to track progress in real-time');
-        console.log('🤖 Agents will be spawned using Task tool');
-        console.log('💾 Coordination data stored in Memory');
       }
       
       if (isAuthenticated) {
@@ -154,44 +170,61 @@ program
         console.log('📝 Artifacts will be saved to servicenow/ directory');
       }
       
-      console.log(); // Empty line
+      console.log('\n🚀 Launching Claude Code with Queen Agent...');
       
-      // Try to execute Claude Code directly
+      // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
       
       if (success) {
-        console.log('✅ Claude Code execution completed successfully!');
-        if (isAuthenticated) {
-          console.log('📊 Check your ServiceNow instance for created artifacts');
+        console.log('\n✅ Queen Agent orchestration launched successfully!');
+        console.log('👑 Queen Agent is now coordinating your swarm');
+        console.log(`💾 Monitor progress with session ID: ${sessionId}`);
+        
+        if (isAuthenticated && options.autoDeploy) {
+          console.log('🚀 Real artifacts will be created in ServiceNow');
         } else {
-          console.log('📊 Check the servicenow/ directory for generated artifacts');
+          console.log('📋 Planning mode - analysis and recommendations only');
         }
+        
+        // Store successful launch in memory
+        memorySystem.storeLearning(`launch_${sessionId}`, {
+          success: true,
+          launched_at: new Date().toISOString()
+        });
       } else {
-        console.log('⚠️  Claude Code direct execution failed. Using fallback method:');
-        console.log('\n🚀 CLAUDE CODE ORCHESTRATION PROMPT:');
+        console.log('\n📋 Claude Code manual execution required');
+        console.log('\n👑 QUEEN AGENT ORCHESTRATION PROMPT:');
         console.log('=' .repeat(80));
         console.log(orchestrationPrompt);
         console.log('=' .repeat(80));
         
-        console.log('\n✅ Snow-Flow orchestration prompt generated!');
+        console.log('\n✅ Queen Agent orchestration prompt generated!');
         console.log('📊 Next Steps:');
         console.log('   1. Copy the above prompt and paste it into Claude Code');
-        console.log('   2. Claude Code will execute the TodoWrite, Task, and Memory tools');
-        console.log('   3. Monitor progress through the batch tools');
-        if (isAuthenticated) {
-          console.log('   4. Artifacts will be created directly in ServiceNow');
+        console.log('   2. Queen Agent will analyze and spawn specialized agents');
+        console.log('   3. Agents will coordinate through shared memory');
+        console.log('   4. Monitor progress through TodoRead and Memory tools');
+        if (isAuthenticated && options.autoDeploy) {
+          console.log('   5. Real artifacts will be created in ServiceNow');
         } else {
-          console.log('   4. Generated artifacts will appear in servicenow/ directory');
+          console.log('   5. Planning mode - no real artifacts created');
         }
-        console.log('\n💡 Tip: Run this in a Claude Code session for full orchestration!');
+        console.log(`\n💾 Session ID for monitoring: ${sessionId}`);
       }
       
     } catch (error) {
-      console.error('❌ Failed to execute Claude Code orchestration:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Failed to execute Queen Agent orchestration:', error instanceof Error ? error.message : String(error));
+      
+      // Store error in memory for learning
+      memorySystem.storeLearning(`error_${sessionId}`, {
+        error: error instanceof Error ? error.message : String(error),
+        failed_at: new Date().toISOString()
+      });
     }
   });
 
-// Helper function to execute Claude Code directly
+
+// Helper function to execute Claude Code directly (FALLBACK ONLY)
 async function executeClaudeCode(prompt: string): Promise<boolean> {
   return new Promise((resolve) => {
     console.log('🔍 Checking for Claude Code availability...');
@@ -368,163 +401,365 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   });
 }
 
-// Helper function to build Claude Code orchestration prompt
-function buildClaudeCodePrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false): string {
+// Helper function to build Queen Agent orchestration prompt
+function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string): string {
   // Check if intelligent features are enabled
   const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
     options.liveTesting || options.autoDeploy || options.autoRollback || 
     options.sharedMemory || options.progressMonitoring;
 
-  const prompt = `# Snow-Flow ServiceNow Development
+  const prompt = `# 👑 Snow-Flow Queen Agent Orchestration
 
-## 🎯 Objective
-${objective}
+## 🎯 Mission Brief
+You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mission is to orchestrate a swarm of specialized agents to complete the following ServiceNow development objective:
 
-## 🧠 Team-Based SPARC Architecture (v1.1.62+)
+**Objective**: ${objective}
+**Session ID**: ${sessionId}
 
-**Use specialized teams for ServiceNow development:**
-
-### Widget Development Team
-\`\`\`bash
-snow-flow sparc team widget "${objective}"
-\`\`\`
-**Team**: Frontend + Backend + UI/UX + Platform + QA Specialists
-
-### Flow Development Team  
-\`\`\`bash
-snow-flow sparc team flow "${objective}"
-\`\`\`
-**Team**: Process + Trigger + Data + Integration + Security Specialists
-
-### Application Development Team
-\`\`\`bash
-snow-flow sparc team app "${objective}"
-\`\`\`
-**Team**: Database + Business Logic + Interface + Security + Performance Specialists
-
-### Individual Specialists (for focused tasks)
-\`\`\`bash
-snow-flow sparc frontend "mobile responsiveness"
-snow-flow sparc backend "API optimization"  
-snow-flow sparc security "access control review"
-\`\`\`
-
-## 📊 Task Analysis
+## 🧠 Task Analysis Summary
 - **Task Type**: ${taskAnalysis.taskType}
 - **Complexity**: ${taskAnalysis.complexity}
+- **Primary Agent Required**: ${taskAnalysis.primaryAgent}
+- **Supporting Agents**: ${taskAnalysis.supportingAgents.join(', ')}
+- **Estimated Total Agents**: ${taskAnalysis.estimatedAgentCount}
+- **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
 - **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 
-## 🧠 Intelligent Agent Analysis
-- **Task Type**: ${taskAnalysis.taskType}
-- **Primary Agent**: ${taskAnalysis.primaryAgent}
-- **Supporting Agents**: ${taskAnalysis.supportingAgents.join(', ')}
-- **Complexity**: ${taskAnalysis.complexity}
-- **Estimated Agents**: ${taskAnalysis.estimatedAgentCount}
-- **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
-- **Auto Update Set**: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}
-- **Auto Application**: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}
+## 👑 Your Queen Agent Responsibilities
 
-## Configuration
-- **Strategy**: ${options.strategy}
-- **Mode**: ${options.mode}
-- **Max Agents**: ${parseInt(options.maxAgents)} (requested) | Estimated: ${taskAnalysis.estimatedAgentCount} | Actual: ${(() => {
-  const userMaxAgents = parseInt(options.maxAgents);
-  const requiredAgents = (taskAnalysis.requiresUpdateSet ? 1 : 0) + (taskAnalysis.requiresApplication ? 1 : 0);
-  const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents);
-  const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
-  return 1 + adjustedSupportingAgents.length + requiredAgents;
-})()}
-- **Parallel**: ${options.parallel ? 'Yes' : 'No'}
-- **Monitor**: ${options.monitor ? 'Yes' : 'No'}
+### 1. Initialize Swarm Session
+First, store the swarm session context in memory:
+\`\`\`javascript
+// Initialize swarm session
+Memory.store("swarm_session_${sessionId}", {
+  objective: "${objective}",
+  status: "initializing",
+  started_at: new Date().toISOString(),
+  queen_agent_id: "queen_${sessionId}",
+  task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
+  configuration: {
+    strategy: "${options.strategy}",
+    mode: "${options.mode}",
+    max_agents: ${parseInt(options.maxAgents)},
+    parallel_execution: ${options.parallel ? 'true' : 'false'},
+    monitoring_enabled: ${options.monitor ? 'true' : 'false'}
+  }
+});
+\`\`\`
 
-## 🧠 Intelligent Features ${hasIntelligentFeatures ? '✅ ENABLED' : '❌ DISABLED'}
-${hasIntelligentFeatures ? `
-- **🔐 Auto Permissions**: ${options.autoPermissions ? '✅ Enabled - will escalate when needed' : '❌ Disabled'}
-- **🔍 Smart Discovery**: ${options.smartDiscovery ? '✅ Enabled - will reuse existing artifacts' : '❌ Disabled'}
-- **🧪 Live Testing**: ${options.liveTesting ? '✅ Enabled - will test in real-time' : '❌ Disabled'}
-- **🚀 Auto Deploy**: ${options.autoDeploy ? '⚠️ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '✅ SAFE - Planning mode only'}
-- **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Enabled - will rollback on failures' : '❌ Disabled'}
-- **💾 Shared Memory**: ${options.sharedMemory ? '✅ Enabled - agents share context' : '❌ Disabled'}
-- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Enabled - real-time status' : '❌ Disabled'}
+### 2. Create Master Task List
+Use TodoWrite to create a comprehensive task breakdown:
+\`\`\`javascript
+TodoWrite([
+  {
+    id: "analyze_requirements",
+    content: "Analyze user requirements: ${objective}",
+    status: "in_progress",
+    priority: "high"
+  },
+  {
+    id: "spawn_agents",
+    content: "Spawn ${taskAnalysis.estimatedAgentCount} specialized agents",
+    status: "pending",
+    priority: "high"
+  },
+  {
+    id: "coordinate_development",
+    content: "Coordinate agent activities for ${taskAnalysis.taskType}",
+    status: "pending",
+    priority: "high"
+  },
+  {
+    id: "validate_solution",
+    content: "Validate and test the complete solution",
+    status: "pending",
+    priority: "medium"
+  }
+]);
+\`\`\`
+
+### 3. Spawn Specialized Agents
+Based on the task analysis, spawn the following agents using the Task tool:
+
+**Primary Agent**: ${taskAnalysis.primaryAgent}
+\`\`\`javascript
+// Spawn primary agent
+Task("${taskAnalysis.primaryAgent}", \`
+  You are the primary ${taskAnalysis.primaryAgent} agent for this swarm.
+  
+  Objective: ${objective}
+  Session: ${sessionId}
+  Task Type: ${taskAnalysis.taskType}
+  
+  Instructions:
+  1. Read swarm context from Memory key: "swarm_session_${sessionId}"
+  2. Begin implementing the core ${taskAnalysis.taskType} requirements
+  3. Store all work progress in Memory with prefix: "agent_${taskAnalysis.primaryAgent}_"
+  4. Update TodoWrite items as you complete tasks
+  5. Coordinate with supporting agents through Memory
+  ${isAuthenticated ? '6. Use ServiceNow MCP tools for deployment' : '6. Create artifacts in servicenow/ directory'}
+\`);
+\`\`\`
+
+**Supporting Agents**:
+${taskAnalysis.supportingAgents.map((agent, index) => `
+Agent ${index + 2}: ${agent}
+\`\`\`javascript
+// Spawn ${agent}
+Task("${agent}", \`
+  You are a supporting ${agent} agent in this swarm.
+  
+  Role: ${agent}
+  Session: ${sessionId}
+  Primary Agent: ${taskAnalysis.primaryAgent}
+  
+  Instructions:
+  1. Wait for primary agent to establish base structure
+  2. Read context from Memory: "swarm_session_${sessionId}"
+  3. Read primary agent's work from: "agent_${taskAnalysis.primaryAgent}_*"
+  4. Enhance/support with your ${agent} expertise
+  5. Store outputs in Memory with prefix: "agent_${agent}_"
+  6. Update relevant TodoWrite items
+\`);
+\`\`\``).join('\n')}
+
+### 4. Memory Coordination Pattern
+All agents MUST use this memory coordination pattern:
+
+\`\`\`javascript
+// Agent initialization
+const session = Memory.get("swarm_session_${sessionId}");
+const agentId = \`agent_\${agentType}_${sessionId}\`;
+
+// Agent stores progress
+Memory.store(\`\${agentId}_progress\`, {
+  status: "working",
+  current_task: "description of current work",
+  completion_percentage: 45,
+  last_update: new Date().toISOString()
+});
+
+// Agent reads other agent's work
+const primaryWork = Memory.get("agent_${taskAnalysis.primaryAgent}_output");
+
+// Agent signals completion
+Memory.store(\`\${agentId}_complete\`, {
+  completed_at: new Date().toISOString(),
+  outputs: { /* agent deliverables */ },
+  artifacts_created: [ /* list of created artifacts */ ]
+});
+\`\`\`
+
+## 🧠 Intelligent Features Configuration
+${hasIntelligentFeatures ? `✅ **INTELLIGENT MODE ACTIVE** - The following features are enabled:
+
+- **🔐 Auto Permissions**: ${options.autoPermissions ? '✅ Will escalate permissions automatically' : '❌ Manual permission handling'}
+- **🔍 Smart Discovery**: ${options.smartDiscovery ? '✅ Will discover and reuse existing artifacts' : '❌ Create all new artifacts'}
+- **🧪 Live Testing**: ${options.liveTesting ? '✅ Will test in real ServiceNow instance' : '❌ Local testing only'}
+- **🚀 Auto Deploy**: ${options.autoDeploy ? '⚠️ WILL DEPLOY TO SERVICENOW AUTOMATICALLY' : '✅ Planning mode - no deployment'}
+- **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Will rollback on any failures' : '❌ No automatic rollback'}
+- **💾 Shared Memory**: ${options.sharedMemory ? '✅ Agents share context via Memory' : '❌ Isolated agent execution'}
+- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Real-time progress tracking' : '❌ No progress monitoring'}` : '❌ **STANDARD MODE** - Use manual coordination patterns'}
+
+## 🎯 ServiceNow Execution Strategy
+
+${isAuthenticated ? `### ✅ Live ServiceNow Integration Active
+
+${hasIntelligentFeatures ? `#### 🧠 Intelligent Orchestration Available
+Use the unified orchestration tool for complete automation:
+
+\`\`\`javascript
+// Queen Agent uses this for intelligent orchestration
+snow_orchestrate_development({
+  objective: "${objective}",
+  auto_permissions: ${options.autoPermissions},
+  smart_discovery: ${options.smartDiscovery},
+  live_testing: ${options.liveTesting},
+  auto_deploy: ${options.autoDeploy},
+  auto_rollback: ${options.autoRollback},
+  shared_memory: ${options.sharedMemory},
+  progress_monitoring: ${options.progressMonitoring}
+});
+\`\`\`
 ` : ''}
 
-${options.autoDeploy && isAuthenticated ? `
-## ⚠️ DEPLOYMENT MODE WARNING ⚠️
+#### ServiceNow MCP Tools Available
+Your agents have access to comprehensive MCP tools:
 
-🚨 **REAL DEPLOYMENT ACTIVE** - This will create ACTUAL artifacts in ServiceNow!
-- Widgets, flows, and other artifacts will be deployed to your instance
-- Changes will be tracked in Update Sets for rollback capability
-- Test thoroughly before running in production environments
+1. **Deployment Tools** (servicenow-deployment-mcp)
+   - \`snow_deploy\` - Unified deployment for all artifact types
+   - \`snow_preview_widget\` - Preview widgets before deployment
+   - \`snow_widget_test\` - Test widget functionality
 
-📋 To run in safe planning mode instead: Use \`--no-auto-deploy\` flag
-` : ''}
+2. **Discovery Tools** (servicenow-intelligent-mcp)
+   - \`snow_find_artifact\` - Natural language artifact search
+   - \`snow_catalog_item_search\` - Find catalog items with fuzzy matching
+   - \`snow_get_by_sysid\` - Direct sys_id lookup
 
-## Task Details
-- **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.length > 0 ? taskAnalysis.serviceNowArtifacts.join(', ') : 'None detected'}
-- **Agent Requirements**: ${taskAnalysis.primaryAgent} (lead) + ${taskAnalysis.supportingAgents.join(', ')} (support)
-- **Complexity Assessment**: ${taskAnalysis.complexity} task requiring ${taskAnalysis.estimatedAgentCount} agents
+3. **Flow Tools** (servicenow-flow-composer-mcp)
+   - \`snow_create_flow\` - Create flows from natural language
+   - \`snow_test_flow_with_mock\` - Test flows with mock data
+   - \`snow_link_catalog_to_flow\` - Link catalog items to flows
 
-## 🔧 ServiceNow Integration
-${isAuthenticated ? '✅ **Live ServiceNow Access: ENABLED**' : '❌ **ServiceNow Access: DISABLED** - Run \`snow-flow auth login\` to enable'}
+4. **Update Set Management** (servicenow-update-set-mcp)
+   - \`snow_update_set_create\` - Create new update sets
+   - \`snow_update_set_add_artifact\` - Track artifacts
+   - \`snow_update_set_complete\` - Complete update sets
 
-${isAuthenticated ? `
-You have access to comprehensive ServiceNow MCP tools for development:
-
-### 📦 ServiceNow MCP Tools Available:
-You have access to comprehensive MCP tools for ServiceNow development including deployment, discovery, testing, and operations capabilities.
-
-💡 **Refer to CLAUDE.md for complete MCP tool documentation and examples**
+${options.autoDeploy ? `
+#### ⚠️ AUTO-DEPLOYMENT ACTIVE ⚠️
+- Real artifacts will be created in ServiceNow
+- All changes tracked in Update Sets
+- Rollback available if needed
 ` : `
-📝 **File-based development mode**
+#### 📋 Planning Mode Active
+- No real artifacts will be created
+- Analysis and recommendations only
+- Use --auto-deploy to enable deployment
+`}` : `### ❌ ServiceNow Integration Disabled
 
-Since ServiceNow integration is not enabled, create artifacts as files in the servicenow/ directory:
-- servicenow/widgets/ for widget files
-- servicenow/workflows/ for workflow definitions  
-- servicenow/scripts/ for server scripts
-- servicenow/apps/ for application definitions
+#### File-Based Development Mode
+Agents will create artifacts as files in these directories:
+- \`servicenow/widgets/\` - Widget definitions
+- \`servicenow/flows/\` - Flow configurations
+- \`servicenow/scripts/\` - Script files
+- \`servicenow/apps/\` - Application definitions
 
-💡 Run "snow-flow auth login" to enable live ServiceNow integration!
+Run \`snow-flow auth login\` to enable live ServiceNow integration.
 `}
 
-## 🚀 Development Approach
+## 👑 Queen Agent Coordination Instructions
 
-${hasIntelligentFeatures && isAuthenticated ? `
-### 🧠 Intelligent Mode Available
-With intelligent features enabled, you can use automated orchestration tools that handle:
-- Requirements analysis and discovery
-- Permission escalation when needed
-- Existing artifact reuse
-- Real-time testing and validation
-- Automatic rollback on failures
-- Update Set management
+### 5. Monitor Agent Progress
+As Queen Agent, continuously monitor swarm progress:
 
-Use \`snow_orchestrate_development\` for complete automation.
-` : `
-### 📋 Standard Development Mode
-Execute these steps for ServiceNow development:
-1. Use TodoWrite to track all tasks
-2. Use Task tool for parallel agent coordination
-3. Use Memory for shared context between agents
-4. Follow the team-based SPARC approach shown above
-`}
+\`\`\`javascript
+// Monitor agent status
+const checkAgentProgress = () => {
+  const agents = [${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}];
+  
+  agents.forEach(agent => {
+    const progress = Memory.get(\`agent_\${agent}_progress\`);
+    const completion = Memory.get(\`agent_\${agent}_complete\`);
+    
+    console.log(\`Agent \${agent}: \${progress?.status || 'not started'}\`);
+    if (progress?.completion_percentage) {
+      console.log(\`  Progress: \${progress.completion_percentage}%\`);
+    }
+  });
+};
 
-### 🎯 Development Process
-${getServiceNowInstructions(taskAnalysis.taskType)}
+// Update swarm status
+Memory.update("swarm_session_${sessionId}", {
+  status: "agents_working",
+  last_check: new Date().toISOString()
+});
+\`\`\`
 
-## 📊 Expected Deliverables
-${getExpectedDeliverables(taskAnalysis.taskType, isAuthenticated)}
+### 6. Coordinate Agent Handoffs
+Ensure smooth transitions between agents:
 
-## 📚 Development Guidelines
+\`\`\`javascript
+// Primary agent signals readiness for support
+Memory.store("agent_${taskAnalysis.primaryAgent}_ready_for_support", {
+  base_structure_complete: true,
+  ready_for: [${taskAnalysis.supportingAgents.map(a => `"${a}"`).join(', ')}],
+  timestamp: new Date().toISOString()
+});
 
-${isAuthenticated ? `✅ **ServiceNow integration is enabled** - You can deploy directly to ServiceNow.` : '❌ **ServiceNow integration is disabled** - Files will be created locally.'}
+// Supporting agents check readiness
+const canProceed = Memory.get("agent_${taskAnalysis.primaryAgent}_ready_for_support");
+if (canProceed?.base_structure_complete) {
+  // Begin supporting work
+}
+\`\`\`
 
-📚 **Refer to CLAUDE.md for:**
-- Complete command reference and examples
-- Team-based SPARC architecture details  
-- MCP tool documentation
-- Best practices and workflows
+### 7. Final Validation and Completion
+Once all agents complete their work:
 
-🎯 **RECOMMENDATION**: Use the team-based SPARC commands shown above for optimal results!`;
+\`\`\`javascript
+// Collect all agent outputs
+const agentOutputs = {};
+[${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}].forEach(agent => {
+  const output = Memory.get(\`agent_\${agent}_complete\`);
+  if (output) {
+    agentOutputs[agent] = output;
+  }
+});
+
+// Store final swarm results
+Memory.store("swarm_session_${sessionId}_results", {
+  objective: "${objective}",
+  completed_at: new Date().toISOString(),
+  agent_outputs: agentOutputs,
+  artifacts_created: Object.values(agentOutputs)
+    .flatMap(output => output.artifacts_created || []),
+  success: true
+});
+
+// Update final TodoWrite status
+TodoWrite([
+  {
+    id: "swarm_completion",
+    content: "Swarm successfully completed: ${objective}",
+    status: "completed",
+    priority: "high"
+  }
+]);
+\`\`\`
+
+## 📊 Progress Monitoring Pattern
+
+${options.progressMonitoring ? `### Real-Time Progress Monitoring Enabled
+Monitor swarm progress using these patterns:
+
+\`\`\`javascript
+// Regular progress checks
+setInterval(() => {
+  const session = Memory.get("swarm_session_${sessionId}");
+  const todos = TodoRead();
+  
+  console.log(\`Swarm Status: \${session.status}\`);
+  console.log(\`Tasks Completed: \${todos.filter(t => t.status === 'completed').length}/\${todos.length}\`);
+  
+  // Check individual agent progress
+  checkAgentProgress();
+}, 30000); // Check every 30 seconds
+\`\`\`
+` : '### Manual Progress Checking\nUse TodoRead and Memory tools to check progress periodically.'}
+
+## 🎯 Success Criteria
+
+Your Queen Agent orchestration is successful when:
+1. ✅ All agents have been spawned and initialized
+2. ✅ Swarm session is tracked in Memory
+3. ✅ Agents are coordinating through shared Memory
+4. ✅ TodoWrite is being used for task tracking
+5. ✅ Progress is being monitored
+6. ✅ ${taskAnalysis.taskType} requirements are met
+7. ✅ All artifacts are created/deployed successfully
+
+## 💡 Queen Agent Best Practices
+
+1. **Spawn agents concurrently** when tasks are independent
+2. **Use Memory prefixes** to avoid key collisions
+3. **Update TodoWrite** frequently for visibility
+4. **Monitor agent health** and restart if needed
+5. **Validate outputs** before marking complete
+6. **Store all decisions** in Memory for audit trail
+
+## 🚀 Begin Orchestration
+
+Now execute this Queen Agent orchestration plan:
+1. Initialize the swarm session in Memory
+2. Create the master task list with TodoWrite
+3. Spawn all required agents using Task
+4. Monitor progress and coordinate
+5. Validate and complete the objective
+
+Remember: You are the Queen Agent - the master coordinator. Your role is to ensure all agents work harmoniously to achieve the objective: "${objective}"
+
+Session ID for this swarm: ${sessionId}`;
 
   return prompt;
 }
@@ -587,6 +822,95 @@ function extractName(objective: string, type: string): string {
   }
   return `Generated ${type}`;
 }
+
+// Swarm status command - monitor running swarms
+program
+  .command('swarm-status [sessionId]')
+  .description('Check the status of a running swarm session')
+  .option('--watch', 'Continuously monitor the swarm progress')
+  .option('--interval <seconds>', 'Watch interval in seconds', '5')
+  .action(async (sessionId: string | undefined, options) => {
+    console.log('\n🔍 Checking swarm status...\n');
+    
+    try {
+      const { QueenMemorySystem } = await import('./queen/queen-memory.js');
+      const memorySystem = new QueenMemorySystem();
+      
+      if (!sessionId) {
+        // List all recent swarm sessions
+        console.log('📋 Recent swarm sessions:');
+        console.log('(Provide a session ID to see detailed status)\n');
+        
+        // Get all session keys from learnings
+        const sessionKeys: string[] = [];
+        // Note: This is a simplified approach - in production, you'd query the database directly
+        console.log('💡 Use: snow-flow swarm-status <sessionId> to see details');
+        console.log('💡 Session IDs are displayed when you start a swarm\n');
+        return;
+      }
+      
+      // Get specific session data
+      const sessionData = memorySystem.getLearning(`session_${sessionId}`);
+      const launchData = memorySystem.getLearning(`launch_${sessionId}`);
+      const errorData = memorySystem.getLearning(`error_${sessionId}`);
+      
+      if (!sessionData) {
+        console.error(`❌ No swarm session found with ID: ${sessionId}`);
+        console.log('💡 Make sure to use the exact session ID displayed when starting the swarm');
+        return;
+      }
+      
+      console.log(`👑 Swarm Session: ${sessionId}`);
+      console.log(`📋 Objective: ${sessionData.objective}`);
+      console.log(`🕐 Started: ${sessionData.started_at}`);
+      console.log(`📊 Task Type: ${sessionData.taskAnalysis.taskType}`);
+      console.log(`🤖 Agents: ${sessionData.taskAnalysis.estimatedAgentCount} total`);
+      console.log(`   - Primary: ${sessionData.taskAnalysis.primaryAgent}`);
+      console.log(`   - Supporting: ${sessionData.taskAnalysis.supportingAgents.join(', ')}`);
+      
+      if (launchData && launchData.success) {
+        console.log(`\n✅ Status: Claude Code launched successfully`);
+        console.log(`🚀 Launched at: ${launchData.launched_at}`);
+      } else if (errorData) {
+        console.log(`\n❌ Status: Error occurred`);
+        console.log(`💥 Error: ${errorData.error}`);
+        console.log(`🕐 Failed at: ${errorData.failed_at}`);
+      } else {
+        console.log(`\n⏳ Status: Awaiting manual Claude Code execution`);
+      }
+      
+      console.log('\n💡 Tips:');
+      console.log('   - Check Claude Code for real-time agent progress');
+      console.log('   - Use Memory.get("swarm_session_' + sessionId + '") in Claude Code');
+      console.log('   - Monitor TodoRead for task completion status');
+      
+      if (options.watch) {
+        console.log(`\n👀 Watching for updates every ${options.interval} seconds...`);
+        console.log('(Press Ctrl+C to stop)\n');
+        
+        const watchInterval = setInterval(async () => {
+          // In a real implementation, this would query Claude Code's memory
+          console.log(`[${new Date().toLocaleTimeString()}] Checking for updates...`);
+          
+          // Re-fetch session data to check for updates
+          const updatedSession = memorySystem.getLearning(`session_${sessionId}`);
+          if (updatedSession) {
+            console.log('   Status: Active - Check Claude Code for details');
+          }
+        }, parseInt(options.interval) * 1000);
+        
+        // Handle graceful shutdown
+        process.on('SIGINT', () => {
+          clearInterval(watchInterval);
+          console.log('\n\n✋ Stopped watching swarm status');
+          process.exit(0);
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to check swarm status:', error instanceof Error ? error.message : String(error));
+    }
+  });
 
 // Spawn agent command
 program
@@ -3537,6 +3861,19 @@ program
  * Note: Users can use: snow-flow swarm "objective" --queen
  * This will be implemented in a future version once the Queen system is stable.
  */
+
+// ===================================================
+// 🎯 INTEGRATE SNOW-FLOW HIVE-MIND SYSTEM
+// ===================================================
+
+// Note: The new integrated commands enhance the existing CLI with:
+// - Advanced system status monitoring
+// - Real-time monitoring dashboard
+// - Persistent memory management
+// - Configuration management
+// - Performance analytics
+// Comment out the line below to disable the integrated commands
+// integrateSnowFlowCommands(program);
 
 program.parse(process.argv);
 

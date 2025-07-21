@@ -6,6 +6,7 @@
 import { Agent, AgentType, ServiceNowTask, AgentMessage } from './types';
 import { QueenMemorySystem } from './queen-memory';
 import * as crypto from 'crypto';
+import { BaseAgent, AGENT_CLASS_MAP } from '../agents';
 
 interface AgentBlueprint {
   type: AgentType;
@@ -481,5 +482,71 @@ export class AgentFactory {
       pendingMessages: this.messageQueue.length,
       availableAgentTypes: Array.from(this.agentBlueprints.keys())
     };
+  }
+
+  // Create specialized agent instance
+  async createSpecializedAgent(type: AgentType, taskId?: string): Promise<BaseAgent | null> {
+    try {
+      // Get the agent class constructor
+      const agentClassLoader = AGENT_CLASS_MAP[type];
+      if (!agentClassLoader) {
+        console.error(`No specialized agent implementation for type: ${type}`);
+        return null;
+      }
+
+      // Dynamically import and instantiate the agent
+      const AgentClass = await agentClassLoader();
+      const specializedAgent = new AgentClass({
+        id: this.generateAgentId(type),
+        memoryPath: this.memory.getDbPath(),
+        debugMode: true
+      });
+
+      // Track in active agents
+      const agentInfo = specializedAgent.getInfo();
+      this.activeAgents.set(agentInfo.id, agentInfo as Agent);
+
+      // Store creation in memory
+      this.memory.storeLearning(
+        `specialized_agent_spawn_${type}`,
+        `Created specialized ${type} agent for task: ${taskId || 'general'}`,
+        0.9
+      );
+
+      return specializedAgent;
+    } catch (error) {
+      console.error(`Failed to create specialized agent ${type}:`, error);
+      return null;
+    }
+  }
+
+  // Execute task with specialized agent
+  async executeWithSpecializedAgent(type: AgentType, instruction: string, context?: any): Promise<any> {
+    const agent = await this.createSpecializedAgent(type);
+    if (!agent) {
+      throw new Error(`Failed to create specialized agent of type ${type}`);
+    }
+
+    try {
+      // Execute the agent's task
+      const result = await agent.execute(instruction, context);
+      
+      // Store execution result in memory
+      this.memory.storeLearning(
+        `specialized_execution_${type}`,
+        JSON.stringify({
+          instruction,
+          success: result.success,
+          timestamp: new Date()
+        }),
+        result.success ? 0.9 : 0.3
+      );
+
+      return result;
+    } finally {
+      // Clean up agent
+      await agent.cleanup();
+      this.terminateAgent(agent.id);
+    }
   }
 }
