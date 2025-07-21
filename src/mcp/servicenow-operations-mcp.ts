@@ -756,6 +756,162 @@ class ServiceNowOperationsMCP {
                 }
               }
             }
+          },
+          
+          // User and Group Management Tools
+          {
+            name: 'snow_create_user_group',
+            description: 'Create a new user group in ServiceNow',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Group name (e.g., "Need Approval")'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Group description'
+                },
+                email: {
+                  type: 'string',
+                  description: 'Group email address (optional)'
+                },
+                manager: {
+                  type: 'string',
+                  description: 'Group manager sys_id or user_name (optional)'
+                },
+                parent: {
+                  type: 'string',
+                  description: 'Parent group sys_id (optional)'
+                },
+                type: {
+                  type: 'string',
+                  description: 'Group type (optional)',
+                  enum: ['', 'catalog', 'change', 'incident', 'problem', 'request']
+                },
+                active: {
+                  type: 'boolean',
+                  description: 'Is group active',
+                  default: true
+                }
+              },
+              required: ['name']
+            }
+          },
+          
+          {
+            name: 'snow_create_user',
+            description: 'Create a new user in ServiceNow',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                user_name: {
+                  type: 'string',
+                  description: 'Unique username for login'
+                },
+                first_name: {
+                  type: 'string',
+                  description: 'User first name'
+                },
+                last_name: {
+                  type: 'string',
+                  description: 'User last name'
+                },
+                email: {
+                  type: 'string',
+                  description: 'User email address'
+                },
+                department: {
+                  type: 'string',
+                  description: 'Department name or sys_id (optional)'
+                },
+                manager: {
+                  type: 'string',
+                  description: 'Manager sys_id or user_name (optional)'
+                },
+                phone: {
+                  type: 'string',
+                  description: 'Phone number (optional)'
+                },
+                title: {
+                  type: 'string',
+                  description: 'Job title (optional)'
+                },
+                location: {
+                  type: 'string',
+                  description: 'Location name or sys_id (optional)'
+                },
+                active: {
+                  type: 'boolean',
+                  description: 'Is user active',
+                  default: true
+                },
+                password: {
+                  type: 'string',
+                  description: 'Initial password (will require change on first login)'
+                }
+              },
+              required: ['user_name', 'first_name', 'last_name', 'email']
+            }
+          },
+          
+          {
+            name: 'snow_assign_user_to_group',
+            description: 'Add a user to a group in ServiceNow',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'string',
+                  description: 'User sys_id or user_name'
+                },
+                group: {
+                  type: 'string',
+                  description: 'Group sys_id or name'
+                }
+              },
+              required: ['user', 'group']
+            }
+          },
+          
+          {
+            name: 'snow_remove_user_from_group',
+            description: 'Remove a user from a group in ServiceNow',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'string',
+                  description: 'User sys_id or user_name'
+                },
+                group: {
+                  type: 'string',
+                  description: 'Group sys_id or name'
+                }
+              },
+              required: ['user', 'group']
+            }
+          },
+          
+          {
+            name: 'snow_list_group_members',
+            description: 'List all members of a group',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                group: {
+                  type: 'string',
+                  description: 'Group sys_id or name'
+                },
+                active_only: {
+                  type: 'boolean',
+                  description: 'Only show active users',
+                  default: true
+                }
+              },
+              required: ['group']
+            }
           }
         ],
       };
@@ -799,6 +955,16 @@ class ServiceNowOperationsMCP {
             return await this.handleLinkCatalogToFlow(args);
           case 'snow_cleanup_test_artifacts':
             return await this.handleCleanupTestArtifacts(args);
+          case 'snow_create_user_group':
+            return await this.handleCreateUserGroup(args);
+          case 'snow_create_user':
+            return await this.handleCreateUser(args);
+          case 'snow_assign_user_to_group':
+            return await this.handleAssignUserToGroup(args);
+          case 'snow_remove_user_from_group':
+            return await this.handleRemoveUserFromGroup(args);
+          case 'snow_list_group_members':
+            return await this.handleListGroupMembers(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Tool ${name} not found`);
         }
@@ -3370,6 +3536,455 @@ ${JSON.stringify(testResults, null, 2)}
   private getServiceNowUrl(): string {
     // This would need to get the instance URL from credentials
     return 'https://instance.service-now.com';
+  }
+
+  private async handleCreateUserGroup(args: any) {
+    const { name, description, email, manager, parent, type, active = true } = args;
+    
+    logger.info(`Creating user group: ${name}`);
+    
+    try {
+      // Check if group already exists
+      const existingGroup = await this.client.get('/api/now/table/sys_user_group', {
+        sysparm_query: `name=${name}`,
+        sysparm_limit: 1
+      });
+      
+      if (existingGroup.result?.length > 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Group "${name}" already exists!\n\nSys ID: ${existingGroup.result[0].sys_id}\nManager: ${existingGroup.result[0].manager?.display_value || 'None'}\nType: ${existingGroup.result[0].type || 'Standard'}\nActive: ${existingGroup.result[0].active}\n\nNo action taken.`
+          }]
+        };
+      }
+      
+      // Prepare group data
+      const groupData: any = {
+        name,
+        active: active.toString()
+      };
+      
+      if (description) groupData.description = description;
+      if (email) groupData.email = email;
+      if (type) groupData.type = type;
+      
+      // Handle manager lookup
+      if (manager) {
+        const managerUser = await this.findUserBySysIdOrUsername(manager);
+        if (managerUser) {
+          groupData.manager = managerUser.sys_id;
+        } else {
+          logger.warn(`Manager "${manager}" not found, creating group without manager`);
+        }
+      }
+      
+      // Handle parent group lookup
+      if (parent) {
+        const parentGroup = await this.findGroupBySysIdOrName(parent);
+        if (parentGroup) {
+          groupData.parent = parentGroup.sys_id;
+        } else {
+          logger.warn(`Parent group "${parent}" not found, creating group without parent`);
+        }
+      }
+      
+      // Create the group
+      const result = await this.client.post('/api/now/table/sys_user_group', groupData);
+      
+      if (result.result) {
+        const groupUrl = `${process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE.replace(/\/$/, '')}.service-now.com` : ''}/sys_user_group.do?sys_id=${result.result.sys_id}`;
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ **User Group Created Successfully!**\n\n**Group Name:** ${result.result.name}\n**Sys ID:** ${result.result.sys_id}\n**Type:** ${result.result.type || 'Standard'}\n**Active:** ${result.result.active}\n${result.result.manager ? `**Manager:** ${result.result.manager.display_value}` : ''}\n${result.result.parent ? `**Parent Group:** ${result.result.parent.display_value}` : ''}\n\n**View Group:** ${groupUrl}\n\nYou can now assign users to this group using \`snow_assign_user_to_group\`.`
+          }]
+        };
+      } else {
+        throw new Error('Failed to create group - no result returned');
+      }
+      
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Failed to create user group**\n\nError: ${error instanceof Error ? error.message : String(error)}\n\nTip: Ensure you have the necessary permissions to create groups (admin or user_admin role).`
+        }]
+      };
+    }
+  }
+  
+  private async handleCreateUser(args: any) {
+    const { 
+      user_name, 
+      first_name, 
+      last_name, 
+      email, 
+      department, 
+      manager, 
+      phone, 
+      title, 
+      location, 
+      active = true,
+      password 
+    } = args;
+    
+    logger.info(`Creating user: ${user_name}`);
+    
+    try {
+      // Check if user already exists
+      const existingUser = await this.client.get('/api/now/table/sys_user', {
+        sysparm_query: `user_name=${user_name}`,
+        sysparm_limit: 1
+      });
+      
+      if (existingUser.result?.length > 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ User "${user_name}" already exists!\n\nSys ID: ${existingUser.result[0].sys_id}\nName: ${existingUser.result[0].first_name} ${existingUser.result[0].last_name}\nEmail: ${existingUser.result[0].email}\nActive: ${existingUser.result[0].active}\n\nNo action taken.`
+          }]
+        };
+      }
+      
+      // Prepare user data
+      const userData: any = {
+        user_name,
+        first_name,
+        last_name,
+        email,
+        active: active.toString()
+      };
+      
+      if (phone) userData.phone = phone;
+      if (title) userData.title = title;
+      if (password) userData.user_password = password;
+      
+      // Handle manager lookup
+      if (manager) {
+        const managerUser = await this.findUserBySysIdOrUsername(manager);
+        if (managerUser) {
+          userData.manager = managerUser.sys_id;
+        } else {
+          logger.warn(`Manager "${manager}" not found, creating user without manager`);
+        }
+      }
+      
+      // Handle department lookup
+      if (department) {
+        const dept = await this.findDepartment(department);
+        if (dept) {
+          userData.department = dept.sys_id;
+        } else {
+          logger.warn(`Department "${department}" not found, creating user without department`);
+        }
+      }
+      
+      // Handle location lookup
+      if (location) {
+        const loc = await this.findLocation(location);
+        if (loc) {
+          userData.location = loc.sys_id;
+        } else {
+          logger.warn(`Location "${location}" not found, creating user without location`);
+        }
+      }
+      
+      // Create the user
+      const result = await this.client.post('/api/now/table/sys_user', userData);
+      
+      if (result.result) {
+        const userUrl = `${process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE.replace(/\/$/, '')}.service-now.com` : ''}/sys_user.do?sys_id=${result.result.sys_id}`;
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ **User Created Successfully!**\n\n**Username:** ${result.result.user_name}\n**Name:** ${result.result.first_name} ${result.result.last_name}\n**Email:** ${result.result.email}\n**Sys ID:** ${result.result.sys_id}\n**Active:** ${result.result.active}\n${result.result.manager ? `**Manager:** ${result.result.manager.display_value}` : ''}\n${result.result.department ? `**Department:** ${result.result.department.display_value}` : ''}\n${password ? '\n⚠️ **Note:** User will be required to change password on first login.' : ''}\n\n**View User:** ${userUrl}\n\nYou can now assign this user to groups using \`snow_assign_user_to_group\`.`
+          }]
+        };
+      } else {
+        throw new Error('Failed to create user - no result returned');
+      }
+      
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Failed to create user**\n\nError: ${error instanceof Error ? error.message : String(error)}\n\nTip: Ensure you have the necessary permissions to create users (admin or user_admin role).`
+        }]
+      };
+    }
+  }
+  
+  private async handleAssignUserToGroup(args: any) {
+    const { user, group } = args;
+    
+    logger.info(`Assigning user ${user} to group ${group}`);
+    
+    try {
+      // Find the user
+      const userRecord = await this.findUserBySysIdOrUsername(user);
+      if (!userRecord) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ User "${user}" not found. Please check the username or sys_id.`
+          }]
+        };
+      }
+      
+      // Find the group
+      const groupRecord = await this.findGroupBySysIdOrName(group);
+      if (!groupRecord) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Group "${group}" not found. Please check the group name or sys_id.\n\nTip: You can create a new group using \`snow_create_user_group\`.`
+          }]
+        };
+      }
+      
+      // Check if user is already in group
+      const existingMembership = await this.client.get('/api/now/table/sys_user_grmember', {
+        sysparm_query: `user=${userRecord.sys_id}^group=${groupRecord.sys_id}`,
+        sysparm_limit: 1
+      });
+      
+      if (existingMembership.result?.length > 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `ℹ️ User "${userRecord.user_name}" is already a member of group "${groupRecord.name}".\n\nNo action taken.`
+          }]
+        };
+      }
+      
+      // Add user to group
+      const result = await this.client.post('/api/now/table/sys_user_grmember', {
+        user: userRecord.sys_id,
+        group: groupRecord.sys_id
+      });
+      
+      if (result.result) {
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ **User Added to Group Successfully!**\n\n**User:** ${userRecord.first_name} ${userRecord.last_name} (${userRecord.user_name})\n**Group:** ${groupRecord.name}\n**Membership Sys ID:** ${result.result.sys_id}\n\nThe user now has all permissions associated with the "${groupRecord.name}" group.`
+          }]
+        };
+      } else {
+        throw new Error('Failed to add user to group - no result returned');
+      }
+      
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Failed to assign user to group**\n\nError: ${error instanceof Error ? error.message : String(error)}\n\nTip: Ensure you have the necessary permissions to manage group membership.`
+        }]
+      };
+    }
+  }
+  
+  private async handleRemoveUserFromGroup(args: any) {
+    const { user, group } = args;
+    
+    logger.info(`Removing user ${user} from group ${group}`);
+    
+    try {
+      // Find the user
+      const userRecord = await this.findUserBySysIdOrUsername(user);
+      if (!userRecord) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ User "${user}" not found. Please check the username or sys_id.`
+          }]
+        };
+      }
+      
+      // Find the group
+      const groupRecord = await this.findGroupBySysIdOrName(group);
+      if (!groupRecord) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Group "${group}" not found. Please check the group name or sys_id.`
+          }]
+        };
+      }
+      
+      // Find the membership record
+      const membership = await this.client.get('/api/now/table/sys_user_grmember', {
+        sysparm_query: `user=${userRecord.sys_id}^group=${groupRecord.sys_id}`,
+        sysparm_limit: 1
+      });
+      
+      if (!membership.result || membership.result.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `ℹ️ User "${userRecord.user_name}" is not a member of group "${groupRecord.name}".\n\nNo action taken.`
+          }]
+        };
+      }
+      
+      // Remove user from group
+      await this.client.delete(`/api/now/table/sys_user_grmember/${membership.result[0].sys_id}`);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ **User Removed from Group Successfully!**\n\n**User:** ${userRecord.first_name} ${userRecord.last_name} (${userRecord.user_name})\n**Group:** ${groupRecord.name}\n\nThe user no longer has permissions associated with the "${groupRecord.name}" group.`
+        }]
+      };
+      
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Failed to remove user from group**\n\nError: ${error instanceof Error ? error.message : String(error)}\n\nTip: Ensure you have the necessary permissions to manage group membership.`
+        }]
+      };
+    }
+  }
+  
+  private async handleListGroupMembers(args: any) {
+    const { group, active_only = true } = args;
+    
+    logger.info(`Listing members of group: ${group}`);
+    
+    try {
+      // Find the group
+      const groupRecord = await this.findGroupBySysIdOrName(group);
+      if (!groupRecord) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Group "${group}" not found. Please check the group name or sys_id.`
+          }]
+        };
+      }
+      
+      // Get group members
+      let query = `group=${groupRecord.sys_id}`;
+      if (active_only) {
+        query += '^user.active=true';
+      }
+      
+      const members = await this.client.get('/api/now/table/sys_user_grmember', {
+        sysparm_query: query,
+        sysparm_fields: 'user.user_name,user.first_name,user.last_name,user.email,user.title,user.active,user.sys_id',
+        sysparm_limit: 100
+      });
+      
+      if (!members.result || members.result.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `ℹ️ **Group "${groupRecord.name}" has no members.**\n\nYou can add users to this group using \`snow_assign_user_to_group\`.`
+          }]
+        };
+      }
+      
+      // Format member list
+      let response = `👥 **Members of "${groupRecord.name}" Group**\n\n`;
+      response += `**Total Members:** ${members.result.length}${active_only ? ' (active only)' : ''}\n\n`;
+      
+      members.result.forEach((member: any, index: number) => {
+        const u = member.user;
+        response += `${index + 1}. **${u.first_name} ${u.last_name}** (${u.user_name})\n`;
+        response += `   - Email: ${u.email}\n`;
+        if (u.title) response += `   - Title: ${u.title}\n`;
+        response += `   - Active: ${u.active}\n`;
+        response += `   - Sys ID: ${u.sys_id}\n\n`;
+      });
+      
+      if (members.result.length === 100) {
+        response += `\n⚠️ **Note:** Results limited to 100 members. The group may have additional members.`;
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: response
+        }]
+      };
+      
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Failed to list group members**\n\nError: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+  
+  // Helper methods
+  private async findUserBySysIdOrUsername(identifier: string) {
+    // First try as sys_id
+    if (identifier.match(/^[a-f0-9]{32}$/)) {
+      const result = await this.client.get(`/api/now/table/sys_user/${identifier}`);
+      if (result.result) return result.result;
+    }
+    
+    // Then try as username
+    const result = await this.client.get('/api/now/table/sys_user', {
+      sysparm_query: `user_name=${identifier}`,
+      sysparm_limit: 1
+    });
+    
+    return result.result?.[0] || null;
+  }
+  
+  private async findGroupBySysIdOrName(identifier: string) {
+    // First try as sys_id
+    if (identifier.match(/^[a-f0-9]{32}$/)) {
+      const result = await this.client.get(`/api/now/table/sys_user_group/${identifier}`);
+      if (result.result) return result.result;
+    }
+    
+    // Then try as name
+    const result = await this.client.get('/api/now/table/sys_user_group', {
+      sysparm_query: `name=${identifier}`,
+      sysparm_limit: 1
+    });
+    
+    return result.result?.[0] || null;
+  }
+  
+  private async findDepartment(identifier: string) {
+    // First try as sys_id
+    if (identifier.match(/^[a-f0-9]{32}$/)) {
+      const result = await this.client.get(`/api/now/table/cmn_department/${identifier}`);
+      if (result.result) return result.result;
+    }
+    
+    // Then try as name
+    const result = await this.client.get('/api/now/table/cmn_department', {
+      sysparm_query: `name=${identifier}`,
+      sysparm_limit: 1
+    });
+    
+    return result.result?.[0] || null;
+  }
+  
+  private async findLocation(identifier: string) {
+    // First try as sys_id
+    if (identifier.match(/^[a-f0-9]{32}$/)) {
+      const result = await this.client.get(`/api/now/table/cmn_location/${identifier}`);
+      if (result.result) return result.result;
+    }
+    
+    // Then try as name
+    const result = await this.client.get('/api/now/table/cmn_location', {
+      sysparm_query: `name=${identifier}`,
+      sysparm_limit: 1
+    });
+    
+    return result.result?.[0] || null;
   }
 
   async run() {

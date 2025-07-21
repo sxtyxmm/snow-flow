@@ -130,7 +130,7 @@ class ServiceNowFlowComposerMCP {
               },
               deploy_immediately: { 
                 type: 'boolean', 
-                description: 'Deploy the flow immediately after creation',
+                description: '⚠️ DEPLOYMENT MODE - true: Deploy REAL flow to ServiceNow immediately | false: Planning mode only',
                 default: true
               },
               create_missing_artifacts: { 
@@ -415,6 +415,8 @@ class ServiceNowFlowComposerMCP {
           {
             type: 'text',
             text: `🧠 ServiceNow Intelligent Flow Created Successfully!
+
+${args.deploy_immediately !== false ? `⚠️ **DEPLOYMENT MODE ACTIVE** - REAL flow created in ServiceNow!` : `📋 **PLANNING MODE** - No actual deployment performed`}
 
 🎯 **Flow Details:**
 - **Name**: ${flowInstruction.flowStructure?.name || 'Unknown'}

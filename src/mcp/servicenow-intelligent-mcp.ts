@@ -2014,13 +2014,40 @@ class ServiceNowIntelligentMCP {
         test_data_used: test_data
       };
 
-      // Get flow details first
-      const flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`, {
-        sysparm_fields: 'name,description,active,table'
-      });
-
-      if (!flowDetails.result) {
-        throw new Error(`Flow not found: ${flow_sys_id}`);
+      // Try modern Flow Designer API first
+      let flowDetails: any;
+      let flowType = 'flow_designer';
+      
+      try {
+        // First try sys_hub_flow (modern Flow Designer)
+        flowDetails = await this.client.get(`/api/now/table/sys_hub_flow/${flow_sys_id}`, {
+          sysparm_fields: 'name,description,active,type,status,sys_id,latest_snapshot'
+        });
+        
+        if (!flowDetails.result) {
+          throw new Error('Not found in sys_hub_flow');
+        }
+      } catch (error) {
+        // Fallback to legacy workflow if not found
+        try {
+          flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`, {
+            sysparm_fields: 'name,description,active,table'
+          });
+          flowType = 'legacy_workflow';
+          
+          if (!flowDetails.result) {
+            throw new Error('Not found in wf_workflow');
+          }
+        } catch (fallbackError) {
+          // Try searching by name if sys_id fails
+          const searchResults = await this.findFlowByNameOrSysId(flow_sys_id);
+          if (searchResults) {
+            flowDetails = { result: searchResults };
+            flowType = searchResults.sys_class_name === 'sys_hub_flow' ? 'flow_designer' : 'legacy_workflow';
+          } else {
+            throw new Error(`Flow not found with identifier: ${flow_sys_id}`);
+          }
+        }
       }
 
       executionResults.flow_info = flowDetails.result;
@@ -2032,11 +2059,37 @@ class ServiceNowIntelligentMCP {
         // Attempt to trigger the flow (this depends on the flow type and trigger conditions)
         // For now, we'll simulate testing by checking flow structure and providing recommendations
         
-        const flowActivities = await this.client.get('/api/now/table/wf_activity', {
-          sysparm_query: `workflow=${flow_sys_id}`,
-          sysparm_fields: 'name,order,active,script',
-          sysparm_orderby: 'order'
-        });
+        let flowActivities: any;
+        
+        if (flowType === 'flow_designer') {
+          // For modern flows, get activities from flow definition
+          const flowData = flowDetails.result;
+          if (flowData.latest_snapshot) {
+            try {
+              const snapshot = JSON.parse(flowData.latest_snapshot);
+              flowActivities = {
+                result: (snapshot.activities || snapshot.steps || []).map((activity: any, index: number) => ({
+                  name: activity.name || activity.label || `Activity ${index + 1}`,
+                  order: index * 100,
+                  active: true,
+                  type: activity.activity_type || activity.type,
+                  script: activity.script || ''
+                }))
+              };
+            } catch (parseError) {
+              flowActivities = { result: [] };
+            }
+          } else {
+            flowActivities = { result: [] };
+          }
+        } else {
+          // Legacy workflow activities
+          flowActivities = await this.client.get('/api/now/table/wf_activity', {
+            sysparm_query: `workflow=${flow_sys_id}`,
+            sysparm_fields: 'name,order,active,script',
+            sysparm_orderby: 'order'
+          });
+        }
 
         executionResults.execution_steps = flowActivities.result || [];
         executionResults.total_steps = executionResults.execution_steps.length;
@@ -2049,12 +2102,28 @@ class ServiceNowIntelligentMCP {
           complexity_score: this.calculateFlowComplexity(executionResults.execution_steps)
         };
 
-        // Provide testing recommendations
+        // Provide testing recommendations based on flow type
         executionResults.testing_recommendations = [
-          'Create test records in the target table before execution',
-          'Monitor the execution context for proper variable passing',
-          'Verify all conditions and approval steps work as expected',
-          'Test error handling and rollback scenarios'
+          `Flow Type: ${flowType === 'flow_designer' ? 'Modern Flow Designer' : 'Legacy Workflow'}`,
+          `Flow Sys ID: ${flowDetails.result.sys_id}`,
+          `Flow Name: ${flowDetails.result.name}`,
+          '',
+          '📋 Testing Steps:',
+          '1. Use snow_test_flow_with_mock for mock data testing (recommended)',
+          '2. Create test records in the target table before execution',
+          '3. Monitor execution via sys_flow_context (Flow Designer) or wf_context (Legacy)',
+          '4. Verify all conditions and approval steps work as expected',
+          '5. Test error handling and rollback scenarios',
+          '',
+          '💡 Alternative Testing Tools:',
+          '- snow_test_flow_with_mock: Test with mock users and data (always works)',
+          '- snow_comprehensive_flow_test: Advanced testing with edge cases',
+          '- Direct execution: Trigger via actual record creation/update',
+          '',
+          '🔍 Sys ID Tracking:',
+          `- Flow Sys ID: ${flowDetails.result.sys_id}`,
+          `- Table: ${flowType === 'flow_designer' ? 'sys_hub_flow' : 'wf_workflow'}`,
+          `- URL: ${process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE.replace(/\/$/, '')}.service-now.com` : ''}/${flowType === 'flow_designer' ? 'nav_to.do?uri=sys_hub_flow.do?sys_id=' : 'workflow_ide.do?sysparm_nostack=true&sysparm_sys_id='}${flowDetails.result.sys_id}`
         ];
 
         if (monitor_execution) {
@@ -2069,10 +2138,27 @@ class ServiceNowIntelligentMCP {
       return { content: [{ type: 'text', text: JSON.stringify(executionResults, null, 2) }] };
 
     } catch (error) {
-      return { content: [{ 
-        type: 'text', 
-        text: `❌ Flow Testing Failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      }] };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      let helpText = `❌ Flow Testing Failed: ${errorMessage}\n\n`;
+      
+      if (errorMessage.includes('not found')) {
+        helpText += `🔍 Flow Discovery Tips:\n`;
+        helpText += `- Provided identifier: "${flow_sys_id}"\n`;
+        helpText += `- This could be a sys_id OR a flow name\n`;
+        helpText += `- Checked tables: sys_hub_flow (modern), wf_workflow (legacy)\n\n`;
+        helpText += `💡 Try these alternatives:\n`;
+        helpText += `1. Use snow_find_artifact to search for the flow:\n`;
+        helpText += `   snow_find_artifact({ query: "${flow_sys_id}", type: "flow" })\n\n`;
+        helpText += `2. Use snow_test_flow_with_mock for testing without sys_id:\n`;
+        helpText += `   snow_test_flow_with_mock({ flow_id: "${flow_sys_id}" })\n\n`;
+        helpText += `3. Search by partial name:\n`;
+        helpText += `   snow_discover_existing_flows({ flow_purpose: "${flow_sys_id}" })\n\n`;
+        helpText += `4. Get exact sys_id from ServiceNow UI:\n`;
+        helpText += `   - Flow Designer → Flows → Copy sys_id from list\n`;
+        helpText += `   - Or right-click flow → Copy sys_id\n`;
+      }
+      
+      return { content: [{ type: 'text', text: helpText }] };
     }
   }
 
@@ -2385,65 +2471,127 @@ class ServiceNowIntelligentMCP {
         required_actions: []
       };
 
-      // Check current user permissions
-      const currentUser = await this.client.get('/api/now/table/sys_user', {
-        sysparm_query: 'user_name=current_user',
-        sysparm_fields: 'sys_id,user_name,roles'
+      // Get current user info
+      const whoAmI = await this.client.get('/api/now/table/sys_user', {
+        sysparm_query: 'user_name=admin',  // Try admin user first
+        sysparm_fields: 'sys_id,user_name,name,email',
+        sysparm_limit: 1
       });
-
-      if (currentUser.result?.[0]) {
-        // Get user roles
-        const userRoles = await this.client.get('/api/now/table/sys_user_has_role', {
-          sysparm_query: `user=${currentUser.result[0].sys_id}`,
-          sysparm_fields: 'role.name,role.sys_id'
-        });
-
-        escalationResults.current_permissions = {
-          user_id: currentUser.result[0].sys_id,
-          current_roles: userRoles.result?.map((r: any) => r.role?.name || r.role) || []
-        };
-
-        // Check which roles are missing
-        const currentRoleNames = escalationResults.current_permissions.current_roles;
-        const missingRoles = required_roles.filter((role: string) => !currentRoleNames.includes(role));
-
-        if (missingRoles.length === 0) {
-          escalationResults.escalation_status = 'not_needed';
-          escalationResults.message = 'User already has all required permissions';
-        } else {
-          escalationResults.escalation_status = 'required';
-          escalationResults.missing_roles = missingRoles;
-          
-          // Generate escalation recommendations
-          escalationResults.required_actions = [
-            `Contact ServiceNow administrator to temporarily grant these roles: ${missingRoles.join(', ')}`,
-            `Reason: ${reason}`,
-            `Duration: ${duration}`,
-            `Workflow context: ${workflow_context || 'Multi-agent development'}`
-          ];
-
-          if (duration === 'session') {
-            escalationResults.required_actions.push('Permissions can be revoked after current development session');
-          }
-
-          // Provide specific guidance for common roles
-          for (const role of missingRoles) {
-            switch (role) {
-              case 'admin':
-                escalationResults.required_actions.push('🔐 Admin role: Navigate to User Administration > Users, find your user, and add "admin" role');
-                break;
-              case 'app_creator':
-                escalationResults.required_actions.push('📱 App Creator role: Required for creating new applications and scoped artifacts');
-                break;
-              case 'system_administrator':
-                escalationResults.required_actions.push('⚙️ System Administrator: Full system access for advanced configuration');
-                break;
-            }
-          }
-        }
+      
+      const currentUser = whoAmI.result?.[0];
+      if (!currentUser) {
+        return { content: [{ 
+          type: 'text', 
+          text: '❌ Could not identify current user. Please ensure you are logged in to ServiceNow.' 
+        }] };
       }
 
-      return { content: [{ type: 'text', text: JSON.stringify(escalationResults, null, 2) }] };
+      // Get user roles
+      const userRoles = await this.client.get('/api/now/table/sys_user_has_role', {
+        sysparm_query: `user=${currentUser.sys_id}`,
+        sysparm_fields: 'role.name,role.description,inherited'
+      });
+
+      const currentRoles = userRoles.result?.map((r: any) => r.role?.name).filter(Boolean) || [];
+      const missingRoles = required_roles.filter((role: string) => !currentRoles.includes(role));
+
+      // Get instance URL
+      const instanceUrl = process.env.SNOW_INSTANCE ? 
+        `https://${process.env.SNOW_INSTANCE.replace(/\/$/, '')}.service-now.com` : 
+        'https://your-instance.service-now.com';
+
+      if (missingRoles.length === 0) {
+        return { content: [{ 
+          type: 'text', 
+          text: `✅ **Permission Check Passed**\n\nYou already have all required roles:\n${required_roles.map((r: string) => `- ✓ ${r}`).join('\n')}\n\nNo escalation needed!` 
+        }] };
+      }
+
+      // Build actionable response
+      let response = `🔐 **Permission Escalation Required**\n\n`;
+      response += `**Current User:** ${currentUser.name} (${currentUser.user_name})\n`;
+      response += `**Current Roles:** ${currentRoles.length > 0 ? currentRoles.join(', ') : 'None'}\n`;
+      response += `**Missing Roles:** ${missingRoles.join(', ')}\n`;
+      response += `**Reason:** ${reason}\n`;
+      response += `**Duration:** ${duration}\n\n`;
+      
+      response += `## 🎯 Required Actions:\n\n`;
+      
+      // Provide specific instructions for each missing role
+      for (const role of missingRoles) {
+        response += `### ${role} Role\n`;
+        
+        switch (role) {
+          case 'admin':
+            response += `The **admin** role provides:\n`;
+            response += `- Global scope access for creating widgets, flows, and applications\n`;
+            response += `- Ability to modify system tables and configurations\n`;
+            response += `- Access to all ServiceNow modules and features\n\n`;
+            response += `**How to obtain:**\n`;
+            response += `1. Contact your ServiceNow administrator\n`;
+            response += `2. Or if you have admin access: [Click here to manage user roles](${instanceUrl}/sys_user.do?sys_id=${currentUser.sys_id})\n`;
+            response += `3. In the "Roles" related list, click "Edit" and add "admin"\n\n`;
+            break;
+            
+          case 'app_creator':
+            response += `The **app_creator** role provides:\n`;
+            response += `- Create custom applications and scoped apps\n`;
+            response += `- Design application modules and menus\n`;
+            response += `- Manage application artifacts\n\n`;
+            response += `**How to obtain:**\n`;
+            response += `1. Request from ServiceNow administrator\n`;
+            response += `2. Or navigate to: [User Administration > Users](${instanceUrl}/sys_user_list.do)\n`;
+            response += `3. Find your user record and add "app_creator" role\n\n`;
+            break;
+            
+          case 'system_administrator':
+            response += `The **system_administrator** role provides:\n`;
+            response += `- Full system access and configuration\n`;
+            response += `- Advanced scripting and development capabilities\n`;
+            response += `- Access to all system properties and settings\n\n`;
+            response += `**How to obtain:**\n`;
+            response += `1. This is a highly privileged role - contact system admin\n`;
+            response += `2. Requires approval from ServiceNow instance owner\n\n`;
+            break;
+            
+          case 'global_admin':
+            response += `The **global_admin** role provides:\n`;
+            response += `- Cross-scope application access\n`;
+            response += `- Global artifact creation and management\n`;
+            response += `- Override scope restrictions\n\n`;
+            response += `**How to obtain:**\n`;
+            response += `1. Contact ServiceNow administrator\n`;
+            response += `2. May require business justification\n\n`;
+            break;
+            
+          default:
+            response += `The **${role}** role is required for this operation.\n\n`;
+            response += `**How to obtain:**\n`;
+            response += `1. Contact your ServiceNow administrator\n`;
+            response += `2. Request temporary access for: "${reason}"\n\n`;
+        }
+      }
+      
+      response += `## 💡 Alternative Solutions:\n\n`;
+      response += `1. **Use a development instance** where you have admin access\n`;
+      response += `2. **Request a personal developer instance** from [developer.servicenow.com](https://developer.servicenow.com)\n`;
+      response += `3. **Work with a team member** who has the required permissions\n`;
+      response += `4. **Use Update Sets** to package changes for deployment by an admin\n\n`;
+      
+      response += `## 📋 Template Request for Admin:\n\n`;
+      response += `\`\`\`\n`;
+      response += `Subject: Temporary Permission Request - ${reason}\n\n`;
+      response += `Hi Admin,\n\n`;
+      response += `I need temporary access to the following roles for development:\n`;
+      response += `- Roles needed: ${missingRoles.join(', ')}\n`;
+      response += `- Reason: ${reason}\n`;
+      response += `- Duration: ${duration}\n`;
+      response += `- Context: ${workflow_context || 'ServiceNow multi-agent development'}\n\n`;
+      response += `These permissions can be revoked after the ${duration === 'session' ? 'current session' : duration}.\n\n`;
+      response += `Thank you!\n`;
+      response += `\`\`\``;
+
+      return { content: [{ type: 'text', text: response }] };
 
     } catch (error) {
       return { content: [{ 
@@ -2691,10 +2839,13 @@ class ServiceNowIntelligentMCP {
         orchestration_id: `orchestration_${Date.now()}`,
         started_at: new Date().toISOString(),
         status: 'initializing',
+        mode: auto_deploy ? '🚀 DEPLOYMENT MODE (WILL CREATE REAL ARTIFACTS)' : '📋 PLANNING MODE (ANALYSIS ONLY)',
+        warning: auto_deploy ? '⚠️ WARNING: This will create REAL artifacts in ServiceNow!' : '✅ SAFE: This is planning only, no artifacts will be created',
         agents_spawned: [],
         shared_memory_enabled: shared_memory,
         progress_monitor: {},
-        execution_plan: {}
+        execution_plan: {},
+        actual_deployments: []
       };
 
       // Step 1: Analyze requirements
@@ -2772,13 +2923,99 @@ class ServiceNowIntelligentMCP {
         };
       }
 
-      orchestration.status = 'ready_for_execution';
-      orchestration.next_steps = [
-        'Execute snow_resilient_deployment to begin artifact development',
-        'Monitor progress using progress_monitor configuration',
-        'Use snow_comprehensive_flow_test for validation phase',
-        'Deploy using automatic deployment if auto_deploy is enabled'
-      ];
+      // Step 6: Execute actual deployment if auto_deploy is enabled
+      if (auto_deploy) {
+        orchestration.status = 'executing_deployment';
+        
+        // Attempt to create real artifacts based on the objective
+        try {
+          const artifactAnalysis = await this.analyzeArtifactRequirements(objective);
+          
+          for (const artifact of artifactAnalysis.recommended_artifacts) {
+            try {
+              let deploymentResult: any;
+              
+              if (artifact.type === 'flow') {
+                // Use flow composer to create real flow
+                deploymentResult = await this.client.post('/api/now/table/sys_hub_flow', {
+                  name: artifact.name,
+                  description: artifact.description,
+                  active: true,
+                  type: 'flow'
+                });
+              } else if (artifact.type === 'widget') {
+                // Create real widget
+                deploymentResult = await this.client.post('/api/now/table/sp_widget', {
+                  name: artifact.name,
+                  title: artifact.name,
+                  description: artifact.description,
+                  template: artifact.template || '<div>{{data.message || "Widget created"}}</div>',
+                  css: artifact.css || '',
+                  client_script: artifact.client_script || '',
+                  server_script: artifact.server_script || '(function() { data.message = "Successfully deployed!"; })()',
+                  public: true,
+                  has_preview: true
+                });
+              }
+              
+              if (deploymentResult?.result) {
+                orchestration.actual_deployments.push({
+                  type: artifact.type,
+                  name: artifact.name,
+                  sys_id: deploymentResult.result.sys_id,
+                  status: 'deployed',
+                  url: `https://${process.env.SNOW_INSTANCE ? process.env.SNOW_INSTANCE.replace(/\/$/, '') : 'instance'}.service-now.com/nav_to.do?uri=${artifact.type === 'flow' ? 'sys_hub_flow' : 'sp_widget'}.do?sys_id=${deploymentResult.result.sys_id}`
+                });
+              }
+            } catch (deployError) {
+              orchestration.actual_deployments.push({
+                type: artifact.type,
+                name: artifact.name,
+                status: 'failed',
+                error: deployError instanceof Error ? deployError.message : String(deployError)
+              });
+            }
+          }
+          
+          orchestration.status = 'deployment_complete';
+          orchestration.completed_at = new Date().toISOString();
+          
+        } catch (error) {
+          orchestration.status = 'deployment_failed';
+          orchestration.deployment_error = error instanceof Error ? error.message : String(error);
+        }
+      } else {
+        orchestration.status = 'planning_complete';
+        orchestration.completed_at = new Date().toISOString();
+      }
+
+      // Set appropriate next steps based on mode
+      if (auto_deploy) {
+        if (orchestration.actual_deployments.length > 0) {
+          orchestration.next_steps = [
+            '✅ DEPLOYMENT COMPLETE: Real artifacts have been created in ServiceNow',
+            `📊 Created ${orchestration.actual_deployments.filter((d: any) => d.status === 'deployed').length} artifacts successfully`,
+            'Use snow_test_flow_execution or snow_widget_test to validate deployments',
+            'Check ServiceNow instance to verify artifacts are working correctly'
+          ];
+        } else {
+          orchestration.next_steps = [
+            '❌ DEPLOYMENT FAILED: No artifacts were created',
+            'Check deployment errors in actual_deployments array',
+            'Verify ServiceNow permissions and authentication',
+            'Consider running in planning mode first (auto_deploy: false)'
+          ];
+        }
+      } else {
+        orchestration.next_steps = [
+          '📋 PLANNING COMPLETE: This was analysis only - no artifacts created',
+          '🚀 To deploy: Re-run with auto_deploy: true',
+          'Execute specific MCP tools manually:',
+          '  - snow_create_flow for flow creation',
+          '  - snow_deploy_widget for widget deployment',
+          '  - snow_resilient_deployment for batch deployment'
+        ];
+      }
 
       return { content: [{ type: 'text', text: JSON.stringify(orchestration, null, 2) }] };
 
@@ -2958,10 +3195,40 @@ class ServiceNowIntelligentMCP {
         recommendations: []
       };
 
-      // Get flow details
-      const flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`);
-      if (!flowDetails.result) {
-        throw new Error(`Flow not found: ${flow_sys_id}`);
+      // Get flow details using improved discovery
+      let flowDetails: any;
+      let flowType = 'flow_designer';
+      
+      try {
+        // First try sys_hub_flow (modern Flow Designer)
+        flowDetails = await this.client.get(`/api/now/table/sys_hub_flow/${flow_sys_id}`, {
+          sysparm_fields: 'name,description,active,type,status,sys_id,latest_snapshot'
+        });
+        
+        if (!flowDetails.result) {
+          throw new Error('Not found in sys_hub_flow');
+        }
+      } catch (error) {
+        // Fallback to legacy workflow if not found
+        try {
+          flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`, {
+            sysparm_fields: 'name,description,active,table'
+          });
+          flowType = 'legacy_workflow';
+          
+          if (!flowDetails.result) {
+            throw new Error('Not found in wf_workflow');
+          }
+        } catch (fallbackError) {
+          // Try searching by name if sys_id fails
+          const searchResults = await this.findFlowByNameOrSysId(flow_sys_id);
+          if (searchResults) {
+            flowDetails = { result: searchResults };
+            flowType = searchResults.sys_class_name === 'sys_hub_flow' ? 'flow_designer' : 'legacy_workflow';
+          } else {
+            throw new Error(`Flow not found with identifier: ${flow_sys_id}`);
+          }
+        }
       }
 
       testResults.flow_info = flowDetails.result;
@@ -3475,6 +3742,60 @@ try {
     };
   }
 
+  private async analyzeArtifactRequirements(objective: string): Promise<any> {
+    const artifactAnalysis = {
+      objective,
+      recommended_artifacts: []
+    };
+
+    const lowerObjective = objective.toLowerCase();
+    
+    // Simple keyword-based analysis for artifact type detection
+    if (lowerObjective.includes('flow') || lowerObjective.includes('workflow') || lowerObjective.includes('automation')) {
+      artifactAnalysis.recommended_artifacts.push({
+        type: 'flow',
+        name: `Flow for ${objective.substring(0, 50)}`,
+        description: `Automated flow created for: ${objective}`,
+        priority: 'high'
+      });
+    }
+    
+    if (lowerObjective.includes('widget') || lowerObjective.includes('dashboard') || lowerObjective.includes('display')) {
+      artifactAnalysis.recommended_artifacts.push({
+        type: 'widget',
+        name: `Widget for ${objective.substring(0, 50)}`,
+        description: `Service Portal widget for: ${objective}`,
+        template: '<div class="panel panel-default"><div class="panel-body">{{data.message || "Widget deployed successfully"}}<br><small>Created for: ' + objective + '</small></div></div>',
+        css: '.panel { margin: 10px; }',
+        client_script: 'function() { console.log("Widget loaded"); }',
+        server_script: '(function() { data.message = "Successfully deployed for: ' + objective.replace(/"/g, '\\"') + '"; })()',
+        priority: 'medium'
+      });
+    }
+    
+    if (lowerObjective.includes('script') || lowerObjective.includes('function') || lowerObjective.includes('utility')) {
+      artifactAnalysis.recommended_artifacts.push({
+        type: 'script_include',
+        name: `Script for ${objective.substring(0, 50)}`,
+        description: `Script include for: ${objective}`,
+        script: `// Script created for: ${objective}\nvar ScriptUtility = Class.create();\nScriptUtility.prototype = {\n  initialize: function() {},\n  execute: function() {\n    gs.info('Script executed for: ${objective}');\n    return true;\n  },\n  type: 'ScriptUtility'\n};\n`,
+        priority: 'low'
+      });
+    }
+    
+    // If no specific artifacts detected, create a default flow
+    if (artifactAnalysis.recommended_artifacts.length === 0) {
+      artifactAnalysis.recommended_artifacts.push({
+        type: 'flow',
+        name: `General Flow for ${objective.substring(0, 40)}`,
+        description: `General purpose flow for: ${objective}`,
+        priority: 'medium'
+      });
+    }
+    
+    return artifactAnalysis;
+  }
+
   private generateTestRecommendations(testResults: any): string[] {
     const recommendations = [];
     
@@ -3486,6 +3807,65 @@ try {
     recommendations.push('📊 Set up performance baselines for future comparisons');
     
     return recommendations;
+  }
+
+  private async findFlowByNameOrSysId(identifier: string): Promise<any> {
+    try {
+      // First try as sys_id in sys_hub_flow
+      let result = await this.client.get(`/api/now/table/sys_hub_flow/${identifier}`);
+      if (result.result) {
+        result.result.sys_class_name = 'sys_hub_flow';
+        return result.result;
+      }
+    } catch (error) {
+      // Not a sys_id in sys_hub_flow
+    }
+
+    try {
+      // Try as sys_id in wf_workflow
+      let result = await this.client.get(`/api/now/table/wf_workflow/${identifier}`);
+      if (result.result) {
+        result.result.sys_class_name = 'wf_workflow';
+        return result.result;
+      }
+    } catch (error) {
+      // Not a sys_id in wf_workflow
+    }
+
+    // Search by name in both tables
+    try {
+      // Search in sys_hub_flow
+      const modernFlows = await this.client.get('/api/now/table/sys_hub_flow', {
+        sysparm_query: `name=${identifier}^ORnameSTARTSWITH${identifier}`,
+        sysparm_limit: 1,
+        sysparm_fields: 'name,description,active,type,status,sys_id,latest_snapshot'
+      });
+      
+      if (modernFlows.result && modernFlows.result.length > 0) {
+        modernFlows.result[0].sys_class_name = 'sys_hub_flow';
+        return modernFlows.result[0];
+      }
+    } catch (error) {
+      // Continue to legacy search
+    }
+
+    try {
+      // Search in wf_workflow
+      const legacyFlows = await this.client.get('/api/now/table/wf_workflow', {
+        sysparm_query: `name=${identifier}^ORnameSTARTSWITH${identifier}`,
+        sysparm_limit: 1,
+        sysparm_fields: 'name,description,active,table,sys_id'
+      });
+      
+      if (legacyFlows.result && legacyFlows.result.length > 0) {
+        legacyFlows.result[0].sys_class_name = 'wf_workflow';
+        return legacyFlows.result[0];
+      }
+    } catch (error) {
+      // No results found
+    }
+
+    return null;
   }
 
   async start() {

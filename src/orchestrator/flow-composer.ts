@@ -1669,6 +1669,9 @@ export class EnhancedFlowComposer {
   }
 
   private extractFlowName(instruction: string): string {
+    // ServiceNow flow name length limit
+    const MAX_FLOW_NAME_LENGTH = 80;
+    
     // First check for quoted flow names - more precise matching
     const quotedPatterns = [
       /flow\s+named\s+["']([^"']+)["']/i,
@@ -1680,20 +1683,20 @@ export class EnhancedFlowComposer {
     for (const pattern of quotedPatterns) {
       const match = instruction.match(pattern);
       if (match && match[1]) {
-        return match[1].trim();
+        return this.validateAndShortenFlowName(match[1].trim(), instruction);
       }
     }
     
     // Check for any remaining quoted strings as fallback
     const generalQuotedMatch = instruction.match(/["']([^"']+)["']/i);
     if (generalQuotedMatch && generalQuotedMatch[1] && generalQuotedMatch[1].toLowerCase().includes('flow')) {
-      return generalQuotedMatch[1].trim();
+      return this.validateAndShortenFlowName(generalQuotedMatch[1].trim(), instruction);
     }
     
     // Then check for 'flow named X' or 'flow called X' without quotes
     const namedMatch = instruction.match(/flow\s+(?:named|called)\s+([^\s]+(?:\s+[^\s]+)*?)(?:\s+that|\s+which|\s+to|\.|,|$)/i);
     if (namedMatch && namedMatch[1]) {
-      return namedMatch[1].trim();
+      return this.validateAndShortenFlowName(namedMatch[1].trim(), instruction);
     }
     
     // Try other patterns
@@ -1706,17 +1709,134 @@ export class EnhancedFlowComposer {
     for (const pattern of patterns) {
       const match = instruction.match(pattern);
       if (match && match[1]) {
-        return match[1].trim();
+        return this.validateAndShortenFlowName(match[1].trim(), instruction);
       }
     }
 
-    // If no specific pattern found, use first part of instruction
-    const words = instruction.split(/\s+/);
-    if (words.length > 2) {
-      return words.slice(0, 3).join(' ');
+    // Generate intelligent flow name from instruction content
+    return this.generateSmartFlowName(instruction);
+  }
+  
+  private validateAndShortenFlowName(flowName: string, instruction: string): string {
+    const MAX_FLOW_NAME_LENGTH = 80;
+    
+    if (flowName.length <= MAX_FLOW_NAME_LENGTH) {
+      return flowName;
     }
-
-    return 'Custom Flow';
+    
+    // Warn about truncation
+    this.logger.warn('Flow name too long, will be shortened', {
+      original: flowName,
+      length: flowName.length,
+      maxLength: MAX_FLOW_NAME_LENGTH
+    });
+    
+    // Try to shorten intelligently
+    const shortened = this.shortenFlowName(flowName, instruction);
+    
+    this.logger.info('Flow name shortened', {
+      original: flowName,
+      shortened: shortened
+    });
+    
+    return shortened;
+  }
+  
+  private shortenFlowName(flowName: string, instruction: string): string {
+    const MAX_LENGTH = 75; // Leave some buffer
+    
+    // If it's already short enough, return it
+    if (flowName.length <= MAX_LENGTH) {
+      return flowName;
+    }
+    
+    // Try to extract key components
+    const table = this.extractTable(instruction);
+    const trigger = this.extractTriggerType(instruction);
+    
+    // Generate a meaningful short name
+    if (table && trigger) {
+      const shortName = `${this.capitalize(table)} ${this.capitalize(trigger)} Flow`;
+      if (shortName.length <= MAX_LENGTH) {
+        return shortName;
+      }
+    }
+    
+    // If still too long, truncate with ellipsis
+    return flowName.substring(0, MAX_LENGTH - 3) + '...';
+  }
+  
+  private generateSmartFlowName(instruction: string): string {
+    const MAX_LENGTH = 75;
+    
+    // Extract key components from instruction
+    const table = this.extractTable(instruction);
+    const trigger = this.extractTriggerType(instruction);
+    const action = this.extractPrimaryAction(instruction);
+    
+    // Build smart flow name
+    let flowName = '';
+    
+    if (table) {
+      flowName += this.capitalize(table) + ' ';
+    }
+    
+    if (trigger) {
+      flowName += this.capitalize(trigger) + ' ';
+    }
+    
+    if (action && flowName.length + action.length < MAX_LENGTH) {
+      flowName += action + ' ';
+    }
+    
+    flowName += 'Flow';
+    
+    // If no meaningful name generated, create a timestamp-based name
+    if (flowName === 'Flow' || flowName.length > MAX_LENGTH) {
+      const timestamp = new Date().toISOString().split('T')[0];
+      flowName = `Auto Flow ${timestamp}`;
+    }
+    
+    return flowName.trim();
+  }
+  
+  private extractTriggerType(instruction: string): string {
+    const lowerInstruction = instruction.toLowerCase();
+    
+    if (lowerInstruction.includes('create') || lowerInstruction.includes('new')) {
+      return 'Create';
+    } else if (lowerInstruction.includes('update') || lowerInstruction.includes('change')) {
+      return 'Update';
+    } else if (lowerInstruction.includes('delete') || lowerInstruction.includes('remove')) {
+      return 'Delete';
+    } else if (lowerInstruction.includes('approve') || lowerInstruction.includes('approval')) {
+      return 'Approval';
+    } else if (lowerInstruction.includes('schedule')) {
+      return 'Scheduled';
+    }
+    
+    return '';
+  }
+  
+  private extractPrimaryAction(instruction: string): string {
+    const actionPatterns = [
+      /(?:to|will|should)\s+(\w+)/i,
+      /(?:for)\s+(\w+ing)/i,
+      /(\w+ing)\s+(?:the|a|an)/i
+    ];
+    
+    for (const pattern of actionPatterns) {
+      const match = instruction.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return '';
+  }
+  
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 
   private extractTable(instruction: string): string {

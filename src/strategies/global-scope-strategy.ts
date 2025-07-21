@@ -498,7 +498,14 @@ export class GlobalScopeStrategy {
 
       return {
         hasPermission: hasGlobalPermission,
-        issues: hasGlobalPermission ? [] : ['User lacks global scope permissions (admin, system_administrator, or global_admin role required)']
+        issues: hasGlobalPermission ? [] : [
+          '🔐 Permission Error: Global scope access required',
+          `Missing roles: ${globalPermissionRoles.filter(r => !roles.includes(r)).join(', ')}`,
+          'To fix:',
+          '1. Run: snow_escalate_permissions tool for detailed instructions',
+          '2. Or contact your ServiceNow administrator',
+          '3. Or use a personal developer instance from developer.servicenow.com'
+        ]
       };
 
     } catch (error) {

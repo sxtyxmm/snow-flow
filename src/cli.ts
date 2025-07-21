@@ -57,7 +57,7 @@ program
     console.log(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
     console.log(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
     console.log(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
-    console.log(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ Yes' : '❌ No'}`);
+    console.log(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
     console.log(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
     console.log(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
     console.log(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
@@ -442,10 +442,21 @@ ${hasIntelligentFeatures ? `
 - **🔐 Auto Permissions**: ${options.autoPermissions ? '✅ Enabled - will escalate when needed' : '❌ Disabled'}
 - **🔍 Smart Discovery**: ${options.smartDiscovery ? '✅ Enabled - will reuse existing artifacts' : '❌ Disabled'}
 - **🧪 Live Testing**: ${options.liveTesting ? '✅ Enabled - will test in real-time' : '❌ Disabled'}
-- **🚀 Auto Deploy**: ${options.autoDeploy ? '✅ Enabled - will deploy when ready' : '❌ Disabled'}
+- **🚀 Auto Deploy**: ${options.autoDeploy ? '⚠️ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '✅ SAFE - Planning mode only'}
 - **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Enabled - will rollback on failures' : '❌ Disabled'}
 - **💾 Shared Memory**: ${options.sharedMemory ? '✅ Enabled - agents share context' : '❌ Disabled'}
 - **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Enabled - real-time status' : '❌ Disabled'}
+` : ''}
+
+${options.autoDeploy && isAuthenticated ? `
+## ⚠️ DEPLOYMENT MODE WARNING ⚠️
+
+🚨 **REAL DEPLOYMENT ACTIVE** - This will create ACTUAL artifacts in ServiceNow!
+- Widgets, flows, and other artifacts will be deployed to your instance
+- Changes will be tracked in Update Sets for rollback capability
+- Test thoroughly before running in production environments
+
+📋 To run in safe planning mode instead: Use \`--no-auto-deploy\` flag
 ` : ''}
 
 ## Task Details
@@ -453,100 +464,16 @@ ${hasIntelligentFeatures ? `
 - **Agent Requirements**: ${taskAnalysis.primaryAgent} (lead) + ${taskAnalysis.supportingAgents.join(', ')} (support)
 - **Complexity Assessment**: ${taskAnalysis.complexity} task requiring ${taskAnalysis.estimatedAgentCount} agents
 
-## ServiceNow Integration
-${isAuthenticated ? '✅ **Live ServiceNow Integration: ENABLED**' : '❌ **Live ServiceNow Integration: DISABLED**'}
+## 🔧 ServiceNow Integration
+${isAuthenticated ? '✅ **Live ServiceNow Access: ENABLED**' : '❌ **ServiceNow Access: DISABLED** - Run \`snow-flow auth login\` to enable'}
 
 ${isAuthenticated ? `
-🔗 **You have LIVE ACCESS to ServiceNow APIs and can create artifacts directly in ServiceNow!**
+You have access to comprehensive ServiceNow MCP tools for development:
 
-🚨 **CRITICAL: You have ServiceNow MCP tools available for direct deployment:**
+### 📦 ServiceNow MCP Tools Available:
+You have access to comprehensive MCP tools for ServiceNow development including deployment, discovery, testing, and operations capabilities.
 
-Available ServiceNow MCP Tools:
-- **ServiceNowClient**: Create widgets, workflows, and applications directly
-- **ServiceNowOAuth**: Authenticated access to ServiceNow APIs
-- **Direct API Access**: Use REST APIs to create and deploy artifacts immediately
-
-**MANDATORY: Use ServiceNow API calls to deploy widgets directly:**
-1. **Create artifacts in ServiceNow using ServiceNowClient.createWidget()**
-2. **Test functionality immediately in the live ServiceNow instance**
-3. **Generate update sets for deployment**
-4. **Provide direct links to created artifacts**
-
-⚠️ **DO NOT say you cannot deploy to ServiceNow** - you CAN and SHOULD deploy directly using the available ServiceNow API tools!
-
-**Example ServiceNow Widget Creation:**
-\`\`\`typescript
-import { ServiceNowClient } from '../utils/servicenow-client.js';
-
-const client = new ServiceNowClient();
-const widget = await client.createWidget({
-  name: 'incident_management_widget',
-  title: 'Incident Management Widget',
-  description: 'Enhanced incident management with visual features',
-  template: '<!-- Your HTML template -->',
-  css: '/* Your CSS styles */',
-  client_script: '/* Your client-side JavaScript */',
-  server_script: '/* Your server-side script */',
-  category: 'incident'
-});
-\`\`\`
-
-**PREFERRED: Use ServiceNow Deployment MCP Tools:**
-\`\`\`typescript
-// Deploy widget using MCP deployment tool
-await snow_deploy_widget({
-  name: 'incident_management_widget',
-  title: 'Incident Management Widget',
-  description: 'Enhanced incident management with visual features',
-  template: widgetHTML,
-  css: widgetCSS,
-  client_script: clientScript,
-  server_script: serverScript,
-  category: 'incident'
-});
-
-// Deploy Flow Designer flow using MCP deployment tool
-await snow_deploy_flow({
-  name: 'approval_flow',
-  description: 'Approval flow for purchases',
-  table: 'sc_request',
-  trigger_type: 'record_created',
-  condition: 'category=hardware^item=iphone',
-  flow_definition: flowJSON,
-  category: 'approval'
-});
-\`\`\`
-
-**ALTERNATIVE: Use Direct Widget Creator for pre-built widgets:**
-\`\`\`typescript
-import { DirectWidgetCreator } from '../cli/direct-widget-creator.js';
-
-const creator = new DirectWidgetCreator();
-await creator.createIncidentManagementWidget();
-\`\`\`
-
-🎯 **YOU CAN AND SHOULD DEPLOY DIRECTLY TO SERVICENOW** - OAuth authentication is active!
-
-📦 **Available Deployment MCP Tools:**
-- snow_deploy_widget - Deploy widgets with full configuration
-- snow_deploy_flow - Deploy Flow Designer flows  
-- snow_deploy_application - Deploy scoped applications
-- snow_deploy_update_set - Create update sets
-- snow_validate_deployment - Validate before deploying
-- snow_rollback_deployment - Rollback if needed
-
-🧠 **Intelligent Flow Composition Tools:**
-- snow_create_complex_flow - Create complete flows with automatic artifact orchestration
-- snow_analyze_flow_instruction - Analyze natural language flow instructions
-- snow_discover_flow_artifacts - Discover artifacts needed for complex flows
-- snow_preview_flow_structure - Preview flow structure before deployment
-
-🎯 **Flow Composition Capabilities:**
-- Automatic discovery of existing ServiceNow artifacts (script includes, business rules, tables)
-- Intelligent artifact orchestration in flows
-- Natural language processing for complex flow instructions
-- Fallback creation for missing artifacts
-- Multi-artifact coordination and deployment
+💡 **Refer to CLAUDE.md for complete MCP tool documentation and examples**
 ` : `
 📝 **File-based development mode**
 
@@ -559,250 +486,45 @@ Since ServiceNow integration is not enabled, create artifacts as files in the se
 💡 Run "snow-flow auth login" to enable live ServiceNow integration!
 `}
 
-## 🚨 CRITICAL: Claude-Flow Batch Tool Integration
-
-⚠️ **MANDATORY EXECUTION PATTERN**: You MUST execute ALL of these tools in a SINGLE MESSAGE for parallel agent coordination:
+## 🚀 Development Approach
 
 ${hasIntelligentFeatures && isAuthenticated ? `
-### 🧠 INTELLIGENT ORCHESTRATION MODE - Use snow_orchestrate_development
+### 🧠 Intelligent Mode Available
+With intelligent features enabled, you can use automated orchestration tools that handle:
+- Requirements analysis and discovery
+- Permission escalation when needed
+- Existing artifact reuse
+- Real-time testing and validation
+- Automatic rollback on failures
+- Update Set management
 
-Since intelligent features are enabled, use the unified orchestration tool:
-
-\`\`\`typescript
-// Use the intelligent orchestration tool with all features enabled
-await snow_orchestrate_development({
-  objective: "${objective}",
-  auto_permissions: ${options.autoPermissions},
-  smart_discovery: ${options.smartDiscovery},
-  live_testing: ${options.liveTesting},
-  auto_deploy: ${options.autoDeploy},
-  auto_rollback: ${options.autoRollback},
-  shared_memory: ${options.sharedMemory},
-  progress_monitoring: ${options.progressMonitoring},
-  max_agents: ${options.maxAgents},
-  strategy: "${options.strategy}",
-  mode: "${options.mode}",
-  task_analysis: ${JSON.stringify(taskAnalysis, null, 2)}
-});
-\`\`\`
-
-This unified command will:
-- ✅ Automatically analyze requirements with snow_analyze_requirements
-- ✅ Escalate permissions when needed with snow_escalate_permissions
-- ✅ Discover and reuse existing artifacts
-- ✅ Create missing components automatically
-- ✅ Test in real-time with snow_comprehensive_flow_test
-- ✅ Deploy with snow_resilient_deployment
-- ✅ Rollback on failures automatically
-- ✅ Track everything in update sets with snow_smart_update_set
-- ✅ Share context across all agents via memory
-
-### Additional Intelligent Tools Available:
-
-**For Permission Issues:**
-\`\`\`typescript
-await snow_escalate_permissions({
-  required_role: "admin",
-  reason: "Need to create global scope artifacts"
-});
-\`\`\`
-
-**For Smart Discovery:**
-\`\`\`typescript
-const requirements = await snow_analyze_requirements({
-  objective: "${objective}",
-  include_dependencies: true,
-  suggest_reusable: true
-});
-\`\`\`
-
-**For Automatic Testing:**
-\`\`\`typescript
-const testResults = await snow_comprehensive_flow_test({
-  flow_name: "approval_flow",
-  test_scenarios: ["happy_path", "edge_cases", "error_handling"],
-  auto_fix: true
-});
-\`\`\`
-
-**For Resilient Deployment:**
-\`\`\`typescript
-await snow_resilient_deployment({
-  artifacts: ["widget_123", "flow_456"],
-  validation_level: "comprehensive",
-  rollback_on_failure: true,
-  deployment_strategy: "blue_green"
-});
-\`\`\`
-
+Use \`snow_orchestrate_development\` for complete automation.
 ` : `
-### 1. Initialize TodoWrite with ALL tasks (5-10 todos minimum)
-### 2. Launch ALL Task agents SIMULTANEOUSLY in the same message
-### 3. Store ALL coordination data in Memory
-### 4. Execute ALL ServiceNow operations in parallel
+### 📋 Standard Development Mode
+Execute these steps for ServiceNow development:
+1. Use TodoWrite to track all tasks
+2. Use Task tool for parallel agent coordination
+3. Use Memory for shared context between agents
+4. Follow the team-based SPARC approach shown above
+`}
 
-**BATCH EXECUTION EXAMPLE:**
-You must use this EXACT pattern in ONE message with multiple tool calls:`}
-
-\`\`\`typescript
-// Tool 1: TodoWrite (5-10 todos in one call)
-TodoWrite([
-  {
-    id: "task_analysis",
-    content: "Analyze ${objective} requirements and constraints",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: "architecture_design",
-    content: "Design ServiceNow architecture and component structure",
-    status: "pending", 
-    priority: "high"
-  },
-  ${taskAnalysis.requiresUpdateSet ? `{
-    id: "update_set_creation",
-    content: "Create Update Set for change management",
-    status: "pending",
-    priority: "high"
-  },` : ''}
-  ${taskAnalysis.requiresApplication ? `{
-    id: "application_creation",
-    content: "Create new ServiceNow Application",
-    status: "pending",
-    priority: "high"
-  },` : ''}
-  {
-    id: "implementation",
-    content: "Implement ${objective}${isAuthenticated ? ' directly in ServiceNow' : ' as files'}",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: "testing",
-    content: "Test and validate ${objective}${isAuthenticated ? ' in ServiceNow instance' : ' via file validation'}",
-    status: "pending",
-    priority: "medium"
-  },
-  {
-    id: "documentation",
-    content: "Document ${objective}${isAuthenticated ? ' with ServiceNow links' : ' with file references'}",
-    status: "pending",
-    priority: "medium"
-  },
-  {
-    id: "deployment",
-    content: "Prepare deployment artifacts and instructions",
-    status: "pending",
-    priority: "low"
-  }
-]);
-
-// Tool 2-N: Task agents (ALL launched in same message) - Respecting user's --max-agents flag
-Task("${taskAnalysis.primaryAgent}", "${AgentDetector.generateAgentPrompt(taskAnalysis.primaryAgent, objective, taskAnalysis)}");
-${(() => {
-  const userMaxAgents = parseInt(options.maxAgents);
-  const requiredAgents = [
-    ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
-    ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
-  ];
-  
-  // Calculate available slots for supporting agents (user max - 1 primary - required agents)
-  const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
-  
-  // Take only the supporting agents that fit within user's limit
-  const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
-  
-  return adjustedSupportingAgents.map(agent => 
-    `Task("${agent}", "${AgentDetector.generateAgentPrompt(agent, objective, taskAnalysis)}");`
-  ).join('\n');
-})()}
-${taskAnalysis.requiresUpdateSet ? `Task("Update Set Manager", "Create and manage Update Set for change management. Use snow_update_set_create to create Update Set automatically.");` : ''}
-${taskAnalysis.requiresApplication ? `Task("Application Manager", "Create new ServiceNow Application. Use snow_deploy_application to create new application scope.");` : ''}
-
-// Tool 7: Memory coordination data
-Memory.store("snow_flow_session", {
-  objective: "${objective}",
-  task_type: "${taskAnalysis.taskType}",
-  primary_agent: "${taskAnalysis.primaryAgent}",
-  supporting_agents: ${JSON.stringify((() => {
-    const userMaxAgents = parseInt(options.maxAgents);
-    const requiredAgents = [
-      ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
-      ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
-    ];
-    const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
-    return taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
-  })())},
-  complexity: "${taskAnalysis.complexity}",
-  servicenow_artifacts: ${JSON.stringify(taskAnalysis.serviceNowArtifacts)},
-  requires_update_set: ${taskAnalysis.requiresUpdateSet},
-  requires_application: ${taskAnalysis.requiresApplication},
-  strategy: "${options.strategy}",
-  mode: "${options.mode}",
-  started_at: new Date().toISOString(),
-  user_requested_max_agents: ${parseInt(options.maxAgents)},
-  actual_agents_spawned: ${(() => {
-    const userMaxAgents = parseInt(options.maxAgents);
-    const requiredAgents = [
-      ...(taskAnalysis.requiresUpdateSet ? ['Update Set Manager'] : []),
-      ...(taskAnalysis.requiresApplication ? ['Application Manager'] : [])
-    ];
-    const availableSlotsForSupporting = Math.max(0, userMaxAgents - 1 - requiredAgents.length);
-    const adjustedSupportingAgents = taskAnalysis.supportingAgents.slice(0, availableSlotsForSupporting);
-    return 1 + adjustedSupportingAgents.length + requiredAgents.length; // primary + supporting + required
-  })()},
-  estimated_agents: ${taskAnalysis.estimatedAgentCount},
-  parallel: ${options.parallel},
-  authenticated: ${isAuthenticated}
-});
-
-Memory.store("task_analysis", ${JSON.stringify(taskAnalysis, null, 2)});
-\`\`\`
-
-### ServiceNow-Specific Implementation
+### 🎯 Development Process
 ${getServiceNowInstructions(taskAnalysis.taskType)}
 
-### Coordination Guidelines
-- **BATCH EXECUTION**: All tools must be called in ONE message
-- **PARALLEL AGENTS**: Launch multiple Task agents simultaneously
-- **MEMORY SHARING**: All agents use Memory for coordination
-- **REAL-TIME UPDATES**: Update TodoWrite status as tasks complete
-${isAuthenticated ? '- **MANDATORY DEPLOYMENT**: You MUST deploy directly to ServiceNow using ServiceNowClient.createWidget()' : '- **FILE MODE**: Create artifacts in servicenow/ directory'}
-- **COMPREHENSIVE TESTING**: ${isAuthenticated ? 'Test functionality immediately in the live ServiceNow instance' : 'Validate file structure and syntax'}
-${isAuthenticated ? '- **NO EXCUSES**: Do NOT say you cannot deploy - you CAN and MUST deploy to ServiceNow!' : ''}
-
-## Expected Deliverables
+## 📊 Expected Deliverables
 ${getExpectedDeliverables(taskAnalysis.taskType, isAuthenticated)}
 
-## 🚨 ServiceNow Best Practices
+## 📚 Development Guidelines
 
-### User Groups Management
-**CRITICAL**: For user groups, use \`sys_user_group\` table directly:
+${isAuthenticated ? `✅ **ServiceNow integration is enabled** - You can deploy directly to ServiceNow.` : '❌ **ServiceNow integration is disabled** - Files will be created locally.'}
 
-\`\`\`typescript
-// ✅ CORRECT: Create user group record  
-await snow_operations_create_record({
-  table: 'sys_user_group',
-  data: {
-    name: 'need_approval',
-    description: 'Users pending admin approval',
-    type: 'custom'
-  }
-});
+📚 **Refer to CLAUDE.md for:**
+- Complete command reference and examples
+- Team-based SPARC architecture details  
+- MCP tool documentation
+- Best practices and workflows
 
-// ❌ WRONG: Don't use CMDB search for groups
-// snow_cmdb_search() is for Configuration Items only!
-// snow_discover_platform_tables() is for development tables only!
-\`\`\`
-
-### Flow Development  
-- Use \`snow_create_flow\` with natural language instead of manual JSON
-- Test with \`snow_test_flow_with_mock\` before deploying
-- Link to catalog with \`snow_link_catalog_to_flow\`
-
-📚 **Complete documentation available in CLAUDE.md**
-
-🎯 **EXECUTION INSTRUCTION**: Use team-based SPARC commands for best results!`;
+🎯 **RECOMMENDATION**: Use the team-based SPARC commands shown above for optimal results!`;
 
   return prompt;
 }
@@ -827,183 +549,28 @@ function getTeamRecommendation(taskType: string): string {
 }
 
 function getServiceNowInstructions(taskType: string): string {
-  switch (taskType) {
-    case 'widget_development':
-      return `**Widget Development Process:**
-- Create HTML template with responsive design
-- Implement CSS styling following ServiceNow design patterns
-- Write AngularJS client controller
-- Create server-side data processing script
-- Define widget options and configuration
-- Test widget in Service Portal`;
-    
-    case 'application_development':
-      return `**Application Development Process:**
-- Design database schema and tables
-- Create business rules and validation
-- Build user interface forms and lists
-- Implement workflows and approvals
-- Configure security and access controls
-- Set up integration points`;
-    
-    case 'flow_development':
-      return `**Flow Development Process:**
-- Analyze flow requirements and triggers
-- Design process flow and approval steps
-- Create Flow Designer workflow using sys_hub_flow
-- Set up notifications and communications
-- Configure conditional logic and routing
-- Test flow execution and error handling`;
-    
-    case 'script_development':
-      return `**Script Development Process:**
-- Analyze business requirements
-- Design script architecture and data flow
-- Implement business rules and script includes
-- Create appropriate error handling
-- Test script functionality
-- Document script behavior`;
-    
-    case 'integration_development':
-      return `**Integration Development Process:**
-- Analyze integration requirements
-- Design API endpoints and data mappings
-- Implement REST/SOAP integrations
-- Create authentication and security
-- Test integration functionality
-- Document API specifications`;
-    
-    case 'database_development':
-      return `**Database Development Process:**
-- Design table structures and relationships
-- Create custom fields and configurations
-- Implement data validation rules
-- Set up reporting and analytics
-- Test data integrity
-- Document database schema`;
-    
-    case 'reporting_development':
-      return `**Reporting Development Process:**
-- Analyze reporting requirements
-- Design report layouts and data sources
-- Create dashboards and visualizations
-- Implement filters and drill-downs
-- Test report performance
-- Document report usage`;
-    
-    case 'research_task':
-      return `**Research Process:**
-- Analyze current state and requirements
-- Research ServiceNow best practices
-- Evaluate available solutions
-- Document findings and recommendations
-- Create implementation roadmap
-- Present research conclusions`;
-    
-    default:
-      return `**ServiceNow Development Process:**
-- Analyze requirements and specifications
-- Design appropriate ServiceNow solution
-- Implement using ServiceNow best practices
-- Create necessary scripts and configurations
-- Test functionality and integration
-- Document implementation`;
-  }
+  const taskTitle = taskType.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+  
+  return `**${taskTitle} Process:**
+The team-based SPARC architecture will handle the complete development process.
+Refer to CLAUDE.md for detailed instructions and best practices specific to ${taskType}.`;
 }
 
 function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = false): string {
-  const baseDeliverables = {
-    'widget_development': [
-      'Widget HTML template',
-      'CSS styling files',
-      'AngularJS client script',
-      'Server-side script',
-      'Widget configuration options',
-      'Installation instructions'
-    ],
-    'application_development': [
-      'Database schema definition',
-      'Business rules and validations',
-      'User interface components',
-      'Workflow definitions',
-      'Security configuration',
-      'Update set for deployment'
-    ],
-    'flow_development': [
-      'Flow Designer workflow',
-      'Process documentation',
-      'Approval configurations',
-      'Notification templates',
-      'Test scenarios',
-      'Implementation guide'
-    ],
-    'script_development': [
-      'Business rules and script includes',
-      'Error handling logic',
-      'Test cases and validation',
-      'Documentation and comments',
-      'Performance optimization',
-      'Security considerations'
-    ],
-    'integration_development': [
-      'REST/SOAP API endpoints',
-      'Authentication configuration',
-      'Data mapping and transformation',
-      'Error handling and logging',
-      'API documentation',
-      'Integration testing'
-    ],
-    'database_development': [
-      'Table structures and relationships',
-      'Custom fields and configurations',
-      'Data validation rules',
-      'Indexes and performance optimization',
-      'Reporting and analytics',
-      'Data migration scripts'
-    ],
-    'reporting_development': [
-      'Report definitions and layouts',
-      'Dashboard configurations',
-      'Data source connections',
-      'Filters and drill-downs',
-      'Performance optimization',
-      'User access controls'
-    ],
-    'research_task': [
-      'Research findings and analysis',
-      'Best practices documentation',
-      'Solution recommendations',
-      'Implementation roadmap',
-      'Risk assessment',
-      'Feasibility analysis'
-    ],
-    'default': [
-      'ServiceNow implementation',
-      'Supporting scripts',
-      'Configuration files',
-      'Documentation',
-      'Test cases',
-      'Deployment instructions'
-    ]
-  };
-  
-  const deliverables = baseDeliverables[taskType as keyof typeof baseDeliverables] || baseDeliverables['default'];
+  const taskTitle = taskType.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
   
   if (isAuthenticated) {
-    // Add ServiceNow-specific deliverables for authenticated mode
-    const serviceNowDeliverables = deliverables.map(item => `- ${item} (created in ServiceNow)`);
-    serviceNowDeliverables.push('- **MANDATORY: Direct deployment to ServiceNow using ServiceNowClient.createWidget()**');
-    serviceNowDeliverables.push('- Direct links to ServiceNow artifacts');
-    serviceNowDeliverables.push('- Update set for deployment');
-    serviceNowDeliverables.push('- Test results from live instance');
-    serviceNowDeliverables.push('- **CRITICAL: Widget must be deployed, not just created as files**');
-    return serviceNowDeliverables.join('\n');
+    return `The team will deliver a complete ${taskTitle.toLowerCase()} solution directly to ServiceNow.
+All artifacts will be created in your ServiceNow instance with proper Update Set tracking.
+Refer to CLAUDE.md for specific deliverables based on your task type.`;
   } else {
-    // File-based deliverables for non-authenticated mode
-    const fileDeliverables = deliverables.map(item => `- ${item} (as files)`);
-    fileDeliverables.push('- Deployment-ready file structure');
-    fileDeliverables.push('- Import instructions for ServiceNow');
-    return fileDeliverables.join('\n');
+    return `The team will create ${taskTitle.toLowerCase()} artifacts as local files.
+Files will be organized in the servicenow/ directory for easy import.
+Refer to CLAUDE.md for specific deliverables based on your task type.`;
   }
 }
 

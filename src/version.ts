@@ -2,13 +2,56 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.67';
+export const VERSION = '1.1.71';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.71': [
+      '🎯 ORCHESTRATION TRANSPARENCY: MCP tools now clearly show deployment vs planning mode',
+      '⚠️ DEPLOYMENT WARNINGS: Explicit warnings when auto_deploy will create REAL artifacts',
+      '📋 PLANNING MODE INDICATORS: Clear distinction between planning and actual deployment',
+      '🚀 CLI IMPROVEMENTS: Swarm command shows "DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS" warnings',
+      '🧠 FLOW COMPOSER TRANSPARENCY: snow_create_flow now shows deployment mode status clearly',
+      '🔍 PARAMETER DESCRIPTIONS: deploy_immediately parameter description updated with deployment warnings',
+      '✅ USER REQUEST: "orchestratie tools zijn niet transparant over of ze echt iets gaan deployen" - ADDRESSED',
+      '💡 CLEAR INDICATORS: Mode and warning fields added to orchestration responses',
+      '🎯 NO MORE CONFUSION: Users always know if deployment will happen or if it is planning only'
+    ],
+    '1.1.70': [
+      '🔧 FLOW TESTING FIX: Improved flow discovery for both modern and legacy flows',
+      '✅ DUAL API SUPPORT: Tests work with sys_hub_flow (modern) AND wf_workflow (legacy)',
+      '🔍 SMART DISCOVERY: Searches by sys_id first, then falls back to name search',
+      '📋 BETTER ERROR MESSAGES: Helpful guidance when flows are not found',
+      '🎯 SYS_ID TRACKING: Clear display of flow sys_id, table, and direct URLs',
+      '💡 ALTERNATIVE SUGGESTIONS: Recommends snow_test_flow_with_mock for easier testing',
+      '🔗 FLOW TYPE DETECTION: Automatically detects Flow Designer vs Legacy Workflow',
+      '📊 ACTIVITY PARSING: Correctly extracts activities from latest_snapshot JSON',
+      '🚀 USER REQUEST: "geen heldere handeling van tracking van sys_ids" - ADDRESSED'
+    ],
+    '1.1.69': [
+      '🛠️ DIRECT CRUD TOOLS: Added comprehensive user and group management tools',
+      '✅ snow_create_user_group: Create new user groups with manager and parent group support',
+      '✅ snow_create_user: Create new users with full profile information',
+      '✅ snow_assign_user_to_group: Add users to groups with membership management',
+      '✅ snow_remove_user_from_group: Remove users from groups with verification',
+      '✅ snow_list_group_members: List all members of a user group',
+      '🎯 USER REQUEST ADDRESSED: "Geen directe MCP tool om een user group te creëren"',
+      '🔧 NO MORE WORKAROUNDS: Direct sys_user_group table operations, no script includes needed',
+      '📊 INTELLIGENT LOOKUPS: Find users/groups by sys_id OR name automatically',
+      '🔐 SECURITY AWARE: Proper permission checks and informative error messages'
+    ],
+    '1.1.68': [
+      '🔧 GENERAL CLI PROMPTS: Made CLI prompts more general as requested by user',
+      '📝 SIMPLIFIED INSTRUCTIONS: Removed specific technical details from CLI prompts',
+      '🎯 CLAUDE.MD REFERENCE: CLI now points to CLAUDE.md for detailed documentation',
+      '🏷️ BRAND UPDATE: Replaced all claude-flow references with snow-flow in CLAUDE.md files',
+      '✨ CLEANER PROMPTS: Removed detailed MCP tool lists and technical instructions',
+      '📚 DOCUMENTATION DRIVEN: CLI prompts now reference CLAUDE.md for specifics',
+      '🚀 BETTER UX: More concise prompts that defer to comprehensive CLAUDE.md'
+    ],
     '1.1.67': [
       '🔧 CRITICAL MCP ERROR FIX: Fixed "Cannot read properties of undefined (reading flowName)" error',
       '✅ NULL SAFETY: Added comprehensive null safety checks to flow composer MCP server',
@@ -451,6 +494,67 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.71': {
+      date: '2025-01-21',
+      changes: [
+        'ORCHESTRATION TRANSPARENCY: Major improvement in deployment mode visibility',
+        'USER REQUEST: "orchestratie tools zijn niet transparant over of ze echt iets gaan deployen"',
+        'CLI TRANSPARENCY: Swarm command now shows "⚠️ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS"',
+        'PLANNING MODE: Clear "✅ SAFE - Planning mode only" indicators when auto_deploy=false',
+        'DEPLOYMENT WARNING SECTION: Added prominent warning section in CLI prompts when deployment active',
+        'FLOW COMPOSER IMPROVEMENTS: snow_create_flow now shows "⚠️ DEPLOYMENT MODE ACTIVE" vs "📋 PLANNING MODE"',
+        'PARAMETER DESCRIPTIONS: deploy_immediately parameter description updated with clear warnings',
+        'MCP TOOL RESPONSES: orchestration tools now include mode and warning fields',
+        'TRANSPARENT BEHAVIOR: Users always know if real artifacts will be created or if it is analysis only',
+        'SAFETY IMPROVEMENTS: Better user awareness prevents accidental deployment in production environments'
+      ]
+    },
+    '1.1.70': {
+      date: '2025-01-21',
+      changes: [
+        'FLOW TESTING IMPROVEMENTS: Fixed 404 errors and improved flow discovery',
+        'USER REQUEST: "Flow test tool gaf vaak een 404 error" - FIXED',
+        'MODERN API SUPPORT: Now correctly uses sys_hub_flow table for modern flows',
+        'LEGACY WORKFLOW SUPPORT: Falls back to wf_workflow for older flows',
+        'SMART DISCOVERY: findFlowByNameOrSysId helper searches both by sys_id and name',
+        'IMPROVED ERROR HANDLING: Detailed guidance when flows not found, with alternative tools',
+        'SYS_ID TRACKING: Clear display of flow sys_id, table name, and direct URLs to Flow Designer',
+        'ACTIVITY EXTRACTION: Correctly parses activities from latest_snapshot JSON for modern flows',
+        'TESTING RECOMMENDATIONS: Enhanced guidance based on flow type (modern vs legacy)',
+        'ALTERNATIVE TOOLS: Suggests snow_test_flow_with_mock and snow_find_artifact as fallbacks',
+        'URL GENERATION: Provides correct URLs for both Flow Designer and Legacy Workflow IDE'
+      ]
+    },
+    '1.1.69': {
+      date: '2025-01-21',
+      changes: [
+        'DIRECT CRUD TOOLS: Added comprehensive user and group management capabilities',
+        'USER REQUEST: "Geen directe MCP tool om een user group te creëren - Moest via script include workaround"',
+        'NEW TOOL: snow_create_user_group - Create user groups with manager, parent, email, and type support',
+        'NEW TOOL: snow_create_user - Create users with full profile including department, manager, location',
+        'NEW TOOL: snow_assign_user_to_group - Add users to groups with automatic lookup by name or sys_id',
+        'NEW TOOL: snow_remove_user_from_group - Remove users from groups with membership verification',
+        'NEW TOOL: snow_list_group_members - List all members of a group with role and status information',
+        'INTELLIGENT LOOKUPS: Helper methods findUserBySysIdOrUsername and findGroupBySysIdOrName',
+        'DUPLICATE PREVENTION: Checks if users/groups exist before creation to prevent duplicates',
+        'PROPER TABLE USAGE: Direct operations on sys_user_group table, not CMDB search',
+        'COMPREHENSIVE RESPONSES: Returns sys_ids, URLs, and detailed status for all operations',
+        'ERROR HANDLING: Clear permission requirements and troubleshooting guidance'
+      ]
+    },
+    '1.1.68': {
+      date: '2025-01-21',
+      changes: [
+        'GENERAL CLI PROMPTS: Made CLI prompts more general based on user feedback',
+        'USER REQUEST: "nu heb je de prompt voor claude-code exterem specifiek gemaakt op de problemen die we net hadden terwijl ik meer zou willen dat je deze juist algemeen moest houden"',
+        'SIMPLIFIED MCP TOOL DOCUMENTATION: Removed detailed tool lists and specific examples',
+        'STREAMLINED DEVELOPMENT GUIDELINES: Replaced technical instructions with CLAUDE.md references',
+        'GENERALIZED DELIVERABLES: Removed specific file lists, now references CLAUDE.md for details',
+        'BRAND CONSISTENCY: Updated all CLAUDE.md files to use snow-flow instead of claude-flow',
+        'IMPROVED DEVELOPER EXPERIENCE: Cleaner, more concise prompts that defer to documentation',
+        'MAINTAINED TEAM-BASED ARCHITECTURE: Still promotes specialized teams but without technical details'
+      ]
+    },
     '1.1.64': {
       date: '2025-01-21',
       changes: [
