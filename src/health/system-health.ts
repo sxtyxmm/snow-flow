@@ -664,7 +664,7 @@ export class SystemHealth extends EventEmitter {
 
   private async storeHealthResult(status: SystemHealthStatus): Promise<void> {
     // Store individual component results
-    for (const [component, result of Object.entries(status.components)) {
+    for (const [component, result] of Object.entries(status.components)) {
       await this.memory.insert('health_checks', {
         id: `${component}_${Date.now()}`,
         component,
