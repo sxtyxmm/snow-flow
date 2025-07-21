@@ -22,6 +22,7 @@ coverage/
 *.md
 !README.md
 !LICENSE
+!CLAUDE.md
 
 # Local data (exclude source but include compiled)
 memory/

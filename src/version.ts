@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.65';
+export const VERSION = '1.1.66';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.66': [
+      '🔧 CRITICAL NPM PACKAGE FIX: Added CLAUDE.md to .npmignore exceptions',
+      '📦 PACKAGE INCLUSION: CLAUDE.md now included in npm package (was excluded by *.md rule)',
+      '🎯 ROOT CAUSE RESOLVED: Users will now get complete 692-line CLAUDE.md from npm install',
+      '📄 FULL DOCUMENTATION: Complete team-based SPARC documentation now available globally',
+      '✅ NPM PACKAGE COMPLETE: No more fallback to 380-line hardcoded template'
+    ],
     '1.1.65': [
       '✅ CONFIRMED INIT COMMAND WORKS: Verified init command copies complete 692-line CLAUDE.md',
       '🔍 DEBUGGING COMPLETE: Found source path detection working correctly',
