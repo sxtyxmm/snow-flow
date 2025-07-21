@@ -619,6 +619,29 @@ ${artifactsToShow.map((artifact: any) => `- ${artifact.type}: https://${credenti
     }
   }
 
+  /**
+   * Extract a flow name from instruction text
+   */
+  private extractFlowName(instruction: string): string {
+    // Try to extract meaningful name from instruction
+    const keywords = ['flow', 'process', 'workflow', 'automation'];
+    const words = instruction.toLowerCase().split(/\s+/);
+    
+    // Look for keywords and use surrounding context
+    for (const keyword of keywords) {
+      const keywordIndex = words.indexOf(keyword);
+      if (keywordIndex >= 0) {
+        // Get 2-3 words before the keyword as the name
+        const startIndex = Math.max(0, keywordIndex - 2);
+        const nameParts = words.slice(startIndex, keywordIndex + 1);
+        return nameParts.join('_').replace(/[^a-z0-9_]/g, '');
+      }
+    }
+    
+    // Fallback: use first few words
+    return words.slice(0, 3).join('_').replace(/[^a-z0-9_]/g, '') + '_flow';
+  }
+
   private async previewFlowStructure(args: any) {
     // Check authentication first
     const isAuth = await this.oauth.isAuthenticated();
@@ -637,7 +660,55 @@ ${artifactsToShow.map((artifact: any) => `- ${artifact.type}: https://${credenti
       this.logger.info('Previewing flow structure', { instruction: args.instruction });
 
       const flowInstruction = await this.composer.createFlowFromInstruction(args.instruction);
+      
+      // FIX: Add null safety checks to prevent "Cannot read properties of undefined" errors
+      if (!flowInstruction || !flowInstruction.flowStructure) {
+        this.logger.error('Flow instruction or flowStructure is undefined', { flowInstruction });
+        
+        // Create minimal fallback flow structure
+        const fallbackFlow = {
+          name: this.extractFlowName(args.instruction),
+          description: `Flow for: ${args.instruction}`,
+          trigger: { type: 'manual', table: 'task', condition: '' },
+          variables: [],
+          activities: [],
+          error_handling: []
+        };
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `⚠️ **Flow Structure Creation Issue**
+
+The flow composer returned incomplete data. Creating minimal flow structure:
+
+📋 **Flow Information:**
+- **Name**: ${fallbackFlow.name}
+- **Description**: ${fallbackFlow.description}
+- **Type**: Manual trigger on task table
+
+💡 **Suggestion**: Try being more specific with your flow requirements, for example:
+- "Create an approval flow for incident management"
+- "Build a notification flow when priority 1 incidents are created"
+- "Design a flow to update request items when approved"
+
+🔧 **Debug Info**: flowInstruction=${JSON.stringify(flowInstruction ? Object.keys(flowInstruction) : 'null')}`
+          }]
+        };
+      }
+      
       const flowStructure = flowInstruction.flowStructure;
+
+      // Additional safety checks for flowStructure properties
+      const safeGet = (obj: any, path: string, defaultValue: any = 'Unknown') => {
+        const parts = path.split('.');
+        let current = obj;
+        for (const part of parts) {
+          if (!current || typeof current !== 'object') return defaultValue;
+          current = current[part];
+        }
+        return current || defaultValue;
+      };
 
       return {
         content: [
@@ -646,16 +717,18 @@ ${artifactsToShow.map((artifact: any) => `- ${artifact.type}: https://${credenti
             text: `🔍 Flow Structure Preview
 
 📋 **Flow Information:**
-- **Name**: ${flowStructure.name}
-- **Description**: ${flowStructure.description}
+- **Name**: ${safeGet(flowStructure, 'name', 'Auto-generated')}
+- **Description**: ${safeGet(flowStructure, 'description', 'No description')}
 
 🔄 **Trigger Configuration:**
-- **Type**: ${flowStructure.trigger.type}
-- **Table**: ${flowStructure.trigger.table}
-- **Condition**: ${flowStructure.trigger.condition || 'None'}
+- **Type**: ${safeGet(flowStructure, 'trigger.type', 'manual')}
+- **Table**: ${safeGet(flowStructure, 'trigger.table', 'task')}
+- **Condition**: ${safeGet(flowStructure, 'trigger.condition', 'None')}
 
 📊 **Flow Variables:**
-${flowStructure.variables.map((variable: any) => `- **${variable.name}** (${variable.type}): ${variable.description}`).join('\n')}
+${flowStructure.variables && Array.isArray(flowStructure.variables) 
+  ? flowStructure.variables.map((variable: any) => `- **${variable.name}** (${variable.type}): ${variable.description}`).join('\n')
+  : '- No variables defined'}
 
 🏗️ **Flow Activities:**
 ${flowStructure.activities.map((activity: any, index: number) => `### ${index + 1}. ${activity.name}

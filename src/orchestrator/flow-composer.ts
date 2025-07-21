@@ -1509,11 +1509,141 @@ export class EnhancedFlowComposer {
   private async searchForFlowActions(searchTerms: string[]): Promise<any[]> {
     const allActions: any[] = [];
     
+    // Define proper flow action mappings for common actions
+    const PROPER_FLOW_ACTIONS: { [key: string]: any } = {
+      'approval': {
+        sys_id: 'com.glideapp.servicenow_common.approval',
+        name: 'Request Approval',
+        label: 'Approval',
+        category: 'core'
+      },
+      'approve': {
+        sys_id: 'com.glideapp.servicenow_common.approval',
+        name: 'Request Approval',
+        label: 'Approval',
+        category: 'core'
+      },
+      'wait': {
+        sys_id: 'com.glideapp.servicenow_common.timer',
+        name: 'Wait for Duration',
+        label: 'Timer',
+        category: 'core'
+      },
+      'timer': {
+        sys_id: 'com.glideapp.servicenow_common.timer',
+        name: 'Wait for Duration',
+        label: 'Timer',
+        category: 'core'
+      },
+      'delay': {
+        sys_id: 'com.glideapp.servicenow_common.timer',
+        name: 'Wait for Duration',
+        label: 'Timer',
+        category: 'core'
+      },
+      'log': {
+        sys_id: 'com.glideapp.servicenow_common.log_message',
+        name: 'Log Message',
+        label: 'Log',
+        category: 'core'
+      },
+      'logging': {
+        sys_id: 'com.glideapp.servicenow_common.log_message',
+        name: 'Log Message',
+        label: 'Log',
+        category: 'core'
+      },
+      'notification': {
+        sys_id: 'com.glideapp.servicenow_common.send_email',
+        name: 'Send Email',
+        label: 'Email Notification',
+        category: 'core'
+      },
+      'email': {
+        sys_id: 'com.glideapp.servicenow_common.send_email',
+        name: 'Send Email',
+        label: 'Email Notification',
+        category: 'core'
+      },
+      'update': {
+        sys_id: 'com.glideapp.servicenow_common.update_record',
+        name: 'Update Record',
+        label: 'Update',
+        category: 'core'
+      },
+      'record': {
+        sys_id: 'com.glideapp.servicenow_common.update_record',
+        name: 'Update Record',
+        label: 'Update',
+        category: 'core'
+      },
+      'field': {
+        sys_id: 'com.glideapp.servicenow_common.update_record',
+        name: 'Update Record',
+        label: 'Update',
+        category: 'core'
+      },
+      'create': {
+        sys_id: 'com.glideapp.servicenow_common.create_record',
+        name: 'Create Record',
+        label: 'Create',
+        category: 'core'
+      },
+      'task': {
+        sys_id: 'com.glideapp.servicenow_common.create_record',
+        name: 'Create Record',
+        label: 'Create Task',
+        category: 'core'
+      }
+    };
+    
+    // First, check if we have predefined actions for these terms
+    for (const term of searchTerms) {
+      const lowerTerm = term.toLowerCase();
+      if (PROPER_FLOW_ACTIONS[lowerTerm]) {
+        // Check if we already have this action to avoid duplicates
+        const exists = allActions.some(a => a.sys_id === PROPER_FLOW_ACTIONS[lowerTerm].sys_id);
+        if (!exists) {
+          allActions.push(PROPER_FLOW_ACTIONS[lowerTerm]);
+        }
+      }
+    }
+    
+    // If we found predefined actions, use those instead of searching
+    if (allActions.length > 0) {
+      this.logger.info(`Using predefined flow actions for terms: ${searchTerms.join(', ')}`, { count: allActions.length });
+      return allActions;
+    }
+    
+    // Otherwise, search ServiceNow but filter out nonsensical results
     for (const term of searchTerms) {
       try {
         const results = await this.client.searchFlowActions(term);
         if (results.actionTypes && results.actionTypes.length > 0) {
-          allActions.push(...results.actionTypes);
+          // Filter out actions that don't make sense
+          const filteredActions = results.actionTypes.filter((action: any) => {
+            const name = (action.name || '').toLowerCase();
+            const label = (action.label || '').toLowerCase();
+            
+            // Exclude actions with negative or contradictory terms
+            const excludePatterns = [
+              'disregard', 'ignore', 'skip', 'bypass', 'cancel', 'delete', 'remove',
+              'reject', 'deny', 'block', 'prevent', 'stop', 'disable', 'deactivate'
+            ];
+            
+            const hasExcludedPattern = excludePatterns.some(pattern => 
+              name.includes(pattern) || label.includes(pattern)
+            );
+            
+            // Also exclude if it doesn't contain any of our search terms
+            const containsSearchTerm = searchTerms.some(searchTerm => 
+              name.includes(searchTerm.toLowerCase()) || label.includes(searchTerm.toLowerCase())
+            );
+            
+            return !hasExcludedPattern && containsSearchTerm;
+          });
+          
+          allActions.push(...filteredActions);
         }
       } catch (error) {
         this.logger.warn(`Failed to search for flow actions with term: ${term}`, error);
@@ -1524,6 +1654,16 @@ export class EnhancedFlowComposer {
     const uniqueActions = allActions.filter((action, index, self) => 
       index === self.findIndex(a => a.sys_id === action.sys_id)
     );
+    
+    // If still no good results, fall back to predefined actions based on first search term
+    if (uniqueActions.length === 0 && searchTerms.length > 0) {
+      const fallbackTerm = searchTerms[0].toLowerCase();
+      const fallbackAction = PROPER_FLOW_ACTIONS[fallbackTerm];
+      if (fallbackAction) {
+        this.logger.info(`Using fallback action for term: ${fallbackTerm}`);
+        return [fallbackAction];
+      }
+    }
     
     this.logger.info(`Found ${uniqueActions.length} unique flow actions for terms: ${searchTerms.join(', ')}`);
     return uniqueActions;
@@ -1768,33 +1908,87 @@ export class EnhancedFlowComposer {
   
   private generateSmartFlowName(instruction: string): string {
     const MAX_LENGTH = 75;
+    const lowerInstruction = instruction.toLowerCase();
+    
+    // Try to extract specific flow purposes from instruction
+    const purposePatterns = [
+      // Approval patterns
+      { pattern: /monitor.*approval/i, name: 'Monitor Approval Flow' },
+      { pattern: /approval.*monitor/i, name: 'Monitor Approval Flow' },
+      { pattern: /approval.*admin/i, name: 'Admin Approval Flow' },
+      { pattern: /require.*approval/i, name: 'Approval Required Flow' },
+      // Request patterns
+      { pattern: /catalog.*request.*monitor/i, name: 'Catalog Monitor Request Flow' },
+      { pattern: /service.*catalog.*request/i, name: 'Service Catalog Request Flow' },
+      { pattern: /equipment.*request/i, name: 'Equipment Request Flow' },
+      { pattern: /iphone.*provisioning/i, name: 'iPhone Provisioning Flow' },
+      { pattern: /mobile.*provisioning/i, name: 'Mobile Device Provisioning Flow' },
+      // Generic patterns
+      { pattern: /incident.*management/i, name: 'Incident Management Flow' },
+      { pattern: /change.*approval/i, name: 'Change Approval Flow' },
+      { pattern: /user.*onboarding/i, name: 'User Onboarding Flow' },
+      { pattern: /password.*reset/i, name: 'Password Reset Flow' }
+    ];
+    
+    // Check for specific patterns first
+    for (const { pattern, name } of purposePatterns) {
+      if (pattern.test(instruction)) {
+        return name;
+      }
+    }
     
     // Extract key components from instruction
     const table = this.extractTable(instruction);
     const trigger = this.extractTriggerType(instruction);
     const action = this.extractPrimaryAction(instruction);
     
-    // Build smart flow name
+    // Build smart flow name with better formatting
     let flowName = '';
     
+    // Handle table names better
     if (table) {
-      flowName += this.capitalize(table) + ' ';
+      const tableDisplayNames: { [key: string]: string } = {
+        'sc_request': 'Service Request',
+        'sc_req_item': 'Catalog Item',
+        'incident': 'Incident',
+        'problem': 'Problem',
+        'change_request': 'Change Request',
+        'task': 'Task',
+        'sys_user': 'User',
+        'cmdb_ci': 'Configuration Item'
+      };
+      
+      flowName += tableDisplayNames[table] || this.capitalize(table);
+      flowName += ' ';
     }
     
-    if (trigger) {
+    // Add trigger description if meaningful
+    if (trigger && trigger !== 'Create') {
       flowName += this.capitalize(trigger) + ' ';
     }
     
-    if (action && flowName.length + action.length < MAX_LENGTH) {
+    // Extract meaningful action from instruction
+    if (lowerInstruction.includes('approval')) {
+      flowName += 'Approval ';
+    } else if (lowerInstruction.includes('notification')) {
+      flowName += 'Notification ';
+    } else if (lowerInstruction.includes('fulfillment')) {
+      flowName += 'Fulfillment ';
+    } else if (action && flowName.length + action.length < MAX_LENGTH - 5) {
       flowName += action + ' ';
     }
     
     flowName += 'Flow';
     
-    // If no meaningful name generated, create a timestamp-based name
-    if (flowName === 'Flow' || flowName.length > MAX_LENGTH) {
+    // If no meaningful name generated, create a descriptive timestamp-based name
+    if (flowName === 'Flow' || flowName.trim() === 'Flow') {
       const timestamp = new Date().toISOString().split('T')[0];
-      flowName = `Auto Flow ${timestamp}`;
+      flowName = `Automated Flow ${timestamp}`;
+    }
+    
+    // Ensure name doesn't exceed max length
+    if (flowName.length > MAX_LENGTH) {
+      flowName = flowName.substring(0, MAX_LENGTH - 3) + '...';
     }
     
     return flowName.trim();
@@ -1891,7 +2085,18 @@ export class EnhancedFlowComposer {
     let condition = '';
 
     // Determine trigger type
-    if (lowerInstruction.includes('update') || lowerInstruction.includes('change')) {
+    // IMPORTANT: "new" or "created" should always be record_created
+    if (lowerInstruction.includes('when new') || 
+        lowerInstruction.includes('when a new') || 
+        lowerInstruction.includes('is created') || 
+        lowerInstruction.includes('new request') ||
+        lowerInstruction.includes('new catalog') ||
+        lowerInstruction.includes('new service')) {
+      triggerType = 'record_created';
+    } else if ((lowerInstruction.includes('update') || lowerInstruction.includes('change')) && 
+               !lowerInstruction.includes('update the request status') &&
+               !lowerInstruction.includes('update status')) {
+      // Don't treat "update the request status" as a trigger, it's an action
       triggerType = 'record_updated';
     } else if (lowerInstruction.includes('delete')) {
       triggerType = 'record_deleted';

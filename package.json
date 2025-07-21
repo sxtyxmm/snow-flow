@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "1.1.73",
+  "version": "1.1.74",
   "description": "Multi-Agent ServiceNow Development Platform - Create, manage, and deploy ServiceNow artifacts using natural language and AI agents",
   "main": "dist/index.js",
   "type": "commonjs",

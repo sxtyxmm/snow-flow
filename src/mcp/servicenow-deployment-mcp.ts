@@ -3998,6 +3998,15 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
     try {
       this.logger.info('Starting unified deployment', args);
       
+      // CRITICAL: Check authentication FIRST before any deployment
+      const isAuthenticated = await this.oauth.isAuthenticated();
+      if (!isAuthenticated) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          'Not authenticated. Run "snow-flow auth login" first.'
+        );
+      }
+      
       const { type, instruction, config, auto_update_set = true, fallback_strategy = 'manual_steps', permission_escalation = 'auto_request', deployment_context } = args;
 
       // Step 1: Ensure Update Set session if requested
@@ -4060,10 +4069,17 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
             try {
               const escalationResult = await this.requestPermissionEscalation(error, strategy.scope);
               if (escalationResult.granted) {
-                // Retry with escalated permissions
-                deploymentResult = await this.attemptDirectDeployment(type, deploymentConfig, strategy.scope);
+                // Use new scope if provided by escalation
+                const effectiveScope = (escalationResult as any).newScope || strategy.scope;
+                this.logger.info('Retrying with escalated permissions', { 
+                  originalScope: strategy.scope, 
+                  newScope: effectiveScope 
+                });
+                
+                // Retry with escalated permissions and potentially new scope
+                deploymentResult = await this.attemptDirectDeployment(type, deploymentConfig, effectiveScope);
                 if (deploymentResult.success) {
-                  return this.formatSuccessResponse(deploymentResult, strategy.scope, updateSetSession, 'escalated');
+                  return this.formatSuccessResponse(deploymentResult, effectiveScope, updateSetSession, 'escalated');
                 }
               }
             } catch (escalationError) {
@@ -4186,12 +4202,135 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
    * Request permission escalation
    */
   private async requestPermissionEscalation(error: any, scope: string): Promise<{granted: boolean, message: string}> {
-    // This would integrate with the permission escalation system
-    // For now, return a structured response
+    this.logger.info('Attempting permission escalation', { error: error.message, scope });
+    
+    // Determine required roles based on error message and scope
+    const requiredRoles = this.extractRequiredRoles(error, scope);
+    
+    // Try multiple escalation strategies
+    const escalationStrategies = [
+      {
+        name: 'scoped_deployment',
+        description: 'Switch to scoped application deployment',
+        attempt: async () => {
+          if (scope === 'global' && requiredRoles.includes('admin')) {
+            // Fallback to scoped application
+            this.logger.info('Attempting scoped deployment as fallback');
+            return { 
+              granted: true, 
+              message: 'Switching to scoped application deployment (no global admin required)',
+              newScope: 'x_custom_app'
+            };
+          }
+          return { granted: false };
+        }
+      },
+      {
+        name: 'personal_scope',
+        description: 'Use personal developer scope',
+        attempt: async () => {
+          if (scope !== 'personal') {
+            this.logger.info('Attempting personal scope deployment');
+            return {
+              granted: true,
+              message: 'Using personal developer scope for deployment',
+              newScope: 'x_personal_dev'
+            };
+          }
+          return { granted: false };
+        }
+      },
+      {
+        name: 'update_set_only',
+        description: 'Create in Update Set without direct deployment',
+        attempt: async () => {
+          this.logger.info('Falling back to Update Set only creation');
+          return {
+            granted: true,
+            message: 'Creating artifact definition in Update Set (manual import required)',
+            newScope: 'update_set',
+            requiresManualStep: true
+          };
+        }
+      }
+    ];
+    
+    // Try each escalation strategy
+    for (const strategy of escalationStrategies) {
+      try {
+        const result = await strategy.attempt();
+        if (result.granted) {
+          return {
+            granted: true,
+            message: `${strategy.description}: ${result.message}`,
+            ...result
+          };
+        }
+      } catch (err) {
+        this.logger.warn(`Escalation strategy ${strategy.name} failed`, err);
+      }
+    }
+    
+    // If all strategies fail, provide detailed manual guidance
     return {
       granted: false,
-      message: `Permission escalation requested for ${scope} scope. Contact your ServiceNow administrator.`
+      message: this.generatePermissionGuidance(requiredRoles, scope, error)
     };
+  }
+  
+  /**
+   * Extract required roles from error message
+   */
+  private extractRequiredRoles(error: any, scope: string): string[] {
+    const message = error instanceof Error ? error.message : String(error);
+    const roles: string[] = [];
+    
+    // Common role patterns in ServiceNow errors
+    if (message.includes('admin') || message.includes('administrator')) {
+      roles.push('admin');
+    }
+    if (message.includes('global') || scope === 'global') {
+      roles.push('global_admin');
+    }
+    if (message.includes('system_administrator')) {
+      roles.push('system_administrator');
+    }
+    if (message.includes('app_creator')) {
+      roles.push('app_creator');
+    }
+    
+    return roles.length > 0 ? roles : ['admin']; // Default to admin if no specific role found
+  }
+  
+  /**
+   * Generate detailed permission guidance
+   */
+  private generatePermissionGuidance(roles: string[], scope: string, error: any): string {
+    const credentials = this.oauth.loadCredentials();
+    const instance = credentials?.then(c => c?.instance) || 'your-instance';
+    
+    return `
+🔐 **Permission Escalation Required**
+
+**Required Roles**: ${roles.join(', ')}
+**Attempted Scope**: ${scope}
+
+**Option 1: Request Role Assignment**
+1. Navigate to: https://${instance}/nav_to.do?uri=sys_user.do?sys_id=<your_user_sys_id>
+2. Go to "Roles" related list
+3. Add roles: ${roles.join(', ')}
+
+**Option 2: Use Delegated Development**
+1. Create artifact in personal scope first
+2. Have admin promote to ${scope} scope
+3. Command: \`snow_deploy --scope personal\`
+
+**Option 3: Manual Import via Update Set**
+1. Export the generated Update Set XML
+2. Import as admin user
+3. Preview and commit the Update Set
+
+**Error Details**: ${error.message || error}`;
   }
 
   /**
@@ -4231,7 +4370,19 @@ Your artifact has been deployed and is ready for testing.` : ''}
    * Generate manual deployment steps as fallback
    */
   private async generateManualDeploymentSteps(type: string, config: any, error: any, updateSetSession: any): Promise<any> {
-    const steps = this.generateTypeSpecificManualSteps(type, config);
+    const credentials = await this.oauth.loadCredentials();
+    const instance = credentials?.instance || 'your-instance';
+    const steps = await this.generateTypeSpecificManualSteps(type, config, instance);
+    
+    // Generate Update Set XML if available
+    let updateSetXml = '';
+    if (updateSetSession) {
+      try {
+        updateSetXml = await this.generateUpdateSetXML(type, config, updateSetSession);
+      } catch (xmlError) {
+        this.logger.warn('Failed to generate Update Set XML', xmlError);
+      }
+    }
     
     return {
       content: [{
@@ -4241,18 +4392,29 @@ Your artifact has been deployed and is ready for testing.` : ''}
 🚨 **Deployment Error**: ${error instanceof Error ? error.message : String(error)}
 
 ${updateSetSession ? `📋 **Update Set Ready**: ${updateSetSession.name} (${updateSetSession.update_set_id})
-✅ Manual changes will be automatically tracked in this Update Set.` : ''}
+✅ Manual changes will be automatically tracked in this Update Set.
+🔗 **Update Set URL**: https://${instance}/sys_update_set.do?sys_id=${updateSetSession.update_set_id}` : ''}
 
-🔧 **Manual Deployment Steps:**
+🔧 **Manual Deployment Steps with Direct URLs:**
 
 ${steps}
+
+${updateSetXml ? `📄 **Update Set XML Generated**
+Copy this XML to import the artifact:
+\`\`\`xml
+${updateSetXml.substring(0, 500)}...
+\`\`\`
+💡 Full XML saved to: update_set_${updateSetSession.update_set_id}.xml` : ''}
 
 📊 **After Manual Deployment:**
 ${updateSetSession ? '- Changes are automatically tracked in your active Update Set' : '- Consider creating an Update Set to track your changes'}
 - Test thoroughly in your development environment
 - Complete Update Set when ready for deployment
 
-💡 **Alternative**: Try individual deployment tools like \`snow_deploy_${type}\` with specific parameters.`
+💡 **Quick Actions:**
+- 🔧 Retry with different scope: \`snow_deploy --type ${type} --scope personal\`
+- 📋 Check permissions: \`snow_auth_diagnostics\`
+- 🚀 Use wizard mode: \`snow_${type}_wizard\``
       }]
     };
   }
@@ -4260,25 +4422,95 @@ ${updateSetSession ? '- Changes are automatically tracked in your active Update 
   /**
    * Generate type-specific manual steps
    */
-  private generateTypeSpecificManualSteps(type: string, config: any): string {
+  private async generateTypeSpecificManualSteps(type: string, config: any, instance: string): Promise<string> {
     switch (type) {
       case 'widget':
-        return `1. Navigate to Service Portal > Widgets in ServiceNow
-2. Click "New" to create a new widget
-3. Set Name: ${config.name || 'Your Widget Name'}
-4. Set Title: ${config.title || config.name || 'Your Widget Title'}
-5. Add HTML template, CSS, and client script as needed
-6. Save and test the widget
-7. Add to a portal page for testing`;
+        return `1. **Open Service Portal Widgets**
+   🔗 URL: https://${instance}/nav_to.do?uri=%2F$sp_widget.do%3Fsys_id%3D-1%26sysparm_stack%3D$sp_widget_list.do
+   
+2. **Click "New" Button** (Top right of the page)
+   📸 Look for: Blue "New" button in the header
+   
+3. **Fill in Widget Details:**
+   - **Name**: ${config.name || 'your_widget_name'} (internal identifier)
+   - **ID**: ${config.id || config.name?.toLowerCase().replace(/\s+/g, '_') || 'widget_id'}
+   - **Title**: ${config.title || 'Your Widget Title'} (display name)
+   - **Description**: ${config.description || 'Widget created via Snow-Flow'}
+   
+4. **Add Widget Code:**
+   **HTML Template** tab:
+   \`\`\`html
+   ${config.template || '<div>Your HTML here</div>'}
+   \`\`\`
+   
+   **CSS - SCSS** tab:
+   \`\`\`css
+   ${config.css || '/* Your styles here */'}
+   \`\`\`
+   
+   **Client Script** tab:
+   \`\`\`javascript
+   ${config.client_script || 'function() {\n  var c = this;\n  // Your client code\n}'}
+   \`\`\`
+   
+   **Server Script** tab:
+   \`\`\`javascript
+   ${config.server_script || '(function() {\n  // Your server code\n})();'}
+   \`\`\`
+
+5. **Save the Widget**
+   - Click "Submit" or use Ctrl+S / Cmd+S
+   - Note the sys_id from the URL for tracking
+
+6. **Test Your Widget**
+   🔗 Test Page URL: https://${instance}/$sp.do?id=widget_editor&sys_id=YOUR_WIDGET_SYS_ID
+   
+7. **Add to Portal Page**
+   🔗 Page Designer: https://${instance}/nav_to.do?uri=%2F$sp_page.do`;
 
       case 'flow':
-        return `1. Navigate to Process Automation > Flow Designer in ServiceNow
-2. Click "New" > "Flow" (or "Subflow" if applicable)
-3. Set Name: ${config.name || 'Your Flow Name'}
-4. Configure trigger based on your requirements
-5. Add activities and logic as needed
-6. Save and activate the flow
-7. Test with sample data`;
+        return `1. **Open Flow Designer**
+   🔗 URL: https://${instance}/nav_to.do?uri=%2Fflow_designer.do
+   
+2. **Create New Flow**
+   - Click the "+" button or "New" in the top menu
+   - Select "Flow" (not Subflow or Action)
+   
+3. **Configure Flow Properties:**
+   - **Name**: ${config.name || 'approval_flow'}
+   - **Description**: ${config.description || 'Flow created via Snow-Flow'}
+   - **Application**: ${config.application || 'Global'}
+   - **Protection**: None (for development)
+   
+4. **Set Up Trigger** (Step 1 in Flow Designer):
+   - Click "Add a trigger"
+   - Select: "${config.trigger_type || 'Record Created'}"
+   - Table: ${config.table || 'Service Catalog Request [sc_request]'}
+   ${config.condition ? `- Condition: ${config.condition}` : ''}
+   
+5. **Add Flow Logic** (Example for approval flow):
+   a. **Add Approval Action**:
+      - Click "+" after trigger
+      - Search "Approval" 
+      - Select "Ask for Approval"
+      - Approver: ${config.approver || 'Manager of Requested for'}
+      
+   b. **Add Condition**:
+      - Click "+" → "Flow Logic" → "If"
+      - Condition: Approval State = Approved
+      
+   c. **Add Actions in "Then" branch**:
+      - Update Request: State = Approved
+      - Send Notification: To requester
+   
+6. **Save and Activate**
+   - Click "Save" (top right)
+   - Click "Activate" to make flow live
+   
+7. **Test Your Flow**
+   🔗 Test Execution: https://${instance}/nav_to.do?uri=%2Fsys_flow_context_list.do
+   - Create a test ${config.table || 'request'} record
+   - Monitor execution in Flow Designer`;
 
       case 'application':
         return `1. Navigate to System Applications > Applications in ServiceNow

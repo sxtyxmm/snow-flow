@@ -2,13 +2,24 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.73';
+export const VERSION = '1.1.74';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Multi-Agent Development Framework',
   features: {
+    '1.1.74': [
+      '🚨 CRITICAL FIX: Flow composer no longer uses wrong/mock flow actions!',
+      '🔧 PROPER FLOW ACTIONS: Added predefined mappings for common actions (approval, wait, log, etc.)',
+      '🛡️ SMART FILTERING: Filters out nonsensical search results like "Disregard Change Request Approvals"',
+      '✅ CORRECT TRIGGERS: "new service catalog request" now correctly uses record_created trigger',
+      '📝 BETTER FLOW NAMES: Descriptive, context-aware names instead of generic "Sc_request Create Flow"',
+      '🎯 FALLBACK STRATEGIES: When ServiceNow search fails, uses proper predefined action types',
+      '🔍 ENHANCED SEARCH: Only returns actions that match search terms and aren\'t contradictory',
+      '💡 USER FEEDBACK: "proberen flow composer met placeholder of mock data te laten deployen" - FIXED',
+      '🚀 REAL DEPLOYMENTS: Flows now deploy with correct actions and configurations'
+    ],
     '1.1.73': [
       '🎯 API SIMPLIFICATION: snow_unified_deploy → snow_deploy (cleaner naming)',
       '⚠️ DEPRECATION SYSTEM: Automatic redirection from old tools with warnings',
@@ -517,6 +528,21 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.74': {
+      date: '2025-01-21',
+      changes: [
+        'CRITICAL FIX: Flow composer no longer uses wrong/mock flow actions during deployment',
+        'USER FEEDBACK: "proberen flow composer met placeholder of mock data te laten deployen" - FIXED',
+        'PROPER ACTION MAPPINGS: Added predefined mappings for approval, wait, log, notification, etc.',
+        'SMART SEARCH FILTERING: Excludes contradictory actions like "Disregard Change Request Approvals"',
+        'CORRECT FLOW TRIGGERS: Fixed "new service catalog request" to use record_created instead of record_updated',
+        'DESCRIPTIVE FLOW NAMES: Context-aware names like "Monitor Approval Flow" instead of "Sc_request Create Flow"',
+        'FALLBACK STRATEGIES: Uses predefined actions when ServiceNow search returns inappropriate results',
+        'ENHANCED VALIDATION: Only accepts actions that actually match search terms and make sense',
+        'REAL DEPLOYMENTS: Flows now deploy with proper ServiceNow action types and configurations',
+        'IMPROVED FLOW STRUCTURE: Activities now correctly linked to appropriate flow actions'
+      ]
+    },
     '1.1.73': {
       date: '2025-01-21',
       changes: [

@@ -95,6 +95,21 @@ export class ServiceNowOAuth {
    */
   async authenticate(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult> {
     try {
+      // Validate client secret format
+      const secretValidation = this.validateClientSecret(clientSecret);
+      if (!secretValidation.valid) {
+        console.error('❌ Invalid OAuth Client Secret:', secretValidation.reason);
+        console.error('💡 To get a valid OAuth secret:');
+        console.error('   1. Log into ServiceNow as admin');
+        console.error('   2. Navigate to: System OAuth > Application Registry');
+        console.error('   3. Create a new OAuth application');
+        console.error('   4. Copy the generated Client Secret (long random string)');
+        return {
+          success: false,
+          error: secretValidation.reason
+        };
+      }
+      
       // Use fixed port 3005 for ServiceNow OAuth
       const port = 3005;
       const redirectUri = `http://localhost:${port}/callback`;
@@ -560,6 +575,15 @@ export class ServiceNowOAuth {
         return null;
       }
       
+      // Validate client secret when loading
+      if (tokens.clientSecret) {
+        const secretValidation = this.validateClientSecret(tokens.clientSecret);
+        if (!secretValidation.valid) {
+          console.warn('⚠️  OAuth Configuration Issue:', secretValidation.reason);
+          console.warn('💡 Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login');
+        }
+      }
+      
       // Debug: Log what we found
       console.log('🔍 Credentials check:');
       console.log(`   - Token file: ${this.tokenPath}`);
@@ -580,5 +604,57 @@ export class ServiceNowOAuth {
       console.error('❌ Error loading credentials:', error);
       return null;
     }
+  }
+
+  /**
+   * Validate OAuth client secret format
+   * OAuth secrets are typically long random strings (32+ chars) with mixed case and alphanumeric
+   * Common passwords are shorter and may contain dictionary words
+   */
+  validateClientSecret(clientSecret: string): { valid: boolean; reason?: string } {
+    // Check minimum length - OAuth secrets are typically 32+ characters
+    if (clientSecret.length < 20) {
+      return {
+        valid: false,
+        reason: 'OAuth Client Secret too short. Expected 32+ character random string from ServiceNow.'
+      };
+    }
+    
+    // Check for common password patterns
+    const commonPasswordPatterns = [
+      /^password/i,
+      /^admin/i,
+      /^test/i,
+      /^demo/i,
+      /^welcome/i,
+      /123456/,
+      /qwerty/i,
+      /^[a-z]+\d{1,4}$/i,  // Simple word + numbers like "Welkom123"
+      /^[A-Z][a-z]+\d{1,4}$/  // Capitalized word + numbers
+    ];
+    
+    for (const pattern of commonPasswordPatterns) {
+      if (pattern.test(clientSecret)) {
+        return {
+          valid: false,
+          reason: `OAuth Client Secret appears to be a password. ServiceNow OAuth secrets are long random strings (e.g., "a1b2c3d4e5f6..."). Check your Application Registry in ServiceNow.`
+        };
+      }
+    }
+    
+    // Check for sufficient entropy (mix of upper, lower, numbers)
+    const hasUpper = /[A-Z]/.test(clientSecret);
+    const hasLower = /[a-z]/.test(clientSecret);
+    const hasNumber = /[0-9]/.test(clientSecret);
+    const charTypes = [hasUpper, hasLower, hasNumber].filter(Boolean).length;
+    
+    if (charTypes < 2) {
+      return {
+        valid: false,
+        reason: 'OAuth Client Secret lacks complexity. ServiceNow generates secrets with mixed case and numbers.'
+      };
+    }
+    
+    return { valid: true };
   }
 }
