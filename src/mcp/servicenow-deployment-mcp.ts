@@ -1552,9 +1552,13 @@ ${isComposedFlow ? `
 
     const result = await this.client.createScriptInclude(scriptIncludeData);
     
+    if (!result.data?.sys_id) {
+      throw new Error(`Script Include deployment failed: No sys_id returned from ServiceNow. Result: ${JSON.stringify(result)}`);
+    }
+    
     return {
       originalId: artifact.sys_id,
-      sys_id: result.data?.sys_id || `mock_si_${Date.now()}`,
+      sys_id: result.data.sys_id,
       name: artifact.name,
       api_name: scriptIncludeData.api_name,
       type: 'script_include',
@@ -1579,9 +1583,13 @@ ${isComposedFlow ? `
 
     const result = await this.client.createBusinessRule(businessRuleData);
     
+    if (!result.data?.sys_id) {
+      throw new Error(`Business Rule deployment failed: No sys_id returned from ServiceNow. Result: ${JSON.stringify(result)}`);
+    }
+    
     return {
       originalId: artifact.sys_id,
-      sys_id: result.data?.sys_id || `mock_br_${Date.now()}`,
+      sys_id: result.data.sys_id,
       name: artifact.name,
       type: 'business_rule',
       success: result.success
@@ -1616,9 +1624,13 @@ ${isComposedFlow ? `
       }
     }
     
+    if (!result.data?.sys_id) {
+      throw new Error(`Table deployment failed: No sys_id returned from ServiceNow. Result: ${JSON.stringify(result)}`);
+    }
+    
     return {
       originalId: artifact.sys_id,
-      sys_id: result.data?.sys_id || `mock_table_${Date.now()}`,
+      sys_id: result.data.sys_id,
       name: artifact.name,
       type: 'table',
       success: result.success
@@ -1810,9 +1822,55 @@ ${this.getScopeBenefits(deploymentResult.scope).map(b => `- ${b}`).join('\n')}`,
     try {
       this.logger.info('Creating update set', { name: args.name });
 
-      // In a real implementation, this would create an update set and add artifacts
-      // For now, we'll simulate the process
-      const updateSetId = `US${Date.now()}`;
+      // Create the update set using the real ServiceNow API
+      const updateSetResult = await this.client.createUpdateSet({
+        name: args.name,
+        description: args.description || `Update Set created via Snow-Flow deployment`
+      });
+
+      if (!updateSetResult.success || !updateSetResult.data) {
+        throw new Error(`Failed to create Update Set: ${updateSetResult.error || 'Unknown error'}`);
+      }
+
+      const updateSetId = updateSetResult.data.sys_id;
+      this.logger.info('Update Set created successfully', { id: updateSetId, name: args.name });
+
+      // Set as current update set for tracking
+      const activateResult = await this.client.setCurrentUpdateSet(updateSetId);
+      if (!activateResult.success) {
+        this.logger.warn('Warning: Could not set as current Update Set', { id: updateSetId });
+      }
+
+      // Track all provided artifacts in the update set
+      const trackingResults = [];
+      if (args.artifacts && Array.isArray(args.artifacts)) {
+        for (const artifact of args.artifacts) {
+          try {
+            // Create sys_update_xml record to track the artifact in the update set
+            const trackingResult = await this.client.createRecord('sys_update_xml', {
+              name: `${artifact.type}_${artifact.sys_id}`,
+              category: 'customer',
+              update_set: updateSetId,
+              target_name: artifact.name,
+              type: artifact.type,
+              target_sys_id: artifact.sys_id,
+              action: 'INSERT_OR_UPDATE'
+            });
+            
+            if (trackingResult.success) {
+              trackingResults.push(`✅ ${artifact.type}: ${artifact.name}`);
+            } else {
+              trackingResults.push(`⚠️ ${artifact.type}: ${artifact.name} (tracking failed)`);
+            }
+          } catch (trackingError) {
+            this.logger.warn('Failed to track artifact in Update Set', { 
+              artifact: artifact.sys_id, 
+              error: trackingError 
+            });
+            trackingResults.push(`⚠️ ${artifact.type}: ${artifact.name} (tracking failed)`);
+          }
+        }
+      }
 
       return {
         content: [
@@ -1824,20 +1882,23 @@ ${this.getScopeBenefits(deploymentResult.scope).map(b => `- ${b}`).join('\n')}`,
 - Name: ${args.name}
 - ID: ${updateSetId}
 - Description: ${args.description || 'N/A'}
-- Artifacts: ${args.artifacts.length} items
+- Artifacts: ${args.artifacts?.length || 0} items
 
-📦 Included Artifacts:
-${args.artifacts.map((a: any) => `- ${a.type}: ${a.sys_id}`).join('\n')}
+📦 Tracked Artifacts:
+${trackingResults.length > 0 ? trackingResults.join('\n') : '- No artifacts specified'}
 
 📝 Next Steps:
-1. Review update set contents
-2. Mark as complete
-3. Export for migration
-4. Deploy to target instance`,
+1. Review update set contents in ServiceNow
+2. Mark as complete when ready: \`snow_update_set_complete\`
+3. Export for migration: \`snow_update_set_export\`
+4. Deploy to target instance
+
+💡 The Update Set is now active and will automatically track future changes.`,
           },
         ],
       };
     } catch (error) {
+      this.logger.error('Update set creation failed', error);
       throw new Error(`Update set creation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -3896,8 +3957,22 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           script += this.generateConditionScript(activity);
           break;
         default:
-          script += `\n        // TODO: Implement ${activity.type} logic
-        gs.log('Activity ${activity.name || activity.type} executed', 'INFO');`;
+          // Handle unknown activity types with a comprehensive fallback
+          script += `\n        // Unknown activity type: ${activity.type}
+        // Available activity data: ${JSON.stringify(activity, null, 2).replace(/"/g, '\\"')}
+        gs.warn('Unsupported activity type in flow: ${activity.type}', 'SNOW_FLOW');
+        
+        // Attempt to execute any custom script if provided
+        ${activity.script ? `
+        // Custom script from activity definition
+        try {
+          ${activity.script}
+        } catch (error) {
+          gs.error('Custom script execution failed for activity ${activity.name || activity.type}: ' + error.message);
+        }` : ''}
+        
+        // Log completion
+        gs.log('Activity ${activity.name || activity.type} processed (unsupported type: ${activity.type})', 'INFO');`;
       }
       script += '\n';
     });
@@ -4724,15 +4799,42 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
    * Ensure active Update Set session
    */
   private async ensureActiveUpdateSet(context: string): Promise<{session: any}> {
-    // This would call the update set MCP to ensure active session
-    // For now, return a mock session
-    return {
-      session: {
-        update_set_id: 'mock_update_set_id',
-        name: `Auto-${context}`,
-        artifacts: []
+    try {
+      // Call the real Update Set MCP to ensure active session
+      const result = await this.client.ensureUpdateSet();
+      
+      if (result.success && result.data) {
+        return {
+          session: {
+            update_set_id: result.data.sys_id,
+            name: result.data.name,
+            artifacts: []
+          }
+        };
       }
-    };
+      
+      // If no current update set, create a new one via the Update Set MCP
+      const createResult = await this.client.createUpdateSet({
+        name: `Auto-${context}-${Date.now()}`,
+        description: `Automatically created for ${context}`,
+        context: context
+      });
+      
+      if (createResult.success && createResult.data) {
+        return {
+          session: {
+            update_set_id: createResult.data.sys_id,
+            name: createResult.data.name,
+            artifacts: []
+          }
+        };
+      }
+      
+      throw new Error('Failed to ensure Update Set session');
+    } catch (error) {
+      this.logger.error('Failed to ensure Update Set session', error);
+      throw new Error(`Update Set session required for deployment. Error: ${error.message}`);
+    }
   }
 
   /**

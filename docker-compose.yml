@@ -1,0 +1,579 @@
+# ServiceNow Multi-Agent MCP Services Docker Compose Configuration
+version: '3.8'
+
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  consul-data:
+  neo4j-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  nginx-logs:
+
+services:
+  # ===========================================
+  # Infrastructure Services
+  # ===========================================
+  
+  consul:
+    image: hashicorp/consul:1.16
+    hostname: consul
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.10
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    volumes:
+      - consul-data:/consul/data
+      - ./docker/consul:/consul/config
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: >
+      consul agent 
+      -server 
+      -bootstrap-expect=1 
+      -data-dir=/consul/data 
+      -config-dir=/consul/config 
+      -ui-content-path=/ui 
+      -bind=172.20.0.10 
+      -client=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    hostname: redis
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5-community
+    hostname: neo4j
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-data:/logs
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ===========================================
+  # Load Balancer
+  # ===========================================
+  
+  nginx-lb:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    hostname: nginx-lb
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.20
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - nginx-logs:/var/log/nginx
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    environment:
+      - CONSUL_URL=http://172.20.0.10:8500
+      - NGINX_LOG_LEVEL=info
+      - CONSUL_TEMPLATE_LOG_LEVEL=info
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 45s
+    restart: unless-stopped
+
+  # ===========================================
+  # MCP Services (11 services)
+  # ===========================================
+  
+  deployment-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/deployment-mcp/Dockerfile
+    hostname: deployment-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=deployment-mcp
+      - SERVER_PORT=3001
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=deployment-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  flow-composer-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/flow-composer-mcp/Dockerfile
+    hostname: flow-composer-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=flow-composer-mcp
+      - SERVER_PORT=3002
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=flow-composer-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  intelligent-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/intelligent-mcp/Dockerfile
+    hostname: intelligent-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=intelligent-mcp
+      - SERVER_PORT=3003
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=intelligent-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  update-set-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/update-set-mcp/Dockerfile
+    hostname: update-set-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=update-set-mcp
+      - SERVER_PORT=3004
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=update-set-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  graph-memory-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/graph-memory-mcp/Dockerfile
+    hostname: graph-memory-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=graph-memory-mcp
+      - SERVER_PORT=3005
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=graph-memory-mcp
+      - NEO4J_URI=bolt://172.20.0.12:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '0.75'
+        reservations:
+          memory: 384M
+          cpus: '0.5'
+
+  operations-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/operations-mcp/Dockerfile
+    hostname: operations-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=operations-mcp
+      - SERVER_PORT=3006
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=operations-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  platform-development-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/platform-development-mcp/Dockerfile
+    hostname: platform-development-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=platform-development-mcp
+      - SERVER_PORT=3007
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=platform-development-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  integration-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/integration-mcp/Dockerfile
+    hostname: integration-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=integration-mcp
+      - SERVER_PORT=3008
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=integration-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  automation-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/automation-mcp/Dockerfile
+    hostname: automation-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=automation-mcp
+      - SERVER_PORT=3009
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=automation-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  security-compliance-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/security-compliance-mcp/Dockerfile
+    hostname: security-compliance-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=security-compliance-mcp
+      - SERVER_PORT=3010
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=security-compliance-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  reporting-analytics-mcp:
+    build:
+      context: .
+      dockerfile: docker/services/reporting-analytics-mcp/Dockerfile
+    hostname: reporting-analytics-mcp
+    networks:
+      - mcp-network
+    environment:
+      - SERVICE_NAME=reporting-analytics-mcp
+      - SERVER_PORT=3011
+      - NODE_ENV=production
+      - CONSUL_URL=http://172.20.0.10:8500
+      - SERVICE_IP=reporting-analytics-mcp
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_CLIENT_ID=${SERVICENOW_CLIENT_ID}
+      - SERVICENOW_CLIENT_SECRET=${SERVICENOW_CLIENT_SECRET}
+    depends_on:
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ===========================================
+  # Monitoring Stack
+  # ===========================================
+  
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    hostname: prometheus
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.30
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./docker/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    hostname: grafana
+    networks:
+      mcp-network:
+        ipv4_address: 172.20.0.31
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=localhost
+      - GF_SMTP_ENABLED=false
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped

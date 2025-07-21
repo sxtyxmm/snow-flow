@@ -1,0 +1,340 @@
+# Docker Compose configuration for production environment
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  # Production-optimized MCP services
+  deployment-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  flow-composer-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  intelligent-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 3  # Higher load expected
+      resources:
+        limits:
+          memory: 1536M
+          cpus: '1.5'
+        reservations:
+          memory: 768M
+          cpus: '0.75'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  update-set-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  graph-memory-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2048M  # Memory-intensive service
+          cpus: '2.0'
+        reservations:
+          memory: 1024M
+          cpus: '1.0'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  operations-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 3  # High availability for operations
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  platform-development-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  integration-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  automation-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  security-compliance-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  reporting-analytics-mcp:
+    environment:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1536M  # Analytics may need more memory
+          cpus: '1.5'
+        reservations:
+          memory: 768M
+          cpus: '0.75'
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+
+  # Infrastructure production configurations
+  consul:
+    environment:
+      - CONSUL_LOG_LEVEL=info
+    deploy:
+      replicas: 3  # Consul cluster for HA
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    environment:
+      - REDIS_SAVE="900 1 300 10 60 10000"  # Production persistence settings
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+    command: >
+      redis-server 
+      --maxmemory 800mb 
+      --maxmemory-policy allkeys-lru 
+      --appendonly yes 
+      --save 900 1 300 10 60 10000
+
+  neo4j:
+    environment:
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_default__listen__address=0.0.0.0
+      - NEO4J_dbms_backup_enabled=true
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+          cpus: '2.0'
+      restart_policy:
+        condition: on-failure
+
+  nginx-lb:
+    environment:
+      - NGINX_LOG_LEVEL=warn
+      - CONSUL_TEMPLATE_LOG_LEVEL=info
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  # Production monitoring
+  prometheus:
+    environment:
+      - PROMETHEUS_RETENTION_TIME=30d
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+          cpus: '1.0'
+      restart_policy:
+        condition: on-failure
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=50GB'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN}
+      - GF_SERVER_ROOT_URL=https://${GRAFANA_DOMAIN}
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${SMTP_HOST}
+      - GF_SMTP_USER=${SMTP_USER}
+      - GF_SMTP_PASSWORD=${SMTP_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure

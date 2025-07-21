@@ -3270,6 +3270,274 @@ program
     }
   });
 
+// ===================================================
+// 👑 QUEEN AGENT COMMANDS - Elegant Orchestration
+// ===================================================
+
+/**
+ * Main Queen command - replaces complex swarm orchestration
+ * Simple, elegant, and intelligent ServiceNow objective execution
+ */
+program
+  .command('queen <objective>')
+  .description('🐝 Execute ServiceNow objective with Queen Agent hive-mind intelligence')
+  .option('--learn', 'Enable enhanced learning from execution (default: true)', true)
+  .option('--no-learn', 'Disable learning')
+  .option('--debug', 'Enable debug mode for detailed insights')
+  .option('--dry-run', 'Preview execution plan without deployment')
+  .option('--memory-driven', 'Use memory for optimal workflow patterns')
+  .option('--monitor', 'Show real-time hive-mind monitoring')
+  .option('--type <type>', 'Hint at task type (widget, flow, app, integration)')
+  .action(async (objective: string, options) => {
+    console.log(`\n👑 ServiceNow Queen Agent v${VERSION} - Hive-Mind Intelligence`);
+    console.log('🐝 Elegant orchestration replacing complex team coordination\n');
+    
+    try {
+      const { QueenIntegration } = await import('./queen/integration-example.js');
+      
+      const queenIntegration = new QueenIntegration({
+        debugMode: options.debug || false
+      });
+
+      if (options.dryRun) {
+        console.log('🔍 DRY RUN MODE - Analyzing objective...');
+        // TODO: Add dry run analysis
+        console.log(`📋 Objective: ${objective}`);
+        console.log('🎯 Queen would analyze, spawn agents, coordinate, and deploy');
+        return;
+      }
+
+      console.log(`🎯 Queen analyzing objective: ${objective}`);
+      
+      const result = await queenIntegration.executeSwarmObjective(objective, {
+        learn: options.learn,
+        memoryDriven: options.memoryDriven,
+        monitor: options.monitor
+      });
+
+      if (result.success) {
+        console.log('\n✅ Queen Agent completed objective successfully!');
+        console.log(`🐝 Hive-Mind coordination: ${result.queen_managed ? 'ACTIVE' : 'INACTIVE'}`);
+        
+        if (result.hive_mind_status) {
+          console.log(`👥 Active Agents: ${result.hive_mind_status.activeAgents}`);
+          console.log(`📋 Active Tasks: ${result.hive_mind_status.activeTasks}`);
+          console.log(`🧠 Learned Patterns: ${result.hive_mind_status.memoryStats.patterns}`);
+        }
+
+        if (options.monitor) {
+          console.log('\n📊 HIVE-MIND MONITORING:');
+          queenIntegration.logHiveMindStatus();
+        }
+      } else {
+        console.error('\n❌ Queen Agent execution failed!');
+        if (result.fallback_required) {
+          console.log('🔄 Consider using traditional swarm command as fallback:');
+          console.log(`   snow-flow swarm "${objective}"`);
+        }
+        process.exit(1);
+      }
+
+      await queenIntegration.shutdown();
+
+    } catch (error) {
+      console.error('\n💥 Queen Agent error:', (error as Error).message);
+      console.log('\n🔄 Fallback to traditional swarm:');
+      console.log(`   snow-flow swarm "${objective}"`);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Queen Memory Management
+ */
+const queenMemory = program.command('queen-memory');
+queenMemory.description('🧠 Manage Queen Agent hive-mind memory');
+
+queenMemory
+  .command('export [file]')
+  .description('Export Queen memory to file')
+  .action(async (file: string = 'queen-memory.json') => {
+    console.log(`\n🧠 Exporting Queen hive-mind memory to ${file}...`);
+    
+    try {
+      const { createServiceNowQueen } = await import('./queen/index.js');
+      const queen = createServiceNowQueen({ debugMode: true });
+      
+      const memoryData = queen.exportMemory();
+      
+      const { promises: fs } = await import('fs');
+      await fs.writeFile(file, memoryData, 'utf-8');
+      
+      console.log(`✅ Memory exported successfully to ${file}`);
+      console.log(`📊 Memory contains learned patterns and successful deployments`);
+      
+      await queen.shutdown();
+    } catch (error) {
+      console.error('❌ Memory export failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+queenMemory
+  .command('import <file>')
+  .description('Import Queen memory from file')
+  .action(async (file: string) => {
+    console.log(`\n🧠 Importing Queen hive-mind memory from ${file}...`);
+    
+    try {
+      const { promises: fs } = await import('fs');
+      const memoryData = await fs.readFile(file, 'utf-8');
+      
+      const { createServiceNowQueen } = await import('./queen/index.js');
+      const queen = createServiceNowQueen({ debugMode: true });
+      
+      queen.importMemory(memoryData);
+      
+      console.log(`✅ Memory imported successfully from ${file}`);
+      console.log(`🧠 Queen now has access to previous learning patterns`);
+      
+      await queen.shutdown();
+    } catch (error) {
+      console.error('❌ Memory import failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+queenMemory
+  .command('clear')
+  .description('Clear Queen memory (reset learning)')
+  .option('--confirm', 'Confirm memory clearing')
+  .action(async (options) => {
+    if (!options.confirm) {
+      console.log('\n⚠️  This will clear all Queen hive-mind learning!');
+      console.log('Use --confirm to proceed: snow-flow queen-memory clear --confirm');
+      return;
+    }
+
+    console.log('\n🧠 Clearing Queen hive-mind memory...');
+    
+    try {
+      const { createServiceNowQueen } = await import('./queen/index.js');
+      const queen = createServiceNowQueen({ debugMode: true });
+      
+      queen.clearMemory();
+      
+      console.log('✅ Queen memory cleared successfully');
+      console.log('🔄 Queen will start fresh learning from next execution');
+      
+      await queen.shutdown();
+    } catch (error) {
+      console.error('❌ Memory clear failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Queen Status and Insights
+ */
+program
+  .command('queen-status')
+  .description('📊 Show Queen Agent hive-mind status and insights')
+  .option('--detailed', 'Show detailed memory and learning statistics')
+  .action(async (options) => {
+    console.log(`\n👑 ServiceNow Queen Agent Status v${VERSION}`);
+    
+    try {
+      const { createServiceNowQueen } = await import('./queen/index.js');
+      const queen = createServiceNowQueen({ debugMode: true });
+      
+      const status = queen.getHiveMindStatus();
+      
+      console.log('\n🐝 HIVE-MIND STATUS 🐝');
+      console.log('═══════════════════════');
+      console.log(`📋 Active Tasks: ${status.activeTasks}`);
+      console.log(`👥 Active Agents: ${status.activeAgents}`);
+      console.log(`🧠 Learned Patterns: ${status.memoryStats.patterns}`);
+      console.log(`📚 Stored Artifacts: ${status.memoryStats.artifacts}`);
+      console.log(`💡 Learning Insights: ${status.memoryStats.learnings}`);
+      
+      if (status.factoryStats.agentTypeCounts) {
+        console.log('\n👥 AGENT BREAKDOWN:');
+        Object.entries(status.factoryStats.agentTypeCounts).forEach(([type, count]) => {
+          console.log(`   ${type}: ${count}`);
+        });
+      }
+
+      if (options.detailed) {
+        console.log('\n🔍 DETAILED MEMORY ANALYSIS:');
+        console.log(`   Memory Size: ${status.memoryStats.totalSize || 'Unknown'}`);
+        console.log(`   Success Rate: ${status.memoryStats.successRate || 'Unknown'}%`);
+        console.log(`   Most Effective Pattern: ${status.memoryStats.bestPattern || 'Learning...'}`);
+      }
+      
+      console.log('═══════════════════════\n');
+      
+      await queen.shutdown();
+    } catch (error) {
+      console.error('❌ Status check failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('queen-insights')
+  .description('💡 Show Queen Agent learning insights and recommendations')
+  .action(async () => {
+    console.log(`\n💡 Queen Agent Learning Insights v${VERSION}`);
+    
+    try {
+      const { createServiceNowQueen } = await import('./queen/index.js');
+      const queen = createServiceNowQueen({ debugMode: true });
+      
+      const insights = queen.getLearningInsights();
+      
+      console.log('\n🧠 LEARNING INSIGHTS 🧠');
+      console.log('═══════════════════════');
+      
+      if (insights.successfulPatterns && insights.successfulPatterns.length > 0) {
+        console.log('\n✅ SUCCESSFUL PATTERNS:');
+        insights.successfulPatterns.forEach((pattern, idx) => {
+          console.log(`   ${idx + 1}. ${pattern.description} (${pattern.successRate}% success)`);
+        });
+      } else {
+        console.log('\n📚 No patterns learned yet - execute objectives to build intelligence');
+      }
+      
+      if (insights.recommendations && insights.recommendations.length > 0) {
+        console.log('\n💡 RECOMMENDATIONS:');
+        insights.recommendations.forEach((rec, idx) => {
+          console.log(`   ${idx + 1}. ${rec}`);
+        });
+      }
+      
+      if (insights.commonTasks && insights.commonTasks.length > 0) {
+        console.log('\n🎯 COMMON TASK TYPES:');
+        insights.commonTasks.forEach((task, idx) => {
+          console.log(`   ${idx + 1}. ${task.type}: ${task.count} executions`);
+        });
+      }
+      
+      console.log('═══════════════════════\n');
+      
+      await queen.shutdown();
+    } catch (error) {
+      console.error('❌ Insights failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ===================================================
+// 🔄 BACKWARD COMPATIBILITY ENHANCEMENTS
+// ===================================================
+
+/**
+ * Enhance existing swarm command with optional Queen intelligence
+ * 
+ * Note: Users can use: snow-flow swarm "objective" --queen
+ * This will be implemented in a future version once the Queen system is stable.
+ */
+
 program.parse(process.argv);
 
 // Show help if no command provided

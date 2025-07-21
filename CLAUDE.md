@@ -1,5 +1,87 @@
 # Snow-Flow Development with Claude Code
 
+## 👑 Queen Agent - The claude-flow Revolution
+
+**The future of ServiceNow development is here!** The ServiceNow Queen Agent embodies the claude-flow philosophy: **elegant simplicity through hive-mind intelligence**.
+
+### 🧠 Claude-Flow Philosophy
+
+Inspired by Claude's natural language capabilities, the Queen Agent transforms complex multi-agent orchestration into simple, intuitive commands. Just as Claude understands human intent from natural language, the Queen Agent understands development objectives and automatically orchestrates the perfect team.
+
+**Core Principles:**
+- **Hive-Mind Intelligence**: All agents share knowledge and learn collectively
+- **Intent-Driven Development**: Describe what you want, not how to build it  
+- **Memory-Driven Patterns**: Learn from every execution, improve over time
+- **Elegant Simplicity**: One command replaces complex coordination
+
+### 🚀 Primary Development Interface (RECOMMENDED)
+
+```bash
+# The Queen Agent - One Command Does Everything!
+snow-flow queen "create incident dashboard with charts and real-time data"
+snow-flow queen "build approval workflow for equipment requests"
+snow-flow queen "deploy mobile-responsive widget with accessibility features"
+snow-flow queen "create complete ITSM solution with custom tables and workflows"
+```
+
+#### Queen Commands Overview
+
+| Command | Purpose | Example |
+|---------|---------|----------|
+| `snow-flow queen "<objective>"` | Primary development command | `snow-flow queen "create incident widget"` |
+| `snow-flow queen-memory export [file]` | Export learning patterns | `snow-flow queen-memory export patterns.json` |
+| `snow-flow queen-memory import [file]` | Import previous learning | `snow-flow queen-memory import patterns.json` |
+| `snow-flow queen-memory clear --confirm` | Reset all learning | `snow-flow queen-memory clear --confirm` |
+| `snow-flow queen-status [--detailed]` | View hive-mind status | `snow-flow queen-status --detailed` |
+| `snow-flow queen-insights` | Get AI recommendations | `snow-flow queen-insights` |
+
+### 🔄 Enhanced Backward Compatibility
+
+```bash
+# Queen intelligence can enhance existing commands
+snow-flow swarm "create widget" --queen    # Adds Queen intelligence to swarm
+snow-flow sparc "create flow" --queen      # Queen-powered SPARC execution
+```
+
+### Queen vs Traditional Development
+
+| Traditional Approach | Queen Agent Approach |
+|---------------------|----------------------|
+| `snow-flow swarm "objective" --strategy development --mode hierarchical --max-agents 8 --parallel --monitor --shared-memory --validation --auto-deploy` | `snow-flow queen "objective" --monitor` |
+| `snow-flow sparc team widget "dashboard" --shared-memory --validation` | `snow-flow queen "create dashboard"` |
+| Complex team assembly and coordination | Automatic hive-mind orchestration |
+| Manual memory management | Memory-driven pattern learning |
+| Separate commands for different artifact types | Universal objective understanding |
+
+### 🧠 Queen Intelligence Features
+
+- **🎯 Automatic Agent Spawning**: Analyzes objectives and spawns optimal specialist teams
+- **📊 Memory-Driven Development**: Learns successful patterns and applies them automatically  
+- **🔄 Graceful Fallbacks**: Falls back to traditional methods when needed
+- **👑 Hive-Mind Coordination**: All agents share context and learn collectively
+- **🚀 One Command Philosophy**: Analyze → Spawn → Coordinate → Deploy in one step
+
+### 🎯 Quick Start with Queen (RECOMMENDED)
+
+```bash
+# 1. Initialize project
+snow-flow init --sparc
+
+# 2. Authenticate
+snow-flow auth login
+
+# 3. Start developing with Queen!
+snow-flow queen "create incident management dashboard with charts"
+
+# 4. Check learning status
+snow-flow queen-status --detailed
+
+# 5. Export learning for reuse
+snow-flow queen-memory export my-patterns.json
+```
+
+---
+
 ## 🚀 Core Development Principles
 
 ### Concurrent Execution Strategy
@@ -357,6 +439,7 @@ snow-flow swarm "complex integration" \
   --auto-permissions
 ```
 
+
 ## New MCP Tools (v1.1.44+)
 
 ### Catalog Item Search
@@ -647,7 +730,9 @@ snow-flow sparc team app "design app"
 
 ## 🎯 Quick Start Workflows
 
-### 🚀 Team-Based Development (v1.1.62+)
+### 🚀 Advanced Development Approaches
+
+#### Team-Based Development (v1.1.62+)
 
 ```bash
 # Widget Development Team
@@ -668,12 +753,26 @@ snow-flow sparc backend "API optimization"
 snow-flow sparc security "access control review"
 ```
 
-### 🎯 Quick Start
-1. `snow-flow init --sparc` - Initialize project with SPARC environment
-2. Configure ServiceNow credentials in .env file
-3. `snow-flow auth login` - Authenticate with ServiceNow OAuth
-4. `snow-flow swarm "create a widget for incident management"` - Everything automatic!
-5. `snow-flow sparc team widget "create dashboard"` - NEW: Use specialized teams!
+### 🎯 Quick Start Comparison
+
+#### **👑 RECOMMENDED: Queen Agent (Primary)**
+```bash
+# 1-3: Same setup
+# 4. Queen does everything automatically!
+snow-flow queen "create incident management widget"
+```
+
+#### **🤖 Alternative: Enhanced Swarm**
+```bash
+# 4. Use Queen intelligence with swarm
+snow-flow swarm "create widget" --queen
+```
+
+#### **⚙️ Traditional: Team-Based**
+```bash
+# 4. Manual team coordination
+snow-flow sparc team widget "create dashboard"
+```
 
 ## 💡 Important Notes
 
@@ -702,7 +801,11 @@ With concurrent execution and batch operations:
 - **Bulk Deployment**: Up to 5x faster with parallel mode
 - **Search Operations**: 4x faster with concurrent queries
 
-## 📚 Additional Resources
+---
+
+## 📚 Advanced Reference (MCP Tools & Traditional Approaches)
+
+*Note: The sections below contain advanced MCP tools and traditional approaches. For most users, the Queen Agent above is the recommended primary interface.*
 
 ### MCP Server Documentation
 - **servicenow-deployment**: Widget, flow, and application deployment

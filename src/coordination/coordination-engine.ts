@@ -299,15 +299,90 @@ export class CoordinationEngine extends EventEmitter {
   // Public API methods
 
   async getExecutionPlan(specification: TaskSpecification): Promise<ExecutionPlan> {
-    const mockTeam = { agents: new Map() } as BaseTeam;
+    // Initialize a proper planning team with required agents
+    const planningTeam = this.createPlanningTeam(specification);
     const taskGraph = new TaskDependencyGraph(this.sharedMemory, this.config);
     
-    // Add tasks without agents for planning
+    // Add tasks with proper agent assignments for realistic planning
     for (const taskDef of specification.tasks) {
-      taskGraph.addTask(taskDef.id, null as any, taskDef.requirements, taskDef.dependencies);
+      const agent = this.assignOptimalAgent(taskDef, planningTeam);
+      taskGraph.addTask(taskDef.id, agent, taskDef.requirements, taskDef.dependencies);
     }
 
     return await taskGraph.generateExecutionPlan();
+  }
+
+  /**
+   * Create a planning team based on task requirements
+   */
+  private createPlanningTeam(specification: TaskSpecification): BaseTeam {
+    const agents = new Map();
+    
+    // Analyze tasks to determine required agent types
+    for (const task of specification.tasks) {
+      const requiredType = this.determineAgentType(task);
+      if (!agents.has(requiredType)) {
+        agents.set(requiredType, {
+          id: `${requiredType}_agent_${Date.now()}`,
+          type: requiredType,
+          capabilities: task.requirements || [],
+          status: 'ready'
+        });
+      }
+    }
+
+    // Ensure at least one general agent exists
+    if (agents.size === 0) {
+      agents.set('general', {
+        id: `general_agent_${Date.now()}`,
+        type: 'general',
+        capabilities: [],
+        status: 'ready'
+      });
+    }
+
+    return {
+      agents,
+      id: `planning_team_${Date.now()}`,
+      name: 'Planning Team',
+      type: 'planning'
+    } as BaseTeam;
+  }
+
+  /**
+   * Determine the optimal agent type for a task
+   */
+  private determineAgentType(task: any): string {
+    const taskType = task.type?.toLowerCase() || '';
+    const requirements = task.requirements || [];
+    
+    if (taskType.includes('widget') || requirements.includes('frontend')) return 'frontend';
+    if (taskType.includes('flow') || requirements.includes('process')) return 'process';
+    if (taskType.includes('backend') || requirements.includes('server')) return 'backend';
+    if (taskType.includes('security') || requirements.includes('security')) return 'security';
+    if (taskType.includes('data') || requirements.includes('database')) return 'data';
+    
+    return 'general'; // Default fallback
+  }
+
+  /**
+   * Assign optimal agent from team for a task
+   */
+  private assignOptimalAgent(task: any, team: BaseTeam): any {
+    const requiredType = this.determineAgentType(task);
+    const agent = team.agents.get(requiredType) || team.agents.get('general');
+    
+    if (!agent) {
+      logger.warn(`No suitable agent found for task type: ${requiredType}, creating default agent`);
+      return {
+        id: `default_agent_${Date.now()}`,
+        type: 'general',
+        capabilities: [],
+        status: 'ready'
+      };
+    }
+    
+    return agent;
   }
 
   getSharedMemory(): SharedMemoryManager {

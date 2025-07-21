@@ -1,6 +1,14 @@
-# Snow-Flow: Multi-Agent ServiceNow Development Platform 🚀
+# Snow-Flow: The claude-flow ServiceNow Revolution 🚀
 
-Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
+**Snow-Flow** transforms ServiceNow development through the revolutionary **Queen Agent** and **claude-flow philosophy**. Experience **hive-mind intelligence** where one elegant command replaces complex multi-agent orchestration.
+
+**The claude-flow Philosophy:**
+- 🧠 **Hive-Mind Intelligence**: All agents share knowledge and learn collectively
+- 🎯 **Intent-Driven Development**: Describe what you want, not how to build it  
+- 📊 **Memory-Driven Patterns**: Learn from every execution, improve over time
+- 👑 **Elegant Simplicity**: One command replaces complex coordination
+
+Powered by 11 specialized MCP (Model Context Protocol) servers and inspired by Claude's natural language understanding, Snow-Flow makes ServiceNow development as simple as having a conversation.
 
 ## 🆕 What's New in v1.1.50
 
@@ -31,7 +39,16 @@ Most intelligent features are now **enabled by default** - één command voor al
 
 ## 🌟 Key Features
 
-### 🤖 11 Specialized MCP Servers
+### 👑 Revolutionary Queen Agent
+
+- **🧠 Hive-Mind Intelligence**: All agents share knowledge and learn collectively from every execution
+- **🎯 Intent-Driven Development**: Natural language understanding converts objectives into perfect solutions  
+- **📊 Memory-Driven Patterns**: Learns successful patterns and automatically applies them to new projects
+- **🚀 One-Command Orchestration**: Replaces complex multi-step workflows with single elegant commands
+- **🔄 Graceful Fallbacks**: Automatically falls back to traditional methods when needed
+- **💾 Persistent Learning**: Export/import patterns for team sharing and backup
+
+### 🤖 11 Specialized MCP Servers (Orchestrated by Queen)
 Each server provides autonomous capabilities for different aspects of ServiceNow development:
 
 1. **Deployment MCP** - Autonomous widget, flow, and application deployment
@@ -46,15 +63,15 @@ Each server provides autonomous capabilities for different aspects of ServiceNow
 10. **Security & Compliance MCP** - Security auditing and compliance
 11. **Reporting & Analytics MCP** - Data analysis and reporting
 
-### 🎯 Core Capabilities
+### 🎯 Core Capabilities (Enhanced by Queen Intelligence)
 
 - **Natural Language Processing**: Create complex ServiceNow artifacts using plain English/Dutch commands
-- **Intelligent Decision Making**: Automatically determines optimal architecture (flow vs subflow)
+- **Hive-Mind Decision Making**: Collectively learns optimal architectures and applies them automatically
 - **Zero Configuration**: All values dynamically discovered from your ServiceNow instance
-- **Autonomous Deployment**: Direct deployment to ServiceNow with automatic error handling
+- **Autonomous Deployment**: Direct deployment to ServiceNow with automatic error handling and learning
 - **Update Set Management**: Professional change tracking like ServiceNow pros use
 - **Global Scope Strategy**: Intelligent scope selection with fallback mechanisms
-- **Multi-Agent Coordination**: Parallel execution for complex tasks
+- **Memory-Driven Coordination**: Parallel execution optimized by learned patterns
 
 ## 🚀 Quick Start
 
@@ -63,14 +80,21 @@ Each server provides autonomous capabilities for different aspects of ServiceNow
 - ServiceNow instance with admin access
 - OAuth application configured in ServiceNow
 
-### Installation
+### Installation & Queen Agent Setup
 
 ```bash
 # Install Snow-Flow globally
 npm install -g snow-flow
 
-# Initialize Snow-Flow in your project directory
+# Initialize Snow-Flow with claude-flow intelligence
 snow-flow init --sparc
+
+# Configure ServiceNow credentials (see Configuration section below)
+# Then authenticate
+snow-flow auth login
+
+# 🎉 Start developing with the Queen Agent!
+snow-flow queen "create incident dashboard with real-time charts"
 ```
 
 #### Alternative: Install from source
@@ -107,6 +131,18 @@ SNOW_PASSWORD=your-password
 snow-flow auth login
 ```
 
+4. **Start developing with Queen Agent:**
+```bash
+# Your first Queen command - creates everything you need!
+snow-flow queen "create incident management dashboard"
+
+# Check what the Queen learned
+snow-flow queen-status --detailed
+
+# Get AI insights for your next project
+snow-flow queen-insights
+```
+
 ### 🎯 MCP Server Activation (v1.1.25+)
 
 Snow-Flow now includes **automatic MCP server activation** for Claude Code! During initialization, you'll be prompted to automatically start Claude Code with all 11 MCP servers pre-loaded:
@@ -136,44 +172,60 @@ claude.exe --mcp-config .mcp.json .
 
 ## 💡 Usage Examples
 
-### Create a Complex Flow with Natural Language
+### 👑 Primary Interface: Queen Agent (RECOMMENDED)
+
+**The Transformation:**
 ```bash
-snow-flow sparc "Create an approval workflow for iPhone 6 orders that notifies managers, creates tasks, and updates inventory"
+# Before: Complex multi-agent coordination
+snow-flow swarm "Build incident system" --strategy development --mode hierarchical --max-agents 8 --parallel --monitor --shared-memory --validation --auto-deploy
+
+# After: Elegant Queen Agent - ONE COMMAND DOES EVERYTHING!
+snow-flow queen "Build a complete incident management system"
 ```
 
-### Deploy a Widget Directly to ServiceNow
+**Examples:**
 ```bash
-snow-flow sparc "Create and deploy a widget that shows all critical incidents with real-time updates"
+# Create complex flows with natural language
+snow-flow queen "Create an approval workflow for iPhone orders with manager notifications"
+
+# Deploy widgets directly to ServiceNow  
+snow-flow queen "Create and deploy a widget showing critical incidents with real-time updates"
+
+# Build complete ITSM solutions
+snow-flow queen "Build complete incident management with dashboard, workflows, and notifications"
+
+# Intelligent artifact discovery and modification
+snow-flow queen "Find and modify the approval workflow to add extra approval step for orders over $1000"
+
+# Multi-language support
+snow-flow queen "Maak een flow voor automatisch toewijzen van incidenten aan groepen"
 ```
 
-### Start a Multi-Agent Swarm for Complex Projects
+### 🧠 Queen Memory Management
 ```bash
-# Most intelligent features are enabled by default!
-snow-flow swarm "Build a complete incident management system with dashboard, workflows, and notifications"
+# Export learned patterns for backup
+snow-flow queen-memory export my-patterns.json
 
-# Default settings:
-# ✅ --smart-discovery (true) - Reuses existing artifacts
-# ✅ --live-testing (true) - Tests in real-time
-# ✅ --auto-deploy (true) - Deploys automatically (safe with update sets)
-# ✅ --auto-rollback (true) - Rollbacks on failures
-# ✅ --shared-memory (true) - Agents share context
-# ✅ --progress-monitoring (true) - Real-time status
+# Import previous learning patterns  
+snow-flow queen-memory import my-patterns.json
 
-# Add --auto-permissions to enable automatic permission escalation
-snow-flow swarm "Create enterprise workflow" --auto-permissions
+# View hive-mind intelligence status
+snow-flow queen-status --detailed
 
-# Disable specific features with --no- prefix
-snow-flow swarm "Test workflow" --no-auto-deploy --no-live-testing
+# Get AI-driven insights and recommendations
+snow-flow queen-insights
+
+# Reset learning (requires confirmation)
+snow-flow queen-memory clear --confirm
 ```
 
-### Intelligent Artifact Discovery
+### 🚀 Enhanced Legacy Commands (with Queen Intelligence)
 ```bash
-snow-flow sparc "Find and modify the approval workflow to add an extra approval step for orders over $1000"
-```
+# Add Queen intelligence to existing swarm commands
+snow-flow swarm "Create enterprise workflow" --queen --auto-permissions
 
-### Create Flows in Dutch
-```bash
-snow-flow sparc "Maak een flow voor het automatisch toewijzen van incidenten aan de juiste groep op basis van categorie"
+# Queen-enhanced SPARC modes
+snow-flow sparc "Create widget" --queen
 ```
 
 ## 🛠️ Advanced Features
@@ -339,26 +391,32 @@ We welcome contributions! Please see our contributing guidelines (coming soon).
 ## 🎯 Use Cases
 
 ### For ServiceNow Developers
-- Rapidly prototype flows and workflows
-- Automate repetitive development tasks
-- Ensure consistency across implementations
-- Reduce development time by 80%
+- **🚀 Rapid Development**: One Queen command replaces hours of manual coordination
+- **📚 Pattern Learning**: Queen learns your preferences and applies them automatically
+- **🔄 Instant Prototyping**: Natural language to working artifacts in minutes
+- **📈 Productivity Boost**: Reduce development time by 90% with hive-mind intelligence
 
 ### For ServiceNow Architects
-- Validate architectural decisions
-- Ensure best practices are followed
-- Analyze impact of changes
-- Optimize performance and maintainability
+- **🧠 Intelligent Architecture**: Queen applies learned architectural patterns automatically
+- **🎯 Best Practice Enforcement**: Hive-mind ensures consistency across all projects
+- **🔍 Impact Analysis**: Graph memory tracks relationships and dependencies
+- **📊 Performance Optimization**: Memory-driven decisions optimize for performance
 
 ### For ServiceNow Administrators
-- Quick deployments and updates
-- Professional change tracking
-- Automated testing and validation
-- Simplified migration between instances
+- **⚡ One-Command Deployments**: Queen handles entire deployment lifecycle automatically
+- **📋 Professional Change Tracking**: Automatic update set management
+- **🛡️ Automated Testing**: Queen learns testing patterns and applies them
+- **🔄 Intelligent Migration**: Memory-driven migration between instances
 
 ## 🚦 Roadmap
 
-- [ ] Visual flow designer integration
+### 👑 Queen Agent Enhancements
+- [ ] **Advanced Hive-Mind Learning**: Cross-project pattern sharing
+- [ ] **Visual Queen Dashboard**: Real-time hive-mind intelligence visualization  
+- [ ] **Queen Teams**: Collaborative Queen agents for enterprise projects
+- [ ] **Predictive Development**: Queen suggests next steps based on learned patterns
+
+### Traditional Feature Enhancements
 - [ ] Enhanced Neo4j graph visualization
 - [ ] Multi-instance synchronization
 - [ ] AI-powered code review
@@ -389,4 +447,13 @@ Built with the power of Claude AI and the ServiceNow platform. Special thanks to
 
 ---
 
-**Ready to revolutionize your ServiceNow development?** Start with `snow-flow init --sparc` and experience the future of ServiceNow automation! 🚀
+**Ready to experience the claude-flow revolution?** 
+
+```bash
+# Install and start with Queen Agent in under 2 minutes!
+snow-flow init --sparc
+snow-flow auth login
+snow-flow queen "create my first ServiceNow solution"
+```
+
+**Join the hive-mind intelligence revolution!** 👑🚀

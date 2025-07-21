@@ -1,0 +1,28 @@
+{
+  "service": {
+    "name": "flow-composer-mcp",
+    "displayName": "ServiceNow Flow Composer MCP Server",
+    "port": 3002,
+    "healthCheck": {
+      "path": "/health",
+      "interval": "30s",
+      "timeout": "10s",
+      "retries": 3
+    },
+    "resources": {
+      "limits": {
+        "memory": "512Mi",
+        "cpu": "500m"
+      },
+      "requests": {
+        "memory": "256Mi",
+        "cpu": "250m"
+      }
+    },
+    "scaling": {
+      "minReplicas": 1,
+      "maxReplicas": 3,
+      "targetCPU": 70
+    }
+  }
+}

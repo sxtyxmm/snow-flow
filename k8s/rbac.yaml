@@ -1,0 +1,140 @@
+# RBAC configuration for ServiceNow MCP services
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-service-account
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: security
+automountServiceAccountToken: true
+---
+# Role for MCP services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: servicenow-mcp
+  name: mcp-service-role
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: security
+rules:
+# Allow reading configmaps and secrets
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+# Allow reading services for service discovery
+- apiGroups: [""]
+  resources: ["services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+# Allow reading pods for health checks
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+# Allow creating events for logging
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+# RoleBinding for MCP services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mcp-service-binding
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: security
+subjects:
+- kind: ServiceAccount
+  name: mcp-service-account
+  namespace: servicenow-mcp
+roleRef:
+  kind: Role
+  name: mcp-service-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRole for cross-namespace service discovery (if needed)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-service-discovery-role
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: security
+rules:
+# Allow reading services across namespaces for service discovery
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+# Allow reading nodes for topology awareness
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding for service discovery
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mcp-service-discovery-binding
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: security
+subjects:
+- kind: ServiceAccount
+  name: mcp-service-account
+  namespace: servicenow-mcp
+roleRef:
+  kind: ClusterRole
+  name: mcp-service-discovery-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ServiceAccount for monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-monitoring-account
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: monitoring
+---
+# ClusterRole for monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-monitoring-role
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: monitoring
+rules:
+# Prometheus needs to scrape metrics
+- apiGroups: [""]
+  resources: ["services", "endpoints", "pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding for monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mcp-monitoring-binding
+  labels:
+    app.kubernetes.io/name: servicenow-mcp
+    app.kubernetes.io/component: monitoring
+subjects:
+- kind: ServiceAccount
+  name: mcp-monitoring-account
+  namespace: servicenow-mcp
+roleRef:
+  kind: ClusterRole
+  name: mcp-monitoring-role
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,232 @@
+# ServiceNow Graph Memory MCP Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-memory-mcp
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: mcp-service
+    app.kubernetes.io/part-of: servicenow-mcp
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: graph-memory-mcp
+      app.kubernetes.io/instance: graph-memory-mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: graph-memory-mcp
+        app.kubernetes.io/instance: graph-memory-mcp
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: mcp-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3005"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: mcp-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: graph-memory-mcp
+        image: servicenow-mcp/graph-memory-mcp:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3005
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "graph-memory-mcp"
+        - name: SERVER_PORT
+          value: "3005"
+        - name: SERVICE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: mcp-config
+        - secretRef:
+            name: servicenow-credentials
+        - secretRef:
+            name: neo4j-credentials
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - graph-memory-mcp
+              topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 30
+---
+# ServiceNow Graph Memory MCP Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: graph-memory-mcp
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: mcp-service
+    app.kubernetes.io/part-of: servicenow-mcp
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3005
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+---
+# ServiceNow Graph Memory MCP Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: graph-memory-mcp-hpa
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+    app.kubernetes.io/component: autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: graph-memory-mcp
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 60
+---
+# ServiceNow Graph Memory MCP ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: graph-memory-mcp
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: graph-memory-mcp
+      app.kubernetes.io/instance: graph-memory-mcp
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+    scrapeTimeout: 10s
+---
+# ServiceNow Graph Memory MCP Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: graph-memory-mcp-pdb
+  namespace: servicenow-mcp
+  labels:
+    app.kubernetes.io/name: graph-memory-mcp
+    app.kubernetes.io/instance: graph-memory-mcp
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: graph-memory-mcp
+      app.kubernetes.io/instance: graph-memory-mcp
+---

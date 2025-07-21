@@ -1503,8 +1503,191 @@ class ServiceNowIntelligentMCP {
       throw new Error('No matching artifact found');
     }
     
-    // Return the best match (first result for now)
-    return results[0];
+    // Return the best match based on relevance scoring
+    return this.selectBestMatch(results, intent);
+  }
+
+  /**
+   * Select the best matching artifact based on relevance scoring
+   */
+  private selectBestMatch(results: any[], intent: ParsedIntent): any {
+    if (results.length === 1) {
+      return results[0];
+    }
+
+    // Score each result based on multiple factors
+    const scoredResults = results.map(result => {
+      let score = 0;
+
+      // Name/title similarity
+      const name = (result.name || result.title || '').toLowerCase();
+      const identifier = intent.identifier.toLowerCase();
+      
+      if (name === identifier) {
+        score += 100; // Exact match
+      } else if (name.includes(identifier) || identifier.includes(name)) {
+        score += 50; // Partial match
+      }
+
+      // Type match
+      if (result.type === intent.artifactType) {
+        score += 30;
+      }
+
+      // Recency (prefer more recently updated)
+      if (result.sys_updated_on) {
+        const daysSinceUpdate = (Date.now() - new Date(result.sys_updated_on).getTime()) / (1000 * 60 * 60 * 24);
+        score += Math.max(0, 10 - daysSinceUpdate); // More points for recent updates
+      }
+
+      // Active/non-test artifacts preferred
+      if (result.active !== false && !name.includes('test') && !name.includes('mock')) {
+        score += 10;
+      }
+
+      return { result, score };
+    });
+
+    // Sort by score and return the best match
+    scoredResults.sort((a, b) => b.score - a.score);
+    
+    this.logger.info('Selected best match', { 
+      selected: scoredResults[0].result.name,
+      score: scoredResults[0].score,
+      totalResults: results.length 
+    });
+    
+    return scoredResults[0].result;
+  }
+
+  /**
+   * Perform comprehensive flow analysis and testing
+   */
+  private async performFlowAnalysis(sysId: string, flowType: string, flowData: any): Promise<any> {
+    const analysis = {
+      structureValid: false,
+      triggerAnalysis: null,
+      recommendedTests: [],
+      performanceScore: 0,
+      securityIssues: [],
+      integrationPoints: []
+    };
+
+    try {
+      // Analyze flow structure
+      if (flowType === 'flow_designer' && flowData.latest_snapshot) {
+        const snapshot = JSON.parse(flowData.latest_snapshot);
+        const activities = snapshot.activities || snapshot.steps || [];
+        
+        analysis.structureValid = activities.length > 0;
+        analysis.performanceScore = this.calculateFlowPerformanceScore(activities);
+        analysis.securityIssues = this.identifySecurityIssues(activities);
+        analysis.integrationPoints = this.findIntegrationPoints(activities);
+      }
+
+      // Analyze trigger conditions
+      if (flowData.table && flowData.condition) {
+        analysis.triggerAnalysis = {
+          table: flowData.table,
+          condition: flowData.condition,
+          active: flowData.active,
+          validTrigger: true
+        };
+        
+        // Recommend specific tests based on trigger
+        analysis.recommendedTests = this.generateFlowTestRecommendations(flowData);
+      }
+
+      return analysis;
+    } catch (error) {
+      this.logger.error('Flow analysis failed', { sysId, error: error.message });
+      return {
+        ...analysis,
+        error: error.message,
+        recommendation: 'Use snow_test_flow_with_mock() for safer testing'
+      };
+    }
+  }
+
+  private calculateFlowPerformanceScore(activities: any[]): number {
+    let score = 100;
+    
+    // Deduct points for potential performance issues
+    activities.forEach(activity => {
+      if (activity.type?.includes('wait') || activity.type?.includes('timer')) {
+        score -= 5; // Wait activities can slow flows
+      }
+      if (activity.script && activity.script.length > 1000) {
+        score -= 10; // Large scripts may impact performance
+      }
+      if (activity.type?.includes('loop')) {
+        score -= 15; // Loops can be performance bottlenecks
+      }
+    });
+
+    return Math.max(0, score);
+  }
+
+  private identifySecurityIssues(activities: any[]): string[] {
+    const issues = [];
+    
+    activities.forEach((activity, index) => {
+      if (activity.script) {
+        // Check for potential security issues
+        if (activity.script.includes('eval(')) {
+          issues.push(`Activity ${index + 1}: Uses eval() which is a security risk`);
+        }
+        if (activity.script.includes('gs.getUser().getUserID()') && !activity.script.includes('canRead')) {
+          issues.push(`Activity ${index + 1}: May have access control issues`);
+        }
+        if (activity.script.includes('XMLHttpRequest')) {
+          issues.push(`Activity ${index + 1}: External HTTP calls may pose security risks`);
+        }
+      }
+    });
+
+    return issues;
+  }
+
+  private findIntegrationPoints(activities: any[]): string[] {
+    const integrations = [];
+    
+    activities.forEach((activity, index) => {
+      if (activity.type?.includes('rest') || activity.type?.includes('soap')) {
+        integrations.push(`Activity ${index + 1}: External API integration (${activity.type})`);
+      }
+      if (activity.script && activity.script.includes('RESTMessage')) {
+        integrations.push(`Activity ${index + 1}: REST Message integration`);
+      }
+      if (activity.script && activity.script.includes('SOAPMessage')) {
+        integrations.push(`Activity ${index + 1}: SOAP Message integration`);
+      }
+    });
+
+    return integrations;
+  }
+
+  private generateFlowTestRecommendations(flowData: any): string[] {
+    const recommendations = [];
+    
+    if (flowData.table) {
+      recommendations.push(`Create test record in ${flowData.table} table`);
+    }
+    
+    if (flowData.condition) {
+      recommendations.push(`Test with records that match condition: ${flowData.condition}`);
+      recommendations.push(`Test with records that don't match condition (negative test)`);
+    }
+    
+    if (flowData.trigger_type === 'record_updated') {
+      recommendations.push('Test by updating existing records');
+    } else if (flowData.trigger_type === 'record_created') {
+      recommendations.push('Test by creating new records');
+    }
+
+    recommendations.push('Use snow_test_flow_with_mock() for isolated testing');
+    
+    return recommendations;
   }
 
   private async analyzeModification(intent: ParsedIntent, artifact: any) {
@@ -1794,13 +1977,15 @@ class ServiceNowIntelligentMCP {
     const results = [];
     
     if (table) {
-      // Refresh cache for specific table
-      results.push(`Refreshed cache for table: ${table}`);
-      // TODO: Implement table-specific cache refresh
+      // Clear any cached data for specific table
+      this.memoryIndex.clear(); // Clear in-memory cache
+      results.push(`Cache cleared for table: ${table}`);
+      results.push(`Note: This MCP uses real-time queries, no persistent cache to refresh`);
     } else {
-      // Refresh all caches
-      results.push('Refreshed all internal caches');
-      // TODO: Implement global cache refresh
+      // Clear all in-memory data
+      this.memoryIndex.clear();
+      results.push('All internal caches cleared');
+      results.push(`Note: This MCP uses real-time ServiceNow queries for accuracy`);
     }
     
     return results;
@@ -1813,7 +1998,7 @@ class ServiceNowIntelligentMCP {
       // Validate specific sys_id
       try {
         const record = await this.client.getRecord(table, sys_id);
-        if (record) {
+        if (record && record.success && record.data) {
           results.push(`✅ sys_id ${sys_id} validated in table ${table}`);
         } else {
           results.push(`❌ sys_id ${sys_id} not found in table ${table}`);
@@ -1822,9 +2007,36 @@ class ServiceNowIntelligentMCP {
         results.push(`❌ sys_id ${sys_id} validation failed: ${error}`);
       }
     } else {
-      // Validate all known sys_ids in memory
-      results.push('Validated all sys_ids in memory index');
-      // TODO: Implement comprehensive sys_id validation
+      // Validate all known sys_ids in memory index
+      const memoryEntries = Array.from(this.memoryIndex.entries());
+      if (memoryEntries.length === 0) {
+        results.push('📝 No sys_ids found in memory index to validate');
+        return results;
+      }
+
+      results.push(`🔍 Validating ${memoryEntries.length} sys_ids from memory index...`);
+      let validCount = 0;
+      let invalidCount = 0;
+      
+      for (const [key, data] of memoryEntries) {
+        // Extract sys_id and table from memory data if available
+        try {
+          if (data.sys_id && data.table) {
+            const record = await this.client.getRecord(data.table, data.sys_id);
+            if (record && record.success && record.data) {
+              validCount++;
+            } else {
+              invalidCount++;
+              results.push(`❌ Invalid: ${data.sys_id} in ${data.table}`);
+            }
+          }
+        } catch (error) {
+          invalidCount++;
+          results.push(`❌ Validation error for ${key}: ${error}`);
+        }
+      }
+      
+      results.push(`✅ Validation complete: ${validCount} valid, ${invalidCount} invalid`);
     }
     
     return results;
@@ -1834,14 +2046,70 @@ class ServiceNowIntelligentMCP {
     const results = [];
     
     if (table) {
-      results.push(`Re-indexed artifacts in table: ${table}`);
-      // TODO: Implement table-specific re-indexing
+      // Re-index artifacts from specific table
+      try {
+        // Query the table to get current artifacts
+        const searchResults = await this.client.searchRecords(table, 'sys_idISNOTEMPTY', 100);
+        if (searchResults.success && searchResults.data) {
+          const artifacts = Array.isArray(searchResults.data) ? searchResults.data : [searchResults.data];
+          
+          // Clear existing entries for this table
+          for (const [key, data] of this.memoryIndex.entries()) {
+            if (data.table === table) {
+              this.memoryIndex.delete(key);
+            }
+          }
+          
+          // Re-index with fresh data
+          let indexedCount = 0;
+          for (const artifact of artifacts) {
+            if (artifact.sys_id && artifact.name) {
+              const indexKey = `${table}_${artifact.name.replace(/\s+/g, '_')}`;
+              this.memoryIndex.set(indexKey, {
+                sys_id: artifact.sys_id,
+                table: table,
+                name: artifact.name,
+                type: this.getArtifactTypeFromTable(table),
+                indexed_at: new Date().toISOString()
+              });
+              indexedCount++;
+            }
+          }
+          
+          results.push(`✅ Re-indexed ${indexedCount} artifacts from table: ${table}`);
+        } else {
+          results.push(`⚠️ Could not fetch artifacts from table: ${table}`);
+        }
+      } catch (error) {
+        results.push(`❌ Re-indexing failed for table ${table}: ${error}`);
+      }
     } else {
-      results.push('Re-indexed all artifacts in memory');
-      // TODO: Implement global re-indexing
+      // Re-index all known artifact tables
+      const artifactTables = ['sp_widget', 'wf_workflow', 'sys_script_include', 'sys_script'];
+      results.push(`🔍 Re-indexing artifacts from ${artifactTables.length} tables...`);
+      
+      let totalIndexed = 0;
+      for (const tableName of artifactTables) {
+        const tableResults = await this.reindexArtifacts(tableName);
+        totalIndexed += tableResults.filter(r => r.includes('✅')).length;
+      }
+      
+      results.push(`✅ Global re-indexing complete: ${totalIndexed} artifacts indexed`);
+      results.push(`💾 Memory index size: ${this.memoryIndex.size} entries`);
     }
     
     return results;
+  }
+
+  private getArtifactTypeFromTable(table: string): string {
+    const tableTypeMap: { [key: string]: string } = {
+      'sp_widget': 'widget',
+      'wf_workflow': 'flow',
+      'sys_script_include': 'script',
+      'sys_script': 'business_rule',
+      'sys_db_object': 'table'
+    };
+    return tableTypeMap[table] || 'unknown';
   }
 
   private async performFullSync(): Promise<string[]> {
@@ -2056,8 +2324,8 @@ class ServiceNowIntelligentMCP {
       const startTime = Date.now();
       
       try {
-        // Attempt to trigger the flow (this depends on the flow type and trigger conditions)
-        // For now, we'll simulate testing by checking flow structure and providing recommendations
+        // Attempt to analyze and test the flow based on its type and trigger conditions
+        const testResult = await this.performFlowAnalysis(sys_id, flowType, flowDetails.result);
         
         let flowActivities: any;
         

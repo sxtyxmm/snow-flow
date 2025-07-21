@@ -1837,12 +1837,67 @@ class ServiceNowOperationsMCP {
   }
 
   private async analyzeUserBehavior(dateFilter: string): Promise<any> {
-    // This would require analyzing user activity across multiple tables
-    // For now, return a basic analysis
-    return {
-      message: 'User behavior analysis requires additional data collection and processing',
-      available_metrics: ['login_patterns', 'request_frequency', 'incident_reporting']
-    };
+    try {
+      // Query actual user activity data from ServiceNow
+      const activities = [];
+      
+      // Get recent incidents created by users
+      const incidents = await this.client.searchRecords(
+        'incident', 
+        `sys_created_on>=${dateFilter}^caller_idISNOTEMPTY`, 
+        100
+      );
+      
+      if (incidents.success && incidents.data) {
+        const incidentData = Array.isArray(incidents.data) ? incidents.data : [incidents.data];
+        const userIncidents = new Map();
+        
+        incidentData.forEach(inc => {
+          const userId = inc.caller_id?.value || inc.caller_id;
+          if (userId) {
+            userIncidents.set(userId, (userIncidents.get(userId) || 0) + 1);
+          }
+        });
+        
+        activities.push({
+          metric: 'incident_reporting',
+          total_incidents: incidentData.length,
+          unique_users: userIncidents.size,
+          avg_per_user: userIncidents.size > 0 ? Math.round(incidentData.length / userIncidents.size * 10) / 10 : 0
+        });
+      }
+      
+      // Get service requests
+      const requests = await this.client.searchRecords(
+        'sc_request', 
+        `sys_created_on>=${dateFilter}^requested_forISNOTEMPTY`, 
+        100
+      );
+      
+      if (requests.success && requests.data) {
+        const requestData = Array.isArray(requests.data) ? requests.data : [requests.data];
+        activities.push({
+          metric: 'request_frequency',
+          total_requests: requestData.length,
+          period: dateFilter
+        });
+      }
+      
+      return {
+        analysis_period: dateFilter,
+        generated_at: new Date().toISOString(),
+        user_activities: activities,
+        summary: `Analyzed ${activities.length} activity metrics for period: ${dateFilter}`,
+        note: 'Analysis based on actual ServiceNow data from incident and request tables'
+      };
+      
+    } catch (error) {
+      return {
+        error: 'User behavior analysis failed',
+        message: error instanceof Error ? error.message : String(error),
+        available_metrics: ['incident_reporting', 'request_frequency']
+      };
+    }
   }
 
   private async calculateKnowledgeRelevance(articles: any[], incident: any): Promise<any[]> {
@@ -1871,36 +1926,142 @@ class ServiceNowOperationsMCP {
   }
 
   private async performPredictiveAnalysis(predictionType: string, timeframe: string): Promise<any> {
-    // This would require machine learning models and historical data analysis
-    // For now, return basic predictions based on current trends
-    
-    const currentDate = new Date();
-    const predictions: any = {
-      prediction_type: predictionType,
-      timeframe: timeframe,
-      generated_at: currentDate.toISOString(),
-      confidence: 0.7,
-      predictions: []
-    };
-    
-    switch (predictionType) {
-      case 'incident_volume':
-        predictions.predictions = await this.predictIncidentVolume(timeframe);
-        break;
-      case 'system_failure':
-        predictions.predictions = await this.predictSystemFailure(timeframe);
-        break;
-      case 'resource_exhaustion':
-        predictions.predictions = await this.predictResourceExhaustion(timeframe);
-        break;
-      case 'user_impact':
-        predictions.predictions = await this.predictUserImpact(timeframe);
-        break;
-      default:
-        predictions.predictions = [{ error: 'Unknown prediction type' }] as any[];
+    try {
+      const currentDate = new Date();
+      const analysis: any = {
+        prediction_type: predictionType,
+        timeframe: timeframe,
+        generated_at: currentDate.toISOString(),
+        analysis_method: 'trend_analysis',
+        data_points: []
+      };
+      
+      switch (predictionType) {
+        case 'incident_volume':
+          analysis.data_points = await this.analyzeIncidentTrends(timeframe);
+          analysis.interpretation = 'Based on recent incident creation patterns';
+          break;
+        case 'system_failure':
+          analysis.data_points = await this.analyzeSystemHealthTrends(timeframe);
+          analysis.interpretation = 'Based on critical incident patterns and system health indicators';
+          break;
+        case 'resource_exhaustion':
+          analysis.data_points = await this.analyzeResourceTrends(timeframe);
+          analysis.interpretation = 'Based on request volumes and capacity indicators';
+          break;
+        case 'user_impact':
+          analysis.data_points = await this.analyzeUserImpactTrends(timeframe);
+          analysis.interpretation = 'Based on user-reported incidents and service requests';
+          break;
+        default:
+          analysis.data_points = [{ error: 'Unknown prediction type', supported_types: ['incident_volume', 'system_failure', 'resource_exhaustion', 'user_impact'] }];
+          analysis.interpretation = 'Unsupported analysis type';
+      }
+      
+      return analysis;
+    } catch (error) {
+      return {
+        prediction_type: predictionType,
+        timeframe: timeframe,
+        error: 'Analysis failed',
+        message: error instanceof Error ? error.message : String(error),
+        generated_at: new Date().toISOString()
+      };
     }
-    
-    return predictions;
+  }
+
+  // New trend analysis methods
+  private async analyzeIncidentTrends(timeframe: string): Promise<any[]> {
+    try {
+      const incidents = await this.client.searchRecords('incident', 'sys_created_onONToday@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)', 100);
+      
+      if (incidents.success && incidents.data) {
+        const incidentData = Array.isArray(incidents.data) ? incidents.data : [incidents.data];
+        const dailyCounts = new Map();
+        
+        incidentData.forEach(incident => {
+          const date = new Date(incident.sys_created_on).toDateString();
+          dailyCounts.set(date, (dailyCounts.get(date) || 0) + 1);
+        });
+        
+        return Array.from(dailyCounts.entries()).map(([date, count]) => ({
+          date,
+          incident_count: count,
+          trend: count > 5 ? 'increasing' : 'stable'
+        }));
+      }
+    } catch (error) {
+      return [{ error: 'Failed to analyze incident trends', message: String(error) }];
+    }
+    return [{ message: 'No incident data available for analysis' }];
+  }
+
+  private async analyzeSystemHealthTrends(timeframe: string): Promise<any[]> {
+    try {
+      const criticalIncidents = await this.client.searchRecords('incident', 'priority=1^sys_created_onONToday@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)', 50);
+      
+      if (criticalIncidents.success && criticalIncidents.data) {
+        const criticalData = Array.isArray(criticalIncidents.data) ? criticalIncidents.data : [criticalIncidents.data];
+        
+        return [{
+          metric: 'critical_incidents',
+          count: criticalData.length,
+          health_indicator: criticalData.length > 3 ? 'at_risk' : 'stable',
+          recent_issues: criticalData.slice(0, 3).map(inc => inc.short_description)
+        }];
+      }
+    } catch (error) {
+      return [{ error: 'Failed to analyze system health trends', message: String(error) }];
+    }
+    return [{ message: 'No system health data available' }];
+  }
+
+  private async analyzeResourceTrends(timeframe: string): Promise<any[]> {
+    try {
+      const requests = await this.client.searchRecords('sc_request', 'sys_created_onONToday@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)', 100);
+      
+      if (requests.success && requests.data) {
+        const requestData = Array.isArray(requests.data) ? requests.data : [requests.data];
+        
+        return [{
+          metric: 'request_volume',
+          total_requests: requestData.length,
+          resource_pressure: requestData.length > 20 ? 'high' : 'normal',
+          trend: 'stable'
+        }];
+      }
+    } catch (error) {
+      return [{ error: 'Failed to analyze resource trends', message: String(error) }];
+    }
+    return [{ message: 'No resource usage data available' }];
+  }
+
+  private async analyzeUserImpactTrends(timeframe: string): Promise<any[]> {
+    try {
+      const userIncidents = await this.client.searchRecords('incident', 'caller_idISNOTEMPTY^sys_created_onONToday@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)', 100);
+      
+      if (userIncidents.success && userIncidents.data) {
+        const incidentData = Array.isArray(userIncidents.data) ? userIncidents.data : [userIncidents.data];
+        const impactCounts = new Map();
+        
+        incidentData.forEach(incident => {
+          const impact = incident.impact || 'unknown';
+          impactCounts.set(impact, (impactCounts.get(impact) || 0) + 1);
+        });
+        
+        return [{
+          metric: 'user_impact_distribution',
+          high_impact: impactCounts.get('1') || 0,
+          medium_impact: impactCounts.get('2') || 0,
+          low_impact: impactCounts.get('3') || 0,
+          total_affected_users: incidentData.length,
+          impact_trend: (impactCounts.get('1') || 0) > 5 ? 'increasing' : 'stable'
+        }];
+      }
+    } catch (error) {
+      return [{ error: 'Failed to analyze user impact trends', message: String(error) }];
+    }
+    return [{ message: 'No user impact data available' }];
   }
 
   private async predictIncidentVolume(timeframe: string): Promise<any[]> {

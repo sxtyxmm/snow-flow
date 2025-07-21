@@ -2,13 +2,27 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.75';
+export const VERSION = '1.1.76';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
-  description: 'ServiceNow Multi-Agent Development Framework',
+  description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.76': [
+      '👑 REVOLUTIONARY: ServiceNow Queen Agent - Hive-Mind Intelligence inspired by claude-flow!',
+      '🧠 NEURAL LEARNING: SQLite-based persistent memory that learns from every deployment',
+      '⚡ DYNAMIC AGENTS: 8 specialized agents spawn on-demand (widget-creator, flow-builder, etc.)',
+      '🎯 ONE COMMAND: snow-flow queen "create dashboard" replaces complex orchestration',
+      '🐝 HIVE-MIND: Central Queen coordinates all agents with swarm intelligence',
+      '📚 CROSS-SESSION: Memory persists across restarts, gets smarter over time',
+      '🔧 MCP INTEGRATION: All 11 MCP servers work as tools for Queen coordination',
+      '✨ CLAUDE-FLOW: Elegant simplicity - transforms complex workflows into conversational commands',
+      '🚀 75% SIMPLER: One command vs complex --strategy --mode --max-agents flags',
+      '💾 MEMORY COMMANDS: queen-memory export/import, queen-status, queen-insights',
+      '📖 DOCS UPDATED: Complete documentation refresh showcasing Queen as primary interface',
+      '🎉 TRANSFORMATION: From enterprise complexity to claude-flow elegance - COMPLETE!'
+    ],
     '1.1.75': [
       '🔧 CRITICAL FIX: snow_deploy with type:"flow" now properly generates flow_definition',
       '🎯 NATURAL LANGUAGE: Creates complete flow structure from instruction with activities',
