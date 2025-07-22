@@ -5,6 +5,21 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.89] - 2025-07-22
+
+### 🔧 Critical Bug Fix
+- **Fixed** `snow_table_schema_discovery` error in ServiceNow Platform Development MCP
+- **Fixed** Error message showing "Failed to get table details: undefined" during Queen Agent execution
+- **Enhanced** Error handling in `discoverTableSchema` method with comprehensive fallback mechanism
+- **Added** Graceful fallback when table details fetch fails - uses basic table info instead of failing completely
+- **Improved** Debug logging for better diagnostics of table discovery issues
+- **Fixed** TypeScript compilation error with proper variable declaration in table discovery
+
+### 🧠 Queen Agent Improvements
+- **Enhanced** Queen Agent resilience during table schema discovery operations
+- **Improved** Ability to continue operation even when ServiceNow table details are partially unavailable
+- **Better** Error recovery for ServiceNow API communication issues
+
 ## [1.1.88] - 2025-07-22
 
 ### 🧠 REVOLUTIONARY: Intelligent Gap Analysis Engine
