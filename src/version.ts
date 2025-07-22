@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.84';
+export const VERSION = '1.1.85';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.85': [
+      '💾 MEMORY INITIALIZATION FIX: Memory now initialized at START of Queen session, not middle',
+      '📦 UPDATE SET ISOLATION: Each objective now gets its own Update Set for proper tracking',
+      '🔍 TABLE DISCOVERY: Automatic table schema discovery for artifacts using ITSM tables',
+      '🤖 CLAUDE-FLOW PATTERNS: Implemented continuous memory sync with TTL and namespaces',
+      '🔄 AGENT COORDINATION: Enhanced memory sharing with session and agent namespaces',
+      '⚡ MCP-FIRST ENFORCEMENT: Queen executes Auth → Discovery → Update Set → Tables before agents',
+      '📋 ARTIFACT TRACKING: Automatic Update Set tracking for all deployed artifacts',
+      '🧠 CONFLICT DETECTION: Real-time conflict detection and resolution via memory sync'
+    ],
     '1.1.84': [
       '📚 ENHANCED INIT COMMAND: Now generates comprehensive swarm documentation for new users',
       '📋 SWARM PATTERNS: Added swarm-patterns.md with common usage examples and MCP-FIRST workflow',
