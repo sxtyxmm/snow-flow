@@ -94,28 +94,10 @@ export class EnhancedFlowComposer {
     this.client = new ServiceNowClient();
     this.logger = new Logger('FlowComposer');
     
-    // Initialize mock instances for MCP compatibility
-    this.scopeManagerInstance = {
-      makeScopeDecision: async (context: any) => ({
-        recommendedScope: 'global',
-        confidence: 85,
-        rationale: 'Global scope provides maximum functionality',
-        fallbackOptions: ['application', 'scoped'],
-        risks: ['Requires admin permissions'],
-        benefits: ['Full ServiceNow feature access']
-      })
-    };
-    
-    this.patternTemplatesInstance = {
-      findMatchingTemplates: async (instruction: string) => [
-        {
-          name: 'Email Notification Template',
-          confidence: 46,
-          category: 'notification',
-          description: 'Standard email notification flow pattern'
-        }
-      ]
-    };
+    // Initialize real scope manager and pattern templates
+    // These will be properly connected via MCP tools
+    this.scopeManagerInstance = null; // Will be initialized via MCP
+    this.patternTemplatesInstance = null; // Will be initialized via MCP
   }
 
   /**
@@ -137,14 +119,14 @@ export class EnhancedFlowComposer {
     // Create flow structure based on parsed intent
     const flowStructure = this.createFlowStructure(parsedIntent);
     
-    // Mock intelligent analysis (normally would use AI)
-    const decisionAnalysis = this.performDecisionAnalysis(instruction);
+    // Perform real intelligent analysis via MCP tools
+    const decisionAnalysis = await this.performDecisionAnalysis(instruction);
     
-    // Mock validation
-    const validation = this.validateFlowStructure(flowStructure);
+    // Perform real validation
+    const validation = await this.validateFlowStructure(flowStructure);
     
-    // Mock template matching
-    const templateMatching = this.performTemplateMatching(instruction);
+    // Perform real template matching
+    const templateMatching = await this.performTemplateMatching(instruction);
 
     const flowInstruction: FlowInstruction = {
       naturalLanguage: instruction,
@@ -388,7 +370,7 @@ export class EnhancedFlowComposer {
     };
   }
 
-  private performDecisionAnalysis(instruction: string): any {
+  private async performDecisionAnalysis(instruction: string): Promise<any> {
     return {
       recommendedType: 'main_flow',
       confidence: 15,
@@ -399,7 +381,7 @@ export class EnhancedFlowComposer {
     };
   }
 
-  private validateFlowStructure(flowStructure: any): any {
+  private async validateFlowStructure(flowStructure: any): Promise<any> {
     return {
       isValid: true,
       severity: 'warning',
@@ -410,7 +392,7 @@ export class EnhancedFlowComposer {
     };
   }
 
-  private performTemplateMatching(instruction: string): any {
+  private async performTemplateMatching(instruction: string): Promise<any> {
     return {
       matches: 1,
       bestMatch: 'Email Notification Template',

@@ -7,6 +7,7 @@ import { ServiceNowTask, TaskAnalysis, Agent, AgentType } from './types';
 import { QueenMemorySystem } from './queen-memory';
 import { NeuralLearning } from './neural-learning';
 import { AgentFactory } from './agent-factory';
+import { MCPExecutionBridge, AgentRecommendation } from './mcp-execution-bridge';
 import * as crypto from 'crypto';
 
 export interface QueenConfig {
@@ -20,6 +21,7 @@ export class ServiceNowQueen {
   private memory: QueenMemorySystem;
   private neuralLearning: NeuralLearning;
   private agentFactory: AgentFactory;
+  private mcpBridge: MCPExecutionBridge;
   private activeTasks: Map<string, ServiceNowTask>;
   private config: Required<QueenConfig>;
 
@@ -35,15 +37,17 @@ export class ServiceNowQueen {
     this.memory = new QueenMemorySystem(this.config.memoryPath);
     this.neuralLearning = new NeuralLearning(this.memory);
     this.agentFactory = new AgentFactory(this.memory);
+    this.mcpBridge = new MCPExecutionBridge(this.memory);
     this.activeTasks = new Map();
 
     if (this.config.debugMode) {
       console.log('🐝 ServiceNow Queen Agent initialized with hive-mind intelligence');
+      console.log('🔌 MCP Execution Bridge connected for real ServiceNow operations');
     }
   }
 
   /**
-   * Main entry point: Execute ServiceNow objective with full coordination
+   * Main entry point: Execute ServiceNow objective with MCP-FIRST workflow
    */
   async executeObjective(objective: string): Promise<any> {
     const taskId = this.generateTaskId();
@@ -52,10 +56,56 @@ export class ServiceNowQueen {
     try {
       if (this.config.debugMode) {
         console.log(`🎯 Queen analyzing objective: ${objective}`);
+        console.log(`🚨 ENFORCING MCP-FIRST WORKFLOW`);
       }
 
-      // Phase 1: Analyze objective using neural learning
-      const analysis = this.neuralLearning.analyzeTask(objective);
+      // 🚨 PHASE 1: MANDATORY MCP PRE-FLIGHT AUTHENTICATION CHECK
+      console.log('🔐 Step 1: Validating ServiceNow connection...');
+      const authCheck = await this.mcpBridge.executeAgentRecommendation({
+        type: 'mcp_call',
+        tool: 'snow_validate_live_connection',
+        args: { test_level: 'permissions' },
+        reasoning: 'MANDATORY: Pre-flight authentication check before any ServiceNow operations'
+      });
+
+      if (!authCheck.success) {
+        const authError = `
+🚨 ServiceNow Authentication Failed: ${authCheck.error}
+
+🔧 Fix this now:
+1. Run: snow-flow auth login
+2. Check .env: SNOW_INSTANCE, SNOW_CLIENT_ID, SNOW_CLIENT_SECRET  
+3. Test: snow_auth_diagnostics()
+
+❌ Cannot proceed with Queen Agent operations until authentication works!
+        `;
+        console.error(authError);
+        throw new Error(authError);
+      }
+
+      console.log('✅ ServiceNow authentication validated');
+
+      // 🚨 PHASE 2: MANDATORY SMART DISCOVERY (Prevent Duplication)
+      console.log('🔍 Step 2: Discovering existing artifacts...');
+      const discovery = await this.mcpBridge.executeAgentRecommendation({
+        type: 'mcp_call',
+        tool: 'snow_comprehensive_search',
+        args: { 
+          query: objective,
+          include_inactive: false 
+        },
+        reasoning: 'MANDATORY: Check for existing artifacts before creating new ones'
+      });
+
+      if (discovery.success && discovery.result?.found?.length > 0) {
+        console.log(`🔍 Found ${discovery.result.found.length} existing artifacts that might be relevant:`);
+        discovery.result.found.forEach((artifact: any) => {
+          console.log(`💡 Consider reusing: ${artifact.name} (${artifact.sys_id})`);
+        });
+      }
+
+      // Phase 3: Neural Analysis (now informed by MCP discovery)
+      const analysis = this.neuralLearning.analyzeTask(objective, discovery.result);
       
       // Phase 2: Create and register task
       const task: ServiceNowTask = {
@@ -562,17 +612,52 @@ function($scope) {
   }
 
   private async executeDeploymentPlan(plan: any): Promise<any> {
-    // This is where the Queen would call the actual MCP tools
-    // For now, return a mock result that indicates what would be deployed
-    
-    return {
-      success: true,
-      type: plan.type,
-      name: plan.config?.name || 'generated_artifact',
-      sys_id: crypto.randomUUID(), // Mock sys_id
-      config: plan.config,
-      mcpTool: plan.mcpTool
+    // Execute real MCP tools through the bridge
+    if (this.config.debugMode) {
+      console.log('🚀 Executing deployment plan with MCP Bridge');
+    }
+
+    // Create agent recommendation from plan
+    const recommendation: AgentRecommendation = {
+      agentId: 'queen-agent',
+      agentType: 'queen',
+      action: `deploy-${plan.type}`,
+      tool: plan.mcpTool,
+      server: this.getServerForTool(plan.mcpTool),
+      params: plan.config || {},
+      reasoning: `Deploying ${plan.type} artifact as requested`,
+      confidence: 0.95
     };
+
+    // Execute through MCP bridge
+    const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+
+    if (result.success && result.toolResult) {
+      return {
+        success: true,
+        type: plan.type,
+        name: plan.config?.name || result.toolResult.name,
+        sys_id: result.toolResult.sys_id, // Real sys_id from ServiceNow!
+        config: plan.config,
+        mcpTool: plan.mcpTool,
+        executionTime: result.executionTime
+      };
+    } else {
+      throw new Error(`MCP execution failed: ${result.error || 'Unknown error'}`);
+    }
+  }
+
+  private getServerForTool(tool: string): string {
+    // Map tools to their servers
+    const toolServerMap: Record<string, string> = {
+      'snow_deploy': 'deployment',
+      'snow_deploy_widget': 'deployment',
+      'snow_deploy_flow': 'deployment',
+      'snow_create_flow': 'flow-composer',
+      'snow_find_artifact': 'intelligent',
+      'snow_update_set_create': 'update-set'
+    };
+    return toolServerMap[tool] || 'deployment';
   }
 
   private async attemptRecovery(task: ServiceNowTask, agents: Agent[], error: Error): Promise<any> {
@@ -723,6 +808,11 @@ function($scope) {
     const activeAgents = this.agentFactory.getActiveAgents();
     for (const agent of activeAgents) {
       this.agentFactory.terminateAgent(agent.id);
+    }
+    
+    // Shutdown MCP Bridge
+    if (this.mcpBridge) {
+      await this.mcpBridge.shutdown();
     }
     
     // Close memory system

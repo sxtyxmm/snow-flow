@@ -361,4 +361,96 @@ export class QueenMemorySystem {
   close(): void {
     this.db.close();
   }
+
+  // Additional methods needed by other components
+
+  /**
+   * Find similar patterns for a given task type
+   */
+  findSimilarPatterns(taskType: string): DeploymentPattern[] {
+    const stmt = this.db.prepare(`
+      SELECT * FROM patterns 
+      WHERE task_type LIKE ? 
+      ORDER BY success_rate DESC, use_count DESC 
+      LIMIT 5
+    `);
+    
+    const rows = stmt.all(`%${taskType}%`) as any[];
+    
+    return rows.map(row => ({
+      taskType: row.task_type,
+      successRate: row.success_rate,
+      agentSequence: JSON.parse(row.agent_sequence),
+      mcpSequence: JSON.parse(row.mcp_sequence),
+      avgDuration: row.avg_duration,
+      lastUsed: new Date(row.last_used)
+    }));
+  }
+
+  /**
+   * Store a decision made by the Queen
+   */
+  storeDecision(taskId: string, decision: any): void {
+    this.storeInContext(`decision_${taskId}`, {
+      ...decision,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Find the best pattern for a task type
+   */
+  findBestPattern(taskType: string): DeploymentPattern | null {
+    const patterns = this.findSimilarPatterns(taskType);
+    return patterns.length > 0 ? patterns[0] : null;
+  }
+
+  /**
+   * Get memory statistics
+   */
+  getStats(): any {
+    const patternCount = this.db.prepare('SELECT COUNT(*) as count FROM patterns').get() as any;
+    const artifactCount = this.db.prepare('SELECT COUNT(*) as count FROM artifacts').get() as any;
+    const taskCount = this.db.prepare('SELECT COUNT(*) as count FROM task_history').get() as any;
+    const learningCount = this.db.prepare('SELECT COUNT(*) as count FROM learnings').get() as any;
+
+    return {
+      patterns: patternCount.count,
+      artifacts: artifactCount.count,
+      tasks: taskCount.count,
+      learnings: learningCount.count,
+      databaseSize: fs.statSync(this.dbPath).size
+    };
+  }
+
+  /**
+   * Store progress information
+   */
+  storeProgress(agentId: string, progress: any): void {
+    this.storeInContext(`progress_${agentId}`, progress);
+  }
+
+  /**
+   * Get progress information
+   */
+  getProgress(agentId: string): any {
+    return this.getFromContext(`progress_${agentId}`);
+  }
+
+  /**
+   * Store failure pattern for learning
+   */
+  storeFailurePattern(pattern: any): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO learnings (key, value, confidence, updated_at) 
+      VALUES (?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      `failure_${Date.now()}`,
+      JSON.stringify(pattern),
+      0.8,
+      new Date().toISOString()
+    );
+  }
 }

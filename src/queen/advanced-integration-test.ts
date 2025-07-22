@@ -7,7 +7,7 @@
  */
 
 import { createServiceNowQueen, ServiceNowQueen } from './index.js';
-import { MockMcpClient, MockMcpResponse } from './mock-mcp-client.js';
+import { MockMcpClient, MockMcpResponse } from '../test/mocks/mock-mcp-client.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
