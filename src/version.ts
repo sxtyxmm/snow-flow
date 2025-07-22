@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.81';
+export const VERSION = '1.1.82';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.82': [
+      '✅ VERSION SYNCHRONIZATION: Complete alignment between package.json and CLI version display',
+      '🔧 MAKEQUEST FIX: Resolved phantom makeRequest error in MCP flow-composer tools',
+      '🎯 DIRECT CLIENT PATTERN: All MCP servers now use consistent direct ServiceNowClient structure',
+      '📦 NPM DEPLOYMENT: Full npm package with synchronized version across all components',
+      '🚀 READY TO TEST: Package published with all makeRequest fixes and version alignment',
+      '🔍 INVESTIGATION COMPLETE: Thorough analysis and resolution of MCP protocol layer issues'
+    ],
     '1.1.81': [
       '🔧 MAKEQUEST FIX: Resolved phantom makeRequest error in MCP flow-composer tools',
       '🎯 DIRECT CLIENT PATTERN: All MCP servers now use consistent direct ServiceNowClient structure',
@@ -598,6 +606,17 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.82': {
+      date: '2025-01-22',
+      changes: [
+        'VERSION SYNCHRONIZATION: Complete alignment between package.json, version.ts, and CLI display',
+        'CLI VERSION FIX: snow-flow --version now correctly shows 1.1.82 instead of previous version',
+        'NPM PACKAGE DEPLOYMENT: Published complete package with synchronized version across all components',
+        'MAKEQUEST INVESTIGATION: Comprehensive resolution of phantom makeRequest calls in MCP tools',
+        'TESTING READY: Package available for installation and testing in separate environments',
+        'COMPLETE WORKFLOW: From investigation → fix → version sync → npm publish → testing'
+      ]
+    },
     '1.1.81': {
       date: '2025-01-22',
       changes: [
