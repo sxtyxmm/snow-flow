@@ -369,6 +369,8 @@ class ServiceNowPlatformDevelopmentMCP {
    */
   private async getTableInfo(tableName: string): Promise<{name: string, label: string, sys_id: string} | null> {
     try {
+      this.logger.debug(`Looking up table info for: ${tableName}`);
+      
       // Try direct lookup first
       const tableResponse = await this.client.searchRecords(
         'sys_db_object',
@@ -693,19 +695,50 @@ class ServiceNowPlatformDevelopmentMCP {
       const { tableName, includeRelated = true, includeIndexes = true, includeExtensions = true, maxDepth = 2 } = args;
       this.logger.info(`Discovering comprehensive schema for table: ${tableName}`);
 
+      // Validate authentication
+      if (!this.client) {
+        throw new Error('ServiceNow client not initialized');
+      }
+
       // Get table information
       const tableInfo = await this.getTableInfo(tableName);
       if (!tableInfo) {
-        throw new Error(`Table not found: ${tableName}`);
+        throw new Error(`Table not found: ${tableName}. Searched in sys_db_object table.`);
       }
+
+      this.logger.debug(`Found table info: ${JSON.stringify(tableInfo)}`);
 
       // Get detailed table metadata
+      this.logger.debug(`Attempting to fetch table details for sys_id: ${tableInfo.sys_id}`);
       const tableDetailsResponse = await this.client.getRecord('sys_db_object', tableInfo.sys_id);
+      
+      // Declare the variable once with proper type
+      let tableDetails: any;
+      
       if (!tableDetailsResponse.success) {
-        throw new Error(`Failed to get table details: ${tableDetailsResponse.error}`);
+        const errorMessage = tableDetailsResponse.error || 
+                           JSON.stringify(tableDetailsResponse) || 
+                           'Unknown error occurred while fetching table details';
+        this.logger.error(`Table details fetch failed for ${tableInfo.sys_id}:`, tableDetailsResponse);
+        
+        // Fallback: try using basic table info if detailed fetch fails
+        this.logger.warn(`Falling back to basic table info for ${tableInfo.name}`);
+        tableDetails = {
+          name: tableInfo.name,
+          label: tableInfo.label,
+          sys_id: tableInfo.sys_id,
+          is_extendable: 'unknown',
+          access: 'unknown',
+          sys_created_on: 'unknown',
+          sys_updated_on: 'unknown',
+          row_count: 'unknown',
+          super_class: null,
+          extension_model: 'unknown',
+          sys_scope: null
+        };
+      } else {
+        tableDetails = tableDetailsResponse.data;
       }
-
-      const tableDetails = tableDetailsResponse.data;
 
       // Get all fields with detailed information
       const fieldsResponse = await this.client.searchRecords(
@@ -715,7 +748,11 @@ class ServiceNowPlatformDevelopmentMCP {
       );
 
       if (!fieldsResponse.success || !fieldsResponse.data) {
-        throw new Error(`Failed to get fields for table: ${tableName}`);
+        const errorMessage = fieldsResponse.error || 
+                           'No data returned from fields query' ||
+                           JSON.stringify(fieldsResponse);
+        this.logger.error(`Fields fetch failed for ${tableInfo.name}:`, fieldsResponse);
+        throw new Error(`Failed to get fields for table ${tableName}: ${errorMessage}`);
       }
 
       const fields = fieldsResponse.data.result.map((field: any) => ({
