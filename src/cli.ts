@@ -1816,6 +1816,820 @@ This mode provides specialized ${mode} capabilities for ServiceNow development p
     await fs.writeFile(join(targetDir, `.claude/commands/sparc/${mode}.md`), content);
   }
   
+  // Create additional swarm documentation files
+  console.log('📋 Creating swarm patterns documentation...');
+  
+  // Create swarm-patterns.md
+  const swarmPatternsContent = `# Swarm Command Patterns - MCP-FIRST Workflow
+
+## 🎯 Primary Interface: snow-flow swarm
+
+The swarm command is your primary interface for ServiceNow development. It uses the Queen Agent backend to orchestrate multiple specialized agents through Claude Code.
+
+## Basic Widget Creation
+\`\`\`bash
+snow-flow swarm "create incident dashboard widget"
+snow-flow swarm "build responsive widget with Chart.js for incident analytics"
+snow-flow swarm "create service portal widget for hardware requests"
+\`\`\`
+
+## Flow Development  
+\`\`\`bash
+snow-flow swarm "create approval workflow for equipment requests"
+snow-flow swarm "build multi-step approval flow with email notifications"
+snow-flow swarm "create automated incident escalation workflow"
+\`\`\`
+
+## Complex Integration
+\`\`\`bash
+snow-flow swarm "integrate ServiceNow with Slack notifications"
+snow-flow swarm "create REST API integration with external ticketing system"
+snow-flow swarm "build bi-directional sync with Microsoft Teams"
+\`\`\`
+
+## Testing Patterns
+\`\`\`bash
+snow-flow swarm "test existing flows and create comprehensive test report"
+snow-flow swarm "validate all widgets in service portal for mobile responsiveness"
+snow-flow swarm "performance test catalog item workflows"
+\`\`\`
+
+## Application Development
+\`\`\`bash
+snow-flow swarm "create complete ITSM solution with custom tables"
+snow-flow swarm "build employee onboarding application with approval flows"
+snow-flow swarm "develop asset management system with automated workflows"
+\`\`\`
+
+## Advanced Patterns with Options
+
+### Disable Auto-Deploy for Testing
+\`\`\`bash
+snow-flow swarm "test new widget locally" --no-auto-deploy --no-live-testing
+\`\`\`
+
+### Enable Permission Escalation
+\`\`\`bash
+snow-flow swarm "create global enterprise workflow" --auto-permissions
+\`\`\`
+
+### Parallel Execution for Large Projects
+\`\`\`bash
+snow-flow swarm "migrate 50 workflows from legacy system" --parallel --max-agents 8
+\`\`\`
+
+### Monitor Real-Time Progress
+\`\`\`bash
+snow-flow swarm "complex ITSM implementation" --monitor
+\`\`\`
+
+## 🔐 MCP-FIRST Workflow
+
+Every swarm command follows this mandatory workflow:
+
+1. **Authentication Check**: Validates ServiceNow OAuth credentials
+2. **Smart Discovery**: Finds existing artifacts to prevent duplication
+3. **Live Development**: Creates real artifacts in ServiceNow
+4. **Update Set Tracking**: All changes tracked for deployment
+
+## 💡 Best Practices
+
+- Start simple: Let the Queen Agent determine complexity
+- Use natural language: Describe what you want, not how to build it
+- Trust the defaults: Intelligent features are enabled automatically
+- Monitor progress: Use --monitor for long-running tasks
+
+## 🎯 Common Success Patterns
+
+### Pattern 1: Quick Widget
+\`\`\`bash
+snow-flow swarm "simple dashboard widget"
+# Queen Agent will:
+# - Spawn widget-creator agent
+# - Create HTML/CSS/JS
+# - Deploy to ServiceNow
+# - Test automatically
+\`\`\`
+
+### Pattern 2: Complex Flow
+\`\`\`bash
+snow-flow swarm "multi-department approval workflow with dynamic routing"
+# Queen Agent will:
+# - Spawn flow-builder, tester, and security agents
+# - Design flow architecture
+# - Implement with conditions
+# - Test all paths
+# - Validate permissions
+\`\`\`
+
+### Pattern 3: Full Application
+\`\`\`bash
+snow-flow swarm "complete HR onboarding system"
+# Queen Agent will:
+# - Spawn app-architect, flow-builder, widget-creator, tester
+# - Design data model
+# - Create tables and relationships
+# - Build UI components
+# - Implement workflows
+# - Test end-to-end
+\`\`\`
+`;
+  await fs.writeFile(join(targetDir, '.claude/commands/swarm-patterns.md'), swarmPatternsContent);
+  
+  // Create agent-types.md
+  const agentTypesContent = `# Agent Types and Specializations
+
+## 🤖 Primary Development Agents
+
+### widget-creator
+**Specialization**: Service Portal widgets, HTML/CSS/JS, responsive design
+**When spawned**: Any widget-related objective
+**Key capabilities**:
+- HTML template generation
+- CSS styling and animations
+- Client-side JavaScript controllers
+- Server-side data scripts
+- Chart.js and data visualization
+- Mobile responsiveness
+
+### flow-builder
+**Specialization**: Flow Designer, process automation, approvals
+**When spawned**: Workflow and automation objectives
+**Key capabilities**:
+- Trigger configuration
+- Conditional logic
+- Approval routing
+- Email notifications
+- Integration with catalog items
+- Subflow creation
+
+### script-writer
+**Specialization**: Business rules, script includes, client scripts
+**When spawned**: Scripting and automation objectives
+**Key capabilities**:
+- GlideRecord operations
+- Business rule creation
+- Script include development
+- Background scripts
+- Fix scripts
+- Scheduled jobs
+
+### app-architect
+**Specialization**: Application design, data modeling, system architecture
+**When spawned**: Full application development
+**Key capabilities**:
+- Table design and relationships
+- Application scoping
+- Security model design
+- Integration architecture
+- Performance optimization
+- Scalability planning
+
+## 🛠️ Supporting Agents
+
+### researcher
+**Specialization**: Discovery, best practices, documentation
+**When spawned**: Complex or unknown requirements
+**Key capabilities**:
+- ServiceNow best practices
+- Platform feature discovery
+- Existing artifact analysis
+- Documentation generation
+- Knowledge base creation
+
+### tester
+**Specialization**: Quality assurance, validation, performance testing
+**When spawned**: After any development task
+**Key capabilities**:
+- Unit test creation
+- Integration testing
+- UI/UX validation
+- Performance benchmarking
+- Security testing
+- Accessibility compliance
+
+### security
+**Specialization**: Access controls, compliance, vulnerability assessment
+**When spawned**: Enterprise or sensitive applications
+**Key capabilities**:
+- ACL configuration
+- Role management
+- Data encryption
+- Compliance validation
+- Security scanning
+- Audit trail setup
+
+### ui-designer
+**Specialization**: User experience, design patterns, accessibility
+**When spawned**: Complex UI requirements
+**Key capabilities**:
+- Design system implementation
+- Accessibility (WCAG) compliance
+- Responsive layouts
+- User journey mapping
+- Style guide creation
+
+## 🎯 How Agents are Selected
+
+The Queen Agent analyzes your objective and automatically selects the optimal team:
+
+### Example 1: "create incident dashboard"
+- **Primary**: widget-creator
+- **Supporting**: ui-designer, tester
+- **Reasoning**: Widget development with UI focus
+
+### Example 2: "build approval workflow"
+- **Primary**: flow-builder
+- **Supporting**: security, tester
+- **Reasoning**: Process automation with security needs
+
+### Example 3: "create ITSM application"
+- **Primary**: app-architect
+- **Supporting**: flow-builder, widget-creator, security, tester
+- **Reasoning**: Full application requiring all capabilities
+
+## 💡 Agent Coordination Patterns
+
+### Sequential Coordination
+Used when tasks have dependencies:
+\`\`\`
+app-architect → widget-creator → flow-builder → tester
+\`\`\`
+
+### Parallel Coordination
+Used when tasks are independent:
+\`\`\`
+widget-creator ⟷ flow-builder ⟷ script-writer
+         ↓            ↓              ↓
+                  tester
+\`\`\`
+
+### Hybrid Coordination
+Used for complex projects:
+\`\`\`
+Phase 1: app-architect (solo)
+Phase 2: widget-creator + flow-builder (parallel)
+Phase 3: security + tester (parallel)
+Phase 4: Final integration (sequential)
+\`\`\`
+
+## 🔧 Manual Agent Control
+
+While the Queen Agent handles selection automatically, you can influence agent selection:
+
+### Request Specific Expertise
+\`\`\`bash
+snow-flow swarm "create widget with heavy security focus"
+# Queen will prioritize security agent
+\`\`\`
+
+### Exclude Certain Agents
+\`\`\`bash
+snow-flow swarm "simple widget" --max-agents 2
+# Queen will use only essential agents
+\`\`\`
+
+### Force Comprehensive Team
+\`\`\`bash
+snow-flow swarm "production-ready incident system" --max-agents 8
+# Queen will assemble full team with all specialists
+\`\`\`
+`;
+  await fs.writeFile(join(targetDir, '.claude/commands/agent-types.md'), agentTypesContent);
+  
+  // Create mcp-tools-quick-ref.md
+  const mcpToolsContent = `# MCP Tools Quick Reference
+
+## 🔐 Authentication & Connection
+
+### snow_validate_live_connection
+\`\`\`javascript
+snow_validate_live_connection({
+  test_level: "permissions" // basic, full, permissions
+})
+\`\`\`
+**Use for**: Checking ServiceNow connection and OAuth status
+
+### snow_auth_diagnostics
+\`\`\`javascript
+snow_auth_diagnostics({
+  include_recommendations: true,
+  run_write_test: true
+})
+\`\`\`
+**Use for**: Debugging authentication issues
+
+## 🔍 Discovery & Search
+
+### snow_find_artifact
+\`\`\`javascript
+snow_find_artifact({
+  query: "incident dashboard widget",
+  type: "widget" // widget, flow, script, application, any
+})
+\`\`\`
+**Use for**: Finding existing ServiceNow artifacts with natural language
+
+### snow_catalog_item_search
+\`\`\`javascript
+snow_catalog_item_search({
+  query: "laptop",
+  fuzzy_match: true,
+  include_variables: true
+})
+\`\`\`
+**Use for**: Finding catalog items with intelligent matching
+
+### snow_get_by_sysid
+\`\`\`javascript
+snow_get_by_sysid({
+  sys_id: "abc123...",
+  table: "sp_widget"
+})
+\`\`\`
+**Use for**: Direct lookup when you have the sys_id
+
+## 🚀 Deployment Tools
+
+### snow_deploy (Universal - v1.1.73+)
+\`\`\`javascript
+snow_deploy({
+  type: "widget", // widget, flow, application, script, batch
+  config: {
+    name: "incident_dashboard",
+    title: "Incident Dashboard",
+    template: htmlContent,
+    css: cssContent,
+    client_script: clientJS,
+    server_script: serverJS
+  },
+  auto_update_set: true
+})
+\`\`\`
+**Use for**: All deployments - replaces individual deploy tools
+
+## 🔄 Flow Development
+
+### snow_create_flow
+\`\`\`javascript
+snow_create_flow({
+  instruction: "create approval flow for purchases over $1000",
+  deploy_immediately: true,
+  enable_intelligent_analysis: true
+})
+\`\`\`
+**Use for**: Creating flows from natural language
+
+### snow_test_flow_with_mock
+\`\`\`javascript
+snow_test_flow_with_mock({
+  flow_id: "equipment_approval",
+  create_test_user: true,
+  mock_catalog_items: true,
+  simulate_approvals: true,
+  cleanup_after_test: true
+})
+\`\`\`
+**Use for**: Testing flows without affecting real data
+
+### snow_link_catalog_to_flow
+\`\`\`javascript
+snow_link_catalog_to_flow({
+  catalog_item_id: "New Laptop",
+  flow_id: "laptop_provisioning",
+  variable_mapping: [{
+    catalog_variable: "model",
+    flow_input: "equipment_type"
+  }]
+})
+\`\`\`
+**Use for**: Connecting catalog items to flows
+
+## 📦 Update Set Management
+
+### snow_update_set_create
+\`\`\`javascript
+snow_update_set_create({
+  name: "Widget Development - Jan 2024",
+  description: "Dashboard widgets for incident management",
+  auto_switch: true
+})
+\`\`\`
+**Use for**: Creating new update sets
+
+### snow_update_set_add_artifact
+\`\`\`javascript
+snow_update_set_add_artifact({
+  type: "widget",
+  sys_id: "abc123...",
+  name: "incident_dashboard"
+})
+\`\`\`
+**Use for**: Tracking artifacts in update sets
+
+### snow_smart_update_set
+\`\`\`javascript
+snow_smart_update_set({
+  detect_context: true,
+  separate_by_task: true,
+  close_previous: true
+})
+\`\`\`
+**Use for**: Automatic update set management
+
+## 🧪 Testing Tools
+
+### snow_widget_test
+\`\`\`javascript
+snow_widget_test({
+  sys_id: "widget_sys_id",
+  test_scenarios: [{
+    name: "No data test",
+    input: { incidents: [] },
+    expected: { message: "No incidents found" }
+  }],
+  validate_dependencies: true
+})
+\`\`\`
+**Use for**: Widget functionality testing
+
+### snow_comprehensive_flow_test
+\`\`\`javascript
+snow_comprehensive_flow_test({
+  flow_sys_id: "flow_id",
+  test_data_generation: "automatic",
+  edge_case_detection: true,
+  performance_validation: true
+})
+\`\`\`
+**Use for**: Comprehensive flow testing
+
+## 🔄 Batch Operations
+
+### Parallel Tool Execution
+\`\`\`javascript
+// Execute multiple operations in one message
+Promise.all([
+  snow_find_artifact({ query: "widget" }),
+  snow_catalog_item_search({ query: "laptop" }),
+  snow_update_set_current()
+])
+\`\`\`
+**Use for**: Maximum performance with concurrent operations
+
+## 💡 Common Patterns
+
+### Pre-flight Check Pattern
+\`\`\`javascript
+// Always start with authentication
+const auth = await snow_validate_live_connection();
+if (!auth.success) {
+  // Switch to planning mode
+  return "Run: snow-flow auth login";
+}
+
+// Then discover existing artifacts
+const existing = await snow_find_artifact({
+  query: "similar to what I want to create"
+});
+
+// Finally deploy new artifact
+const result = await snow_deploy({
+  type: "widget",
+  config: widgetConfig
+});
+\`\`\`
+
+### Error Recovery Pattern
+\`\`\`javascript
+try {
+  await snow_deploy({ type: "flow", config });
+} catch (error) {
+  if (error.includes("permissions")) {
+    // Try global scope
+    await snow_escalate_permissions();
+  } else if (error.includes("validation")) {
+    // Create manual deployment guide
+    await snow_create_manual_guide();
+  }
+}
+\`\`\`
+
+### Update Set Pattern
+\`\`\`javascript
+// Ensure update set exists
+await snow_smart_update_set();
+
+// Deploy artifact
+const artifact = await snow_deploy({ type: "widget", config });
+
+// Track in update set
+await snow_update_set_add_artifact({
+  type: "widget",
+  sys_id: artifact.sys_id,
+  name: artifact.name
+});
+\`\`\`
+`;
+  await fs.writeFile(join(targetDir, '.claude/commands/mcp-tools-quick-ref.md'), mcpToolsContent);
+  
+  // Create examples directory
+  await fs.mkdir(join(targetDir, 'examples'), { recursive: true });
+  
+  // Create memory patterns directory and sample patterns
+  await fs.mkdir(join(targetDir, 'memory/patterns'), { recursive: true });
+  
+  const successfulPatternsContent = {
+    patterns: [
+      {
+        objective: "create incident dashboard widget",
+        agents: ["widget-creator", "ui-designer", "tester"],
+        mcpTools: ["snow_deploy", "snow_widget_test", "snow_preview_widget"],
+        successRate: 0.95,
+        avgDuration: "5-10 minutes",
+        commonIssues: ["Missing Chart.js dependency", "Mobile responsiveness"],
+        bestPractices: ["Always test on mobile", "Use Chart.js from CDN"]
+      },
+      {
+        objective: "create approval workflow",
+        agents: ["flow-builder", "security", "tester"],
+        mcpTools: ["snow_create_flow", "snow_test_flow_with_mock", "snow_link_catalog_to_flow"],
+        successRate: 0.92,
+        avgDuration: "10-15 minutes",
+        commonIssues: ["Complex approval routing", "Email notification setup"],
+        bestPractices: ["Test all approval paths", "Use mock data first"]
+      },
+      {
+        objective: "create ITSM application",
+        agents: ["app-architect", "flow-builder", "widget-creator", "security", "tester"],
+        mcpTools: ["snow_deploy", "snow_create_flow", "snow_update_set_create"],
+        successRate: 0.88,
+        avgDuration: "30-45 minutes",
+        commonIssues: ["Table relationships", "Permission model"],
+        bestPractices: ["Design data model first", "Use Update Sets throughout"]
+      }
+    ],
+    agentCapabilities: {
+      "widget-creator": {
+        strengths: ["HTML/CSS/JS", "Chart.js", "Responsive design"],
+        limitations: ["Complex backend logic", "Database design"]
+      },
+      "flow-builder": {
+        strengths: ["Process automation", "Conditional logic", "Approvals"],
+        limitations: ["UI development", "Complex integrations"]
+      },
+      "app-architect": {
+        strengths: ["System design", "Data modeling", "Architecture"],
+        limitations: ["Detailed implementation", "UI/UX design"]
+      }
+    },
+    mcpToolPatterns: {
+      "authentication_first": {
+        pattern: "Always start with snow_validate_live_connection",
+        reason: "Ensures OAuth is valid before attempting operations"
+      },
+      "discovery_before_creation": {
+        pattern: "Use snow_find_artifact before snow_deploy",
+        reason: "Prevents duplicate artifacts and wasted effort"
+      },
+      "update_set_tracking": {
+        pattern: "Create Update Set, deploy, then track artifacts",
+        reason: "Professional change management like ServiceNow pros"
+      }
+    }
+  };
+  
+  await fs.writeFile(
+    join(targetDir, 'memory/patterns/successful-deployments.json'),
+    JSON.stringify(successfulPatternsContent, null, 2)
+  );
+  
+  // Create workflow patterns JSON
+  const workflowPatternsContent = {
+    workflowTemplates: [
+      {
+        name: "Standard Widget Development",
+        steps: [
+          "snow_validate_live_connection",
+          "snow_find_artifact (check existing)",
+          "snow_update_set_create",
+          "snow_deploy (type: widget)",
+          "snow_widget_test",
+          "snow_update_set_add_artifact"
+        ]
+      },
+      {
+        name: "Flow Development with Testing",
+        steps: [
+          "snow_validate_live_connection",
+          "snow_discover_existing_flows",
+          "snow_create_flow",
+          "snow_test_flow_with_mock",
+          "snow_link_catalog_to_flow (if needed)",
+          "snow_comprehensive_flow_test (if authenticated)"
+        ]
+      },
+      {
+        name: "Full Application Deployment",
+        steps: [
+          "snow_validate_live_connection",
+          "snow_analyze_requirements",
+          "snow_update_set_create",
+          "snow_deploy (multiple artifacts)",
+          "snow_create_flow (for workflows)",
+          "snow_deploy (for widgets)",
+          "snow_update_set_complete"
+        ]
+      }
+    ]
+  };
+  
+  await fs.writeFile(
+    join(targetDir, 'memory/patterns/workflow-templates.json'),
+    JSON.stringify(workflowPatternsContent, null, 2)
+  );
+  
+  // Create quick start guide
+  const quickStartContent = `# Snow-Flow Quick Start Guide
+
+## 🚀 5-Minute Setup
+
+### 1. Initialize Your Project
+\`\`\`bash
+snow-flow init --sparc
+\`\`\`
+
+### 2. Configure ServiceNow OAuth
+Edit the .env file with your ServiceNow credentials:
+\`\`\`env
+SNOW_INSTANCE=dev123456.service-now.com
+SNOW_CLIENT_ID=your_oauth_client_id
+SNOW_CLIENT_SECRET=your_oauth_client_secret
+\`\`\`
+
+### 3. Authenticate
+\`\`\`bash
+snow-flow auth login
+\`\`\`
+
+### 4. Create Your First Widget
+\`\`\`bash
+snow-flow swarm "create simple incident counter widget"
+\`\`\`
+
+## 📋 What Just Happened?
+
+When you ran the swarm command, Snow-Flow:
+1. ✅ Validated your ServiceNow connection
+2. ✅ Analyzed your objective using Queen Agent
+3. ✅ Spawned specialized agents (widget-creator, tester)
+4. ✅ Created a real widget in your ServiceNow instance
+5. ✅ Tracked everything in an Update Set
+6. ✅ Tested the widget automatically
+
+## 🎯 Next Steps
+
+### Try More Examples
+\`\`\`bash
+# Create a workflow
+snow-flow swarm "create simple approval workflow"
+
+# Build a dashboard
+snow-flow swarm "create IT dashboard with KPIs"
+
+# Develop an application
+snow-flow swarm "create basic ticketing system"
+\`\`\`
+
+### Explore Documentation
+- **Swarm Patterns**: .claude/commands/swarm-patterns.md
+- **Agent Types**: .claude/commands/agent-types.md
+- **MCP Tools**: .claude/commands/mcp-tools-quick-ref.md
+- **Examples**: ./examples/
+
+### Monitor Progress
+\`\`\`bash
+# Check swarm status
+snow-flow swarm-status <sessionId>
+
+# View system status
+snow-flow status
+\`\`\`
+
+## 💡 Pro Tips
+
+1. **Start Simple**: Let the Queen Agent handle complexity
+2. **Use Natural Language**: Describe what you want, not how
+3. **Trust the Defaults**: Intelligent features are enabled
+4. **Check Examples**: Run scripts in ./examples/ folder
+
+## 🆘 Need Help?
+
+- **Auth Issues**: Run \`snow-flow auth status\`
+- **MCP Tools**: Check .claude/commands/mcp-tools-quick-ref.md
+- **Agent Info**: See .claude/commands/agent-types.md
+- **GitHub**: https://github.com/groeimetai/snow-flow
+
+Happy ServiceNow Development! 🎉
+`;
+  
+  await fs.writeFile(join(targetDir, 'QUICK_START.md'), quickStartContent);
+  
+  // Create example scripts
+  const widgetExampleContent = `#!/bin/bash
+# Example: Create an incident dashboard widget
+
+# This example shows how to create a comprehensive incident dashboard
+# with real-time data, charts, and mobile responsiveness
+
+snow-flow swarm "create incident dashboard widget with:
+- Real-time incident counts by priority (Critical, High, Medium, Low)
+- Chart.js bar chart showing incidents by category
+- Line graph for incident trends over the last 7 days
+- Responsive grid layout for mobile devices
+- Auto-refresh every 30 seconds
+- Click-through to incident details
+- Color coding for priority levels (red for critical, orange for high)
+- Export to PDF functionality
+- Filter by assignment group"
+
+# The Queen Agent will:
+# 1. Spawn widget-creator as primary agent
+# 2. Add ui-designer for responsive design
+# 3. Add tester for validation
+# 4. Create complete widget in ServiceNow
+# 5. Test on mobile and desktop
+# 6. Deploy with Update Set tracking
+`;
+  await fs.writeFile(join(targetDir, 'examples/widget-dashboard.sh'), widgetExampleContent);
+  await fs.chmod(join(targetDir, 'examples/widget-dashboard.sh'), '755');
+  
+  const approvalFlowExampleContent = `#!/bin/bash
+# Example: Create equipment approval workflow
+
+# This example demonstrates creating a multi-level approval workflow
+# with dynamic routing based on cost and department
+
+snow-flow swarm "create approval workflow for equipment requests with:
+- Automatic approval for items under $100
+- Manager approval for items $100-$1000
+- Department head approval for items $1000-$5000
+- VP approval for items over $5000
+- IT approval required for all technology items regardless of cost
+- Finance review for items over $10000
+- Email notifications at each approval step
+- Slack notifications for urgent requests
+- 48-hour SLA with escalation
+- Rejection reasons and resubmission process
+- Integration with catalog items for equipment selection
+- Automatic PO generation upon final approval"
+
+# The Queen Agent will:
+# 1. Spawn flow-builder as primary agent
+# 2. Add security agent for approval permissions
+# 3. Add tester for all approval paths
+# 4. Create complex flow with conditions
+# 5. Link to catalog items
+# 6. Test all approval scenarios
+# 7. Validate email notifications
+`;
+  await fs.writeFile(join(targetDir, 'examples/approval-workflow.sh'), approvalFlowExampleContent);
+  await fs.chmod(join(targetDir, 'examples/approval-workflow.sh'), '755');
+  
+  const itsmApplicationExampleContent = `#!/bin/bash
+# Example: Create complete ITSM solution
+
+# This example shows how to build a full IT Service Management application
+# with custom tables, workflows, and user interfaces
+
+snow-flow swarm "create complete ITSM solution for laptop provisioning with:
+- Custom request table extending task table
+- Fields: laptop_model, specifications, justification, cost_center
+- Catalog item for laptop requests with dynamic pricing
+- Multi-stage approval workflow based on cost and user role
+- Integration with asset management for laptop assignment
+- Automated Active Directory account provisioning
+- Email notifications to user, manager, and IT
+- Dashboard showing request status and metrics
+- SLA tracking with 5-day fulfillment target
+- Mobile-friendly request portal
+- Reporting on request volumes and fulfillment times
+- Return process for laptop replacement
+- Integration with purchase order system"
+
+# The Queen Agent will:
+# 1. Spawn app-architect to design the solution
+# 2. Add flow-builder for approval workflows
+# 3. Add widget-creator for dashboards
+# 4. Add script-writer for integrations
+# 5. Add security for access controls
+# 6. Add tester for end-to-end validation
+# 7. Create all components in sequence
+# 8. Deploy complete solution
+`;
+  await fs.writeFile(join(targetDir, 'examples/itsm-application.sh'), itsmApplicationExampleContent);
+  await fs.chmod(join(targetDir, 'examples/itsm-application.sh'), '755');
+  
   // Create CLAUDE.md by copying from source (v1.1.62+)
   let claudeMdContent = '';
   try {
@@ -3032,7 +3846,13 @@ program
       if (options.sparc) {
         console.log('🎯 Creating SPARC environment...');
         await createSparcFiles(targetDir);
-        console.log('✅ SPARC environment created\n');
+        console.log('✅ SPARC environment created');
+        console.log('📋 Added swarm documentation:');
+        console.log('   - swarm-patterns.md: Common swarm command examples');
+        console.log('   - agent-types.md: Agent specializations guide');
+        console.log('   - mcp-tools-quick-ref.md: MCP tools reference');
+        console.log('   - examples/: Ready-to-run example scripts');
+        console.log('   - memory/patterns/: Success patterns and templates\n');
       }
       
       // Phase 4: Create .env file
@@ -3538,6 +4358,12 @@ echo "💡 Check MCP servers with: /mcp in Claude Code"
       console.log('   1. Edit .env file with your ServiceNow OAuth credentials');
       console.log('   2. Run: snow-flow auth login');
       console.log('   3. Start your first swarm: snow-flow swarm "create a widget for incident management"');
+      console.log('');
+      console.log('📚 Documentation created:');
+      console.log('   - QUICK_START.md: 5-minute getting started guide');
+      console.log('   - CLAUDE.md: Complete development guide with MCP-FIRST workflow');
+      console.log('   - .claude/commands/: Swarm patterns, agent types, MCP tools reference');
+      console.log('   - examples/: Ready-to-run example scripts for common tasks');
       console.log('');
       console.log('✅ Project is ready to use!');
       console.log('');

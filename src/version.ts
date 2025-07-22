@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.83';
+export const VERSION = '1.1.84';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.84': [
+      '📚 ENHANCED INIT COMMAND: Now generates comprehensive swarm documentation for new users',
+      '📋 SWARM PATTERNS: Added swarm-patterns.md with common usage examples and MCP-FIRST workflow',
+      '🤖 AGENT DOCUMENTATION: Added agent-types.md with detailed agent specializations guide',
+      '🔧 MCP TOOLS REFERENCE: Added mcp-tools-quick-ref.md for easy tool lookup',
+      '📁 EXAMPLE SCRIPTS: Ready-to-run examples for widget, workflow, and ITSM development',
+      '💾 MEMORY PATTERNS: JSON files with success patterns and workflow templates',
+      '🚀 QUICK START GUIDE: New QUICK_START.md for 5-minute onboarding',
+      '✅ MCP-FIRST WORKFLOW: Init ensures CLAUDE.md includes mandatory authentication flow'
+    ],
     '1.1.83': [
       '🎯 FINAL VERSION SYNC: Complete CLI version synchronization - snow-flow --version now shows correct 1.1.83',
       '🔧 CLEAN BUILD: Fresh compilation ensuring dist/version.js matches src/version.ts',
@@ -613,6 +623,19 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.84': {
+      date: '2025-01-22',
+      changes: [
+        'ENHANCED INIT COMMAND: Complete overhaul of project initialization documentation',
+        'USER REQUEST: "hebben we ook de init command geupdate" - FULLY IMPLEMENTED',
+        'NEW FILES: swarm-patterns.md, agent-types.md, mcp-tools-quick-ref.md for comprehensive guidance',
+        'EXAMPLE SCRIPTS: widget-dashboard.sh, approval-workflow.sh, itsm-application.sh with real scenarios',
+        'MEMORY PATTERNS: successful-deployments.json and workflow-templates.json for learning patterns',
+        'QUICK START GUIDE: QUICK_START.md provides 5-minute onboarding experience',
+        'MCP-FIRST WORKFLOW: Init ensures CLAUDE.md contains mandatory authentication workflow',
+        'IMPROVED OUTPUT: Init command now clearly shows all documentation created for users'
+      ]
+    },
     '1.1.83': {
       date: '2025-01-22',
       changes: [
