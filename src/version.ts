@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.85';
+export const VERSION = '1.1.86';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.86': [
+      '🔍 INTELLIGENT TABLE DISCOVERY: Analyzes objective to detect and discover required tables',
+      '📊 AUTOMATIC SCHEMA VALIDATION: Discovers actual field names, types, and relationships',
+      '🎯 PATTERN MATCHING: Detects standard tables, custom u_ tables, and context clues',
+      '💡 SMART DETECTION: "catalog" → sc_cat_item, "user" → sys_user, "cmdb" → cmdb_ci',
+      '⚡ AGENT COORDINATION: All agents use exact field names from discovered schemas',
+      '📋 DISCOVERY EXAMPLES: Clear examples show how objectives map to table discovery',
+      '🚀 INCREASED ACCURACY: Agents use correct field names like "short_description"',
+      '🧠 CONTEXT AWARENESS: Discovers related tables based on objective context'
+    ],
     '1.1.85': [
       '💾 MEMORY INITIALIZATION FIX: Memory now initialized at START of Queen session, not middle',
       '📦 UPDATE SET ISOLATION: Each objective now gets its own Update Set for proper tracking',

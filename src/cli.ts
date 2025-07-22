@@ -425,6 +425,23 @@ You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mis
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
 - **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 
+## 📊 Table Discovery Intelligence
+
+The Queen Agent will automatically discover and validate table schemas based on the objective. This ensures agents use correct field names and table structures.
+
+**Table Detection Examples:**
+- "create widget for incident records" → Discovers: incident, sys_user, sys_user_group
+- "build approval flow for u_equipment_request" → Discovers: u_equipment_request, sys_user, sysapproval_approver
+- "portal showing catalog items" → Discovers: sc_cat_item, sc_category, sc_request
+- "dashboard with CMDB assets" → Discovers: cmdb_ci, cmdb_rel_ci, sys_user
+- "report on problem tickets" → Discovers: problem, incident, sys_user
+
+**Discovery Process:**
+1. Extracts table names from objective (standard tables, u_ custom tables, explicit mentions)
+2. Discovers actual table schemas with field names, types, and relationships
+3. Stores schemas in memory for all agents to use
+4. Agents MUST use exact field names from schemas (e.g., 'short_description' not 'desc')
+
 ## 👑 Your Queen Agent Responsibilities
 
 ### 1. CRITICAL: Initialize Memory FIRST (Before Everything!)
@@ -503,33 +520,87 @@ await mcp__claude-flow__memory_usage({
   namespace: "swarm_${sessionId}"
 });
 
-// Step 2.4: For artifacts using tables, discover table schemas
-${taskAnalysis.serviceNowArtifacts.includes('widget') || taskAnalysis.serviceNowArtifacts.includes('flow') ? `
-// Discover common ITSM tables
-const tablesToDiscover = ['incident', 'sc_request', 'change_request', 'problem'];
-const tableSchemas = {};
+// Step 2.4: Discover tables mentioned in objective
+// Extract potential table names from the objective
+const tablePatterns = [
+  /\b(incident|problem|change_request|sc_request|sc_req_item|task|cmdb_ci|sys_user|sys_user_group)\b/gi,
+  /\b(u_\w+)\b/g, // Custom tables starting with u_
+  /\b(\w+_table)\b/gi, // Tables ending with _table
+  /\bfrom\s+(\w+)\b/gi, // SQL-like "from table_name"
+  /\btable[:\s]+(\w+)\b/gi, // "table: xyz" or "table xyz"
+  /\b(\w+)\s+records?\b/gi, // "xyz records"
+];
 
-for (const table of tablesToDiscover) {
-  try {
-    const schema = await mcp__servicenow-platform-development__snow_table_schema_discovery({
-      tableName: table,
-      includeRelated: true,
-      includeIndexes: false
-    });
-    tableSchemas[table] = schema;
-  } catch (e) {
-    // Table might not exist, continue
+const detectedTables = new Set();
+// Always include common tables for context
+['incident', 'sc_request', 'sys_user'].forEach(t => detectedTables.add(t));
+
+// Search for tables in objective
+for (const pattern of tablePatterns) {
+  const matches = "${objective}".matchAll(pattern);
+  for (const match of matches) {
+    if (match[1]) {
+      detectedTables.add(match[1].toLowerCase());
+    }
   }
 }
 
-// Store table schemas in memory
+// Also check for common data needs based on objective type
+if ("${objective}".toLowerCase().includes('catalog')) {
+  detectedTables.add('sc_cat_item');
+  detectedTables.add('sc_category');
+}
+if ("${objective}".toLowerCase().includes('user')) {
+  detectedTables.add('sys_user');
+  detectedTables.add('sys_user_group');
+}
+if ("${objective}".toLowerCase().includes('cmdb') || "${objective}".toLowerCase().includes('asset')) {
+  detectedTables.add('cmdb_ci');
+}
+if ("${objective}".toLowerCase().includes('knowledge')) {
+  detectedTables.add('kb_knowledge');
+}
+
+console.log(\`🔍 Detected tables to discover: \${Array.from(detectedTables).join(', ')}\`);
+
+// Discover schemas for all detected tables
+const tableSchemas = {};
+for (const tableName of detectedTables) {
+  try {
+    const schema = await mcp__servicenow-platform-development__snow_table_schema_discovery({
+      tableName: tableName,
+      includeRelated: true,
+      includeIndexes: false,
+      maxDepth: 1 // Don't go too deep to avoid timeout
+    });
+    
+    if (schema && schema.fields) {
+      tableSchemas[tableName] = {
+        name: tableName,
+        label: schema.label || tableName,
+        fields: schema.fields,
+        field_count: schema.fields.length,
+        key_fields: schema.fields.filter(f => f.primary || f.reference).map(f => f.name)
+      };
+      console.log(\`✅ Discovered table '\${tableName}' with \${schema.fields.length} fields\`);
+    }
+  } catch (e) {
+    console.log(\`⚠️ Table '\${tableName}' not found or inaccessible\`);
+  }
+}
+
+// Store discovered table schemas in memory
 await mcp__claude-flow__memory_usage({
   action: "store",
   key: "table_schemas_${sessionId}",
-  value: JSON.stringify(tableSchemas),
+  value: JSON.stringify({
+    discovered_at: new Date().toISOString(),
+    objective: "${objective}",
+    tables: tableSchemas,
+    table_names: Object.keys(tableSchemas)
+  }),
   namespace: "swarm_${sessionId}"
 });
-` : '// No table discovery needed for this task type'}
 \`\`\`
 
 ### 3. Create Master Task List
@@ -588,7 +659,13 @@ Task("${taskAnalysis.primaryAgent}", \`
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
-  2. Use the discovered table schemas when creating artifacts that reference tables
+  
+  2. 🔍 CRITICAL: Use discovered table schemas:
+     - The table_schemas contain actual field names, types, and relationships
+     - ALWAYS use the exact field names from the schema (e.g., 'short_description' not 'description')
+     - Check key_fields for primary keys and references
+     - If you need a table that wasn't discovered, use snow_table_schema_discovery first
+  
   3. Check existing_artifacts to avoid duplication - reuse or extend existing ones
   4. ALL deployments MUST use the Update Set stored in memory
   5. Begin implementing the core ${taskAnalysis.taskType} requirements
@@ -598,6 +675,7 @@ Task("${taskAnalysis.primaryAgent}", \`
   
   🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
   📦 UPDATE SET: Use the one from memory - DO NOT create a new one!
+  📊 TABLES: Use exact field names from discovered schemas!
 \`);
 \`\`\`
 
@@ -619,15 +697,22 @@ Task("${agent}", \`
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
      - mcp__claude-flow__memory_usage({action: "retrieve", key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
-  2. Monitor primary agent's progress: mcp__claude-flow__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
-  3. Wait for primary agent to establish base structure before major changes
-  4. Use discovered table schemas for any table references
-  5. Enhance/support with your ${agent} expertise
+  
+  2. 🔍 CRITICAL: Use discovered table schemas:
+     - The table_schemas contain actual field names, types, and relationships
+     - ALWAYS use the exact field names from the schema (e.g., 'short_description' not 'description')
+     - Check key_fields for primary keys and references
+     - If you need a table that wasn't discovered, use snow_table_schema_discovery first
+  
+  3. Monitor primary agent's progress: mcp__claude-flow__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
+  4. Wait for primary agent to establish base structure before major changes
+  5. Enhance/support with your ${agent} expertise  
   6. Store your progress: mcp__claude-flow__memory_usage({action: "store", key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
   7. Update relevant TodoWrite items
   
   🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
   📦 UPDATE SET: Use the one from memory - DO NOT create a new one!
+  📊 TABLES: Use exact field names from discovered schemas!
   
   🔐 AUTHENTICATION REQUIREMENTS:
   - ALWAYS use MCP tools first - inherit auth status from primary agent
