@@ -43,6 +43,120 @@ Snow-Flow implements the **claude-flow philosophy** specifically for ServiceNow 
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## 🧠 NEW: Intelligent Gap Analysis Engine (v1.1.88)
+
+The revolutionary **Intelligent Gap Analysis Engine** represents the next evolution of Snow-Flow's hive-mind intelligence, automatically detecting and resolving ServiceNow configurations that go beyond standard MCP tool capabilities.
+
+### 🎯 Gap Analysis Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│             Intelligent Gap Analysis Engine                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Requirements    │  │ MCP Coverage    │  │ Auto-Resolution │ │  
+│  │ Analyzer        │──│ Analyzer        │──│ Engine          │ │
+│  │ (60+ Types)     │  │ (Gap Detection) │  │ (API Calls)     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│           │                       │                      │      │
+│           ▼                       ▼                      ▼      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Manual Guide    │  │ Risk Assessment │  │ Environment     │ │
+│  │ Generator       │  │ Engine          │  │ Adaptation      │ │
+│  │ (Step-by-Step)  │  │ (Safety Check)  │  │ (Dev/Test/Prod) │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 🔍 What Gap Analysis Detects
+
+The engine analyzes objectives and identifies requirements across **60+ ServiceNow configuration types**:
+
+**🔐 Authentication & Security:**
+- LDAP/SAML authentication setup
+- Single Sign-On (SSO) configurations  
+- Multi-Factor Authentication (MFA)
+- OAuth provider configurations
+- Custom ACL rules and data policies
+
+**🗄️ Database & Performance:**
+- Database indexes for performance optimization
+- Database views and partitioning
+- System properties configuration
+- Performance analytics setup
+- Custom table field configurations
+
+**🧭 Navigation & User Interface:**
+- Application menus and modules
+- Navigation module customization
+- Form layouts and sections
+- UI actions and policies
+- Custom form designs
+
+**📧 Integration & Communication:**
+- Email templates and notifications
+- Web service configurations
+- Import sets and transform maps
+- External API integrations
+- Webhook configurations
+
+**🔄 Workflow & Automation:**
+- Workflow activities and transitions
+- SLA definitions and metrics
+- Escalation rules and policies
+- Scheduled job configurations
+- Event rule automation
+
+### 🤖 Intelligent Resolution Process
+
+**Phase 1: Requirement Detection**
+```javascript
+// AI-powered analysis of natural language objectives
+const requirements = RequirementsAnalyzer.analyzeObjective(
+  "create ITSM solution with LDAP authentication and approval workflows"
+);
+// Result: 12 requirements detected across authentication, workflow, UI categories
+```
+
+**Phase 2: MCP Coverage Analysis**
+```javascript
+// Map what MCP tools can handle vs gaps requiring manual work
+const coverage = McpCoverageAnalyzer.analyzeCoverage(requirements);
+// Result: 67% MCP coverage, 4 gaps requiring attention
+```
+
+**Phase 3: Automatic Resolution**
+```javascript
+// Attempt automatic configuration via ServiceNow APIs
+const automation = await AutoResolutionEngine.resolveBulk(gaps);
+// Result: 6 configurations automated, 4 require manual setup
+```
+
+**Phase 4: Manual Guide Generation**
+```javascript
+// Generate detailed step-by-step guides for complex configurations
+const guides = ManualInstructionsGenerator.generateBulkInstructions(manualItems);
+// Result: Role-specific guides with time estimates and risk assessment
+```
+
+### 🎯 Integration with Queen Agent
+
+The Gap Analysis Engine seamlessly integrates into the Queen Agent workflow as **Phase 5: Intelligent Gap Analysis**:
+
+```javascript
+// Automatic execution as part of Queen Agent coordination
+const gapAnalysisResult = await this.gapAnalysisEngine.analyzeAndResolve(objective, {
+  autoPermissions: this.config.autoPermissions,
+  environment: 'development',
+  enableAutomation: true,
+  includeManualGuides: true,
+  riskTolerance: 'medium'
+});
+```
+
+**No additional commands needed** - the Gap Analysis Engine automatically runs during every Queen Agent execution, ensuring comprehensive ServiceNow configuration coverage.
+
 ## 🚀 Swarm Command Workflow
 
 ### 1. Initialization Phase

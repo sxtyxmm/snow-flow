@@ -4,6 +4,8 @@
 
 The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that provide comprehensive coverage for ServiceNow development, operations, and management. Each server focuses on specific aspects of ServiceNow automation and integrates seamlessly with the snow-flow CLI and Claude Code.
 
+**🧠 NEW in v1.1.88**: The **Intelligent Gap Analysis Engine** revolutionizes ServiceNow development by automatically detecting **ALL** configurations needed beyond standard MCP tools - covering 60+ configuration types including system properties, LDAP/SAML authentication, database indexes, navigation, ACL rules, and more. The engine attempts automatic resolution via ServiceNow APIs and provides detailed manual guides with role requirements and risk assessment for complex configurations.
+
 ## Architecture
 
 ```
@@ -12,7 +14,7 @@ The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that p
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
 │  │  Deployment     │  │  Flow Composer  │  │  Intelligent    │ │
-│  │  MCP Server     │  │  MCP Server     │  │  MCP Server     │ │
+│  │  MCP Server     │  │  MCP Server     │  │  + Gap Analysis │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
 │  │  Update Set     │  │  Graph Memory   │  │  Operations     │ │
@@ -78,8 +80,8 @@ The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that p
 - `snow_preview_flow_structure` - Preview flow before deployment
 - `snow_deploy_composed_flow` - Deploy composed flows
 
-### 3. ServiceNow Intelligent MCP
-**Purpose**: AI-powered artifact discovery and modification
+### 3. ServiceNow Intelligent MCP + Gap Analysis Engine 🧠
+**Purpose**: AI-powered artifact discovery, modification, and intelligent gap analysis for beyond-MCP configurations
 
 **Key Features**:
 - **Natural Language Search**: Find artifacts using plain language
@@ -87,13 +89,29 @@ The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that p
 - **Deep Analysis**: Comprehensive artifact analysis with indexing
 - **Memory-based Search**: Search previously indexed artifacts
 - **Comprehensive Multi-table Search**: Search across all ServiceNow tables
+- **🧠 REVOLUTIONARY: Intelligent Gap Analysis Engine**:
+  - **Beyond MCP Detection**: Automatically detects ALL ServiceNow configurations needed beyond standard MCP tools
+  - **60+ Configuration Types**: System properties, LDAP/SAML auth, database indexes, navigation, forms, ACLs, and more
+  - **Auto-Resolution Engine**: Attempts automatic configuration via ServiceNow APIs for safe operations
+  - **Manual Instructions Generator**: Creates detailed step-by-step guides with role requirements and risk assessment
+  - **Environment-Aware Guidance**: Provides dev/test/prod specific instructions and warnings
+  - **Risk Assessment**: Evaluates complexity and safety of each configuration
 
-**Tools**:
+**Core Tools**:
 - `snow_find_artifact` - Natural language artifact discovery
 - `snow_edit_artifact` - Edit artifacts with natural language
 - `snow_analyze_artifact` - Deep artifact analysis
 - `snow_memory_search` - Search indexed artifacts
 - `snow_comprehensive_search` - Multi-table search
+
+**🧠 Gap Analysis Tools (NEW in v1.1.88)**:
+- `snow_analyze_requirements` - AI-powered parsing of objectives to identify all needed configurations
+- `snow_smart_update_set` - Automatic artifact tracking, conflict detection, dependency validation
+- `snow_orchestrate_development` - Unified development orchestration with auto-spawning agents
+- `snow_resilient_deployment` - Advanced error recovery with retry mechanisms and fallback strategies
+- `snow_comprehensive_flow_test` - Advanced flow testing with automatic test data generation
+- `snow_discover_existing_flows` - Smart flow discovery to prevent duplication
+- `snow_test_flow_execution` - Live flow testing with detailed execution monitoring
 
 ### 4. ServiceNow Update Set MCP
 **Purpose**: Professional update set management and change tracking
@@ -376,22 +394,74 @@ snow-flow swarm "Create a flow that approves iPhone requests"
 
 # Find and edit artifacts
 snow-flow swarm "Find the incident widget and add a new field"
+
+# 🧠 NEW: Use Gap Analysis Engine for complex requirements
+snow-flow queen "create ITSM solution with LDAP authentication and custom approval workflows"
+
+# 🧠 NEW: Automatically detect and configure beyond-MCP requirements
+snow-flow swarm "build executive dashboard with SSO authentication and performance analytics"
+```
+
+**🧠 What You'll See with Gap Analysis Engine**:
+
+```bash
+snow-flow queen "create incident management with LDAP authentication"
+
+🧠 Step 4: Running Intelligent Gap Analysis...
+📊 Gap Analysis Complete:
+  • Total Requirements: 12
+  • MCP Coverage: 67%
+  • Automated: 6 configurations  
+  • Manual Work: 4 items
+
+✅ Automatically Configured:
+  • System property: glide.ui.incident_management created
+  • Navigation module: Incident Management added to Service Desk
+  • Email template: incident_notification configured
+  • Database index: incident.priority_state for performance
+  • Form layout: incident form sections optimized
+  • UI action: "Escalate Priority" button added
+
+📋 Manual Configuration Required:
+  • LDAP authentication setup (high-risk operation)
+  • SSO configuration with Active Directory  
+  • Custom ACL rules for incident priority restrictions
+  • Email server configuration for notifications
+
+📚 Detailed Manual Guides Available:
+  📖 Configure LDAP Authentication - 25 minutes
+     Risk: high | Roles: security_admin, admin
+  📖 Setup SSO with Active Directory - 45 minutes
+     Risk: high | Roles: security_admin
 ```
 
 ### Swarm Integration
 
-MCP servers enhance multi-agent swarms:
+MCP servers enhance multi-agent swarms with intelligent gap analysis:
 
 ```bash
-# Deploy complex solutions
+# Deploy complex solutions with automatic gap analysis
 snow-flow swarm "Build a complete incident management dashboard with widgets, flows, and reports"
 
 # Analyze and optimize existing artifacts
 snow-flow swarm "Analyze all incident-related artifacts and suggest improvements"
 
-# Create integrated solutions
+# Create integrated solutions with beyond-MCP configurations
 snow-flow swarm "Create a service catalog item with approval workflow and notifications"
+
+# 🧠 NEW: Complex enterprise solutions with Gap Analysis
+snow-flow swarm "Deploy enterprise ITSM platform with SSO, LDAP, custom forms, and automated reporting"
+
+# 🧠 NEW: Security-enhanced workflows with auto-configuration
+snow-flow swarm "Create secure approval workflows with encryption, audit trails, and compliance reporting"
 ```
+
+**🧠 Enhanced Swarm Capabilities with Gap Analysis Engine**:
+- **Automatic Discovery**: Swarms automatically detect ALL required configurations beyond MCP tools
+- **Intelligent Automation**: Attempts automatic setup of system properties, navigation, templates, etc.
+- **Manual Guide Generation**: Creates step-by-step guides for complex configurations
+- **Risk Assessment**: Evaluates and communicates risk levels for each configuration
+- **Role-Based Instructions**: Provides role-specific guidance (admin, security_admin, etc.)
 
 ## Best Practices
 

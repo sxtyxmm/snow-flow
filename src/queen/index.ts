@@ -47,11 +47,13 @@ export function createServiceNowQueen(options: {
   memoryPath?: string;
   debugMode?: boolean;
   maxConcurrentAgents?: number;
+  autoPermissions?: boolean;
 } = {}) {
   return new ServiceNowQueen({
     debugMode: options.debugMode ?? process.env.NODE_ENV === 'development',
     memoryPath: options.memoryPath,
-    maxConcurrentAgents: options.maxConcurrentAgents ?? 5
+    maxConcurrentAgents: options.maxConcurrentAgents ?? 5,
+    autoPermissions: options.autoPermissions ?? false
   });
 }
 

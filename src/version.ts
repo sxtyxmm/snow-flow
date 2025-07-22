@@ -2,13 +2,38 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.86';
+export const VERSION = '1.1.88';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.88': [
+      '🧠 INTELLIGENT GAP ANALYSIS ENGINE: Revolutionary beyond-MCP configuration detection and automation',
+      '🎯 REQUIREMENTS ANALYZER: AI-powered analysis of objectives to identify ALL ServiceNow configurations needed',
+      '📊 MCP COVERAGE ANALYZER: Comprehensive mapping of what MCP tools can vs cannot handle',
+      '🤖 AUTO-RESOLUTION ENGINE: Automatic fixing of ServiceNow configurations beyond MCP tool scope',
+      '📚 MANUAL INSTRUCTIONS GENERATOR: Detailed step-by-step guides for configurations that cannot be automated',
+      '🔧 60+ SERVICENOW CONFIGURATIONS: Supports system properties, database indexes, LDAP, OAuth, navigation, forms, and more',
+      '⚡ AUTOMATIC DETECTION: Detects missing system properties, navigation modules, authentication configs, performance settings',
+      '🛡️ RISK ASSESSMENT: Intelligent risk evaluation and complexity scoring for all configurations',
+      '🎯 QUEEN AGENT INTEGRATION: Built into Queen Agent workflow - analyzes objectives automatically',
+      '📋 FALLBACK STRATEGIES: When automation fails, provides comprehensive manual instructions with warnings and verification steps',
+      '🚀 USER REQUEST: "alle mogelijke soorten handelingen die nodig zouden zijn om een objective te bereiken" - IMPLEMENTED',
+      '💡 BEYOND MCP TOOLS: Handles user permissions, database indexes, email templates, ACLs, UI actions, and 50+ other configurations'
+    ],
+    '1.1.87': [
+      '📦 AUTOMATIC DEPENDENCY MANAGEMENT: Detects Chart.js, moment.js, lodash, jQuery, d3.js in widget code',
+      '🎯 SMART THEME INJECTION: Automatically adds missing dependencies to Service Portal theme header',
+      '🤖 AUTO-PERMISSIONS SUPPORT: With --auto-permissions flag, installs dependencies without prompting',
+      '🔍 INTELLIGENT DETECTION: Scans HTML, CSS, client scripts, and server scripts for library usage',
+      '📋 USER PROMPTS: Without auto-permissions, asks user before modifying theme',
+      '🚀 CDN INTEGRATION: Uses official CDN URLs with minified versions and integrity hashes',
+      '✅ CONFLICT PREVENTION: Checks if dependencies already loaded before adding duplicates',
+      '🧠 QUEEN AGENT INTEGRATION: Dependency management built into widget deployment workflow',
+      '🔧 NO MANUAL WORK: Chart.js widgets work immediately without manual theme editing'
+    ],
     '1.1.86': [
       '🔍 INTELLIGENT TABLE DISCOVERY: Analyzes objective to detect and discover required tables',
       '📊 AUTOMATIC SCHEMA VALIDATION: Discovers actual field names, types, and relationships',
@@ -643,6 +668,52 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.88': {
+      date: '2025-01-22',
+      changes: [
+        'REVOLUTIONARY: Intelligent Gap Analysis Engine - analyzes objectives for ALL required ServiceNow configurations',
+        'USER REQUEST: "alle mogelijke soorten handelingen die nodig zouden zijn om een objective te bereiken die vallen buiten de standaard mcps" - FULLY IMPLEMENTED',
+        'REQUIREMENTS ANALYZER: AI-powered parser that identifies 60+ types of ServiceNow configurations from natural language',
+        'MCP COVERAGE ANALYZER: Comprehensive mapping system showing what MCP tools can handle vs missing gaps',  
+        'AUTO-RESOLUTION ENGINE: Attempts automatic configuration of system properties, navigation, authentication, database indexes, and more',
+        'MANUAL INSTRUCTIONS GENERATOR: Creates detailed step-by-step guides with role requirements, warnings, and verification steps',
+        'INTELLIGENT DETECTION: Detects system properties, LDAP configs, OAuth providers, navigation modules, form layouts, ACL rules, data policies',
+        'RISK ASSESSMENT: Evaluates complexity and risk level for each configuration with fallback strategies',
+        'QUEEN AGENT INTEGRATION: Built into Queen Agent workflow - runs automatically after authentication and discovery',
+        'COMPREHENSIVE COVERAGE: Handles user permissions, database indexes, email templates, scheduled jobs, ACL rules, UI actions, import sets, transforms, and 50+ other configurations',
+        'AUTOMATIC FALLBACKS: When automation fails, provides comprehensive manual instructions with environment-specific guidance',
+        'PERFECT WORKFLOW: Authentication → Discovery → Gap Analysis → MCP Tools → Auto-Resolution → Manual Instructions',
+        'BEYOND MCP SCOPE: Finally addresses all ServiceNow configurations that fall outside standard MCP tool capabilities'
+      ]
+    },
+    '1.1.87': {
+      date: '2025-01-22',
+      changes: [
+        'AUTOMATIC DEPENDENCY MANAGEMENT: Complete solution for external library integration',
+        'USER REQUEST: "je weet chart.js moet je wel echt in je service portal theme header kopieeren voor je het kan gebruiken. zou snow-flow dat uit zichzelf kunnen doen?" - IMPLEMENTED',
+        'DEPENDENCY DETECTOR: Automatically detects Chart.js, moment.js, lodash, jQuery, d3.js, axios, Bootstrap usage in widget code',
+        'SMART THEME INJECTION: ServicePortalThemeManager updates theme header with missing dependencies',
+        'AUTO-PERMISSIONS INTEGRATION: Respects --auto-permissions flag to install dependencies without prompting',
+        'CDN INTEGRATION: Uses official CDNs with minified versions, integrity hashes, and crossorigin attributes',
+        'CONFLICT PREVENTION: Checks if dependencies already loaded to prevent duplicates',
+        'QUEEN AGENT INTEGRATION: Built into widget deployment workflow - no manual steps needed',
+        'COMPREHENSIVE TESTING: Full test suite for dependency detection and theme management',
+        'INTELLIGENT PROMPTS: When auto-permissions disabled, provides clear dependency installation prompts'
+      ]
+    },
+    '1.1.86': {
+      date: '2025-01-22',
+      changes: [
+        'INTELLIGENT TABLE DISCOVERY: Analyzes objective to detect and discover required ServiceNow tables',
+        'USER REQUEST: "ik bedoelde dat de table discovery voor elke ontwikkeling alle tables moet discoveren die ze nodig hebben" - IMPLEMENTED',
+        'PATTERN MATCHING: Detects standard tables (incident, problem, change_request), custom u_ tables, and context clues',
+        'AUTOMATIC SCHEMA DISCOVERY: Uses snow_table_schema_discovery to get actual field names, types, and relationships',
+        'CONTEXT AWARENESS: Discovers related tables based on objective context (e.g., "catalog" → sc_cat_item, sc_category)',
+        'AGENT COORDINATION: All agents receive discovered table schemas to use exact field names like "short_description"',
+        'MEMORY INTEGRATION: Stores discovered schemas in memory for all agents to access during execution',
+        'DISCOVERY EXAMPLES: Clear documentation showing how objectives map to table discovery patterns'
+      ]
+    },
     '1.1.84': {
       date: '2025-01-22',
       changes: [

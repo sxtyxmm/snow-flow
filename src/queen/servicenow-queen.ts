@@ -8,6 +8,9 @@ import { QueenMemorySystem } from './queen-memory';
 import { NeuralLearning } from './neural-learning';
 import { AgentFactory } from './agent-factory';
 import { MCPExecutionBridge, AgentRecommendation } from './mcp-execution-bridge';
+import { ServicePortalThemeManager } from '../utils/theme-manager';
+import { DependencyDetector } from '../utils/dependency-detector';
+import { GapAnalysisEngine, GapAnalysisResult } from '../intelligence/gap-analysis-engine';
 import * as crypto from 'crypto';
 
 export interface QueenConfig {
@@ -15,6 +18,7 @@ export interface QueenConfig {
   maxConcurrentAgents?: number;
   learningRate?: number;
   debugMode?: boolean;
+  autoPermissions?: boolean;
 }
 
 export class ServiceNowQueen {
@@ -22,6 +26,7 @@ export class ServiceNowQueen {
   private neuralLearning: NeuralLearning;
   private agentFactory: AgentFactory;
   private mcpBridge: MCPExecutionBridge;
+  private gapAnalysisEngine: GapAnalysisEngine;
   private activeTasks: Map<string, ServiceNowTask>;
   private config: Required<QueenConfig>;
 
@@ -30,7 +35,8 @@ export class ServiceNowQueen {
       memoryPath: config.memoryPath,
       maxConcurrentAgents: config.maxConcurrentAgents || 5,
       learningRate: config.learningRate || 0.1,
-      debugMode: config.debugMode || false
+      debugMode: config.debugMode || false,
+      autoPermissions: config.autoPermissions || false
     };
 
     // Initialize hive-mind components
@@ -38,11 +44,13 @@ export class ServiceNowQueen {
     this.neuralLearning = new NeuralLearning(this.memory);
     this.agentFactory = new AgentFactory(this.memory);
     this.mcpBridge = new MCPExecutionBridge(this.memory);
+    this.gapAnalysisEngine = new GapAnalysisEngine(this.mcpBridge, console, this.config.autoPermissions);
     this.activeTasks = new Map();
 
     if (this.config.debugMode) {
       console.log('🐝 ServiceNow Queen Agent initialized with hive-mind intelligence');
       console.log('🔌 MCP Execution Bridge connected for real ServiceNow operations');
+      console.log('🧠 Intelligent Gap Analysis Engine ready for beyond-MCP configurations');
     }
   }
 
@@ -104,10 +112,10 @@ export class ServiceNowQueen {
         });
       }
 
-      // Phase 3: Neural Analysis (now informed by MCP discovery)
+      // Phase 3: Initial Neural Analysis (informed by MCP discovery)
       const analysis = this.neuralLearning.analyzeTask(objective, discovery.result);
       
-      // Phase 2: Create and register task
+      // Phase 4: Create and register task
       const task: ServiceNowTask = {
         id: taskId,
         objective,
@@ -117,14 +125,63 @@ export class ServiceNowQueen {
       };
       this.activeTasks.set(taskId, task);
 
-      // Phase 3: Spawn optimal agent swarm
+      // 🚨 PHASE 5: INTELLIGENT GAP ANALYSIS (Beyond MCP Tools)
+      console.log('🧠 Step 4: Running Intelligent Gap Analysis...');
+      let gapAnalysisResult: GapAnalysisResult | null = null;
+      
+      try {
+        gapAnalysisResult = await this.gapAnalysisEngine.analyzeAndResolve(objective, {
+          autoPermissions: this.config.autoPermissions,
+          environment: 'development',
+          enableAutomation: true,
+          includeManualGuides: true,
+          riskTolerance: 'medium'
+        });
+
+        console.log(`📊 Gap Analysis Complete:`);
+        console.log(`  • Total Requirements: ${gapAnalysisResult.totalRequirements}`);
+        console.log(`  • MCP Coverage: ${gapAnalysisResult.mcpCoverage.coveragePercentage}%`);
+        console.log(`  • Automated: ${gapAnalysisResult.summary.successfulAutomation} configurations`);
+        console.log(`  • Manual Work: ${gapAnalysisResult.summary.requiresManualWork} items`);
+
+        // Display manual instructions if needed
+        if (gapAnalysisResult.summary.requiresManualWork > 0) {
+          console.log('\n📋 Manual Configuration Required:');
+          gapAnalysisResult.nextSteps.manual.forEach(step => console.log(`  • ${step}`));
+          
+          if (gapAnalysisResult.manualGuides) {
+            console.log('\n📚 Detailed manual guides available in gap analysis result');
+          }
+        }
+
+        // Display automation successes
+        if (gapAnalysisResult.summary.successfulAutomation > 0) {
+          console.log('\n✅ Automated Configurations:');
+          gapAnalysisResult.nextSteps.automated.forEach(step => console.log(`  • ${step}`));
+        }
+
+        // Display recommendations
+        if (gapAnalysisResult.nextSteps.recommendations.length > 0) {
+          console.log('\n💡 Recommendations:');
+          gapAnalysisResult.nextSteps.recommendations.forEach(rec => console.log(`  • ${rec}`));
+        }
+
+        // Store gap analysis result in task for later reference
+        (task as any).gapAnalysis = gapAnalysisResult;
+
+      } catch (gapError) {
+        console.warn(`⚠️ Gap Analysis failed: ${gapError instanceof Error ? gapError.message : 'Unknown error'}`);
+        console.log('🔄 Continuing with standard MCP workflow...');
+      }
+
+      // Phase 6: Spawn optimal agent swarm
       const agents = this.spawnOptimalSwarm(task, analysis);
       
-      // Phase 4: Execute coordinated deployment
+      // Phase 7: Execute coordinated deployment
       task.status = 'executing';
       const result = await this.coordinateExecution(task, agents, analysis);
       
-      // Phase 5: Learn from execution
+      // Phase 8: Learn from execution
       const duration = Date.now() - startTime;
       this.learnFromExecution(task, agents, result, duration, null);
       
@@ -295,7 +352,8 @@ export class ServiceNowQueen {
       return {
         type: 'widget',
         mcpTool: 'snow_deploy',
-        config: this.extractWidgetConfig(task.objective, agentResults)
+        config: this.extractWidgetConfig(task.objective, agentResults),
+        autoPermissions: this.config.autoPermissions // Pass auto-permissions flag for dependency handling
       };
     }
 
@@ -633,7 +691,7 @@ function($scope) {
     const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
 
     if (result.success && result.toolResult) {
-      return {
+      const deploymentResult = {
         success: true,
         type: plan.type,
         name: plan.config?.name || result.toolResult.name,
@@ -642,6 +700,13 @@ function($scope) {
         mcpTool: plan.mcpTool,
         executionTime: result.executionTime
       };
+
+      // Handle dependency injection for widgets
+      if (plan.type === 'widget' && plan.config) {
+        await this.handleWidgetDependencies(plan.config, plan.autoPermissions);
+      }
+
+      return deploymentResult;
     } else {
       throw new Error(`MCP execution failed: ${result.error || 'Unknown error'}`);
     }
@@ -655,9 +720,110 @@ function($scope) {
       'snow_deploy_flow': 'deployment',
       'snow_create_flow': 'flow-composer',
       'snow_find_artifact': 'intelligent',
-      'snow_update_set_create': 'update-set'
+      'snow_update_set_create': 'update-set',
+      'snow_get_by_sysid': 'intelligent',
+      'snow_edit_by_sysid': 'intelligent'
     };
     return toolServerMap[tool] || 'deployment';
+  }
+
+  private async handleWidgetDependencies(widgetConfig: any, autoPermissions?: boolean): Promise<void> {
+    try {
+      // Detect dependencies in widget code
+      const dependencies = DependencyDetector.analyzeWidget(widgetConfig);
+
+      if (dependencies.length === 0) {
+        return; // No dependencies needed
+      }
+
+      console.log(`\n📦 Detected ${dependencies.length} external dependencies in widget:`);
+      dependencies.forEach(dep => {
+        console.log(`  • ${dep.name} - ${dep.description}`);
+      });
+
+      // Create MCP tools wrapper for theme manager
+      const mcpTools = {
+        snow_find_artifact: async (params: any) => {
+          const recommendation: AgentRecommendation = {
+            agentId: 'queen-agent',
+            agentType: 'queen',
+            action: 'find-theme',
+            tool: 'snow_find_artifact',
+            server: 'intelligent',
+            params,
+            reasoning: 'Finding Service Portal theme for dependency injection',
+            confidence: 0.95
+          };
+          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          return result.toolResult;
+        },
+        snow_comprehensive_search: async (params: any) => {
+          const recommendation: AgentRecommendation = {
+            agentId: 'queen-agent',
+            agentType: 'queen',
+            action: 'search-themes',
+            tool: 'snow_comprehensive_search',
+            server: 'intelligent',
+            params,
+            reasoning: 'Searching for Service Portal themes',
+            confidence: 0.95
+          };
+          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          return result.toolResult;
+        },
+        snow_get_by_sysid: async (params: any) => {
+          const recommendation: AgentRecommendation = {
+            agentId: 'queen-agent',
+            agentType: 'queen',
+            action: 'get-theme',
+            tool: 'snow_get_by_sysid',
+            server: 'intelligent',
+            params,
+            reasoning: 'Getting Service Portal theme details',
+            confidence: 0.95
+          };
+          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          return result.toolResult;
+        },
+        snow_edit_by_sysid: async (params: any) => {
+          const recommendation: AgentRecommendation = {
+            agentId: 'queen-agent',
+            agentType: 'queen',
+            action: 'update-theme',
+            tool: 'snow_edit_by_sysid',
+            server: 'intelligent',
+            params,
+            reasoning: 'Updating Service Portal theme with dependencies',
+            confidence: 0.95
+          };
+          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          return result.toolResult;
+        }
+      };
+
+      // Update theme with dependencies
+      const result = await ServicePortalThemeManager.updateThemeWithDependencies(
+        dependencies,
+        mcpTools,
+        {
+          autoPermissions,
+          skipPrompt: autoPermissions, // Skip prompt if auto-permissions enabled
+          useMinified: true
+        }
+      );
+
+      if (result.success) {
+        console.log(`✅ ${result.message}`);
+      } else {
+        console.log(`⚠️ Dependencies not installed: ${result.message}`);
+        console.log('💡 You may need to manually add these dependencies to your Service Portal theme');
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error handling widget dependencies:', error.message);
+      // Don't fail the deployment, just warn
+      console.log('⚠️ Widget deployed successfully but dependencies may need manual installation');
+    }
   }
 
   private async attemptRecovery(task: ServiceNowTask, agents: Agent[], error: Error): Promise<any> {
@@ -731,6 +897,22 @@ function($scope) {
 
   getTaskStatus(taskId: string): ServiceNowTask | null {
     return this.activeTasks.get(taskId) || null;
+  }
+
+  /**
+   * Get gap analysis results for a task
+   */
+  getGapAnalysisResults(taskId: string): GapAnalysisResult | null {
+    const task = this.activeTasks.get(taskId);
+    return (task as any)?.gapAnalysis || null;
+  }
+
+  /**
+   * Get all manual guides from gap analysis for a task
+   */
+  getManualConfigurationGuides(taskId: string): any {
+    const gapAnalysis = this.getGapAnalysisResults(taskId);
+    return gapAnalysis?.manualGuides || null;
   }
 
   getHiveMindStatus(): any {
