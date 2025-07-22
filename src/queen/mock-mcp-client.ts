@@ -343,6 +343,29 @@ export class MockMcpClient {
     const delay = Math.random() * (maxMs - minMs) + minMs;
     return new Promise(resolve => setTimeout(resolve, delay));
   }
+
+  /**
+   * COMPATIBILITY FIX: makeRequest method for phantom calls
+   * MockMcpClient simulates HTTP requests
+   */
+  async makeRequest(config: any): Promise<any> {
+    console.log('🔧 MockMcpClient.makeRequest called with config:', config);
+    
+    // Simulate delay
+    await this.simulateDelay(100, 500);
+    
+    // Return mock response
+    return {
+      success: true,
+      data: {
+        message: 'Mock HTTP response from MockMcpClient',
+        method: config.method || 'GET',
+        url: config.url || config.endpoint,
+        timestamp: new Date().toISOString()
+      },
+      status: 200
+    };
+  }
 }
 
 export default MockMcpClient;

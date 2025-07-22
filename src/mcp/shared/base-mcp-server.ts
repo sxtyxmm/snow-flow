@@ -140,12 +140,31 @@ export abstract class BaseMCPServer {
       }
       
       // 4. Test actual ServiceNow connection
-      const connectionTest = await this.client.testConnection();
-      if (!connectionTest.success) {
-        return {
-          success: false,
-          error: `ServiceNow connection failed: ${connectionTest.error}`
-        };
+      this.logger.info('🔧 About to call testConnection', {
+        clientType: this.client.constructor.name,
+        clientMethods: Object.getOwnPropertyNames(Object.getPrototypeOf(this.client)),
+        hasTestConnection: typeof this.client.testConnection === 'function',
+        hasMakeRequest: typeof this.client.makeRequest === 'function'
+      });
+      
+      try {
+        const connectionTest = await this.client.testConnection();
+        if (!connectionTest.success) {
+          return {
+            success: false,
+            error: `ServiceNow connection failed: ${connectionTest.error}`
+          };
+        }
+      } catch (testError) {
+        this.logger.error('🔧 testConnection error:', {
+          error: testError.message,
+          stack: testError.stack,
+          clientInfo: {
+            type: this.client.constructor.name,
+            methods: Object.getOwnPropertyNames(Object.getPrototypeOf(this.client))
+          }
+        });
+        throw testError;
       }
       
       this.logger.info('✅ ServiceNow connection validated');

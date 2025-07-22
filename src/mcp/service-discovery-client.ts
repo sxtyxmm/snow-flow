@@ -248,6 +248,40 @@ export class ServiceDiscoveryClient {
       isWatching = false;
     };
   }
+
+  /**
+   * COMPATIBILITY FIX: makeRequest method for phantom calls
+   */
+  async makeRequest(config: any): Promise<any> {
+    console.log('🔧 ServiceDiscoveryClient.makeRequest called with config:', config);
+    
+    try {
+      // Route the request to the appropriate HTTP method
+      const method = (config.method || 'GET').toLowerCase();
+      const url = config.url || config.endpoint;
+      const data = config.data || config.body;
+      
+      console.log(`🔧 ServiceDiscovery routing ${method.toUpperCase()} request to: ${url}`);
+      
+      switch (method) {
+        case 'get':
+          return await this.client.get(url, { params: config.params });
+        case 'post':
+          return await this.client.post(url, data);
+        case 'put':
+          return await this.client.put(url, data);
+        case 'patch':
+          return await this.client.patch(url, data);
+        case 'delete':
+          return await this.client.delete(url);
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`);
+      }
+    } catch (error) {
+      console.error('🔧 ServiceDiscoveryClient makeRequest error:', error);
+      throw error;
+    }
+  }
 }
 
 export interface ServiceInstance {

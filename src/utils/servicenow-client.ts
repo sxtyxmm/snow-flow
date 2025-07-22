@@ -70,6 +70,34 @@ export class ServiceNowClient {
         'Accept': 'application/json'
       }
     });
+    
+    // 🔧 CRITICAL FIX: Add makeRequest method to Axios instance to fix phantom calls
+    // Some code expects makeRequest to exist on this.client (the Axios instance)
+    (this.client as any).makeRequest = async (config: any) => {
+      console.log('🔧 AXIOS makeRequest called! Config:', config);
+      console.log('🔧 Routing to appropriate HTTP method...');
+      
+      // Route to the appropriate Axios method based on the request config
+      const method = (config.method || 'GET').toLowerCase();
+      const url = config.url || config.endpoint;
+      const data = config.data || config.body;
+      
+      switch (method) {
+        case 'get':
+          return this.client.get(url, { params: config.params, ...config });
+        case 'post':
+          return this.client.post(url, data, config);
+        case 'put':
+          return this.client.put(url, data, config);
+        case 'patch':
+          return this.client.patch(url, data, config);
+        case 'delete':
+          return this.client.delete(url, config);
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`);
+      }
+    };
+    
     this.actionTypeCache = new ActionTypeCache(this);
     
     // Add request interceptor for authentication with automatic token refresh
@@ -1204,6 +1232,14 @@ snow_create_flow({
     try {
       console.log('🔄 Creating Flow Designer flow...');
       console.log(`📋 Flow: ${flow.name}`);
+      
+      // 🔧 CRITICAL DEBUG: Check if makeRequest exists on this instance
+      console.log('🔧 CRITICAL DEBUG - Client methods check:', {
+        hasCreateFlow: typeof this.createFlow === 'function',
+        hasMakeRequest: typeof this.makeRequest === 'function',
+        clientPrototype: Object.getOwnPropertyNames(Object.getPrototypeOf(this)),
+        clientConstructor: this.constructor.name
+      });
       
       // Add pre-deployment validation
       this.validateFlowBeforeDeployment(flow);
@@ -2783,6 +2819,46 @@ try {
       const response = await this.client.delete(url);
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * TEMPORARY FIX: makeRequest method to handle phantom calls
+   * This method provides compatibility for code that expects makeRequest
+   */
+  async makeRequest(config: any): Promise<any> {
+    console.log('🔧 MAKEQUEST CALLED! Stack trace:', new Error().stack);
+    console.log('🔧 TEMP FIX: makeRequest called with config:', config);
+    console.log('🔧 This instance constructor:', this.constructor.name);
+    console.log('🔧 This instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+    
+    try {
+      await this.ensureAuthenticated();
+      
+      // Route the request to the appropriate HTTP method
+      const method = (config.method || 'GET').toLowerCase();
+      const url = config.url || config.endpoint;
+      const data = config.data || config.body;
+      
+      console.log(`🔧 Routing ${method.toUpperCase()} request to: ${url}`);
+      
+      switch (method) {
+        case 'get':
+          return await this.get(url, config.params);
+        case 'post':
+          return await this.post(url, data);
+        case 'put':
+          return await this.put(url, data);
+        case 'patch':
+          return await this.patch(url, data);
+        case 'delete':
+          return await this.delete(url);
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`);
+      }
+    } catch (error) {
+      console.error('🔧 makeRequest error:', error);
       throw error;
     }
   }
