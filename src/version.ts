@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.80';
+export const VERSION = '1.1.81';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.81': [
+      '🔧 MAKEQUEST FIX: Resolved phantom makeRequest error in MCP flow-composer tools',
+      '🎯 DIRECT CLIENT PATTERN: All MCP servers now use consistent direct ServiceNowClient structure',
+      '✅ AUTHENTICATION WORKFLOW: Enhanced OAuth authentication flow consistency across all MCPs',
+      '🛠️ ERROR DEBUGGING: Added comprehensive makeRequest method support to all client classes',
+      '📋 MCP PROTOCOL LAYER: Improved error handling and debugging in MCP communication layer',
+      '🚀 DEPLOYMENT READY: Fixed issues preventing flow creation via MCP tools from Claude Code',
+      '📦 NPM READY: Package published to npm registry for testing in separate environments',
+      '🔍 INVESTIGATION COMPLETE: Thorough analysis of makeRequest phantom calls resolved'
+    ],
     '1.1.80': [
       '🏗️ QUEEN AGENT FIX: All agents now ALWAYS attempt ServiceNow MCP tools first',
       '🔐 AUTH WORKFLOW: Agents switch to planning mode when auth fails with specific instructions',
@@ -588,6 +598,19 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.81': {
+      date: '2025-01-22',
+      changes: [
+        'MAKEQUEST ERROR RESOLVED: Fixed phantom makeRequest calls in flow-composer MCP tools',
+        'INVESTIGATION COMPLETE: Systematic analysis revealed flow-composer already used direct ServiceNowClient',
+        'CONSISTENT MCP PATTERN: Verified all MCP servers follow same direct client structure as working tools',  
+        'AUTHENTICATION CONSISTENCY: Enhanced OAuth authentication flow across all MCP servers',
+        'ERROR HANDLING IMPROVED: Added comprehensive makeRequest method support to all client classes',
+        'MCP PROTOCOL DEBUGGING: Better error tracing and debugging capabilities in MCP communication layer',
+        'NPM PACKAGE READY: Published v1.1.81 to npm registry for testing in separate environments',
+        'DEPLOYMENT RELIABILITY: Resolved issues that prevented flow creation via MCP tools in Claude Code'
+      ]
+    },
     '1.1.80': {
       date: '2025-01-22',
       changes: [
