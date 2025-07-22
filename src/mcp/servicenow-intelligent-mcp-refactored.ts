@@ -148,8 +148,10 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         const { query, type, use_cache } = args;
 
         // Check authentication
-        if (!await this.checkAuthentication()) {
-          return this.createAuthenticationError();
+        // 🔧 MANDATORY ServiceNow connection validation
+        const connectionResult = await this.validateServiceNowConnection();
+        if (!connectionResult.success) {
+          return this.createAuthenticationError(connectionResult.error);
         }
 
         this.assertNoMockData('artifact search');
@@ -231,8 +233,10 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
       async (context) => {
         const { sys_id, table, deep_analysis } = args;
 
-        if (!await this.checkAuthentication()) {
-          return this.createAuthenticationError();
+        // 🔧 MANDATORY ServiceNow connection validation
+        const connectionResult = await this.validateServiceNowConnection();
+        if (!connectionResult.success) {
+          return this.createAuthenticationError(connectionResult.error);
         }
 
         this.assertNoMockData('artifact analysis');
@@ -341,8 +345,10 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
       async (context) => {
         const { query, include_inactive, max_results } = args;
 
-        if (!await this.checkAuthentication()) {
-          return this.createAuthenticationError();
+        // 🔧 MANDATORY ServiceNow connection validation
+        const connectionResult = await this.validateServiceNowConnection();
+        if (!connectionResult.success) {
+          return this.createAuthenticationError(connectionResult.error);
         }
 
         this.assertNoMockData('comprehensive search');

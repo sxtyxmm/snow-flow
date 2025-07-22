@@ -565,41 +565,119 @@ export class ServiceNowOAuth {
   }
 
   /**
-   * Load credentials (including tokens)
+   * Load credentials (including tokens) with .env fallback
    */
   async loadCredentials(): Promise<ServiceNowCredentials | null> {
     try {
+      // First, try to load saved OAuth tokens
       const tokens = await this.loadTokens();
-      if (!tokens) {
-        console.log('⚠️  No tokens found in:', this.tokenPath);
-        return null;
-      }
       
-      // Validate client secret when loading
-      if (tokens.clientSecret) {
-        const secretValidation = this.validateClientSecret(tokens.clientSecret);
-        if (!secretValidation.valid) {
-          console.warn('⚠️  OAuth Configuration Issue:', secretValidation.reason);
-          console.warn('💡 Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login');
+      if (tokens && tokens.accessToken) {
+        // Validate client secret when loading
+        if (tokens.clientSecret) {
+          const secretValidation = this.validateClientSecret(tokens.clientSecret);
+          if (!secretValidation.valid) {
+            console.warn('⚠️  OAuth Configuration Issue:', secretValidation.reason);
+            console.warn('💡 Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login');
+          }
+        }
+        
+        // Check if token is expired
+        const expiresAt = new Date(tokens.expiresAt);
+        const now = new Date();
+        
+        if (now < expiresAt) {
+          console.log('✅ Using saved OAuth tokens');
+          return {
+            instance: tokens.instance,
+            clientId: tokens.clientId,
+            clientSecret: tokens.clientSecret,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresAt: tokens.expiresAt
+          };
+        } else {
+          console.log('⏰ Saved OAuth token expired, will try refresh...');
         }
       }
       
-      // Debug: Log what we found
-      console.log('🔍 Credentials check:');
-      console.log(`   - Token file: ${this.tokenPath}`);
-      console.log(`   - Instance: ${tokens.instance || 'MISSING'}`);
-      console.log(`   - Client ID: ${tokens.clientId ? '✅ Present' : '❌ Missing'}`);
-      console.log(`   - Access Token: ${tokens.accessToken ? '✅ Present' : '❌ Missing'}`);
-      console.log(`   - Expires At: ${tokens.expiresAt || 'MISSING'}`);
+      // 🔧 NEW: Fallback to .env file if no valid tokens
+      console.log('🔍 No valid OAuth tokens found, checking .env file...');
       
-      return {
-        instance: tokens.instance,
-        clientId: tokens.clientId,
-        clientSecret: tokens.clientSecret,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        expiresAt: tokens.expiresAt
-      };
+      // Load environment variables with dotenv
+      try {
+        require('dotenv').config();
+      } catch (err) {
+        console.log('📝 dotenv not available, using process.env directly');
+      }
+      
+      const envInstance = process.env.SNOW_INSTANCE;
+      const envClientId = process.env.SNOW_CLIENT_ID;
+      const envClientSecret = process.env.SNOW_CLIENT_SECRET;
+      
+      if (envInstance && envClientId && envClientSecret) {
+        console.log('✅ Found ServiceNow credentials in .env file');
+        console.log(`   - Instance: ${envInstance}`);
+        console.log(`   - Client ID: ${envClientId}`);
+        console.log(`   - Client Secret: ✅ Present`);
+        
+        // Validate client secret
+        const secretValidation = this.validateClientSecret(envClientSecret);
+        if (!secretValidation.valid) {
+          console.error('❌ Invalid OAuth Client Secret in .env file:', secretValidation.reason);
+          console.error('💡 Please update SNOW_CLIENT_SECRET in .env with proper OAuth secret from ServiceNow');
+          return null;
+        }
+        
+        console.log('');
+        console.log('🔐 OAuth Setup Required:');
+        console.log('   Your .env has OAuth credentials but no active session.');
+        console.log('   Run: snow-flow auth login');
+        console.log('   This will authenticate and create persistent tokens.');
+        console.log('');
+        
+        // Return credentials without access token - this will trigger auth flow
+        return {
+          instance: envInstance.replace(/\/$/, ''),
+          clientId: envClientId,
+          clientSecret: envClientSecret,
+          // No accessToken - this signals that OAuth login is needed
+        };
+      }
+      
+      // 🔧 Check for old username/password setup in .env
+      const envUsername = process.env.SNOW_USERNAME;
+      const envPassword = process.env.SNOW_PASSWORD;
+      
+      if (envInstance && envUsername && envPassword) {
+        console.warn('⚠️  Found username/password in .env - OAuth is recommended');
+        console.warn('💡 For better security, set up OAuth credentials:');
+        console.warn('   1. In ServiceNow: System OAuth > Application Registry > New');
+        console.warn('   2. Update .env with SNOW_CLIENT_ID and SNOW_CLIENT_SECRET');
+        console.warn('   3. Run: snow-flow auth login');
+        
+        // Don't return username/password - force OAuth setup
+        return null;
+      }
+      
+      // No credentials found anywhere
+      console.error('❌ No ServiceNow credentials found!');
+      console.error('');
+      console.error('🔧 Setup Instructions:');
+      console.error('   1. Create .env file with OAuth credentials:');
+      console.error('      SNOW_INSTANCE=your-instance.service-now.com');
+      console.error('      SNOW_CLIENT_ID=your_oauth_client_id');
+      console.error('      SNOW_CLIENT_SECRET=your_oauth_client_secret');
+      console.error('   2. Run: snow-flow auth login');
+      console.error('');
+      console.error('💡 To get OAuth credentials:');
+      console.error('   • ServiceNow: System OAuth > Application Registry > New OAuth Application');
+      console.error('   • Redirect URI: http://localhost:3005/callback');
+      console.error('   • Scopes: useraccount write admin');
+      console.error('');
+      
+      return null;
+      
     } catch (error) {
       console.error('❌ Error loading credentials:', error);
       return null;

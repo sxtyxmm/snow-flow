@@ -112,6 +112,239 @@ snow-flow queen-memory export my-patterns.json
 - CHECK current update set before starting work
 - COMPLETE update sets before moving between environments
 
+## 🔒 MANDATORY ServiceNow Development Workflow (v1.1.79+)
+
+### 🚨 CRITICAL: All ServiceNow Operations MUST Follow This Workflow
+
+**Every single ServiceNow operation must start with authentication validation!** The MCP servers now automatically enforce this workflow.
+
+#### **STEP 1: MANDATORY Authentication Validation**
+
+```javascript
+// This happens automatically in ALL MCP tools
+const connectionResult = await validateServiceNowConnection();
+if (!connectionResult.success) {
+  return createAuthenticationError(connectionResult.error);
+}
+```
+
+**What This Checks:**
+1. ✅ **Credentials Exist**: .env file has OAuth settings
+2. ✅ **OAuth Session Active**: Valid access token exists  
+3. ✅ **Token Valid**: Not expired, auto-refresh if needed
+4. ✅ **Live Connection**: Actual ServiceNow instance responds
+
+**If Authentication Fails, You Get:**
+```
+❌ ServiceNow Connection Failed
+
+OAuth authentication required. Run "snow-flow auth login" to authenticate.
+
+🔧 To fix this:
+
+1. Ensure .env file has OAuth credentials:
+   SNOW_INSTANCE=your-instance.service-now.com
+   SNOW_CLIENT_ID=your_oauth_client_id
+   SNOW_CLIENT_SECRET=your_oauth_client_secret
+
+2. Authenticate with ServiceNow:
+   snow-flow auth login
+
+3. If you still get errors, run diagnostics:
+   snow_auth_diagnostics()
+```
+
+#### **STEP 2: Smart Artifact Discovery (DRY Principle)**
+
+```javascript
+// Automatic discovery before creating anything new
+const discovery = await discoverExistingArtifacts(
+  type,           // 'widget', 'flow', 'script', etc.
+  artifactName,   // Extracted from instruction/config
+  searchTerms     // Related keywords for comprehensive search
+);
+
+if (discovery.found) {
+  console.log(`🔍 Found ${discovery.artifacts.length} existing artifacts`);
+  console.log(`💡 Suggestions: ${discovery.suggestions.join(', ')}`);
+}
+```
+
+**Discovery Results Include:**
+- 📋 **Existing Artifacts**: Similar names and functionality
+- 💡 **Reuse Suggestions**: "Consider reusing: Widget A, Widget B"  
+- 🔍 **Related Items**: Found by description and keywords
+- ⚠️ **Duplication Warnings**: Prevents creating identical artifacts
+
+#### **STEP 3: Automatic Update Set Management**
+
+```javascript
+// Automatic Update Set creation and tracking
+const updateSetId = await ensureUpdateSet(context, purpose);
+
+// After every deployment
+await trackArtifact(sysId, type, name, updateSetId);
+```
+
+**Update Set Features:**
+- 📦 **Auto-Creation**: Creates Update Set if none exists
+- 🏷️ **Smart Naming**: `Snow-Flow Widget Deployment - 2024-01-15`
+- 📋 **Auto-Tracking**: Every artifact automatically tracked
+- 🔄 **Session Management**: Links to Agent session for coordination
+
+### 🛡️ Error Recovery Patterns with Specific Next Steps
+
+#### **Authentication Errors (403, 401)**
+
+```javascript
+// OLD: Generic error
+❌ "Authentication failed"
+
+// NEW: Specific recovery steps
+❌ ServiceNow Connection Failed
+
+OAuth token expired and refresh failed. Run "snow-flow auth login" to re-authenticate.
+
+🔧 To fix this:
+1. Check .env credentials are correct
+2. Run: snow-flow auth login  
+3. If issues persist: snow_auth_diagnostics()
+```
+
+#### **Deployment Errors with Fallback Strategies**
+
+```javascript
+// Automatic fallback strategies
+if (deployment.failed) {
+  // Strategy 1: Try global scope
+  if (error.includes('insufficient privileges')) {
+    await escalateToGlobalScope();
+  }
+  
+  // Strategy 2: Manual steps guide  
+  if (fallback_strategy === 'manual_steps') {
+    return createManualStepsGuide(artifact, error);
+  }
+  
+  // Strategy 3: Update Set only
+  if (fallback_strategy === 'update_set_only') {
+    await createUpdateSetWithInstructions(artifact);
+  }
+}
+```
+
+#### **Discovery Conflicts with Resolution Options**
+
+```javascript
+// When existing artifacts found
+if (discovery.found) {
+  return {
+    options: [
+      "1. Reuse existing: incident_dashboard_v2 (recommended)",
+      "2. Extend existing with new features", 
+      "3. Create new with different name: incident_dashboard_v3",
+      "4. Override existing (not recommended)"
+    ],
+    recommendations: [
+      "✅ Reusing saves development time",
+      "⚠️ Check if existing meets requirements first",
+      "💡 Consider extending instead of duplicating"
+    ]
+  };
+}
+```
+
+### 🔧 Enhanced OAuth Implementation (v1.1.79+)
+
+#### **Environment Variable Fallback**
+
+The OAuth system now properly supports .env fallback:
+
+```javascript
+// 1. Try OAuth tokens from ~/.snow-flow/auth.json
+// 2. Fallback to .env credentials if no tokens
+// 3. Provide specific error messages for each failure
+
+async loadCredentials(): Promise<ServiceNowCredentials | null> {
+  // Try saved OAuth tokens first
+  const tokens = await this.loadTokens();
+  if (tokens?.accessToken) {
+    return tokens;  // ✅ Valid session found
+  }
+  
+  // 🔧 NEW: Fallback to .env file
+  const envCredentials = this.loadFromEnv();
+  if (envCredentials) {
+    // Return credentials without accessToken - signals OAuth login needed
+    return envCredentials;
+  }
+  
+  // ❌ No credentials found anywhere
+  return null;
+}
+```
+
+#### **Automatic Token Refresh**
+
+```javascript
+// Smart token management
+if (token.expired) {
+  console.log('🔄 Token expired, attempting refresh...');
+  
+  const refreshResult = await oauth.refreshAccessToken();
+  if (refreshResult.success) {
+    console.log('✅ Token refreshed successfully');
+  } else {
+    return authenticationError('Token refresh failed - login required');
+  }
+}
+```
+
+### 📋 MANDATORY Pre-Flight Checklist
+
+Before ANY ServiceNow development, ensure:
+
+#### **Environment Setup**
+- [ ] ✅ `.env` file has SNOW_INSTANCE, SNOW_CLIENT_ID, SNOW_CLIENT_SECRET
+- [ ] ✅ `snow-flow auth login` completed successfully  
+- [ ] ✅ `snow_validate_live_connection()` returns success
+
+#### **Development Workflow**
+- [ ] ✅ Start with discovery: `snow_find_artifact()` or `snow_comprehensive_search()`
+- [ ] ✅ Check for reusable components before creating new
+- [ ] ✅ Ensure active Update Set before deployment
+- [ ] ✅ Test with mock data first: `snow_test_flow_with_mock()`
+
+#### **Deployment Verification** 
+- [ ] ✅ All artifacts tracked in Update Set
+- [ ] ✅ Authentication validated before each operation
+- [ ] ✅ Error recovery plan in place
+- [ ] ✅ Rollback strategy documented
+
+### 🚨 Queen Agent Must Develop IN ServiceNow First
+
+**CRITICAL RULE**: The Queen Agent and all specialists must always develop directly in the live ServiceNow instance using the MCP tools, never create local documentation or placeholder code.
+
+```bash
+# ✅ CORRECT: Live development
+snow-flow queen "create incident widget"
+# → Queen uses snow_deploy() with real ServiceNow instance
+# → Creates actual widget in ServiceNow
+# → Tracks in Update Set
+# → Returns sys_id and live URL
+
+# ❌ INCORRECT: Local/mock development  
+# → Creates local HTML/CSS files
+# → Uses placeholder data
+# → No ServiceNow integration
+```
+
+**Why This Matters:**
+- 🎯 **Real Validation**: Only live environment shows real constraints
+- 🔗 **Actual Integration**: Real data connections and dependencies
+- 📋 **Proper Tracking**: Update Sets only work with live changes
+- 🚀 **Immediate Value**: User can see and test results instantly
+
 ## 🎯 Simplified Deployment API (v1.1.73+)
 
 ### One Tool for All Deployments

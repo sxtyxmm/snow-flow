@@ -497,7 +497,14 @@ Task("${taskAnalysis.primaryAgent}", \`
   3. Store all work progress in Memory with prefix: "agent_${taskAnalysis.primaryAgent}_"
   4. Update TodoWrite items as you complete tasks
   5. Coordinate with supporting agents through Memory
-  ${isAuthenticated ? '6. Use ServiceNow MCP tools for deployment' : '6. Create artifacts in servicenow/ directory'}
+  
+  🔐 AUTHENTICATION WORKFLOW (MANDATORY):
+  1. ALWAYS start with an MCP tool to check authentication status
+  2. If any MCP tool returns auth error:
+     - The tool will provide SPECIFIC instructions (e.g., "Run snow-flow auth login")
+     - Switch to PLANNING MODE - document the COMPLETE solution
+     - Store all plans in Memory for future automated deployment
+  3. NEVER skip directly to local files - always try MCP first!
 \`);
 \`\`\`
 
@@ -520,6 +527,11 @@ Task("${agent}", \`
   4. Enhance/support with your ${agent} expertise
   5. Store outputs in Memory with prefix: "agent_${agent}_"
   6. Update relevant TodoWrite items
+  
+  🔐 AUTHENTICATION REQUIREMENTS:
+  - ALWAYS use MCP tools first - inherit auth status from primary agent
+  - If auth fails, contribute to the PLANNING documentation
+  - Store all plans in Memory for future deployment
 \`);
 \`\`\``).join('\n')}
 
@@ -563,7 +575,9 @@ ${hasIntelligentFeatures ? `✅ **INTELLIGENT MODE ACTIVE** - The following feat
 
 ## 🎯 ServiceNow Execution Strategy
 
-${isAuthenticated ? `### ✅ Live ServiceNow Integration Active
+### 🚀 MANDATORY: Live ServiceNow Development First!
+
+**CRITICAL RULE**: All agents MUST attempt to use ServiceNow MCP tools first, regardless of authentication status.
 
 ${hasIntelligentFeatures ? `#### 🧠 Intelligent Orchestration Available
 Use the unified orchestration tool for complete automation:
@@ -583,9 +597,17 @@ snow_orchestrate_development({
 \`\`\`
 ` : ''}
 
-#### ServiceNow MCP Tools Available
-Your agents have access to comprehensive MCP tools:
+#### ServiceNow MCP Tools (ALWAYS TRY THESE FIRST!)
+${isAuthenticated ? '✅ Authentication detected - full deployment capabilities' : '⚠️ No authentication detected - MCP tools will provide specific instructions if auth needed'}
 
+Your agents MUST use these MCP tools IN THIS ORDER:
+
+🔍 **PRE-FLIGHT CHECKS** (Always do first!):
+1. \`snow_find_artifact\` with a simple query to test authentication
+2. If auth fails, the tool provides specific instructions
+3. Continue with appropriate strategy based on auth status
+
+📦 **CORE DEVELOPMENT TOOLS**:
 1. **Deployment Tools** (servicenow-deployment-mcp)
    - \`snow_deploy\` - Unified deployment for all artifact types
    - \`snow_preview_widget\` - Preview widgets before deployment
@@ -606,6 +628,12 @@ Your agents have access to comprehensive MCP tools:
    - \`snow_update_set_add_artifact\` - Track artifacts
    - \`snow_update_set_complete\` - Complete update sets
 
+🚨 **ERROR RECOVERY PATTERNS**:
+- Auth Error → Document complete solution → Store in Memory → Guide user
+- Permission Error → Try global scope → Document if fails
+- Not Found → Create new → Track in Update Set
+- Any Error → Provide SPECIFIC next steps, not generic messages
+
 ${options.autoDeploy ? `
 #### ⚠️ AUTO-DEPLOYMENT ACTIVE ⚠️
 - Real artifacts will be created in ServiceNow
@@ -616,17 +644,18 @@ ${options.autoDeploy ? `
 - No real artifacts will be created
 - Analysis and recommendations only
 - Use --auto-deploy to enable deployment
-`}` : `### ❌ ServiceNow Integration Disabled
-
-#### File-Based Development Mode
-Agents will create artifacts as files in these directories:
-- \`servicenow/widgets/\` - Widget definitions
-- \`servicenow/flows/\` - Flow configurations
-- \`servicenow/scripts/\` - Script files
-- \`servicenow/apps/\` - Application definitions
-
-Run \`snow-flow auth login\` to enable live ServiceNow integration.
 `}
+${!isAuthenticated ? `### ❌ ServiceNow Integration Disabled
+
+#### Planning Mode (Auth Required)
+When authentication is not available, agents will:
+1. Document the COMPLETE solution architecture
+2. Create detailed implementation guides
+3. Store all plans in Memory for future deployment
+4. Provide SPECIFIC instructions: "Run snow-flow auth login"
+
+⚠️ IMPORTANT: This is a FALLBACK mode only!
+Agents must ALWAYS try MCP tools first!` : ''}
 
 ## 👑 Queen Agent Coordination Instructions
 
@@ -747,6 +776,81 @@ Your Queen Agent orchestration is successful when:
 4. **Monitor agent health** and restart if needed
 5. **Validate outputs** before marking complete
 6. **Store all decisions** in Memory for audit trail
+
+## 📋 Agent-Specific Authentication & Discovery Workflows
+
+### 🛠️ Widget Creator Agent
+\`\`\`javascript
+// Pre-flight check
+const authCheck = await snow_find_artifact({ query: "test auth", type: "widget" });
+if (authCheck.error?.includes("OAuth")) {
+  // Switch to planning mode
+  Memory.store("widget_plan", {
+    html_template: "<!-- Complete HTML structure -->",
+    server_script: "// Complete server logic",
+    client_script: "// Complete client controller",
+    css_styles: "/* Complete styles */",
+    deployment_instructions: "Run snow-flow auth login, then use snow_deploy"
+  });
+  TodoWrite([{ content: "Widget plan ready - auth required for deployment", status: "completed" }]);
+} else {
+  // Continue with live development
+  const existing = await snow_comprehensive_search({ query: "similar widget" });
+  // ... proceed with snow_deploy
+}
+\`\`\`
+
+### 🔄 Flow Builder Agent
+\`\`\`javascript
+// Check existing flows first
+const flows = await snow_discover_existing_flows({ flow_purpose: "objective" });
+if (flows.error?.includes("OAuth")) {
+  // Document flow architecture
+  Memory.store("flow_plan", {
+    trigger: "When record created on [table]",
+    steps: ["Step 1: Validate data", "Step 2: Process", "Step 3: Notify"],
+    natural_language: "Complete flow instruction for snow_create_flow",
+    deployment_command: "snow_create_flow with instruction from Memory"
+  });
+} else {
+  // Create flow directly
+  await snow_create_flow({ instruction: "natural language description" });
+}
+\`\`\`
+
+### 📝 Script Writer Agent
+\`\`\`javascript
+// Verify permissions
+const permCheck = await snow_get_by_sysid({ 
+  sys_id: "test", 
+  table: "sys_script_include" 
+});
+if (permCheck.error?.includes("OAuth")) {
+  // Complete script documentation
+  Memory.store("script_solution", {
+    script_type: "Business Rule/Script Include/etc",
+    code: "// Complete implementation",
+    when: "before/after/async",
+    table: "target_table",
+    deployment_ready: true
+  });
+}
+\`\`\`
+
+### 🧪 Tester Agent
+\`\`\`javascript
+// Tester can start with mock (always works)
+const mockTest = await snow_test_flow_with_mock({
+  flow_id: "flow_name",
+  test_inputs: { /* test data */ }
+});
+// Then try comprehensive if authenticated
+const liveTest = await snow_comprehensive_flow_test({ flow_sys_id: "id" });
+if (liveTest.error) {
+  // Document test results from mock only
+  Memory.store("test_results", mockTest);
+}
+\`\`\`
 
 ## 🚀 Begin Orchestration
 

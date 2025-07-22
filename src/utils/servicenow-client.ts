@@ -144,7 +144,7 @@ export class ServiceNowClient {
   }
 
   /**
-   * Ensure we have valid authentication
+   * Ensure we have valid authentication with improved error handling
    */
   private async ensureAuthenticated(): Promise<void> {
     if (!this.credentials) {
@@ -152,15 +152,55 @@ export class ServiceNowClient {
     }
     
     if (!this.credentials) {
-      console.error('❌ No credentials found');
-      throw new Error('No ServiceNow credentials found. Please run "snow-flow auth login" first.');
+      console.error('❌ No ServiceNow credentials found');
+      console.error('');
+      console.error('🔧 To fix this:');
+      console.error('   1. Ensure .env file has OAuth credentials:');
+      console.error('      SNOW_INSTANCE=your-instance.service-now.com');
+      console.error('      SNOW_CLIENT_ID=your_oauth_client_id');
+      console.error('      SNOW_CLIENT_SECRET=your_oauth_client_secret');
+      console.error('   2. Run: snow-flow auth login');
+      console.error('');
+      throw new Error('No ServiceNow credentials found. Set up .env file and run "snow-flow auth login".');
     }
     
-    // The OAuth service will handle token refresh automatically
+    // Check if we have credentials but no access token (OAuth login needed)
+    if (!this.credentials.accessToken) {
+      console.error('🔐 OAuth authentication required');
+      console.error('');
+      console.error('✅ Your .env file has OAuth credentials');
+      console.error('❌ But no active OAuth session found');
+      console.error('');
+      console.error('🔧 To authenticate:');
+      console.error('   Run: snow-flow auth login');
+      console.error('   This will open your browser for OAuth login.');
+      console.error('');
+      throw new Error('OAuth login required. Run "snow-flow auth login" to authenticate.');
+    }
+    
+    // Check if token is valid/authenticated
     const isAuth = await this.oauth.isAuthenticated();
     if (!isAuth) {
-      console.error('❌ Authentication expired and refresh failed');
-      throw new Error('ServiceNow authentication expired. Please run "snow-flow auth login" again.');
+      console.error('⏰ OAuth token expired');
+      console.error('');
+      console.error('🔄 Attempting automatic token refresh...');
+      
+      // Try to refresh the token
+      const refreshResult = await this.oauth.refreshAccessToken();
+      if (refreshResult.success && refreshResult.accessToken) {
+        console.log('✅ Token refreshed successfully');
+        // Update local credentials
+        this.credentials.accessToken = refreshResult.accessToken;
+        return; // Success!
+      }
+      
+      console.error('❌ Token refresh failed:', refreshResult.error);
+      console.error('');
+      console.error('🔧 To fix this:');
+      console.error('   Run: snow-flow auth login');
+      console.error('   This will re-authenticate with ServiceNow.');
+      console.error('');
+      throw new Error('OAuth token expired and refresh failed. Run "snow-flow auth login" to re-authenticate.');
     }
   }
 

@@ -2,13 +2,24 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.79';
+export const VERSION = '1.1.80';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.80': [
+      '🏗️ QUEEN AGENT FIX: All agents now ALWAYS attempt ServiceNow MCP tools first',
+      '🔐 AUTH WORKFLOW: Agents switch to planning mode when auth fails with specific instructions',
+      '📋 PRE-FLIGHT CHECKS: All agents start with authentication verification before operations',
+      '🔍 DISCOVERY FIRST: Agents check for existing artifacts before creating new ones',
+      '📝 PLANNING MODE: Complete solution documentation when authentication not available',
+      '🚨 ERROR RECOVERY: Specific recovery patterns for auth, permission, and not found errors',
+      '💡 AGENT INSTRUCTIONS: Each agent type has specific auth and discovery workflows',
+      '✅ NO MORE LOCAL FILES: Agents never skip directly to local file creation',
+      '🎯 SERVICENOW FIRST: Live development in ServiceNow is now mandatory approach'
+    ],
     '1.1.79': [
       '🎯 FINAL VERSION FIX: Corrected ALL version references including features object',
       '📊 DASHBOARD SYNC: Dashboard now shows correct v1.1.79 across all displays',
@@ -577,6 +588,23 @@ export const VERSION_INFO = {
     ]
   },
   changelog: {
+    '1.1.80': {
+      date: '2025-01-22',
+      changes: [
+        'QUEEN AGENT ORCHESTRATION FIX: Complete overhaul of agent instruction system',
+        'ROOT CAUSE: CLI was giving conditional instructions - WITH auth = MCP tools, WITHOUT auth = local files',
+        'SOLUTION: All agents now ALWAYS attempt ServiceNow MCP tools first, regardless of auth status',
+        'NEW WORKFLOW: Try MCP tool → Get specific error instructions → Switch to planning mode → Document solution',
+        'AUTHENTICATION HANDLING: Pre-flight checks validate connection before any operations',
+        'DISCOVERY PATTERN: All agents check for existing artifacts to follow DRY principle',
+        'PLANNING MODE: When auth fails, agents create COMPLETE solution documentation for manual deployment',
+        'ERROR RECOVERY: Specific patterns for auth errors, permission errors, not found errors',
+        'AGENT-SPECIFIC WORKFLOWS: Each agent type has tailored authentication and discovery instructions',
+        'MEMORY INTEGRATION: All plans stored in memory for future automated deployment',
+        'NO MORE LOCAL FILES: Eliminated direct file creation - ServiceNow-first development is mandatory',
+        'USER FEEDBACK ADDRESSED: Agents no longer create local files when MCP tools are available'
+      ]
+    },
     '1.1.74': {
       date: '2025-01-21',
       changes: [

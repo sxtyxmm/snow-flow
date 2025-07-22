@@ -196,44 +196,165 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
   }
 
   /**
-   * Main deployment method with full agent integration
+   * Main deployment method with full agent integration and intelligent workflow
    */
   private async deployWithAgentCoordination(args: any): Promise<MCPToolResult> {
     return await this.executeWithAgentContext(
       'snow_deploy',
       args,
       async (context) => {
-        // Check authentication
-        if (!await this.checkAuthentication()) {
-          return this.createAuthenticationError();
+        // 🔧 STEP 1: MANDATORY Authentication and Connection Validation
+        this.logger.info('🔍 Step 1: Validating ServiceNow connection...');
+        const connectionResult = await this.validateServiceNowConnection();
+        if (!connectionResult.success) {
+          return this.createAuthenticationError(connectionResult.error);
         }
-
+        
         // Assert no mock data
         this.assertNoMockData('deployment');
+
+        // 🔧 STEP 2: Update Set Management
+        this.logger.info('📦 Step 2: Ensuring Update Set for tracking...');
+        await this.reportProgress(context, 15, 'Setting up Update Set');
+        
+        const purpose = args.type === 'batch' ? 'Batch Deployment' : `${args.type} Deployment`;
+        const updateSetId = await this.ensureUpdateSet(context, purpose);
+        
+        if (!updateSetId) {
+          this.logger.warn('⚠️ No Update Set created - changes will not be tracked');
+        }
+
+        // 🔧 STEP 3: Smart Artifact Discovery (DRY principle)
+        if (args.type !== 'batch' && (args.config?.name || args.instruction)) {
+          this.logger.info('🔍 Step 3: Discovering existing artifacts...');
+          await this.reportProgress(context, 25, 'Checking for existing artifacts');
+          
+          const artifactName = args.config?.name || this.extractNameFromInstruction(args.instruction);
+          if (artifactName) {
+            const discovery = await this.discoverExistingArtifacts(
+              args.type,
+              artifactName,
+              this.extractSearchTermsFromInstruction(args.instruction)
+            );
+            
+            if (discovery.found) {
+              this.logger.info(`🔍 Found ${discovery.artifacts.length} existing artifacts`);
+              // Store discovery info in memory for reference
+              await this.memory.updateSharedContext({
+                session_id: context.session_id,
+                context_key: `discovery_${args.type}`,
+                context_value: JSON.stringify({
+                  artifacts: discovery.artifacts,
+                  suggestions: discovery.suggestions,
+                  timestamp: new Date().toISOString()
+                }),
+                created_by_agent: context.agent_id
+              });
+            }
+          }
+        }
 
         // Get session context for coordination
         const sessionContext = await this.getSessionContext(context.session_id);
         
-        // Report initial progress
-        await this.reportProgress(context, 10, 'Initializing deployment');
+        // Report progress
+        await this.reportProgress(context, 35, 'Starting deployment');
 
         try {
           // Handle different deployment types
+          let result;
           if (args.type === 'batch') {
-            return await this.deployBatch(args, context);
+            result = await this.deployBatch(args, context, updateSetId);
           } else {
-            return await this.deploySingleArtifact(args, context);
+            result = await this.deploySingleArtifact(args, context, updateSetId);
           }
+          
+          // Add discovery information to successful results (from memory context)
+          try {
+            const discoveryResults = await this.memory.query(
+              'SELECT context_value FROM shared_context WHERE session_id = ? AND context_key = ?',
+              [context.session_id, `discovery_${args.type}`]
+            );
+            
+            if (discoveryResults.length > 0) {
+              const discovery = JSON.parse(discoveryResults[0].context_value);
+              if (discovery.artifacts && discovery.artifacts.length > 0) {
+                result.content.push({
+                  type: 'text',
+                  text: `\n📋 Artifact Discovery Results:\n${discovery.suggestions?.join('\n') || ''}`
+                });
+              }
+            }
+          } catch (discoveryError) {
+            this.logger.warn('Could not retrieve discovery information', discoveryError);
+          }
+          
+          return result;
+          
         } catch (error) {
-          // Request Queen intervention for critical errors
+          this.logger.error('Deployment failed, attempting intelligent recovery...', error);
+          
+          // Use enhanced error handling with fallback options
+          const fallbackOptions = {
+            enableRetry: true,
+            enableScopeEscalation: args.permission_escalation === 'auto_request',
+            enableManualSteps: args.fallback_strategy === 'manual_steps'
+          };
+          
+          const errorResult = await this.handleServiceNowError(
+            error,
+            `${args.type} deployment`,
+            context,
+            fallbackOptions
+          );
+          
+          // If error handling provided a recovery solution
+          if (errorResult.content.some(c => c.text?.includes('can_continue: true'))) {
+            this.logger.info('✅ Error recovered - retrying deployment...');
+            
+            try {
+              // Retry the deployment after recovery
+              await this.reportProgress(context, 85, 'Retrying after error recovery');
+              
+              let retryResult;
+              if (args.type === 'batch') {
+                retryResult = await this.deployBatch(args, context, updateSetId);
+              } else {
+                retryResult = await this.deploySingleArtifact(args, context, updateSetId);
+              }
+              
+              // Add recovery note to success result
+              retryResult.content.push({
+                type: 'text',
+                text: '\n✅ Deployment succeeded after automatic error recovery'
+              });
+              
+              return retryResult;
+              
+            } catch (retryError) {
+              this.logger.error('Retry after recovery also failed', retryError);
+              
+              // Request Queen intervention for persistent failures
+              await this.requestQueenIntervention(context, {
+                type: 'deployment_failure_persistent',
+                priority: 'critical',
+                description: `Failed to deploy ${args.type} even after error recovery: ${retryError instanceof Error ? retryError.message : String(retryError)}`,
+                attempted_solutions: ['direct_deployment', 'error_recovery', 'retry_after_recovery']
+              });
+              
+              return errorResult; // Return the error recovery guidance
+            }
+          }
+          
+          // If no automatic recovery possible, request Queen intervention
           await this.requestQueenIntervention(context, {
             type: 'deployment_failure',
-            priority: 'high',
+            priority: 'high', 
             description: `Failed to deploy ${args.type}: ${error instanceof Error ? error.message : String(error)}`,
-            attempted_solutions: ['direct_deployment', 'fallback_strategy']
+            attempted_solutions: ['direct_deployment', 'intelligent_error_handling']
           });
 
-          throw error;
+          return errorResult; // Return the error recovery guidance instead of throwing
         }
       }
     );
@@ -242,17 +363,16 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
   /**
    * Deploy a single artifact with memory tracking
    */
-  private async deploySingleArtifact(args: any, context: AgentContext): Promise<MCPToolResult> {
+  private async deploySingleArtifact(args: any, context: AgentContext, updateSetId?: string): Promise<MCPToolResult> {
     const { type, config, instruction } = args;
 
     // Report planning phase
     await this.reportProgress(context, 20, 'Planning deployment');
 
     // Ensure update set if requested
-    let updateSetId: string | undefined;
-    if (args.auto_update_set !== false) {
-      const updateSetResult = await this.ensureUpdateSet(type, config?.name || 'artifact', context);
-      updateSetId = updateSetResult.updateSetId;
+    let finalUpdateSetId = updateSetId;
+    if (args.auto_update_set !== false && !finalUpdateSetId) {
+      finalUpdateSetId = await this.ensureUpdateSet(context, config?.name || 'artifact');
       
       await this.reportProgress(context, 30, 'Update set ready');
     }
@@ -263,17 +383,17 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
 
     switch (type) {
       case 'widget':
-        result = await this.deployWidget(config, context, updateSetId);
+        result = await this.deployWidget(config, context, finalUpdateSetId);
         break;
       case 'flow':
-        result = await this.deployFlow(config || { instruction }, context, updateSetId);
+        result = await this.deployFlow(config || { instruction }, context, finalUpdateSetId);
         break;
       case 'application':
-        result = await this.deployApplication(config, context, updateSetId);
+        result = await this.deployApplication(config, context, finalUpdateSetId);
         break;
       case 'script':
       case 'business_rule':
-        result = await this.deployScript(type, config, context, updateSetId);
+        result = await this.deployScript(type, config, context, finalUpdateSetId);
         break;
       default:
         throw new Error(`Unsupported deployment type: ${type}`);
@@ -286,7 +406,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       name: result.name || config?.name || 'unnamed',
       description: config?.description,
       config,
-      update_set_id: updateSetId
+      update_set_id: finalUpdateSetId
     });
 
     // Record deployment in history
@@ -316,7 +436,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       {
         sys_id: result.sys_id,
         name: result.name,
-        update_set_id: updateSetId,
+        update_set_id: finalUpdateSetId,
         deployment_details: result
       },
       {
@@ -330,7 +450,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
   /**
    * Deploy multiple artifacts in batch
    */
-  private async deployBatch(args: any, context: AgentContext): Promise<MCPToolResult> {
+  private async deployBatch(args: any, context: AgentContext, updateSetId?: string): Promise<MCPToolResult> {
     const { artifacts, parallel, transaction_mode, dry_run } = args;
     
     if (!artifacts || !Array.isArray(artifacts)) {
@@ -352,8 +472,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
     }
 
     // Create update set for batch
-    const updateSetResult = await this.ensureUpdateSet('batch', `Batch deployment`, context);
-    const updateSetId = updateSetResult.updateSetId;
+    const batchUpdateSetId = await this.ensureUpdateSet(context, `Batch deployment`);
 
     const results: any[] = [];
     const errors: any[] = [];
@@ -397,7 +516,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
             
             if (transaction_mode) {
               // Rollback on error in transaction mode
-              await this.rollbackBatch(results, updateSetId, context);
+              await this.rollbackBatch(results, batchUpdateSetId, context);
               throw new Error(`Batch deployment failed at artifact ${i + 1}: ${error}`);
             }
           }
@@ -406,7 +525,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
 
       // Check if we need to rollback
       if (transaction_mode && errors.length > 0) {
-        await this.rollbackBatch(results, updateSetId, context);
+        await this.rollbackBatch(results, batchUpdateSetId, context);
         throw new Error(`Batch deployment failed with ${errors.length} errors`);
       }
 
@@ -418,7 +537,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
           successful: results.length,
           failed: errors.length,
           errors: errors.length > 0 ? errors : undefined,
-          update_set_id: updateSetId
+          update_set_id: batchUpdateSetId
         }
       );
 
@@ -438,7 +557,7 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
   }
 
   /**
-   * Deploy widget with agent tracking
+   * Deploy widget with agent tracking and intelligent error handling
    */
   private async deployWidget(config: any, context: AgentContext, updateSetId?: string): Promise<any> {
     this.logger.info('Deploying widget', { 
@@ -447,6 +566,12 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
     });
 
     try {
+      // Validate widget configuration first
+      const validationErrors = this.validateWidgetConfig(config);
+      if (validationErrors.length > 0) {
+        throw new Error(`Widget validation failed: ${validationErrors.join(', ')}`);
+      }
+
       // Create widget in ServiceNow
       const widgetData = {
         name: config.name,
@@ -463,10 +588,33 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       const response = await this.client.createRecord('sp_widget', widgetData);
       
       if (!response.success || !response.result) {
-        throw new Error('Failed to create widget in ServiceNow');
+        // Try to provide more specific error information
+        const errorMsg = response.error || 'Unknown error creating widget';
+        
+        // Check for common widget creation issues
+        if (errorMsg.includes('duplicate') || errorMsg.includes('already exists')) {
+          throw new Error(`Widget '${config.name}' already exists. Consider using a different name or updating the existing widget.`);
+        }
+        
+        if (errorMsg.includes('permission') || errorMsg.includes('access')) {
+          throw new Error(`Insufficient permissions to create widget. Check sp_widget table permissions.`);
+        }
+        
+        throw new Error(`Failed to create widget in ServiceNow: ${errorMsg}`);
       }
 
-      const widgetSysId = response.result.sys_id;
+      const result = response.result as any;
+      const widgetSysId = Array.isArray(result) ? result[0]?.sys_id : result?.sys_id;
+
+      // 🔧 Track artifact in Update Set
+      if (updateSetId) {
+        try {
+          await this.trackArtifact(widgetSysId, 'widget', config.name, updateSetId);
+        } catch (trackingError) {
+          this.logger.warn('Update Set tracking failed (widget created but not tracked)', trackingError);
+          // Don't fail the deployment, just warn
+        }
+      }
 
       // Determine next agent based on widget complexity
       let nextAgent: string | undefined;
@@ -480,18 +628,78 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
         nextSteps = ['functional_testing', 'performance_testing'];
       }
 
+      // Log successful deployment
+      this.logger.info(`✅ Widget deployed successfully: ${config.name} (${widgetSysId})`);
+
       return {
         sys_id: widgetSysId,
         name: config.name,
         table: 'sp_widget',
         next_agent: nextAgent,
-        next_steps: nextSteps
+        next_steps: nextSteps,
+        success: true
       };
 
     } catch (error) {
       this.logger.error('Widget deployment failed', error);
-      throw error;
+      
+      // Use intelligent error handling for specific recovery guidance
+      const errorResult = await this.handleServiceNowError(
+        error,
+        'widget deployment',
+        context,
+        {
+          enableRetry: true,
+          enableScopeEscalation: true,
+          enableManualSteps: true
+        }
+      );
+      
+      // Re-throw with enhanced error information for higher-level handling
+      const enhancedError = new Error(`Widget deployment failed: ${error instanceof Error ? error.message : String(error)}`);
+      (enhancedError as any).errorRecoveryGuidance = errorResult;
+      throw enhancedError;
     }
+  }
+
+  /**
+   * Validate widget configuration before deployment
+   */
+  private validateWidgetConfig(config: any): string[] {
+    const errors: string[] = [];
+    
+    if (!config.name) {
+      errors.push('Widget name is required');
+    } else {
+      // Check for valid widget naming
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(config.name)) {
+        errors.push('Widget name must start with letter and contain only letters, numbers, and underscores');
+      }
+      
+      if (config.name.length > 40) {
+        errors.push('Widget name must be 40 characters or less');
+      }
+    }
+    
+    if (!config.template) {
+      errors.push('Widget template is required');
+    } else {
+      // Basic HTML validation
+      if (config.template.length > 100000) {
+        errors.push('Widget template is too large (max 100KB)');
+      }
+    }
+    
+    // Validate scripts if provided
+    if (config.server_script && config.server_script.length > 1000000) {
+      errors.push('Server script is too large (max 1MB)');
+    }
+    
+    if (config.client_script && config.client_script.length > 1000000) {
+      errors.push('Client script is too large (max 1MB)');
+    }
+    
+    return errors;
   }
 
   /**
@@ -531,8 +739,9 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       throw new Error('Failed to create flow in ServiceNow');
     }
 
+    const result = response.result as any;
     return {
-      sys_id: response.result.sys_id,
+      sys_id: Array.isArray(result) ? result[0]?.sys_id : result?.sys_id,
       name: config.name,
       table: 'sys_hub_flow'
     };
@@ -542,20 +751,13 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
    * Deploy application with scope management
    */
   private async deployApplication(config: any, context: AgentContext, updateSetId?: string): Promise<any> {
-    // Determine deployment scope
+    // Determine deployment scope (simplified)
     const scopeStrategy = config.scope_strategy || 'auto';
-    const deploymentContext: DeploymentContext = {
-      artifactType: 'application',
-      targetScope: scopeStrategy === 'auto' ? undefined : config.scope,
-      environment: config.environment || 'development',
-      permissions: [] // Will be populated based on auth
-    };
-
-    const scope = await this.scopeManager.determineScope(deploymentContext);
+    const targetScope = scopeStrategy === 'auto' ? 'global' : (config.scope || 'global');
     
     const appData = {
       name: config.name,
-      scope: scope.scopeName,
+      scope: targetScope,
       short_description: config.short_description,
       version: config.version,
       vendor: config.vendor || 'Custom',
@@ -569,10 +771,11 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       throw new Error('Failed to create application in ServiceNow');
     }
 
+    const result = response.result as any;
     return {
-      sys_id: response.result.sys_id,
+      sys_id: Array.isArray(result) ? result[0]?.sys_id : result?.sys_id,
       name: config.name,
-      scope: scope.scopeName,
+      scope: targetScope,
       table: 'sys_app'
     };
   }
@@ -597,8 +800,9 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
     }
 
     // Scripts often need testing
+    const result = response.result as any;
     return {
-      sys_id: response.result.sys_id,
+      sys_id: Array.isArray(result) ? result[0]?.sys_id : result?.sys_id,
       name: config.name,
       table,
       next_agent: 'test_agent',
@@ -741,22 +945,6 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
 
   // Helper methods
 
-  private async ensureUpdateSet(type: string, name: string, context: AgentContext): Promise<any> {
-    // Implementation would check for existing update set or create new one
-    // This is simplified for the example
-    const updateSetName = `${context.session_id}_${type}_${Date.now()}`;
-    
-    const response = await this.client.createRecord('sys_update_set', {
-      name: updateSetName,
-      description: `Created by ${context.agent_type} agent ${context.agent_id}`,
-      state: 'in_progress'
-    });
-
-    return {
-      updateSetId: response.result?.sys_id,
-      updateSetName
-    };
-  }
 
   private async validateArtifact(artifact: any, context: AgentContext): Promise<any> {
     // Simplified validation logic
@@ -802,10 +990,91 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
     const successful = deployments.filter(d => d.success).length;
     return Math.round((successful / deployments.length) * 100);
   }
+
+  /**
+   * Extract artifact name from natural language instruction
+   */
+  private extractNameFromInstruction(instruction: string): string | null {
+    if (!instruction) return null;
+    
+    // Look for patterns like "create a widget called X" or "make a flow named Y"
+    const patterns = [
+      /(?:create|make|build)\s+(?:a|an)?\s*\w+\s+(?:called|named|for)\s+["']?([^"']+)["']?/i,
+      /(?:create|make|build)\s+["']([^"']+)["']\s+\w+/i,
+      /(?:widget|flow|script|rule|table|application)\s+(?:called|named|for)\s+["']?([^"']+)["']?/i,
+      /"([^"]+)"\s+(?:widget|flow|script|rule|table|application)/i,
+      /'([^']+)'\s+(?:widget|flow|script|rule|table|application)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = instruction.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+    
+    // Fallback: look for quoted text that might be a name
+    const quotedMatch = instruction.match(/["']([^"']{3,30})["']/);
+    if (quotedMatch && quotedMatch[1]) {
+      return quotedMatch[1].trim();
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract search terms from instruction for discovery
+   */
+  private extractSearchTermsFromInstruction(instruction: string): string[] {
+    if (!instruction) return [];
+    
+    const terms: string[] = [];
+    
+    // Common keywords that might indicate similar functionality
+    const keywords = [
+      'incident', 'dashboard', 'report', 'approval', 'notification', 'user', 'profile',
+      'management', 'tracking', 'monitoring', 'analytics', 'workflow', 'request',
+      'ticket', 'service', 'catalog', 'portal', 'form', 'table', 'list', 'chart',
+      'graph', 'widget', 'flow', 'automation', 'integration', 'api', 'rest',
+      'email', 'alert', 'escalation', 'assignment', 'routing', 'sla', 'metric'
+    ];
+    
+    const lowercaseInstruction = instruction.toLowerCase();
+    
+    // Extract keywords that appear in the instruction
+    for (const keyword of keywords) {
+      if (lowercaseInstruction.includes(keyword)) {
+        terms.push(keyword);
+      }
+    }
+    
+    // Extract quoted terms
+    const quotedTerms = instruction.match(/["']([^"']{2,20})["']/g);
+    if (quotedTerms) {
+      quotedTerms.forEach(quoted => {
+        const term = quoted.replace(/["']/g, '').trim();
+        if (term.length >= 2 && !terms.includes(term.toLowerCase())) {
+          terms.push(term.toLowerCase());
+        }
+      });
+    }
+    
+    // Extract important words (3+ characters, not common words)
+    const words = lowercaseInstruction.match(/\b[a-z]{3,}\b/g) || [];
+    const commonWords = ['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'];
+    
+    for (const word of words) {
+      if (!commonWords.includes(word) && word.length >= 3 && !terms.includes(word)) {
+        terms.push(word);
+      }
+    }
+    
+    return terms.slice(0, 5); // Limit to 5 terms to avoid too many searches
+  }
 }
 
 // Start the server
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   const server = new ServiceNowDeploymentMCP();
   server.start().catch(console.error);
 }
