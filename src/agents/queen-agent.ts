@@ -9,6 +9,7 @@ import { TodoItem, TodoStatus } from '../types/todo.types';
 import { ServiceNowTask, Agent, AgentType, TaskAnalysis, DeploymentPattern } from '../queen/types';
 import { QueenMemorySystem } from '../queen/queen-memory';
 import { AgentCoordinator } from './coordinator';
+import { ParallelAgentEngine, ParallelizationOpportunity, ParallelExecutionPlan } from '../queen/parallel-agent-engine';
 import * as crypto from 'crypto';
 
 export interface QueenAgentConfig {
@@ -41,6 +42,7 @@ export interface TodoCoordination {
 export class QueenAgent extends EventEmitter {
   private memory: QueenMemorySystem;
   private coordinator: AgentCoordinator;
+  private parallelEngine: ParallelAgentEngine;
   private config: Required<QueenAgentConfig>;
   private activeObjectives: Map<string, QueenObjective>;
   private todoCoordinations: Map<string, TodoCoordination>;
@@ -60,6 +62,7 @@ export class QueenAgent extends EventEmitter {
     // Initialize core systems
     this.memory = new QueenMemorySystem(this.config.memoryPath);
     this.coordinator = new AgentCoordinator(this.memory);
+    this.parallelEngine = new ParallelAgentEngine(this.memory);
     this.activeObjectives = new Map();
     this.todoCoordinations = new Map();
     this.activeAgents = new Map();
@@ -108,7 +111,7 @@ export class QueenAgent extends EventEmitter {
   }
 
   /**
-   * Spawn agents based on objective requirements
+   * Spawn agents based on objective requirements with intelligent parallelization
    */
   async spawnAgents(objectiveId: string): Promise<Agent[]> {
     const todoCoordination = this.todoCoordinations.get(objectiveId);
@@ -121,8 +124,94 @@ export class QueenAgent extends EventEmitter {
       throw new Error(`No analysis found for objective: ${objectiveId}`);
     }
 
+    console.log('🧠 Queen Agent: Analyzing parallelization opportunities...');
+    
+    // 🚀 NEW: Detect parallelization opportunities
+    const opportunities = await this.parallelEngine.detectParallelizationOpportunities(
+      todoCoordination.todos,
+      analysis.analysis.type,
+      Array.from(this.activeAgents.values())
+    );
+
+    if (opportunities.length > 0) {
+      console.log(`🎯 Found ${opportunities.length} parallelization opportunities!`);
+      return await this.spawnParallelAgents(objectiveId, todoCoordination, opportunities);
+    } else {
+      console.log('📋 No parallelization opportunities found, using sequential approach');
+      return await this.spawnSequentialAgents(objectiveId, todoCoordination, analysis.analysis);
+    }
+  }
+
+  /**
+   * 🚀 NEW: Spawn parallel agents based on opportunities
+   */
+  async spawnParallelAgents(
+    objectiveId: string,
+    todoCoordination: TodoCoordination,
+    opportunities: ParallelizationOpportunity[]
+  ): Promise<Agent[]> {
+    // Create execution plan
+    const plan = await this.parallelEngine.createExecutionPlan(
+      opportunities,
+      todoCoordination.todos,
+      this.config.maxConcurrentAgents
+    );
+
+    console.log(`🚀 Executing parallel plan with ${plan.agentTeam.length} specialized agents`);
+    
+    // Execute parallel spawning
+    const result = await this.parallelEngine.executeParallelPlan(
+      plan,
+      async (type: AgentType, specialization?: string) => {
+        const agent = await this.spawnSpecializedAgent(type, objectiveId, specialization);
+        this.activeAgents.set(agent.id, agent);
+        return agent;
+      }
+    );
+
+    // Assign todos to parallel agents based on their workloads
+    for (const workload of plan.agentTeam) {
+      const agent = result.spawnedAgents.find(a => a.id === workload.agentId);
+      if (agent) {
+        // Advanced todo assignment based on workload specializations
+        this.assignTodosToParallelAgent(agent, todoCoordination, workload.assignedTodos, workload.specializations);
+      }
+    }
+
+    // Store parallel execution details
+    await this.memory.store(`parallel_agents_${objectiveId}`, {
+      planId: plan.planId,
+      agents: result.spawnedAgents.map(a => ({ id: a.id, type: a.type, capabilities: a.capabilities })),
+      executionDetails: result.executionDetails,
+      parallelizationOpportunities: opportunities.length,
+      estimatedSpeedup: result.executionDetails.estimatedSpeedup,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`✅ Spawned ${result.spawnedAgents.length} parallel agents`);
+    console.log(`⚡ Estimated speedup: ${result.executionDetails.estimatedSpeedup}`);
+    console.log(`🔀 Parallel workflows: ${result.executionDetails.parallelWorkflows}`);
+
+    this.emit('agents:spawned', { 
+      objectiveId, 
+      agents: result.spawnedAgents,
+      parallel: true,
+      speedup: result.executionDetails.estimatedSpeedup
+    });
+    
+    return result.spawnedAgents;
+  }
+
+  /**
+   * Fallback: Spawn sequential agents (original behavior)
+   */
+  async spawnSequentialAgents(
+    objectiveId: string,
+    todoCoordination: TodoCoordination,
+    analysis: TaskAnalysis
+  ): Promise<Agent[]> {
     const agents: Agent[] = [];
-    const requiredAgentTypes = new Set(analysis.analysis.requiredAgents);
+    const requiredAgentTypes = new Set(analysis.requiredAgents);
 
     // Spawn agents for each required type
     for (const agentType of requiredAgentTypes) {
@@ -140,7 +229,7 @@ export class QueenAgent extends EventEmitter {
       timestamp: new Date().toISOString()
     });
 
-    this.emit('agents:spawned', { objectiveId, agents });
+    this.emit('agents:spawned', { objectiveId, agents, parallel: false });
     
     return agents;
   }
@@ -590,6 +679,38 @@ export class QueenAgent extends EventEmitter {
   }
 
   /**
+   * 🚀 NEW: Assign todos to parallel agent with specializations
+   */
+  private assignTodosToParallelAgent(
+    agent: Agent, 
+    todoCoordination: TodoCoordination, 
+    assignedTodoIds: string[],
+    specializations: string[]
+  ): void {
+    // Assign specific todos based on parallel workload planning
+    for (const todoId of assignedTodoIds) {
+      todoCoordination.agentAssignments.set(todoId, agent.id);
+      
+      // Update agent task with first assigned todo
+      if (!agent.task) {
+        agent.task = todoId;
+      }
+    }
+
+    // Store specialization context in memory for agent coordination
+    this.memory.store(`agent_specializations_${agent.id}`, {
+      agentId: agent.id,
+      specializations,
+      assignedTodos: assignedTodoIds,
+      parallelMode: true,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`👤 Agent ${agent.type} (${agent.id}) specialized for: ${specializations.join(', ')}`);
+    console.log(`📝 Assigned ${assignedTodoIds.length} todos for parallel execution`);
+  }
+
+  /**
    * Assign todos to agent based on capabilities
    */
   private assignTodosToAgent(agent: Agent, todoCoordination: TodoCoordination): void {
@@ -712,9 +833,9 @@ export class QueenAgent extends EventEmitter {
   }
 
   /**
-   * Spawn a specialized agent
+   * Spawn a specialized agent with optional specialization
    */
-  private async spawnSpecializedAgent(type: AgentType, objectiveId: string): Promise<Agent> {
+  private async spawnSpecializedAgent(type: AgentType, objectiveId: string, specialization?: string): Promise<Agent> {
     const agentId = this.generateId(`agent_${type}`);
     
     const agent: Agent = {
@@ -729,8 +850,14 @@ export class QueenAgent extends EventEmitter {
     await this.memory.store(`agent_${agentId}`, {
       agent,
       objectiveId,
+      specialization: specialization || 'general',
+      parallelMode: !!specialization,
       spawnedAt: new Date().toISOString()
     });
+
+    if (specialization) {
+      console.log(`👤 Spawned specialized ${type} agent: ${specialization}`);
+    }
 
     // Notify coordinator of new agent
     await this.coordinator.registerAgent(agent);
