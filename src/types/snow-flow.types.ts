@@ -26,7 +26,30 @@ export type AgentType =
   | 'workflow-designer'
   | 'ui-builder'
   | 'security-auditor'
-  | 'integration-specialist';
+  | 'integration-specialist'
+  // 🚀 NEW: Specialized agents for parallel execution (v1.1.91)
+  | 'widget-creator'          // Widget development specialist
+  | 'widget-builder'          // Widget builder (alias)
+  | 'flow-builder'            // Flow development specialist
+  | 'script-writer'           // Script development specialist
+  | 'security-agent'          // Security analysis specialist (alias)
+  | 'app-architect'           // Application architecture specialist
+  | 'css-specialist'          // Styling and responsive design specialist
+  | 'backend-specialist'      // Server script specialist
+  | 'frontend-specialist'     // Client script specialist
+  | 'ui-ux-specialist'        // User experience specialist
+  | 'performance-specialist'  // Performance optimization
+  | 'accessibility-specialist'// Accessibility compliance
+  | 'trigger-specialist'      // Flow trigger configuration
+  | 'action-specialist'       // Flow action development
+  | 'approval-specialist'     // Approval process specialist
+  | 'notification-specialist' // Notification configuration
+  | 'error-handler'          // Error handling specialist
+  | 'security-specialist'     // Security implementation
+  | 'api-specialist'         // API integration specialist
+  | 'transform-specialist'    // Data transformation specialist
+  | 'monitoring-specialist'   // Integration monitoring
+  | 'documentation-specialist';// Documentation specialist
 
 export type AgentStatus = 'idle' | 'busy' | 'error' | 'terminated';
 

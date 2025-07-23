@@ -1,7 +1,8 @@
 /**
- * Queen Agent Core
+ * Queen Agent Core with Enhanced 403 Error Handling
  * Master coordinator that analyzes objectives and spawns specialized agents
  * Works through Claude Code interface using TodoWrite for task coordination
+ * Now with intelligent 403 error handling using Gap Analysis Engine
  */
 
 import { EventEmitter } from 'eventemitter3';
@@ -10,6 +11,8 @@ import { ServiceNowTask, Agent, AgentType, TaskAnalysis, DeploymentPattern } fro
 import { QueenMemorySystem } from '../queen/queen-memory';
 import { AgentCoordinator } from './coordinator';
 import { ParallelAgentEngine, ParallelizationOpportunity, ParallelExecutionPlan } from '../queen/parallel-agent-engine';
+import { Queen403Handler } from './queen-403-handler';
+import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
 
 export interface QueenAgentConfig {
@@ -18,22 +21,19 @@ export interface QueenAgentConfig {
   debugMode?: boolean;
   autoSpawn?: boolean;
   claudeCodeInterface?: boolean;
+  mcpTools?: any; // MCP tools for Gap Analysis
 }
 
 export interface QueenObjective {
   id: string;
   description: string;
-  context?: Record<string, any>;
   priority?: 'low' | 'medium' | 'high' | 'critical';
-  constraints?: {
-    maxDuration?: number;
-    requiredCapabilities?: string[];
-    forbiddenActions?: string[];
-  };
+  constraints?: string[];
+  metadata?: Record<string, any>;
 }
 
 export interface TodoCoordination {
-  taskId: string;
+  objectiveId: string;
   todos: TodoItem[];
   agentAssignments: Map<string, string>; // todoId -> agentId
   dependencies: Map<string, string[]>; // todoId -> [dependencyIds]
@@ -43,10 +43,12 @@ export class QueenAgent extends EventEmitter {
   private memory: QueenMemorySystem;
   private coordinator: AgentCoordinator;
   private parallelEngine: ParallelAgentEngine;
+  private handler403: Queen403Handler;
   private config: Required<QueenAgentConfig>;
   private activeObjectives: Map<string, QueenObjective>;
   private todoCoordinations: Map<string, TodoCoordination>;
   private activeAgents: Map<string, Agent>;
+  private logger: Logger;
 
   constructor(config: QueenAgentConfig = {}) {
     super();
@@ -56,13 +58,18 @@ export class QueenAgent extends EventEmitter {
       maxConcurrentAgents: config.maxConcurrentAgents || 8,
       debugMode: config.debugMode || false,
       autoSpawn: config.autoSpawn !== false,
-      claudeCodeInterface: config.claudeCodeInterface !== false
+      claudeCodeInterface: config.claudeCodeInterface !== false,
+      mcpTools: config.mcpTools || {}
     };
+
+    // Initialize logger first
+    this.logger = new Logger('QueenAgent');
 
     // Initialize core systems
     this.memory = new QueenMemorySystem(this.config.memoryPath);
     this.coordinator = new AgentCoordinator(this.memory);
     this.parallelEngine = new ParallelAgentEngine(this.memory);
+    this.handler403 = new Queen403Handler(this.logger, this.config.mcpTools);
     this.activeObjectives = new Map();
     this.todoCoordinations = new Map();
     this.activeAgents = new Map();
@@ -70,8 +77,16 @@ export class QueenAgent extends EventEmitter {
     this.setupEventHandlers();
     
     if (this.config.debugMode) {
-      console.log('👑 Queen Agent initialized with Claude Code interface');
+      console.log('👑 Queen Agent initialized with Claude Code interface and 403 handling');
     }
+  }
+
+  /**
+   * Update MCP tools configuration (useful when tools become available later)
+   */
+  updateMCPTools(mcpTools: any): void {
+    this.config.mcpTools = mcpTools;
+    this.handler403 = new Queen403Handler(this.logger, mcpTools);
   }
 
   /**
@@ -111,6 +126,116 @@ export class QueenAgent extends EventEmitter {
   }
 
   /**
+   * Handle deployment error with intelligent 403 detection and resolution
+   */
+  async handleDeploymentError(error: any, context: {
+    objectiveId: string;
+    agentId?: string;
+    operation: string;
+    artifactType?: string;
+    tableName?: string;
+  }): Promise<boolean> {
+    // Check if it's a 403 permission error
+    if (this.is403Error(error)) {
+      console.log('🚨 Queen Agent: Detected 403 permission error - activating intelligent analysis');
+      
+      const objective = this.activeObjectives.get(context.objectiveId);
+      if (!objective) {
+        console.error('No objective found for error context');
+        return false;
+      }
+
+      // Use 403 handler with Gap Analysis
+      const result = await this.handler403.handle403Error({
+        error,
+        operation: context.operation,
+        tableName: context.tableName,
+        artifactType: context.artifactType,
+        objective: objective.description
+      });
+
+      // Update todos based on analysis
+      if (result.nextSteps.length > 0) {
+        await this.updateTodosWithPermissionFixes(context.objectiveId, result);
+      }
+
+      // If automatic fixes were applied, return true to retry
+      if (result.resolved) {
+        console.log('✅ Queen Agent: Automatic fixes applied - suggesting retry');
+        this.emit('permission:auto-fixed', { context, result });
+        return true;
+      }
+
+      // Emit event for manual intervention needed
+      this.emit('permission:manual-required', { context, result });
+      return false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if error is a 403 permission error
+   */
+  private is403Error(error: any): boolean {
+    const errorStr = error?.toString() || '';
+    const errorMsg = error?.message || '';
+    const statusCode = error?.status || error?.statusCode || error?.response?.status;
+    
+    return statusCode === 403 || 
+           errorStr.includes('403') || 
+           errorMsg.includes('403') ||
+           errorMsg.includes('permission') ||
+           errorMsg.includes('access denied') ||
+           errorMsg.includes('insufficient privileges');
+  }
+
+  /**
+   * Update todos with permission fix steps
+   */
+  private async updateTodosWithPermissionFixes(
+    objectiveId: string, 
+    permissionResult: any
+  ): Promise<void> {
+    const todoCoordination = this.todoCoordinations.get(objectiveId);
+    if (!todoCoordination) return;
+
+    // Add new todos for permission fixes
+    const newTodos: TodoItem[] = [];
+
+    // Add retry todo if automatic fixes were applied
+    if (permissionResult.resolved) {
+      newTodos.push({
+        id: this.generateId('todo'),
+        content: '🔄 Retry deployment after automatic permission fixes',
+        status: 'pending',
+        priority: 'high'
+      });
+    }
+
+    // Add manual action todos
+    permissionResult.nextSteps.forEach((step: string) => {
+      newTodos.push({
+        id: this.generateId('todo'),
+        content: step,
+        status: 'pending',
+        priority: 'high'
+      });
+    });
+
+    // Insert new todos at the beginning of pending todos
+    const pendingIndex = todoCoordination.todos.findIndex(t => t.status === 'pending');
+    if (pendingIndex >= 0) {
+      todoCoordination.todos.splice(pendingIndex, 0, ...newTodos);
+    } else {
+      todoCoordination.todos.push(...newTodos);
+    }
+
+    // Emit update event
+    this.emit('todos:updated', { objectiveId, todos: todoCoordination.todos });
+  }
+
+  /**
    * Spawn agents based on objective requirements with intelligent parallelization
    */
   async spawnAgents(objectiveId: string): Promise<Agent[]> {
@@ -145,67 +270,38 @@ export class QueenAgent extends EventEmitter {
   /**
    * 🚀 NEW: Spawn parallel agents based on opportunities
    */
-  async spawnParallelAgents(
+  private async spawnParallelAgents(
     objectiveId: string,
     todoCoordination: TodoCoordination,
     opportunities: ParallelizationOpportunity[]
   ): Promise<Agent[]> {
+    console.log('🚀 Queen Agent: Spawning parallel agent teams...');
+    
     // Create execution plan
-    const plan = await this.parallelEngine.createExecutionPlan(
+    const executionPlan = await this.parallelEngine.createExecutionPlan(
       opportunities,
       todoCoordination.todos,
       this.config.maxConcurrentAgents
     );
 
-    console.log(`🚀 Executing parallel plan with ${plan.agentTeam.length} specialized agents`);
-    
-    // Execute parallel spawning
+    // Execute the plan and get spawned agents
     const result = await this.parallelEngine.executeParallelPlan(
-      plan,
+      executionPlan,
       async (type: AgentType, specialization?: string) => {
-        const agent = await this.spawnSpecializedAgent(type, objectiveId, specialization);
-        this.activeAgents.set(agent.id, agent);
-        return agent;
+        return await this.spawnSpecializedAgent(type, objectiveId, specialization);
       }
     );
 
-    // Assign todos to parallel agents based on their workloads
-    for (const workload of plan.agentTeam) {
-      const agent = result.spawnedAgents.find(a => a.id === workload.agentId);
-      if (agent) {
-        // Advanced todo assignment based on workload specializations
-        this.assignTodosToParallelAgent(agent, todoCoordination, workload.assignedTodos, workload.specializations);
-      }
-    }
-
-    // Store parallel execution details
-    await this.memory.store(`parallel_agents_${objectiveId}`, {
-      planId: plan.planId,
-      agents: result.spawnedAgents.map(a => ({ id: a.id, type: a.type, capabilities: a.capabilities })),
-      executionDetails: result.executionDetails,
-      parallelizationOpportunities: opportunities.length,
-      estimatedSpeedup: result.executionDetails.estimatedSpeedup,
-      timestamp: new Date().toISOString()
-    });
-
-    console.log(`✅ Spawned ${result.spawnedAgents.length} parallel agents`);
+    console.log(`✅ Spawned ${result.spawnedAgents.length} specialized agents in parallel`);
     console.log(`⚡ Estimated speedup: ${result.executionDetails.estimatedSpeedup}`);
-    console.log(`🔀 Parallel workflows: ${result.executionDetails.parallelWorkflows}`);
 
-    this.emit('agents:spawned', { 
-      objectiveId, 
-      agents: result.spawnedAgents,
-      parallel: true,
-      speedup: result.executionDetails.estimatedSpeedup
-    });
-    
     return result.spawnedAgents;
   }
 
   /**
-   * Fallback: Spawn sequential agents (original behavior)
+   * Fallback to sequential agent spawning
    */
-  async spawnSequentialAgents(
+  private async spawnSequentialAgents(
     objectiveId: string,
     todoCoordination: TodoCoordination,
     analysis: TaskAnalysis
@@ -217,205 +313,264 @@ export class QueenAgent extends EventEmitter {
     for (const agentType of requiredAgentTypes) {
       const agent = await this.spawnSpecializedAgent(agentType, objectiveId);
       agents.push(agent);
-      this.activeAgents.set(agent.id, agent);
-      
-      // Assign todos to agent based on capabilities
-      this.assignTodosToAgent(agent, todoCoordination);
     }
 
-    // Update memory with agent spawning information
-    await this.memory.store(`agents_${objectiveId}`, {
-      agents: agents.map(a => ({ id: a.id, type: a.type, capabilities: a.capabilities })),
-      timestamp: new Date().toISOString()
-    });
-
-    this.emit('agents:spawned', { objectiveId, agents, parallel: false });
-    
     return agents;
   }
 
   /**
-   * Monitor and coordinate agent progress
+   * Spawn a specialized agent with optional specialization
    */
-  async monitorProgress(objectiveId: string): Promise<{
-    overall: number;
-    byAgent: Map<string, number>;
-    blockingIssues: string[];
-    estimatedCompletion: Date;
-  }> {
-    const todoCoordination = this.todoCoordinations.get(objectiveId);
-    if (!todoCoordination) {
-      throw new Error(`No todo coordination found for objective: ${objectiveId}`);
-    }
-
-    // Calculate progress from todos
-    const completedTodos = todoCoordination.todos.filter(t => t.status === 'completed').length;
-    const totalTodos = todoCoordination.todos.length;
-    const overallProgress = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
-
-    // Calculate per-agent progress
-    const byAgent = new Map<string, number>();
-    for (const [todoId, agentId] of todoCoordination.agentAssignments) {
-      const agentTodos = Array.from(todoCoordination.agentAssignments.entries())
-        .filter(([_, aid]) => aid === agentId);
-      const agentCompleted = agentTodos.filter(([tid, _]) => 
-        todoCoordination.todos.find(t => t.id === tid)?.status === 'completed'
-      ).length;
-      const agentProgress = agentTodos.length > 0 ? (agentCompleted / agentTodos.length) * 100 : 0;
-      byAgent.set(agentId, agentProgress);
-    }
-
-    // Identify blocking issues
-    const blockingIssues = await this.identifyBlockingIssues(todoCoordination);
-
-    // Estimate completion based on current velocity
-    const estimatedCompletion = this.estimateCompletion(todoCoordination, overallProgress);
-
-    // Store progress in memory
-    await this.memory.store(`progress_${objectiveId}`, {
-      overall: overallProgress,
-      byAgent: Object.fromEntries(byAgent),
-      blockingIssues,
-      estimatedCompletion: estimatedCompletion.toISOString(),
-      timestamp: new Date().toISOString()
-    });
-
-    this.emit('progress:updated', { objectiveId, overall: overallProgress, byAgent, blockingIssues });
-
-    return {
-      overall: overallProgress,
-      byAgent,
-      blockingIssues,
-      estimatedCompletion
-    };
-  }
-
-  /**
-   * Make memory-driven decisions based on past patterns
-   */
-  async makeDecision(context: {
-    objective: string;
-    currentState: any;
-    options: string[];
-  }): Promise<{
-    decision: string;
-    reasoning: string;
-    confidence: number;
-  }> {
-    // Query memory for similar past decisions
-    const similarPatterns = await this.memory.findSimilarPatterns(context.objective);
+  private async spawnSpecializedAgent(
+    type: AgentType, 
+    objectiveId: string,
+    specialization?: string
+  ): Promise<Agent> {
+    const agentId = this.generateId('agent');
     
-    // Analyze success rates of different approaches
-    const optionScores = new Map<string, number>();
-    for (const option of context.options) {
-      const score = this.calculateOptionScore(option, similarPatterns, context);
-      optionScores.set(option, score);
-    }
-
-    // Select best option
-    const bestOption = Array.from(optionScores.entries())
-      .sort((a, b) => b[1] - a[1])[0];
-
-    const decision = {
-      decision: bestOption[0],
-      reasoning: this.generateDecisionReasoning(bestOption[0], similarPatterns, context),
-      confidence: bestOption[1] / 100
+    const agent: Agent = {
+      id: agentId,
+      type,
+      status: 'active',
+      objectiveId,
+      specialization,
+      startTime: Date.now()
     };
 
-    // Store decision for future learning
-    await this.memory.storeDecision({
-      context,
-      decision: decision.decision,
-      confidence: decision.confidence,
-      timestamp: new Date().toISOString()
+    this.activeAgents.set(agentId, agent);
+    
+    // Store agent info in memory for coordination
+    await this.memory.store(`agent_${agentId}`, {
+      agent,
+      objective: this.activeObjectives.get(objectiveId),
+      assignedTodos: [],
+      status: 'initializing'
     });
 
-    this.emit('decision:made', decision);
+    this.emit('agent:spawned', agent);
+    
+    // Assign todos to agent based on capabilities
+    await this.assignTodosToAgent(agent, objectiveId);
 
-    return decision;
+    return agent;
   }
 
   /**
-   * Create TodoWrite coordination structure
+   * Analyze objective to determine requirements
    */
-  private async createTodoCoordination(objective: QueenObjective, analysis: TaskAnalysis): Promise<TodoCoordination> {
-    const todos: TodoItem[] = [];
-    const dependencies = new Map<string, string[]>();
+  private async performObjectiveAnalysis(objective: QueenObjective): Promise<TaskAnalysis> {
+    const description = objective.description.toLowerCase();
+    
+    // Determine task type
+    let type: ServiceNowTask['type'] = 'generic';
+    let requiredAgents: AgentType[] = [];
+    let estimatedComplexity = 5;
+    let suggestedPattern: DeploymentPattern = 'standard';
+    let dependencies: string[] = [];
 
-    // Create high-level todos based on task analysis
-    if (analysis.type === 'widget') {
-      todos.push(...this.createWidgetTodos(objective, analysis));
-    } else if (analysis.type === 'flow') {
-      todos.push(...this.createFlowTodos(objective, analysis));
-    } else if (analysis.type === 'script') {
-      todos.push(...this.createScriptTodos(objective, analysis));
-    } else if (analysis.type === 'integration') {
-      todos.push(...this.createIntegrationTodos(objective, analysis));
-    } else {
-      todos.push(...this.createGenericTodos(objective, analysis));
+    // Widget development detection
+    if (description.includes('widget') || description.includes('portal') || description.includes('ui component')) {
+      type = 'widget';
+      requiredAgents = ['widget-creator', 'script-writer', 'tester'];
+      if (description.includes('complex') || description.includes('interactive')) {
+        estimatedComplexity = 8;
+        requiredAgents.push('ui-ux-specialist');
+      }
+    }
+    
+    // Flow development detection
+    else if (description.includes('flow') || description.includes('workflow') || description.includes('automation')) {
+      type = 'flow';
+      requiredAgents = ['flow-builder', 'integration-specialist', 'tester'];
+      if (description.includes('approval')) {
+        requiredAgents.push('approval-specialist');
+        dependencies.push('user_management', 'notification_system');
+      }
+    }
+    
+    // Application development
+    else if (description.includes('application') || description.includes('app') || description.includes('complete solution')) {
+      type = 'application';
+      requiredAgents = ['app-architect', 'widget-creator', 'flow-builder', 'script-writer', 'tester'];
+      estimatedComplexity = 10;
+      suggestedPattern = 'modular';
+    }
+    
+    // Script development
+    else if (description.includes('script') || description.includes('business rule') || description.includes('api')) {
+      type = 'script';
+      requiredAgents = ['script-writer', 'tester'];
+      if (description.includes('integration')) {
+        requiredAgents.push('integration-specialist');
+      }
+    }
+    
+    // Integration development
+    else if (description.includes('integration') || description.includes('connect') || description.includes('external')) {
+      type = 'integration';
+      requiredAgents = ['integration-specialist', 'script-writer', 'tester'];
+      dependencies.push('authentication', 'data_transformation');
     }
 
-    // Set up dependencies based on logical flow
-    this.setupTodoDependencies(todos, dependencies);
+    // Add security agent if mentioned
+    if (description.includes('secure') || description.includes('security') || description.includes('permission')) {
+      requiredAgents.push('security-specialist');
+    }
 
     return {
-      taskId: objective.id,
-      todos,
-      agentAssignments: new Map(),
+      type,
+      complexity: estimatedComplexity,
+      requiredAgents: [...new Set(requiredAgents)], // Remove duplicates
+      estimatedComplexity: Math.min(10, Math.max(1, estimatedComplexity)),
+      suggestedPattern,
       dependencies
     };
+  }
+
+  /**
+   * Create todo coordination structure for Claude Code interface
+   */
+  private async createTodoCoordination(
+    objective: QueenObjective, 
+    analysis: TaskAnalysis
+  ): Promise<TodoCoordination> {
+    const todos = this.generateTodosForObjective(objective, analysis);
+    
+    const coordination: TodoCoordination = {
+      objectiveId: objective.id,
+      todos,
+      agentAssignments: new Map(),
+      dependencies: this.analyzeTodoDependencies(todos)
+    };
+
+    // Store coordination info in memory
+    await this.memory.store(`coordination_${objective.id}`, coordination);
+
+    return coordination;
+  }
+
+  /**
+   * Generate todos based on objective type
+   */
+  private generateTodosForObjective(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+    const baseTodos: TodoItem[] = [
+      {
+        id: this.generateId('todo'),
+        content: `Initialize swarm memory session for: ${objective.description}`,
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Validate ServiceNow authentication and permissions',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Check for existing similar artifacts',
+        status: 'pending',
+        priority: 'medium'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Create Update Set for tracking changes',
+        status: 'pending',
+        priority: 'high'
+      }
+    ];
+
+    // Add type-specific todos
+    switch (analysis.type) {
+      case 'widget':
+        baseTodos.push(...this.createWidgetTodos(objective, analysis));
+        break;
+      case 'flow':
+        baseTodos.push(...this.createFlowTodos(objective, analysis));
+        break;
+      case 'application':
+        baseTodos.push(...this.createApplicationTodos(objective, analysis));
+        break;
+      case 'script':
+        baseTodos.push(...this.createScriptTodos(objective, analysis));
+        break;
+      case 'integration':
+        baseTodos.push(...this.createIntegrationTodos(objective, analysis));
+        break;
+      default:
+        baseTodos.push(...this.createGenericTodos(objective, analysis));
+    }
+
+    // Add final todos
+    baseTodos.push(
+      {
+        id: this.generateId('todo'),
+        content: 'Validate solution completeness',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Generate documentation and handoff materials',
+        status: 'pending',
+        priority: 'medium'
+      }
+    );
+
+    return baseTodos;
   }
 
   /**
    * Create widget-specific todos
    */
   private createWidgetTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+    // 🚀 ENHANCED: More specific todos to trigger parallel agent specialization
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
-        content: `Analyze widget requirements: ${objective.description}`,
+        content: `Analyze portal requirements and user experience design: ${objective.description}`,
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Design widget HTML template structure',
+        content: 'Create widget HTML structure with responsive design and accessibility features',
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Implement server-side data processing logic',
+        content: 'Develop server-side script for backend data processing and API integration',
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Create client-side controller script',
+        content: 'Build client-side controller with interactive features and event handling',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Style widget with CSS including responsive design and theme compliance',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Implement performance optimization and caching strategies',
         status: 'pending',
         priority: 'medium'
       },
       {
         id: this.generateId('todo'),
-        content: 'Style widget with responsive CSS',
-        status: 'pending',
-        priority: 'medium'
-      },
-      {
-        id: this.generateId('todo'),
-        content: 'Test widget functionality with mock data',
-        status: 'pending',
-        priority: 'medium'
-      },
-      {
-        id: this.generateId('todo'),
-        content: 'Deploy widget to ServiceNow instance',
+        content: 'Test widget functionality including cross-browser and mobile testing',
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Validate deployment and run integration tests',
+        content: 'Ensure security best practices and vulnerability scanning',
         status: 'pending',
         priority: 'high'
       }
@@ -467,13 +622,65 @@ export class QueenAgent extends EventEmitter {
       },
       {
         id: this.generateId('todo'),
-        content: 'Test flow with mock scenarios',
+        content: 'Test flow with mock data scenarios',
+        status: 'pending',
+        priority: 'high'
+      }
+    ];
+
+    return todos;
+  }
+
+  /**
+   * Create application-specific todos
+   */
+  private createApplicationTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+    const todos: TodoItem[] = [
+      {
+        id: this.generateId('todo'),
+        content: `Design application architecture: ${objective.description}`,
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Deploy and activate flow',
+        content: 'Create application scope and structure',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Design data model and tables',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Create UI components and widgets',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Implement business logic and workflows',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Configure security and access controls',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Create integration points',
+        status: 'pending',
+        priority: 'medium'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Test application end-to-end',
         status: 'pending',
         priority: 'high'
       }
@@ -495,19 +702,13 @@ export class QueenAgent extends EventEmitter {
       },
       {
         id: this.generateId('todo'),
-        content: 'Determine script type (Business Rule, Script Include, etc.)',
-        status: 'pending',
-        priority: 'high'
-      },
-      {
-        id: this.generateId('todo'),
         content: 'Design script logic and error handling',
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Implement core business logic',
+        content: 'Implement core functionality',
         status: 'pending',
         priority: 'high'
       },
@@ -519,19 +720,19 @@ export class QueenAgent extends EventEmitter {
       },
       {
         id: this.generateId('todo'),
-        content: 'Create unit tests for script functions',
+        content: 'Optimize performance',
         status: 'pending',
         priority: 'medium'
       },
       {
         id: this.generateId('todo'),
-        content: 'Deploy script to ServiceNow',
+        content: 'Create unit tests',
         status: 'pending',
         priority: 'high'
       },
       {
         id: this.generateId('todo'),
-        content: 'Validate script execution and performance',
+        content: 'Deploy and validate in ServiceNow',
         status: 'pending',
         priority: 'high'
       }
@@ -647,7 +848,7 @@ export class QueenAgent extends EventEmitter {
       },
       {
         id: this.generateId('todo'),
-        content: 'Validate and document solution',
+        content: 'Monitor and validate deployment',
         status: 'pending',
         priority: 'medium'
       }
@@ -657,519 +858,421 @@ export class QueenAgent extends EventEmitter {
   }
 
   /**
-   * Set up logical dependencies between todos
+   * Analyze todo dependencies
    */
-  private setupTodoDependencies(todos: TodoItem[], dependencies: Map<string, string[]>): void {
-    // For sequential tasks, each depends on the previous
-    for (let i = 1; i < todos.length; i++) {
-      dependencies.set(todos[i].id, [todos[i - 1].id]);
-    }
-
-    // Some tasks can be parallelized
-    // For example, styling and client script can happen in parallel after template is done
-    const templateTodo = todos.find(t => t.content.includes('template') || t.content.includes('structure'));
-    const stylingTodo = todos.find(t => t.content.includes('CSS') || t.content.includes('style'));
-    const clientTodo = todos.find(t => t.content.includes('client') || t.content.includes('controller'));
-
-    if (templateTodo && stylingTodo && clientTodo) {
-      // Both styling and client script depend only on template, not on each other
-      dependencies.set(stylingTodo.id, [templateTodo.id]);
-      dependencies.set(clientTodo.id, [templateTodo.id]);
-    }
-  }
-
-  /**
-   * 🚀 NEW: Assign todos to parallel agent with specializations
-   */
-  private assignTodosToParallelAgent(
-    agent: Agent, 
-    todoCoordination: TodoCoordination, 
-    assignedTodoIds: string[],
-    specializations: string[]
-  ): void {
-    // Assign specific todos based on parallel workload planning
-    for (const todoId of assignedTodoIds) {
-      todoCoordination.agentAssignments.set(todoId, agent.id);
-      
-      // Update agent task with first assigned todo
-      if (!agent.task) {
-        agent.task = todoId;
+  private analyzeTodoDependencies(todos: TodoItem[]): Map<string, string[]> {
+    const dependencies = new Map<string, string[]>();
+    
+    // Simple dependency analysis - each todo depends on all previous high priority todos
+    const highPriorityTodos = todos.filter(t => t.priority === 'high');
+    
+    highPriorityTodos.forEach((todo, index) => {
+      if (index > 0) {
+        const prevHighPriorityIds = highPriorityTodos
+          .slice(0, index)
+          .map(t => t.id);
+        dependencies.set(todo.id, prevHighPriorityIds);
       }
-    }
-
-    // Store specialization context in memory for agent coordination
-    this.memory.store(`agent_specializations_${agent.id}`, {
-      agentId: agent.id,
-      specializations,
-      assignedTodos: assignedTodoIds,
-      parallelMode: true,
-      timestamp: new Date().toISOString()
     });
 
-    console.log(`👤 Agent ${agent.type} (${agent.id}) specialized for: ${specializations.join(', ')}`);
-    console.log(`📝 Assigned ${assignedTodoIds.length} todos for parallel execution`);
+    return dependencies;
   }
 
   /**
    * Assign todos to agent based on capabilities
    */
-  private assignTodosToAgent(agent: Agent, todoCoordination: TodoCoordination): void {
-    const agentCapabilityMap: Record<AgentType, string[]> = {
-      'widget-creator': ['widget', 'template', 'HTML', 'server', 'client', 'deploy widget'],
-      'flow-builder': ['flow', 'trigger', 'decision', 'action', 'workflow'],
-      'script-writer': ['script', 'business rule', 'logic', 'function'],
-      'app-architect': ['architecture', 'design', 'structure', 'solution'],
-      'integration-specialist': ['integration', 'REST', 'SOAP', 'API', 'external'],
-      'catalog-manager': ['catalog', 'item', 'category', 'variable'],
-      'researcher': ['analyze', 'research', 'requirements', 'existing'],
-      'tester': ['test', 'validate', 'mock', 'scenario', 'integration test']
-    };
+  private async assignTodosToAgent(agent: Agent, objectiveId: string): Promise<void> {
+    const todoCoordination = this.todoCoordinations.get(objectiveId);
+    if (!todoCoordination) return;
 
-    const agentKeywords = agentCapabilityMap[agent.type] || [];
+    const unassignedTodos = todoCoordination.todos.filter(todo => 
+      !Array.from(todoCoordination.agentAssignments.values()).includes(todo.id) &&
+      todo.status === 'pending'
+    );
 
-    // Assign todos that match agent capabilities
-    for (const todo of todoCoordination.todos) {
-      if (!todoCoordination.agentAssignments.has(todo.id)) {
-        const todoLower = todo.content.toLowerCase();
-        const matches = agentKeywords.some(keyword => todoLower.includes(keyword.toLowerCase()));
-        
-        if (matches) {
-          todoCoordination.agentAssignments.set(todo.id, agent.id);
-          
-          // Update agent task list
-          if (!agent.task) {
-            agent.task = todo.id;
-          }
-        }
+    // Assign todos based on agent type and specialization
+    const assignableTodos = unassignedTodos.filter(todo => 
+      this.canAgentHandleTodo(agent, todo)
+    );
+
+    for (const todo of assignableTodos) {
+      todoCoordination.agentAssignments.set(todo.id, agent.id);
+      
+      // Update agent's assigned todos in memory
+      const agentData = await this.memory.get(`agent_${agent.id}`) as any;
+      if (agentData) {
+        agentData.assignedTodos.push(todo.id);
+        await this.memory.store(`agent_${agent.id}`, agentData);
       }
+    }
+
+    this.emit('todos:assigned', { agent, todos: assignableTodos });
+  }
+
+  /**
+   * Check if agent can handle specific todo
+   */
+  private canAgentHandleTodo(agent: Agent, todo: TodoItem): boolean {
+    const todoContent = todo.content.toLowerCase();
+    
+    switch (agent.type) {
+      case 'widget-creator':
+        return todoContent.includes('widget') || 
+               todoContent.includes('html') || 
+               todoContent.includes('portal') ||
+               todoContent.includes('ui');
+               
+      case 'css-specialist':
+        return todoContent.includes('style') || 
+               todoContent.includes('css') || 
+               todoContent.includes('responsive') ||
+               todoContent.includes('theme');
+               
+      case 'backend-specialist':
+        return todoContent.includes('server') || 
+               todoContent.includes('backend') || 
+               todoContent.includes('data') ||
+               todoContent.includes('api');
+               
+      case 'frontend-specialist':
+        return todoContent.includes('client') || 
+               todoContent.includes('controller') || 
+               todoContent.includes('interactive') ||
+               todoContent.includes('event');
+               
+      case 'flow-builder':
+        return todoContent.includes('flow') || 
+               todoContent.includes('workflow') ||
+               todoContent.includes('trigger') ||
+               todoContent.includes('action');
+               
+      case 'script-writer':
+        return todoContent.includes('script') || 
+               todoContent.includes('logic') ||
+               todoContent.includes('function');
+               
+      case 'integration-specialist':
+        return todoContent.includes('integration') || 
+               todoContent.includes('external') ||
+               todoContent.includes('api') ||
+               todoContent.includes('rest');
+               
+      case 'tester':
+        return todoContent.includes('test') || 
+               todoContent.includes('validate') ||
+               todoContent.includes('verify');
+               
+      case 'security-specialist':
+        return todoContent.includes('security') || 
+               todoContent.includes('permission') ||
+               todoContent.includes('access') ||
+               todoContent.includes('vulnerability');
+               
+      case 'performance-specialist':
+        return todoContent.includes('performance') || 
+               todoContent.includes('optimization') ||
+               todoContent.includes('caching');
+               
+      case 'ui-ux-specialist':
+        return todoContent.includes('user experience') || 
+               todoContent.includes('design') ||
+               todoContent.includes('ux');
+               
+      default:
+        // Generic agents can handle setup and coordination tasks
+        return todoContent.includes('initialize') || 
+               todoContent.includes('validate') ||
+               todoContent.includes('create update set') ||
+               todoContent.includes('documentation');
     }
   }
 
   /**
-   * Perform deep analysis of objective
+   * Monitor agent progress through todo updates
    */
-  private async performObjectiveAnalysis(objective: QueenObjective): Promise<TaskAnalysis> {
-    const description = objective.description.toLowerCase();
-    
-    // Determine task type
-    let type: ServiceNowTask['type'] = 'unknown';
-    if (description.includes('widget')) type = 'widget';
-    else if (description.includes('flow') || description.includes('workflow')) type = 'flow';
-    else if (description.includes('script') || description.includes('business rule')) type = 'script';
-    else if (description.includes('app') || description.includes('application')) type = 'application';
-    else if (description.includes('integration') || description.includes('api')) type = 'integration';
-
-    // Determine required agents
-    const requiredAgents: AgentType[] = [];
-    
-    // Always include researcher for analysis
-    requiredAgents.push('researcher');
-    
-    // Add type-specific agents
-    switch (type) {
-      case 'widget':
-        requiredAgents.push('widget-creator');
-        if (description.includes('test')) requiredAgents.push('tester');
-        break;
-      case 'flow':
-        requiredAgents.push('flow-builder');
-        if (description.includes('catalog')) requiredAgents.push('catalog-manager');
-        if (description.includes('test')) requiredAgents.push('tester');
-        break;
-      case 'script':
-        requiredAgents.push('script-writer');
-        if (description.includes('test')) requiredAgents.push('tester');
-        break;
-      case 'integration':
-        requiredAgents.push('integration-specialist');
-        requiredAgents.push('tester');
-        break;
-      case 'application':
-        requiredAgents.push('app-architect');
-        requiredAgents.push('widget-creator');
-        requiredAgents.push('flow-builder');
-        requiredAgents.push('tester');
-        break;
-      default:
-        // For unknown types, spawn a balanced team
-        requiredAgents.push('app-architect');
-        requiredAgents.push('script-writer');
-        break;
+  async monitorProgress(objectiveId: string): Promise<{
+    overall: number;
+    byAgent: Map<string, number>;
+    blockingIssues: string[];
+    estimatedCompletion: Date;
+  }> {
+    const todoCoordination = this.todoCoordinations.get(objectiveId);
+    if (!todoCoordination) {
+      throw new Error(`No todo coordination found for objective: ${objectiveId}`);
     }
 
-    // Estimate complexity based on description
-    const complexityFactors = {
-      words: description.split(' ').length,
-      hasIntegration: description.includes('integration') || description.includes('api'),
-      hasMultipleComponents: description.includes('and') || description.includes('with'),
-      hasComplexLogic: description.includes('complex') || description.includes('advanced'),
-      hasPerformanceReqs: description.includes('performance') || description.includes('optimize')
-    };
+    // Calculate progress from todos
+    const completedTodos = todoCoordination.todos.filter(t => t.status === 'completed').length;
+    const totalTodos = todoCoordination.todos.length;
+    const overallProgress = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
 
-    const estimatedComplexity = 
-      complexityFactors.words / 10 +
-      (complexityFactors.hasIntegration ? 2 : 0) +
-      (complexityFactors.hasMultipleComponents ? 1 : 0) +
-      (complexityFactors.hasComplexLogic ? 2 : 0) +
-      (complexityFactors.hasPerformanceReqs ? 1 : 0);
+    // Calculate per-agent progress
+    const byAgent = new Map<string, number>();
+    for (const [todoId, agentId] of todoCoordination.agentAssignments) {
+      const agentTodos = Array.from(todoCoordination.agentAssignments.entries())
+        .filter(([_, aid]) => aid === agentId);
+      const agentCompleted = agentTodos.filter(([tid, _]) => 
+        todoCoordination.todos.find(t => t.id === tid)?.status === 'completed'
+      ).length;
+      const agentProgress = agentTodos.length > 0 ? (agentCompleted / agentTodos.length) * 100 : 0;
+      byAgent.set(agentId, agentProgress);
+    }
 
-    // Look for successful patterns in memory
-    const suggestedPattern = await this.memory.findBestPattern(type);
+    // Identify blocking issues
+    const blockingIssues = await this.identifyBlockingIssues(todoCoordination);
 
-    // Extract dependencies
-    const dependencies: string[] = [];
-    if (description.includes('table')) dependencies.push('table_creation');
-    if (description.includes('user')) dependencies.push('user_management');
-    if (description.includes('approval')) dependencies.push('approval_framework');
-    if (description.includes('notification')) dependencies.push('notification_system');
+    // Estimate completion based on current velocity
+    const estimatedCompletion = this.estimateCompletion(todoCoordination, overallProgress);
+
+    // Store progress in memory
+    await this.memory.store(`progress_${objectiveId}`, {
+      overall: overallProgress,
+      byAgent: Object.fromEntries(byAgent),
+      blockingIssues,
+      estimatedCompletion: estimatedCompletion.toISOString(),
+      timestamp: new Date().toISOString()
+    });
+
+    this.emit('progress:updated', { objectiveId, overall: overallProgress, byAgent, blockingIssues });
 
     return {
-      type,
-      requiredAgents: [...new Set(requiredAgents)], // Remove duplicates
-      estimatedComplexity: Math.min(10, Math.max(1, estimatedComplexity)),
-      suggestedPattern,
-      dependencies
+      overall: overallProgress,
+      byAgent,
+      blockingIssues,
+      estimatedCompletion
     };
   }
 
   /**
-   * Spawn a specialized agent with optional specialization
+   * Make memory-driven decisions based on past patterns
    */
-  private async spawnSpecializedAgent(type: AgentType, objectiveId: string, specialization?: string): Promise<Agent> {
-    const agentId = this.generateId(`agent_${type}`);
+  async makeDecision(context: {
+    objective: string;
+    currentState: any;
+    options: string[];
+  }): Promise<{
+    decision: string;
+    confidence: number;
+    reasoning: string;
+  }> {
+    // Query memory for similar past decisions
+    const similarPatterns = await this.memory.findSimilarPatterns(context.objective);
     
-    const agent: Agent = {
-      id: agentId,
-      type,
-      status: 'idle',
-      capabilities: this.getAgentCapabilities(type),
-      mcpTools: this.getAgentMcpTools(type)
+    // Analyze success rates of past decisions
+    const successRates = new Map<string, number>();
+    for (const option of context.options) {
+      const pastOutcomes = similarPatterns.filter(p => p.decision === option);
+      const successRate = pastOutcomes.length > 0 
+        ? pastOutcomes.filter(p => p.outcome === 'success').length / pastOutcomes.length
+        : 0.5; // Default to 50% if no history
+      successRates.set(option, successRate);
+    }
+
+    // Choose option with highest success rate
+    let bestOption = context.options[0];
+    let highestRate = 0;
+    
+    for (const [option, rate] of successRates) {
+      if (rate > highestRate) {
+        highestRate = rate;
+        bestOption = option;
+      }
+    }
+
+    const confidence = highestRate > 0.7 ? 0.9 : highestRate > 0.5 ? 0.7 : 0.5;
+    
+    const decision = {
+      decision: bestOption,
+      confidence,
+      reasoning: `Based on ${similarPatterns.length} similar past scenarios, "${bestOption}" has a ${(highestRate * 100).toFixed(0)}% success rate.`
     };
 
-    // Store agent in memory for coordination
-    await this.memory.store(`agent_${agentId}`, {
-      agent,
-      objectiveId,
-      specialization: specialization || 'general',
-      parallelMode: !!specialization,
-      spawnedAt: new Date().toISOString()
+    // Store decision for future learning
+    await this.memory.storeDecision({
+      context,
+      decision: decision.decision,
+      confidence: decision.confidence,
+      timestamp: new Date().toISOString()
     });
 
-    if (specialization) {
-      console.log(`👤 Spawned specialized ${type} agent: ${specialization}`);
-    }
-
-    // Notify coordinator of new agent
-    await this.coordinator.registerAgent(agent);
-
-    this.emit('agent:spawned', agent);
-
-    return agent;
-  }
-
-  /**
-   * Get agent capabilities based on type
-   */
-  private getAgentCapabilities(type: AgentType): string[] {
-    const capabilityMap: Record<AgentType, string[]> = {
-      'widget-creator': ['html_generation', 'css_styling', 'javascript_development', 'servicenow_api', 'widget_deployment'],
-      'flow-builder': ['flow_design', 'trigger_configuration', 'action_creation', 'decision_logic', 'flow_testing'],
-      'script-writer': ['glide_scripting', 'business_logic', 'error_handling', 'performance_optimization', 'script_deployment'],
-      'app-architect': ['system_design', 'architecture_planning', 'component_integration', 'best_practices', 'documentation'],
-      'integration-specialist': ['rest_api', 'soap_services', 'data_transformation', 'authentication', 'error_recovery'],
-      'catalog-manager': ['catalog_creation', 'variable_management', 'workflow_linking', 'approval_setup', 'ui_design'],
-      'researcher': ['requirement_analysis', 'feasibility_study', 'solution_research', 'best_practice_identification'],
-      'tester': ['test_planning', 'test_execution', 'mock_data_creation', 'integration_testing', 'performance_testing']
-    };
-
-    return capabilityMap[type] || ['general_servicenow_development'];
-  }
-
-  /**
-   * Get MCP tools available to agent type
-   */
-  private getAgentMcpTools(type: AgentType): string[] {
-    const toolMap: Record<AgentType, string[]> = {
-      'widget-creator': ['snow_deploy', 'snow_preview_widget', 'snow_widget_test'],
-      'flow-builder': ['snow_create_flow', 'snow_test_flow_with_mock', 'snow_validate_flow_definition'],
-      'script-writer': ['snow_create_script_include', 'snow_create_business_rule', 'snow_create_client_script'],
-      'app-architect': ['snow_analyze_requirements', 'snow_create_application', 'snow_intelligent_flow_analysis'],
-      'integration-specialist': ['snow_create_rest_message', 'snow_create_transform_map', 'snow_test_integration'],
-      'catalog-manager': ['snow_catalog_item_search', 'snow_catalog_item_manager', 'snow_link_catalog_to_flow'],
-      'researcher': ['snow_find_artifact', 'snow_comprehensive_search', 'snow_discover_existing_flows'],
-      'tester': ['snow_test_flow_with_mock', 'snow_widget_test', 'snow_comprehensive_flow_test']
-    };
-
-    return toolMap[type] || ['snow_find_artifact'];
-  }
-
-  /**
-   * Identify blocking issues in todo coordination
-   */
-  private async identifyBlockingIssues(todoCoordination: TodoCoordination): Promise<string[]> {
-    const issues: string[] = [];
-
-    // Check for todos with unmet dependencies
-    for (const [todoId, deps] of todoCoordination.dependencies) {
-      const todo = todoCoordination.todos.find(t => t.id === todoId);
-      if (todo && todo.status === 'pending') {
-        const unmetDeps = deps.filter(depId => {
-          const depTodo = todoCoordination.todos.find(t => t.id === depId);
-          return depTodo && depTodo.status !== 'completed';
-        });
-
-        if (unmetDeps.length > 0) {
-          issues.push(`Todo "${todo.content}" blocked by ${unmetDeps.length} dependencies`);
-        }
-      }
-    }
-
-    // Check for todos with no assigned agent
-    const unassignedTodos = todoCoordination.todos.filter(todo => 
-      !todoCoordination.agentAssignments.has(todo.id) && todo.status === 'pending'
-    );
-
-    if (unassignedTodos.length > 0) {
-      issues.push(`${unassignedTodos.length} todos have no assigned agent`);
-    }
-
-    // Check for failed todos
-    const failedTodos = todoCoordination.todos.filter(t => t.status === 'cancelled');
-    if (failedTodos.length > 0) {
-      issues.push(`${failedTodos.length} todos have failed`);
-    }
-
-    return issues;
-  }
-
-  /**
-   * Estimate completion time based on progress
-   */
-  private estimateCompletion(todoCoordination: TodoCoordination, currentProgress: number): Date {
-    const startTime = new Date(todoCoordination.taskId.split('_')[1]); // Extract timestamp from ID
-    const elapsedMs = Date.now() - startTime.getTime();
+    this.emit('decision:made', decision);
     
-    if (currentProgress === 0) {
-      // Default estimate if no progress yet
-      return new Date(Date.now() + 3600000); // 1 hour
-    }
-
-    const estimatedTotalMs = (elapsedMs / currentProgress) * 100;
-    const remainingMs = estimatedTotalMs - elapsedMs;
-    
-    return new Date(Date.now() + remainingMs);
+    return decision;
   }
 
   /**
-   * Calculate score for decision option
-   */
-  private calculateOptionScore(option: string, patterns: DeploymentPattern[], context: any): number {
-    let score = 50; // Base score
-
-    // Adjust based on historical success with similar patterns
-    for (const pattern of patterns) {
-      if (pattern.agentSequence.some(agent => option.toLowerCase().includes(agent))) {
-        score += pattern.successRate * 20;
-      }
-    }
-
-    // Adjust based on context constraints
-    if (context.currentState?.failedAttempts?.includes(option)) {
-      score -= 30; // Penalize previously failed options
-    }
-
-    // Boost score if option matches objective keywords
-    const objectiveWords = context.objective.toLowerCase().split(' ');
-    const optionWords = option.toLowerCase().split(' ');
-    const matches = objectiveWords.filter(word => optionWords.includes(word)).length;
-    score += matches * 5;
-
-    return Math.min(100, Math.max(0, score));
-  }
-
-  /**
-   * Generate reasoning for decision
-   */
-  private generateDecisionReasoning(decision: string, patterns: DeploymentPattern[], context: any): string {
-    const reasons: string[] = [];
-
-    // Check historical patterns
-    const relevantPatterns = patterns.filter(p => 
-      p.agentSequence.some(agent => decision.toLowerCase().includes(agent))
-    );
-    
-    if (relevantPatterns.length > 0) {
-      const avgSuccess = relevantPatterns.reduce((sum, p) => sum + p.successRate, 0) / relevantPatterns.length;
-      reasons.push(`Historical success rate: ${Math.round(avgSuccess)}%`);
-    }
-
-    // Check objective alignment
-    const objectiveWords = context.objective.toLowerCase().split(' ');
-    const decisionWords = decision.toLowerCase().split(' ');
-    const alignment = objectiveWords.filter(word => decisionWords.includes(word)).length;
-    if (alignment > 0) {
-      reasons.push(`Strong alignment with objective (${alignment} matching concepts)`);
-    }
-
-    // Default reasoning if no specific reasons
-    if (reasons.length === 0) {
-      reasons.push('Best option based on current context and available capabilities');
-    }
-
-    return reasons.join('; ');
-  }
-
-  /**
-   * Set up event handlers for coordination
+   * Setup event handlers for coordination
    */
   private setupEventHandlers(): void {
-    // Listen to coordinator events
-    this.coordinator.on('agent:handoff', async (data) => {
-      await this.handleAgentHandoff(data);
+    // Handle agent lifecycle events
+    this.coordinator.on('agent:ready', async (data) => {
+      console.log(`✅ Agent ${data.agentId} ready for tasks`);
+      await this.assignTodosToAgent(
+        this.activeAgents.get(data.agentId)!,
+        data.objectiveId
+      );
     });
 
-    this.coordinator.on('agent:blocked', async (data) => {
-      await this.handleAgentBlocked(data);
+    this.coordinator.on('agent:completed', async (data) => {
+      console.log(`✅ Agent ${data.agentId} completed all tasks`);
+      this.activeAgents.delete(data.agentId);
+      
+      // Check if we need to spawn more agents
+      if (this.config.autoSpawn) {
+        await this.checkAndSpawnAgents(data.objectiveId);
+      }
     });
 
-    this.coordinator.on('coordination:error', async (error) => {
-      await this.handleCoordinationError(error);
+    this.coordinator.on('agent:error', async (data) => {
+      console.error(`❌ Agent ${data.agentId} encountered error:`, data.error);
+      
+      // Handle 403 errors specifically
+      if (this.is403Error(data.error)) {
+        const handled = await this.handleDeploymentError(data.error, {
+          objectiveId: data.objectiveId,
+          agentId: data.agentId,
+          operation: 'deployment',
+          artifactType: data.artifactType
+        });
+
+        if (handled) {
+          // Retry the agent's task
+          this.emit('agent:retry', data);
+        }
+      }
     });
   }
 
   /**
-   * Handle agent handoff events
+   * Check if more agents need to be spawned
    */
-  private async handleAgentHandoff(data: any): Promise<void> {
-    this.emit('coordination:handoff', data);
-    
-    // Update todo status if handoff includes completed work
-    if (data.completedTodoId) {
-      await this.updateTodoStatus(data.objectiveId, data.completedTodoId, 'completed');
-    }
-  }
+  private async checkAndSpawnAgents(objectiveId: string): Promise<void> {
+    const todoCoordination = this.todoCoordinations.get(objectiveId);
+    if (!todoCoordination) return;
 
-  /**
-   * Handle agent blocked events
-   */
-  private async handleAgentBlocked(data: any): Promise<void> {
-    this.emit('coordination:blocked', data);
-    
-    // Attempt to resolve blockage
-    const resolution = await this.makeDecision({
-      objective: `Resolve blockage for ${data.agentId}`,
-      currentState: data,
-      options: ['spawn_helper_agent', 'reassign_task', 'provide_fallback', 'wait_for_dependency']
-    });
+    const unassignedTodos = todoCoordination.todos.filter(todo => 
+      !Array.from(todoCoordination.agentAssignments.values()).includes(todo.id) &&
+      todo.status === 'pending'
+    );
 
-    if (resolution.decision === 'spawn_helper_agent') {
-      // Spawn additional agent to help
-      await this.spawnAgents(data.objectiveId);
+    if (unassignedTodos.length > 0 && this.activeAgents.size < this.config.maxConcurrentAgents) {
+      // Spawn additional agents if needed
+      await this.spawnAgents(objectiveId);
     }
   }
 
   /**
    * Handle coordination errors
    */
-  private async handleCoordinationError(error: any): Promise<void> {
-    this.emit('coordination:error', error);
+  private async handleCoordinationError(error: any, context: any): Promise<void> {
+    console.error('❌ Coordination error:', error);
     
-    // Log error to memory for learning
-    await this.memory.store(`error_${Date.now()}`, {
-      error: error.message,
-      stack: error.stack,
-      context: error.context,
-      timestamp: new Date().toISOString()
+    // Store error in memory for learning
+    await this.memory.storeError({
+      error: error.message || error,
+      context,
+      timestamp: new Date().toISOString(),
+      recovery: null
     });
+
+    this.emit('coordination:error', { error, context });
   }
 
   /**
-   * Update todo status
+   * Identify blocking issues from todos
    */
-  private async updateTodoStatus(objectiveId: string, todoId: string, status: TodoStatus): Promise<void> {
-    const todoCoordination = this.todoCoordinations.get(objectiveId);
-    if (!todoCoordination) return;
-
-    const todo = todoCoordination.todos.find(t => t.id === todoId);
-    if (todo) {
-      todo.status = status;
-      
-      // Store update in memory
-      await this.memory.store(`todo_update_${todoId}`, {
-        todoId,
-        newStatus: status,
-        timestamp: new Date().toISOString()
-      });
-
-      this.emit('todo:updated', { objectiveId, todoId, status });
+  private async identifyBlockingIssues(todoCoordination: TodoCoordination): Promise<string[]> {
+    const issues: string[] = [];
+    
+    // Check for failed todos
+    const failedTodos = todoCoordination.todos.filter(t => t.status === 'failed' as TodoStatus);
+    if (failedTodos.length > 0) {
+      issues.push(`${failedTodos.length} failed tasks blocking progress`);
     }
+
+    // Check for stuck in-progress todos (older than 10 minutes)
+    const stuckTodos = todoCoordination.todos.filter(t => {
+      if (t.status !== 'in_progress') return false;
+      const todoData = this.memory.get(`todo_${t.id}`) as any;
+      if (!todoData || !todoData.startTime) return false;
+      return Date.now() - todoData.startTime > 10 * 60 * 1000; // 10 minutes
+    });
+    
+    if (stuckTodos.length > 0) {
+      issues.push(`${stuckTodos.length} tasks stuck in progress`);
+    }
+
+    // Check for dependency bottlenecks
+    const pendingWithDeps = todoCoordination.todos.filter(t => 
+      t.status === 'pending' &&
+      todoCoordination.dependencies.has(t.id)
+    );
+    
+    for (const todo of pendingWithDeps) {
+      const deps = todoCoordination.dependencies.get(todo.id) || [];
+      const incompleteDeps = deps.filter(depId => {
+        const depTodo = todoCoordination.todos.find(t => t.id === depId);
+        return depTodo && depTodo.status !== 'completed';
+      });
+      
+      if (incompleteDeps.length === deps.length) {
+        issues.push(`Task "${todo.content}" blocked by dependencies`);
+      }
+    }
+
+    return issues;
   }
 
   /**
-   * Generate unique ID
+   * Estimate completion time based on current progress
+   */
+  private estimateCompletion(todoCoordination: TodoCoordination, currentProgress: number): Date {
+    if (currentProgress === 0) {
+      return new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours if no progress
+    }
+
+    const completedTodos = todoCoordination.todos.filter(t => t.status === 'completed').length;
+    const startTime = this.activeObjectives.get(todoCoordination.objectiveId)?.metadata?.startTime || Date.now();
+    const elapsedTime = Date.now() - startTime;
+    
+    const averageTimePerTodo = elapsedTime / completedTodos;
+    const remainingTodos = todoCoordination.todos.filter(t => t.status !== 'completed').length;
+    const estimatedRemainingTime = averageTimePerTodo * remainingTodos;
+
+    return new Date(Date.now() + estimatedRemainingTime);
+  }
+
+  /**
+   * Generate unique ID for entities
    */
   private generateId(prefix: string): string {
     return `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
   }
 
   /**
-   * Get queen status
-   */
-  async getStatus(): Promise<{
-    activeObjectives: number;
-    activeAgents: number;
-    totalTodos: number;
-    completedTodos: number;
-    memoryStats: any;
-  }> {
-    let totalTodos = 0;
-    let completedTodos = 0;
-
-    for (const coordination of this.todoCoordinations.values()) {
-      totalTodos += coordination.todos.length;
-      completedTodos += coordination.todos.filter(t => t.status === 'completed').length;
-    }
-
-    return {
-      activeObjectives: this.activeObjectives.size,
-      activeAgents: this.activeAgents.size,
-      totalTodos,
-      completedTodos,
-      memoryStats: await this.memory.getStats()
-    };
-  }
-
-  /**
-   * Shutdown queen agent
+   * Shutdown queen agent gracefully
    */
   async shutdown(): Promise<void> {
-    if (this.config.debugMode) {
-      console.log('👑 Shutting down Queen Agent');
+    console.log('👑 Queen Agent shutting down...');
+    
+    // Save current state
+    for (const [objectiveId, objective] of this.activeObjectives) {
+      await this.memory.store(`objective_state_${objectiveId}`, {
+        objective,
+        todoCoordination: this.todoCoordinations.get(objectiveId),
+        activeAgents: Array.from(this.activeAgents.values()).filter(a => a.objectiveId === objectiveId),
+        timestamp: new Date().toISOString()
+      });
     }
 
-    // Terminate all active agents
+    // Notify all active agents
     for (const agent of this.activeAgents.values()) {
-      await this.coordinator.terminateAgent(agent.id);
+      this.emit('agent:shutdown', agent);
     }
 
-    // Close memory system
-    this.memory.close();
-
-    // Clear all maps
-    this.activeObjectives.clear();
-    this.todoCoordinations.clear();
-    this.activeAgents.clear();
-
-    this.emit('shutdown');
+    await this.memory.close();
+    this.removeAllListeners();
+    
+    console.log('✅ Queen Agent shutdown complete');
   }
 }
-
-// Export types for TodoWrite integration
-export interface TodoItem {
-  id: string;
-  content: string;
-  status: TodoStatus;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-}
-
-export type TodoStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';

@@ -93,18 +93,56 @@ export class AgentDetector {
     }
   };
 
+  // 🚀 ENHANCED: Updated to use new specialized agents for parallel execution (v1.1.92)
   private static readonly SERVICENOW_ARTIFACTS = {
-    'widget': ['widget_builder', 'coder', 'tester'],
-    'flow': ['flow_designer', 'architect', 'tester'],
-    'workflow': ['flow_designer', 'architect', 'tester'],
-    'application': ['architect', 'coder', 'database_expert', 'tester', 'documenter'],
-    'script': ['coder', 'reviewer', 'tester'],
-    'business_rule': ['coder', 'reviewer', 'tester'],
-    'integration': ['integration_specialist', 'architect', 'tester'],
-    'api': ['integration_specialist', 'coder', 'tester'],
-    'table': ['database_expert', 'architect', 'coder'],
-    'report': ['database_expert', 'analyst', 'coder'],
-    'dashboard': ['widget_builder', 'database_expert', 'coder']
+    'widget': [
+      'widget-creator',        // HTML structure specialist
+      'css-specialist',        // Styling and responsive design specialist  
+      'backend-specialist',    // Server script specialist
+      'frontend-specialist',   // Client script specialist
+      'integration-specialist', // API integration specialist
+      'ui-ux-specialist',      // User experience specialist
+      'performance-specialist', // Performance optimization
+      'tester'                // Testing specialist
+    ],
+    'flow': [
+      'flow-builder',          // Flow structure specialist
+      'trigger-specialist',    // Trigger configuration specialist
+      'action-specialist',     // Action development specialist  
+      'integration-specialist', // External system integration
+      'approval-specialist',   // Approval process specialist
+      'notification-specialist', // Notification configuration
+      'error-handler',         // Error handling specialist
+      'tester'                // Flow testing specialist
+    ],
+    'workflow': [
+      'flow-builder', 'trigger-specialist', 'action-specialist', 'approval-specialist', 'tester'
+    ],
+    'application': [
+      'app-architect',         // Application architecture
+      'widget-creator',        // UI components
+      'css-specialist',        // Styling specialist
+      'flow-builder',          // Business logic flows
+      'script-writer',         // Script includes and business rules
+      'security-specialist',   // Security implementation
+      'integration-specialist', // System integration
+      'performance-specialist', // Performance optimization
+      'documentation-specialist' // Documentation
+    ],
+    'script': ['script-writer', 'security-specialist', 'tester'],
+    'business_rule': ['script-writer', 'security-specialist', 'tester'],
+    'integration': [
+      'integration-specialist', // API integration specialist
+      'api-specialist',        // API development specialist
+      'transform-specialist',  // Data transformation specialist
+      'monitoring-specialist', // Integration monitoring
+      'security-specialist',   // Security implementation
+      'tester'                // Integration testing
+    ],
+    'api': ['api-specialist', 'integration-specialist', 'security-specialist', 'tester'],
+    'table': ['database_expert', 'architect', 'script-writer'],
+    'report': ['database_expert', 'analyst', 'performance-specialist'],
+    'dashboard': ['widget-creator', 'css-specialist', 'database_expert', 'performance-specialist']
   };
 
   static analyzeTask(objective: string, userMaxAgents?: number): TaskAnalysis {

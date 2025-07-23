@@ -13,7 +13,7 @@
  *   const result = await engine.analyzeAndResolve("create incident widget with charts");
  */
 
-import { RequirementsAnalyzer, ServiceNowRequirement, AnalysisResult } from './requirements-analyzer';
+import { RequirementsAnalyzer, ServiceNowRequirement, ObjectiveAnalysis } from './requirements-analyzer';
 import { McpCoverageAnalyzer, CoverageAnalysis } from './mcp-coverage-analyzer';
 import { AutoResolutionEngine, BulkResolutionResult } from './auto-resolution-engine';
 import { ManualInstructionsGenerator, BulkManualGuide } from './manual-instructions-generator';
@@ -281,7 +281,7 @@ export class GapAnalysisEngine {
     objective: string,
     analysisId: string,
     startTime: number,
-    requirementsAnalysis: AnalysisResult,
+    requirementsAnalysis: ObjectiveAnalysis,
     mcpCoverage: CoverageAnalysis,
     automationResults: BulkResolutionResult,
     manualGuides: BulkManualGuide | null,

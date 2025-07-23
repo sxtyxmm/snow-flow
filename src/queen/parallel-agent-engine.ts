@@ -97,9 +97,9 @@ export class ParallelAgentEngine extends EventEmitter {
     const capabilityOpportunity = await this.detectCapabilitySplit(todos);
     if (capabilityOpportunity) opportunities.push(capabilityOpportunity);
 
-    // Filter and rank opportunities by confidence and speedup
+    // 🚀 ENHANCED: More lenient filtering to ensure parallel execution happens
     const rankedOpportunities = opportunities
-      .filter(opp => opp.confidence > 0.6 && opp.estimatedSpeedup > 1.2)
+      .filter(opp => opp.confidence > 0.5 && opp.estimatedSpeedup > 1.1) // Lower thresholds
       .sort((a, b) => (b.confidence * b.estimatedSpeedup) - (a.confidence * a.estimatedSpeedup));
 
     console.log(`🎯 Found ${rankedOpportunities.length} high-confidence parallelization opportunities`);
@@ -260,34 +260,116 @@ export class ParallelAgentEngine extends EventEmitter {
     todos: TodoItem[],
     objectiveType: ServiceNowTask['type']
   ): Promise<ParallelizationOpportunity | null> {
-    // Look for complex todos that can be broken down
-    const complexTodos = todos.filter(todo => 
-      todo.content.length > 100 || 
-      todo.content.includes('and') ||
-      todo.content.includes('with') ||
-      todo.priority === 'high'
-    );
+    // 🚀 ENHANCED: More intelligent detection of tasks that benefit from specialization
+    const canBenefitFromSpecialization = todos.filter(todo => {
+      const content = todo.content.toLowerCase();
+      
+      // Widget development indicators
+      if (content.includes('widget') || content.includes('portal') || content.includes('ui')) {
+        return true;
+      }
+      
+      // Development indicators
+      if (content.includes('develop') || content.includes('create') || content.includes('build')) {
+        return true;
+      }
+      
+      // Multiple component indicators
+      if (content.includes('and') || content.includes('with') || content.includes('including')) {
+        return true;
+      }
+      
+      // Complex task indicators
+      if (todo.priority === 'high' || todo.priority === 'medium') {
+        return true;
+      }
+      
+      // Any development-related task benefits from specialization
+      if (content.includes('test') || content.includes('style') || content.includes('script')) {
+        return true;
+      }
+      
+      return false;
+    });
     
-    if (complexTodos.length === 0) return null;
+    // 🚀 Be more aggressive - even single development tasks benefit from parallel specialists
+    if (canBenefitFromSpecialization.length === 0 && todos.length > 0) {
+      // If no specific indicators, but we have todos, still try to parallelize
+      canBenefitFromSpecialization.push(...todos.slice(0, Math.min(3, todos.length)));
+    }
     
+    if (canBenefitFromSpecialization.length === 0) return null;
+    
+    // 🚀 ENHANCED: More specialized agent teams with specific roles
     const breakdownMap = {
-      'widget': ['widget-creator', 'script-writer', 'tester'],
-      'flow': ['flow-builder', 'integration-specialist', 'tester'],
-      'application': ['app-architect', 'widget-creator', 'flow-builder', 'integration-specialist'],
-      'script': ['script-writer', 'tester'],
-      'integration': ['integration-specialist', 'script-writer', 'tester']
+      'widget': [
+        'widget-creator',      // HTML structure specialist
+        'css-specialist',      // Styling and responsive design specialist
+        'backend-specialist',  // Server script specialist
+        'frontend-specialist', // Client script specialist
+        'integration-specialist', // API integration specialist
+        'ui-ux-specialist',    // User experience specialist
+        'performance-specialist', // Performance optimization
+        'accessibility-specialist', // Accessibility compliance
+        'tester'              // Testing specialist
+      ],
+      'flow': [
+        'flow-builder',        // Flow structure specialist
+        'trigger-specialist',  // Trigger configuration specialist
+        'action-specialist',   // Action development specialist
+        'integration-specialist', // External system integration
+        'approval-specialist', // Approval process specialist
+        'notification-specialist', // Notification configuration
+        'error-handler',       // Error handling specialist
+        'tester'              // Flow testing specialist
+      ],
+      'application': [
+        'app-architect',       // Application architecture
+        'widget-creator',      // UI components
+        'css-specialist',      // Styling specialist
+        'flow-builder',        // Business logic flows
+        'script-writer',       // Script includes and business rules
+        'security-specialist', // Security implementation
+        'integration-specialist', // System integration
+        'performance-specialist', // Performance optimization
+        'documentation-specialist', // Documentation
+        'tester'              // Comprehensive testing
+      ],
+      'script': [
+        'script-writer',       // Core script development
+        'api-specialist',      // API integration specialist
+        'performance-specialist', // Code optimization
+        'security-specialist', // Security review
+        'documentation-specialist', // Code documentation
+        'tester'              // Script testing
+      ],
+      'integration': [
+        'integration-specialist', // Core integration
+        'api-specialist',      // API development
+        'transform-specialist', // Data transformation
+        'error-handler',       // Error handling
+        'monitoring-specialist', // Integration monitoring
+        'security-specialist', // Security implementation
+        'tester'              // Integration testing
+      ]
     };
     
-    const suggestedAgents = breakdownMap[objectiveType] || ['script-writer', 'tester'];
-    const todoIds = complexTodos.map(t => t.id);
+    // Select appropriate specialists based on task
+    let suggestedAgents = breakdownMap[objectiveType] || breakdownMap['widget'];
+    
+    // 🚀 Limit to reasonable number but ensure good coverage
+    const maxSpecialists = Math.min(8, Math.max(4, canBenefitFromSpecialization.length * 2));
+    suggestedAgents = suggestedAgents.slice(0, maxSpecialists);
+    
+    const todoIds = canBenefitFromSpecialization.map(t => t.id);
     
     return {
       id: this.generateId('specialized'),
       type: 'specialized_breakdown',
       todos: todoIds,
       suggestedAgents: suggestedAgents as AgentType[],
-      estimatedSpeedup: 2.0, // Specialized agents work faster
-      confidence: 0.8,
+      estimatedSpeedup: Math.min(3.5, 1.5 + (suggestedAgents.length * 0.3)), // More realistic speedup
+      confidence: 0.85, // Higher confidence for specialization benefits
       dependencies: [],
       blockers: []
     };

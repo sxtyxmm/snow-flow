@@ -596,8 +596,36 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
           throw new Error(`Widget '${config.name}' already exists. Consider using a different name or updating the existing widget.`);
         }
         
-        if (errorMsg.includes('permission') || errorMsg.includes('access')) {
-          throw new Error(`Insufficient permissions to create widget. Check sp_widget table permissions.`);
+        if (errorMsg.includes('permission') || errorMsg.includes('access') || errorMsg.includes('403')) {
+          throw new Error(`
+🚫 Service Portal Permission Error (403)
+
+Even with sp_admin role, this can happen due to:
+
+1. **OAuth Scope Restrictions**
+   - Go to: System OAuth > Application Registry
+   - Set "Accessible from" to "All application scopes"
+
+2. **Cross-Scope Access** 
+   - Switch to Global scope and try again
+   - Check ACLs on sp_widget table
+
+3. **Missing System Properties**
+   - Ensure: glide.service_portal.enable_api_access = true
+
+4. **Update Set Required**
+   - Widgets must be created in an active Update Set
+   - Use: snow_ensure_active_update_set() first
+
+🔧 Quick Fix: Try deployment with global scope:
+await snow_deploy({
+  type: "widget", 
+  config: {...},
+  scope_preference: "global"
+});
+
+📚 See SERVICE_PORTAL_403_FIX.md for detailed troubleshooting.
+          `);
         }
         
         throw new Error(`Failed to create widget in ServiceNow: ${errorMsg}`);
