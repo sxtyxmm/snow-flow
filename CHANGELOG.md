@@ -5,6 +5,22 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.91] - 2025-07-23
+
+### 🔧 Critical Bug Fix - Memory Tools Integration
+- **Fixed** "The memory tool is not available" error reported by users when running snow-flow
+- **Added** Memory tools (memory_store, memory_get, memory_list) directly to ServiceNow Intelligent MCP server
+- **Added** Todo management tools (todo_write, todo_read) for task coordination across agents
+- **Enhanced** MCPMemoryManager integration to use existing getSessionContext method
+- **Improved** Memory tool implementation following claude-flow design patterns
+- **Fixed** Private/protected method conflict between BaseMCPServer and ServiceNowIntelligentMCP
+
+### 💾 Technical Details
+- **Integration** Memory tools now available through Intelligent MCP server, not as separate MCP
+- **Namespace Support** All memory operations support namespacing for organized data storage
+- **Session Context** Uses global session context for cross-agent memory sharing
+- **Todo Coordination** Agents can now properly coordinate tasks through todo tools
+
 ## [1.1.90] - 2025-07-22
 
 ### 🚀 REVOLUTIONARY: Intelligent Parallel Agent Engine

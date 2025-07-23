@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.90';
+export const VERSION = '1.1.91';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.1.91': [
+      '🔧 MEMORY TOOLS FIX: Added memory_store, memory_get, memory_list tools directly to Intelligent MCP server',
+      '📝 TODO TOOLS: Added todo_write and todo_read tools for task coordination across agents',
+      '💾 PERSISTENT MEMORY: Queen Agent and all agents can now properly use memory tools for coordination',
+      '🔄 SEAMLESS INTEGRATION: Memory tools integrated directly into ServiceNow Intelligent MCP',
+      '🐛 BUG FIX: Resolved "memory tool not available" error in Queen Agent execution'
+    ],
     '1.1.90': [
       '🚀 REVOLUTIONARY: Intelligent Parallel Agent Engine - automatically spawns specialized agent teams for optimal performance',
       '🎯 SMART PARALLELIZATION: Analyzes todos to detect 4 types of opportunities - independent tasks, specialized breakdown, load distribution, capability split',

@@ -108,6 +108,77 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
             },
             required: ['query']
           }
+        },
+        {
+          name: 'memory_store',
+          description: 'Store data in persistent memory for multi-agent coordination',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              key: { type: 'string', description: 'Unique key for the data' },
+              value: { description: 'Data to store (any JSON-serializable value)' },
+              ttl: { type: 'number', description: 'Time to live in milliseconds (optional)' },
+              namespace: { type: 'string', description: 'Namespace for organizing data (optional)', default: 'default' }
+            },
+            required: ['key', 'value']
+          }
+        },
+        {
+          name: 'memory_get',
+          description: 'Retrieve data from persistent memory',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              key: { type: 'string', description: 'Key to retrieve' },
+              namespace: { type: 'string', description: 'Namespace to search in (optional)', default: 'default' }
+            },
+            required: ['key']
+          }
+        },
+        {
+          name: 'memory_list',
+          description: 'List all keys in memory',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              namespace: { type: 'string', description: 'Namespace to list (optional)', default: 'default' },
+              pattern: { type: 'string', description: 'Pattern to filter keys (optional)' }
+            }
+          }
+        },
+        {
+          name: 'todo_write',
+          description: 'Create or update todo items for task coordination',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              todos: {
+                type: 'array',
+                description: 'Array of todo items',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', description: 'Unique ID for the todo' },
+                    content: { type: 'string', description: 'Todo description' },
+                    status: { type: 'string', enum: ['pending', 'in_progress', 'completed'], description: 'Todo status' },
+                    priority: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Todo priority' }
+                  },
+                  required: ['id', 'content', 'status', 'priority']
+                }
+              }
+            },
+            required: ['todos']
+          }
+        },
+        {
+          name: 'todo_read',
+          description: 'Read current todo list',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', enum: ['all', 'pending', 'in_progress', 'completed'], description: 'Filter by status', default: 'all' }
+            }
+          }
         }
       ]
     }));
@@ -125,6 +196,16 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
             return await this.searchMemory(args);
           case 'snow_comprehensive_search':
             return await this.comprehensiveSearch(args);
+          case 'memory_store':
+            return await this.handleMemoryStore(args);
+          case 'memory_get':
+            return await this.handleMemoryGet(args);
+          case 'memory_list':
+            return await this.handleMemoryList(args);
+          case 'todo_write':
+            return await this.handleTodoWrite(args);
+          case 'todo_read':
+            return await this.handleTodoRead(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -690,7 +771,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
     return typeMap[table] || 'unknown';
   }
 
-  private getTableForType(type: string): string {
+  protected getTableForType(type: string): string {
     const tableMap: Record<string, string> = {
       'widget': 'sp_widget',
       'flow': 'sys_hub_flow',
@@ -725,6 +806,167 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
 
   private hashQuery(query: string): string {
     return crypto.createHash('md5').update(query).digest('hex').substring(0, 8);
+  }
+
+  /**
+   * Memory store handler
+   */
+  private async handleMemoryStore(args: any): Promise<MCPToolResult> {
+    const { key, value, ttl, namespace = 'default' } = args;
+    
+    try {
+      // Store in shared context
+      await this.memory.updateSharedContext({
+        session_id: 'global',
+        context_key: `${namespace}:${key}`,
+        context_value: JSON.stringify(value),
+        created_by_agent: 'intelligent_mcp'
+      });
+      
+      return this.createSuccessResponse(
+        `Data stored successfully with key: ${namespace}:${key}`,
+        { key: `${namespace}:${key}`, namespace }
+      );
+    } catch (error) {
+      return this.createErrorResponse('Failed to store in memory', error);
+    }
+  }
+
+  /**
+   * Memory get handler
+   */
+  private async handleMemoryGet(args: any): Promise<MCPToolResult> {
+    const { key, namespace = 'default' } = args;
+    
+    try {
+      // Get from session context
+      const sessionContext = await this.memory.getSessionContext('global');
+      const fullKey = `${namespace}:${key}`;
+      
+      if (!sessionContext || !sessionContext[fullKey]) {
+        return this.createSuccessResponse(
+          `Key not found: ${namespace}:${key}`,
+          { value: null, found: false }
+        );
+      }
+      
+      return this.createSuccessResponse(
+        `Data retrieved successfully`,
+        { 
+          key: `${namespace}:${key}`,
+          namespace,
+          value: JSON.parse(sessionContext[fullKey]),
+          found: true
+        }
+      );
+    } catch (error) {
+      return this.createErrorResponse('Failed to retrieve from memory', error);
+    }
+  }
+
+  /**
+   * Memory list handler
+   */
+  private async handleMemoryList(args: any): Promise<MCPToolResult> {
+    const { namespace = 'default', pattern } = args;
+    
+    try {
+      // Get all contexts for global session
+      const sessionContext = await this.memory.getSessionContext('global');
+      
+      if (!sessionContext) {
+        return this.createSuccessResponse(
+          `No keys found in namespace ${namespace}`,
+          { namespace, count: 0, keys: [] }
+        );
+      }
+      
+      // Filter by namespace
+      let keys = Object.keys(sessionContext)
+        .filter(k => k.startsWith(`${namespace}:`))
+        .map(k => k.replace(`${namespace}:`, ''));
+      
+      // Apply pattern filter if provided
+      if (pattern) {
+        const regex = new RegExp(pattern);
+        keys = keys.filter(k => regex.test(k));
+      }
+      
+      return this.createSuccessResponse(
+        `Found ${keys.length} keys in namespace ${namespace}`,
+        { namespace, count: keys.length, keys }
+      );
+    } catch (error) {
+      return this.createErrorResponse('Failed to list memory keys', error);
+    }
+  }
+
+  /**
+   * Todo write handler
+   */
+  private async handleTodoWrite(args: any): Promise<MCPToolResult> {
+    const { todos } = args;
+    
+    try {
+      // Store todos in shared context
+      await this.memory.updateSharedContext({
+        session_id: 'global',
+        context_key: 'todos:current',
+        context_value: JSON.stringify(todos),
+        created_by_agent: 'intelligent_mcp'
+      });
+      
+      // Update individual todo items for quick access
+      for (const todo of todos) {
+        await this.memory.updateSharedContext({
+          session_id: 'global',
+          context_key: `todos:item:${todo.id}`,
+          context_value: JSON.stringify(todo),
+          created_by_agent: 'intelligent_mcp'
+        });
+      }
+      
+      return this.createSuccessResponse(
+        `Updated ${todos.length} todo items`,
+        { todos, count: todos.length }
+      );
+    } catch (error) {
+      return this.createErrorResponse('Failed to write todos', error);
+    }
+  }
+
+  /**
+   * Todo read handler
+   */
+  private async handleTodoRead(args: any): Promise<MCPToolResult> {
+    const { status = 'all' } = args;
+    
+    try {
+      // Get current todos from session context
+      const sessionContext = await this.memory.getSessionContext('global');
+      const todosKey = 'todos:current';
+      
+      if (!sessionContext || !sessionContext[todosKey]) {
+        return this.createSuccessResponse(
+          'No todos found',
+          { todos: [], count: 0 }
+        );
+      }
+      
+      let todos = JSON.parse(sessionContext[todosKey]);
+      
+      // Filter by status if not 'all'
+      if (status !== 'all') {
+        todos = todos.filter((t: any) => t.status === status);
+      }
+      
+      return this.createSuccessResponse(
+        `Found ${todos.length} todos`,
+        { todos, count: todos.length }
+      );
+    } catch (error) {
+      return this.createErrorResponse('Failed to read todos', error);
+    }
   }
 }
 

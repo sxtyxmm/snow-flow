@@ -357,7 +357,7 @@ ${errorText}
   /**
    * Get ServiceNow table name for artifact type
    */
-  private getTableForType(type: string): string {
+  protected getTableForType(type: string): string {
     const tableMap: { [key: string]: string } = {
       'widget': 'sp_widget',
       'flow': 'sys_hub_flow', 

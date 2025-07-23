@@ -12,7 +12,16 @@
 - 🎯 **Claude Code Integration**: All coordination happens through Claude Code interface
 - 🚀 **One Command**: `snow-flow swarm "objective"` - everything else is automatic
 
-## ✨ What's New in v1.1.90 - Revolutionary Parallel Agent Engine
+## ✨ What's New in v1.1.91 - Critical Memory Tools Fix
+
+### 🔧 Memory Tool Integration Fixed
+- **Fixed** "The memory tool is not available" error when running snow-flow
+- **Added** Memory tools (memory_store, memory_get, memory_list) directly to Intelligent MCP server
+- **Added** Todo management tools (todo_write, todo_read) for proper task coordination
+- **Enhanced** Queen Agent can now properly coordinate tasks through memory and todo tools
+- **Integrated** Memory functionality following claude-flow design patterns
+
+## 🚀 Previous Release: v1.1.90 - Revolutionary Parallel Agent Engine
 
 ### 🚀 BREAKTHROUGH: Intelligent Parallel Agent Spawning
 - **Automatic Parallelization**: Queen Agent detects work that can be split across specialized agent teams
