@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.2.1';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.2.1': [
+      '🧠 NEO4J SMART INTEGRATION: Auto-detects Neo4j during init and offers optional graph memory setup',
+      '⚡ GRACEFUL FALLBACK: Graph memory server now starts without Neo4j, provides helpful fallback responses',
+      '🎯 CONDITIONAL CONFIGURATION: Graph memory only added to .mcp.json when Neo4j is enabled',
+      '🔧 IMPROVED ERROR HANDLING: No more crashes when Neo4j is unavailable - smooth degradation',
+      '📋 INIT ENHANCEMENT: Interactive prompt during init asks about graph memory features',
+      '💾 ADDED SERVICENOW-MEMORY: Memory MCP server now properly included in init configuration'
+    ],
     '1.2.0': [
       '🔄 ARCHITECTURE CHANGE: Switched from claude-flow memory tools to native ServiceNow memory system',
       '🎯 MEMORY SYSTEM FIX: All CLI memory references now use mcp__servicenow-memory__ tools instead of mcp__claude-flow__memory_usage',
@@ -16,10 +24,7 @@ export const VERSION_INFO = {
       '🚀 IMPROVED RELIABILITY: Queen Agent and swarm coordination now use dedicated ServiceNow memory infrastructure',
       '💾 SEAMLESS MIGRATION: Automatic transition from claude-flow memory to ServiceNow memory without data loss',
       '🔧 TOOL ALIGNMENT: All memory operations (store, get, search) now consistently use ServiceNow MCP server',
-      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system',
-      '🧠 NEO4J INTEGRATION: Optional graph memory support with automatic detection during init',
-      '⚡ GRACEFUL FALLBACK: Graph memory server runs without Neo4j, returns helpful messages',
-      '🎯 SMART INIT: Auto-detects Neo4j availability and offers configuration during setup'
+      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system'
     ],
     '1.1.91': [
       '🔧 MEMORY TOOLS FIX: Added memory_store, memory_get, memory_list tools directly to Intelligent MCP server',
