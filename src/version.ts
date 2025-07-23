@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.2.2';
+export const VERSION = '1.2.3';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.2.3': [
+      '🔐 AUTHENTICATION FIX: Resolved MCP authentication failure due to environment variable mismatch',
+      '🔧 CONFIG ALIGNMENT: Fixed discrepancy between .env file and MCP configuration files',
+      '✅ VALIDATED CONNECTION: All ServiceNow MCP tools now authenticate properly',
+      '💯 MEMORY SERVER: servicenow-memory MCP server authentication fully functional',
+      '🚀 SWARM READY: All swarm commands now execute without authentication errors'
+    ],
     '1.2.2': [
       '🎯 CRITICAL FIX: Resolved empty flows issue - Complete MCP integration achieved',
       '🔧 FLOW-BUILDER AGENT: Now uses MCPExecutionBridge for real ServiceNow deployment',
