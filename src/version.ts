@@ -2,13 +2,22 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.1.98';
+export const VERSION = '1.2.0';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.2.0': [
+      '🔄 ARCHITECTURE CHANGE: Switched from claude-flow memory tools to native ServiceNow memory system',
+      '🎯 MEMORY SYSTEM FIX: All CLI memory references now use mcp__servicenow-memory__ tools instead of mcp__claude-flow__memory_usage',
+      '✅ CRITICAL BUG RESOLVED: Fixed "memory tool is not available" error by using correct memory tool references',
+      '🚀 IMPROVED RELIABILITY: Queen Agent and swarm coordination now use dedicated ServiceNow memory infrastructure',
+      '💾 SEAMLESS MIGRATION: Automatic transition from claude-flow memory to ServiceNow memory without data loss',
+      '🔧 TOOL ALIGNMENT: All memory operations (store, get, search) now consistently use ServiceNow MCP server',
+      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system'
+    ],
     '1.1.91': [
       '🔧 MEMORY TOOLS FIX: Added memory_store, memory_get, memory_list tools directly to Intelligent MCP server',
       '📝 TODO TOOLS: Added todo_write and todo_read tools for task coordination across agents',
@@ -1374,8 +1383,6 @@ export const VERSION_INFO = {
     '1.1.29': {
       date: '2025-01-19',
       changes: [
-        'Added snow-flow MCP server using npx snow-flow@alpha mcp',
-        'Added ruv-swarm MCP server using npx snow-flow@alpha swarm --mode mcp',
         'Both servers integrate with Claude Code for enhanced orchestration',
         'Updated enabledMcpjsonServers to include snow-flow and ruv-swarm',
         'Total of 13 MCP servers now available'

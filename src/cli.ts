@@ -279,13 +279,13 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
   const startTime = Date.now();
   
   // Show initial dashboard only once
-  console.log('┌─────────────────────────────────────────────────────────────┐');
-  console.log(`│               🚀 Snow-Flow Dashboard v${VERSION}                 │`);
-  console.log('├─────────────────────────────────────────────────────────────┤');
-  console.log(`│ 🤖 Claude Code Status:  ✅ Starting                        │`);
-  console.log(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}                            │`);
-  console.log(`│ ⏱️  Session Time:        00:00                          │`);
-  console.log(`│ 🔄 Monitoring Cycles:    0                                │`);
+  console.log(`┌─────────────────────────────────────────────────────────────┐`);
+  console.log(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
+  console.log(`├─────────────────────────────────────────────────────────────┤`);
+  console.log(`│ 🤖 Claude Code Status:  ✅ Starting                          │`);
+  console.log(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}        │`);
+  console.log(`│ ⏱️  Session Time:        00:00                               │`);
+  console.log(`│ 🔄 Monitoring Cycles:    0                                   │`);
   console.log('└─────────────────────────────────────────────────────────────┘');
   
   // Silent monitoring - only log to file or memory, don't interfere with Claude Code UI
@@ -448,12 +448,11 @@ The Queen Agent will automatically discover and validate table schemas based on 
 **THIS MUST BE YOUR VERY FIRST ACTION - Initialize the swarm memory session:**
 \`\`\`javascript
 // 🚨 EXECUTE THIS IMMEDIATELY - DO NOT SKIP OR DELAY!
-mcp__claude-flow__memory_usage({
-  action: "store",
+mcp__servicenow-memory__memory_store({
   key: "swarm_session_${sessionId}",
   value: JSON.stringify({
     objective: "${objective}",
-    status: "initializing",
+    status: "initializing", 
     started_at: new Date().toISOString(),
     queen_agent_id: "queen_${sessionId}",
     task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
@@ -469,11 +468,7 @@ mcp__claude-flow__memory_usage({
   namespace: "swarm_${sessionId}"
 });
 
-// Initialize agent coordination memory namespace
-mcp__claude-flow__memory_namespace({
-  action: "create",
-  namespace: "agents_${sessionId}"
-});
+// Agent coordination namespace handled automatically by ServiceNow memory system
 \`\`\`
 
 ### 2. MANDATORY MCP-FIRST Workflow Steps
@@ -497,8 +492,7 @@ const existingArtifacts = await mcp__servicenow-intelligent__snow_comprehensive_
 });
 
 // Store discovery results in memory for agents
-await mcp__claude-flow__memory_usage({
-  action: "store",
+await mcp__servicenow-memory__memory_store({
   key: "existing_artifacts_${sessionId}",
   value: JSON.stringify(existingArtifacts),
   namespace: "swarm_${sessionId}"
@@ -513,8 +507,7 @@ const updateSet = await mcp__servicenow-update-set__snow_update_set_create({
 });
 
 // Store Update Set info in memory
-await mcp__claude-flow__memory_usage({
-  action: "store", 
+await mcp__servicenow-memory__memory_store({
   key: "update_set_${sessionId}",
   value: JSON.stringify(updateSet),
   namespace: "swarm_${sessionId}"
@@ -590,8 +583,7 @@ for (const tableName of detectedTables) {
 }
 
 // Store discovered table schemas in memory
-await mcp__claude-flow__memory_usage({
-  action: "store",
+await mcp__servicenow-memory__memory_store({
   key: "table_schemas_${sessionId}",
   value: JSON.stringify({
     discovered_at: new Date().toISOString(),
@@ -655,10 +647,10 @@ Task("${taskAnalysis.primaryAgent}", \`
   
   Instructions:
   1. FIRST: Read ALL shared context from memory:
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
   
   2. 🔍 CRITICAL: Use discovered table schemas:
      - The table_schemas contain actual field names, types, and relationships
@@ -669,7 +661,7 @@ Task("${taskAnalysis.primaryAgent}", \`
   3. Check existing_artifacts to avoid duplication - reuse or extend existing ones
   4. ALL deployments MUST use the Update Set stored in memory
   5. Begin implementing the core ${taskAnalysis.taskType} requirements
-  6. Store all work progress with: mcp__claude-flow__memory_usage({action: "store", key: "agent_${taskAnalysis.primaryAgent}_progress", value: "...", namespace: "agents_${sessionId}"})
+  6. Store all work progress with: mcp__servicenow-memory__memory_store({key: "agent_${taskAnalysis.primaryAgent}_progress", value: "...", namespace: "agents_${sessionId}"})
   7. Update TodoWrite items as you complete tasks
   8. Read other agents' progress from namespace "agents_${sessionId}"
   
@@ -693,10 +685,10 @@ Task("${agent}", \`
   
   Instructions:
   1. FIRST: Read ALL shared context from memory (same as primary agent):
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__claude-flow__memory_usage({action: "retrieve", key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__servicenow-memory__memory_get({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
   
   2. 🔍 CRITICAL: Use discovered table schemas:
      - The table_schemas contain actual field names, types, and relationships
@@ -704,10 +696,10 @@ Task("${agent}", \`
      - Check key_fields for primary keys and references
      - If you need a table that wasn't discovered, use snow_table_schema_discovery first
   
-  3. Monitor primary agent's progress: mcp__claude-flow__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
+  3. Monitor primary agent's progress: mcp__servicenow-memory__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
   4. Wait for primary agent to establish base structure before major changes
   5. Enhance/support with your ${agent} expertise  
-  6. Store your progress: mcp__claude-flow__memory_usage({action: "store", key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
+  6. Store your progress: mcp__servicenow-memory__memory_store({key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
   7. Update relevant TodoWrite items
   
   🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
@@ -901,15 +893,14 @@ Implement continuous memory synchronization for real-time coordination:
 // Initialize coordination heartbeat (Claude-Flow pattern)
 const coordinationInterval = setInterval(async () => {
   // Sync agent states across namespace
-  const agentStates = await mcp__claude-flow__memory_search({
+  const agentStates = await mcp__servicenow-memory__memory_search({
     pattern: "agent_*_progress",
     namespace: "agents_${sessionId}",
     limit: 50
   });
   
   // Update swarm coordination state with TTL for freshness
-  await mcp__claude-flow__memory_usage({
-    action: "store",
+  await mcp__servicenow-memory__memory_store({
     key: "swarm_coordination_${sessionId}",
     value: JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -924,8 +915,7 @@ const coordinationInterval = setInterval(async () => {
   
   // Detect and resolve conflicts between agents
   if (agentStates.some(s => s.includes("conflict") || s.includes("duplicate"))) {
-    await mcp__claude-flow__memory_usage({
-      action: "store",
+    await mcp__servicenow-memory__memory_store({
       key: "conflict_resolution_needed",
       value: JSON.stringify({
         agents: agentStates.filter(s => s.includes("conflict")),
@@ -960,8 +950,7 @@ const coordinationInterval = setInterval(async () => {
     
     // Mark as tracked
     artifact.tracked_in_update_set = true;
-    await mcp__claude-flow__memory_usage({
-      action: "store",
+    await mcp__servicenow-memory__memory_store({
       key: \`agent_\${artifact.agent}_deployed_\${artifact.sys_id}\`,
       value: JSON.stringify(artifact),
       namespace: "agents_${sessionId}"
@@ -977,8 +966,7 @@ const coordinationInterval = setInterval(async () => {
 }, 10000); // Every 10 seconds
 
 // Also update main session state
-await mcp__claude-flow__memory_usage({
-  action: "store",
+await mcp__servicenow-memory__memory_store({
   key: "swarm_session_${sessionId}",
   value: JSON.stringify({
     status: "agents_working",
@@ -4340,12 +4328,12 @@ program
             },
             "snow-flow": {
               command: "npx",
-              args: ["snow-flow@alpha", "mcp"],
+              args: ["claude-flow@alpha", "mcp"],
               env: {}
             },
             "ruv-swarm": {
               command: "npx",
-              args: ["snow-flow@alpha", "swarm", "--mode", "mcp"],
+              args: ["claude-flow@alpha", "swarm", "--mode", "mcp"],
               env: {}
             }
           }
