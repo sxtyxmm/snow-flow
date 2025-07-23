@@ -26,6 +26,7 @@ export interface MCPServerConfig {
   name: string;
   version: string;
   description?: string;
+  requiresAuth?: boolean; // Optional flag to disable ServiceNow authentication
   capabilities?: {
     tools?: {};
     resources?: {};
@@ -115,13 +116,15 @@ export abstract class BaseMCPServer {
       metrics.calls++;
       
       try {
-        // Validate authentication first
-        const authResult = await this.validateAuth();
-        if (!authResult.success) {
-          throw new McpError(
-            ErrorCode.InvalidRequest,
-            `Authentication failed: ${authResult.error}`
-          );
+        // Validate authentication first (skip if not required)
+        if (this.config.requiresAuth !== false) {
+          const authResult = await this.validateAuth();
+          if (!authResult.success) {
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `Authentication failed: ${authResult.error}`
+            );
+          }
         }
 
         // Execute tool with retry logic
@@ -147,6 +150,11 @@ export abstract class BaseMCPServer {
    * Setup authentication with automatic token refresh
    */
   private setupAuthentication(): void {
+    // Skip authentication setup if not required
+    if (this.config.requiresAuth === false) {
+      return;
+    }
+    
     // Check auth every 5 minutes
     this.authCheckInterval = setInterval(async () => {
       try {
@@ -402,10 +410,12 @@ export abstract class BaseMCPServer {
   async start(): Promise<void> {
     this.logger.info(`Starting ${this.config.name} v${this.config.version}`);
     
-    // Validate initial connection
-    const authResult = await this.validateAuth();
-    if (!authResult.success) {
-      this.logger.warn('Starting without authentication - some features may be limited');
+    // Validate initial connection (skip if not required)
+    if (this.config.requiresAuth !== false) {
+      const authResult = await this.validateAuth();
+      if (!authResult.success) {
+        this.logger.warn('Starting without authentication - some features may be limited');
+      }
     }
 
     await this.server.connect(this.transport);

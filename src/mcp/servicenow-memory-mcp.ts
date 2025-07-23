@@ -28,7 +28,8 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     const config = {
       name: 'servicenow-memory',
       version: '1.0.0',
-      description: 'Memory and todo management for ServiceNow multi-agent coordination'
+      description: 'Memory and todo management for ServiceNow multi-agent coordination',
+      requiresAuth: false // Memory server doesn't need ServiceNow authentication
     };
     
     super(config);

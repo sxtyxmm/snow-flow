@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.2.3';
+export const VERSION = '1.2.4';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.2.4': [
+      '🔐 MEMORY AUTH FIX: Fixed authentication error in servicenow-memory MCP server',
+      '🏗️ ARCHITECTURE IMPROVEMENT: Added requiresAuth flag to BaseMCPServer for non-ServiceNow servers',
+      '💾 MEMORY INDEPENDENCE: Memory server no longer requires ServiceNow authentication',
+      '⚡ PERFORMANCE: Faster startup for memory-only operations without auth validation',
+      '🛡️ ERROR HANDLING: Eliminated unnecessary authentication failures for local-only servers'
+    ],
     '1.2.3': [
       '🔐 AUTHENTICATION FIX: Resolved MCP authentication failure due to environment variable mismatch',
       '🔧 CONFIG ALIGNMENT: Fixed discrepancy between .env file and MCP configuration files',
