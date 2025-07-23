@@ -125,6 +125,11 @@ class ServiceNowGraphMemoryMCP {
         }
       } catch (error) {
         this.logger.error('Failed to connect to Neo4j', error);
+        this.neo4jAvailable = false;
+        if (this.driver) {
+          await this.driver.close();
+          this.driver = null;
+        }
         throw error;
       }
     }
@@ -781,9 +786,29 @@ ${JSON.stringify(exportData, null, 2).substring(0, 1000)}...
   }
 
   async start() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    this.logger.info('ServiceNow Graph Memory MCP Server started');
+    try {
+      // Try to connect to Neo4j if configured
+      if (this.neo4jAvailable && this.config) {
+        try {
+          await this.connectToNeo4j();
+          this.logger.info('Neo4j connection established');
+        } catch (error) {
+          this.logger.warn('Neo4j connection failed - running in fallback mode', error);
+          this.neo4jAvailable = false;
+        }
+      }
+      
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      this.logger.info('ServiceNow Graph Memory MCP Server started');
+      
+      if (!this.neo4jAvailable) {
+        this.logger.info('Running without Neo4j - all operations will return fallback responses');
+      }
+    } catch (error) {
+      this.logger.error('Failed to start server', error);
+      throw error;
+    }
   }
 
   async stop() {

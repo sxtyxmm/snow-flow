@@ -3418,6 +3418,33 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
   }
 }
 
+async function appendToEnvFile(targetDir: string, content: string) {
+  const envFilePath = join(targetDir, '.env');
+  await fs.appendFile(envFilePath, content);
+}
+
+async function checkNeo4jAvailability(): Promise<boolean> {
+  const { execSync } = require('child_process');
+  
+  try {
+    // Check if Neo4j is installed
+    execSync('which neo4j', { stdio: 'pipe' });
+    
+    // Check if Neo4j is running
+    try {
+      execSync('neo4j status', { stdio: 'pipe' });
+      return true;
+    } catch {
+      // Neo4j is installed but not running
+      console.log('ℹ️  Neo4j is installed but not running. Start with: neo4j start');
+      return false;
+    }
+  } catch {
+    // Neo4j is not installed
+    return false;
+  }
+}
+
 async function createMCPConfig(targetDir: string) {
   // Create the correct .mcp.json file for Claude Code discovery
   const mcpConfig = {
@@ -4151,6 +4178,47 @@ program
       await createEnvFile(targetDir);
       console.log('✅ Environment file created\n');
       
+      // Phase 4.5: Check for Neo4j and offer graph memory setup
+      console.log('🧠 Checking for Neo4j Graph Memory support...');
+      const neo4jAvailable = await checkNeo4jAvailability();
+      let enableGraphMemory = false;
+      
+      if (neo4jAvailable) {
+        console.log('✅ Neo4j detected! Graph memory features available.');
+        console.log('\n📊 Graph Memory provides:');
+        console.log('   - Intelligent artifact relationship tracking');
+        console.log('   - Impact analysis for changes');
+        console.log('   - Dependency visualization');
+        console.log('   - Pattern recognition across projects\n');
+        
+        const readline = require('readline');
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+        
+        const answer = await new Promise<string>((resolve) => {
+          rl.question('Enable graph memory features? (Y/n): ', resolve);
+        });
+        rl.close();
+        
+        enableGraphMemory = answer.toLowerCase() !== 'n';
+        
+        if (enableGraphMemory) {
+          console.log('✅ Graph memory enabled\n');
+          // Add Neo4j config to .env
+          await appendToEnvFile(targetDir, `
+# Neo4j Graph Memory Configuration
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+`);
+        }
+      } else {
+        console.log('ℹ️  Neo4j not detected. Graph memory features will be disabled.');
+        console.log('   To enable later: brew install neo4j && neo4j start\n');
+      }
+      
       // Phase 5: Create MCP configuration and Claude Code settings
       console.log('🌐 MCP server configuration will be generated after build...');
       console.log('⚙️  Claude Code settings configured with:\n');
@@ -4222,56 +4290,63 @@ program
         }
         
         // Generate .mcp.json with correct paths
-        mcpConfig = {
-          mcpServers: {
-            "servicenow-deployment": {
-              command: "node",
-              args: [join(mcpBasePath, "servicenow-deployment-mcp.js")],
-              env: {
-                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
-                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
-                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-              }
-            },
-            "servicenow-flow-composer": {
-              command: "node",
-              args: [join(mcpBasePath, "servicenow-flow-composer-mcp.js")],
-              env: {
-                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
-                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
-                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-              }
-            },
-            "servicenow-update-set": {
-              command: "node",
-              args: [join(mcpBasePath, "servicenow-update-set-mcp.js")],
-              env: {
-                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
-                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
-                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-              }
-            },
-            "servicenow-intelligent": {
-              command: "node",
-              args: [join(mcpBasePath, "servicenow-intelligent-mcp.js")],
-              env: {
-                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
-                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
-                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-              }
-            },
-            "servicenow-graph-memory": {
-              command: "node",
-              args: [join(mcpBasePath, "servicenow-graph-memory-mcp.js")],
-              env: {
-                NEO4J_URI: envVars.NEO4J_URI || "bolt://localhost:7687",
-                NEO4J_USER: envVars.NEO4J_USER || "neo4j",
-                NEO4J_PASSWORD: envVars.NEO4J_PASSWORD || "password",
-                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
-                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
-                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
-              }
-            },
+        const mcpServers: any = {
+          "servicenow-deployment": {
+            command: "node",
+            args: [join(mcpBasePath, "servicenow-deployment-mcp.js")],
+            env: {
+              SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+              SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+              SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+            }
+          },
+          "servicenow-flow-composer": {
+            command: "node",
+            args: [join(mcpBasePath, "servicenow-flow-composer-mcp.js")],
+            env: {
+              SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+              SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+              SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+            }
+          },
+          "servicenow-update-set": {
+            command: "node",
+            args: [join(mcpBasePath, "servicenow-update-set-mcp.js")],
+            env: {
+              SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+              SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+              SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+            }
+          },
+          "servicenow-intelligent": {
+            command: "node",
+            args: [join(mcpBasePath, "servicenow-intelligent-mcp.js")],
+            env: {
+              SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+              SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+              SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+            }
+          }
+        };
+        
+        // Only add graph memory if Neo4j is enabled
+        if (enableGraphMemory) {
+          mcpServers["servicenow-graph-memory"] = {
+            command: "node",
+            args: [join(mcpBasePath, "servicenow-graph-memory-mcp.js")],
+            env: {
+              NEO4J_URI: envVars.NEO4J_URI || "bolt://localhost:7687",
+              NEO4J_USER: envVars.NEO4J_USER || "neo4j",
+              NEO4J_PASSWORD: envVars.NEO4J_PASSWORD || "password",
+              SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+              SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+              SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+            }
+          };
+        }
+        
+        // Add remaining servers
+        Object.assign(mcpServers, {
             "servicenow-operations": {
               command: "node",
               args: [join(mcpBasePath, "servicenow-operations-mcp.js")],
@@ -4326,6 +4401,15 @@ program
                 SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
               }
             },
+            "servicenow-memory": {
+              command: "node",
+              args: [join(mcpBasePath, "servicenow-memory-mcp.js")],
+              env: {
+                SNOW_INSTANCE: envVars.SNOW_INSTANCE || "your-instance.service-now.com",
+                SNOW_CLIENT_ID: envVars.SNOW_CLIENT_ID || "your-oauth-client-id",
+                SNOW_CLIENT_SECRET: envVars.SNOW_CLIENT_SECRET || "your-oauth-client-secret"
+              }
+            },
             "snow-flow": {
               command: "npx",
               args: ["claude-flow@alpha", "mcp"],
@@ -4336,7 +4420,11 @@ program
               args: ["claude-flow@alpha", "swarm", "--mode", "mcp"],
               env: {}
             }
-          }
+          });
+        
+        // Create the final mcpConfig
+        mcpConfig = {
+          mcpServers: mcpServers
         };
         
         // Now initialize and start MCP servers

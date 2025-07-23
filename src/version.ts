@@ -16,7 +16,10 @@ export const VERSION_INFO = {
       '🚀 IMPROVED RELIABILITY: Queen Agent and swarm coordination now use dedicated ServiceNow memory infrastructure',
       '💾 SEAMLESS MIGRATION: Automatic transition from claude-flow memory to ServiceNow memory without data loss',
       '🔧 TOOL ALIGNMENT: All memory operations (store, get, search) now consistently use ServiceNow MCP server',
-      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system'
+      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system',
+      '🧠 NEO4J INTEGRATION: Optional graph memory support with automatic detection during init',
+      '⚡ GRACEFUL FALLBACK: Graph memory server runs without Neo4j, returns helpful messages',
+      '🎯 SMART INIT: Auto-detects Neo4j availability and offers configuration during setup'
     ],
     '1.1.91': [
       '🔧 MEMORY TOOLS FIX: Added memory_store, memory_get, memory_list tools directly to Intelligent MCP server',
