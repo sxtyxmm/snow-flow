@@ -80,7 +80,8 @@ const mcpServerFiles = [
   'servicenow-integration-mcp.js',
   'servicenow-automation-mcp.js',
   'servicenow-security-compliance-mcp.js',
-  'servicenow-reporting-analytics-mcp.js'
+  'servicenow-reporting-analytics-mcp.js',
+  'servicenow-memory-mcp.js'
 ];
 
 mcpServerFiles.forEach(file => {

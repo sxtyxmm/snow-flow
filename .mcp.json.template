@@ -101,6 +101,15 @@
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
+    },
+    "servicenow-memory": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
     }
   }
 }
