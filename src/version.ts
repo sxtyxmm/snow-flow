@@ -2,13 +2,24 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.2.1';
+export const VERSION = '1.2.2';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.2.2': [
+      '🎯 CRITICAL FIX: Resolved empty flows issue - Complete MCP integration achieved',
+      '🔧 FLOW-BUILDER AGENT: Now uses MCPExecutionBridge for real ServiceNow deployment',
+      '⚡ INTELLIGENT DEPLOYMENT: Calls snow_create_flow MCP tool with template matching and natural language parsing',
+      '🧪 LIVE TESTING: Implements snow_test_flow_with_mock for comprehensive flow validation',
+      '📊 SMART DISCOVERY: Uses snow_discover_existing_flows to prevent flow duplication',
+      '🚀 REAL SERVICENOW DATA: Stores artifacts with actual sys_ids from ServiceNow instead of mock data',
+      '✨ ENHANCED FLOW COMPOSER: 5 professional templates (Approval, Incident, Request, Data Processing, User Management)',
+      '🧠 NATURAL LANGUAGE PROCESSING: Intelligent flow requirement analysis and automatic artifact creation',
+      '💪 WORKFLOW OPTIMIZATION: Complete elimination of 500+ lines of redundant hardcoded flow logic'
+    ],
     '1.2.1': [
       '🧠 NEO4J SMART INTEGRATION: Auto-detects Neo4j during init and offers optional graph memory setup',
       '⚡ GRACEFUL FALLBACK: Graph memory server now starts without Neo4j, provides helpful fallback responses',
