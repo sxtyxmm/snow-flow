@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * ServiceNow Memory MCP Server
  * Provides memory and todo management capabilities for multi-agent coordination
@@ -51,8 +52,6 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
   }
 
   async initialize(): Promise<void> {
-    await super.initialize();
-    
     // Initialize memory system
     this.memorySystem = new MemorySystem({
       dbPath: path.join(this.memoryPath, 'snow-flow-memory.db')
@@ -403,15 +402,16 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     if (this.memorySystem) {
       await this.memorySystem.close();
     }
-    await super.shutdown();
+    // No need to call super.shutdown() - BaseMCPServer doesn't have this method
   }
 }
 
-// Create and start the server
-if (require.main === module) {
-  const server = new ServiceNowMemoryMCP();
-  server.start().catch(error => {
+// Start the server
+const server = new ServiceNowMemoryMCP();
+// Initialize memory system before starting
+server.initialize()
+  .then(() => server.start())
+  .catch(error => {
     console.error('Failed to start Memory MCP server:', error);
     process.exit(1);
   });
-}
