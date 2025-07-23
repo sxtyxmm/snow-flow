@@ -2449,6 +2449,411 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
   }
 
   /**
+   * Generate Update Set XML based on artifact type
+   */
+  private async generateUpdateSetXML(type: string, config: any, updateSetSession: any): Promise<string> {
+    switch (type) {
+      case 'widget':
+        return this.generateWidgetUpdateSetXML(config);
+      case 'flow':
+        return this.generateFlowUpdateSetXML(config);
+      case 'application':
+        return this.generateApplicationUpdateSetXML(config);
+      default:
+        throw new Error(`Update Set XML generation not implemented for type: ${type}`);
+    }
+  }
+
+  /**
+   * Generate Update Set XML for Flow Designer flows
+   */
+  private generateFlowUpdateSetXML(args: any): string {
+    const timestamp = new Date().toISOString();
+    const updateSetName = `Flow_${args.name}_${Date.now()}`;
+    
+    // Generate unique identifiers
+    const updateSetId = this.generateGUID();
+    const flowId = this.generateGUID();
+    const triggerId = this.generateGUID();
+    const updateXmlId = this.generateGUID();
+    
+    // Parse flow definition if it's a string
+    let flowDefinition = args.flow_definition;
+    if (typeof flowDefinition === 'string') {
+      try {
+        flowDefinition = JSON.parse(flowDefinition);
+      } catch (e) {
+        flowDefinition = { activities: [] };
+      }
+    }
+    
+    // Ensure flow definition has proper structure
+    if (!flowDefinition || typeof flowDefinition !== 'object') {
+      flowDefinition = { activities: [] };
+    }
+
+    // Generate action instances and flow logic
+    const { actionInstances, flowLogics, completeFlowDefinition } = this.generateFlowComponents(
+      flowDefinition, 
+      flowId, 
+      triggerId, 
+      timestamp
+    );
+
+    // Calculate total update count
+    const totalUpdates = 1 + actionInstances.length + flowLogics.length + 1; // flow + actions + logics + trigger
+
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="${timestamp}">
+  <sys_update_set action="INSERT_OR_UPDATE">
+    <application display_value="Global">global</application>
+    <category>customer</category>
+    <description>Auto-generated Update Set for Flow Designer: ${args.name}</description>
+    <is_default>false</is_default>
+    <name>${updateSetName}</name>  
+    <origin_sys_id/>
+    <release_date/>
+    <state>complete</state>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_id>${updateSetId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <update_count>${totalUpdates}</update_count>
+  </sys_update_set>
+  
+  <!-- Main Flow Record -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <category>customer</category>
+    <comments/>
+    <name>sys_hub_flow_${flowId}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_hub_flow">
+  <sys_hub_flow action="INSERT_OR_UPDATE">
+    <access>public</access>
+    <acls/>
+    <active>${args.active !== false ? 'true' : 'false'}</active>
+    <annotation/>
+    <callable_by_client_api>false</callable_by_client_api>
+    <category>${args.category || 'automation'}</category>
+    <checked_out_by/>
+    <compiler_build/>
+    <copied_from/>
+    <copied_from_name/>
+    <description>${args.description || ''}</description>  
+    <internal_name>global.${args.name}</internal_name>
+    <label_cache>[{"name":"${args.name}","internal_name":"${args.name}","label":"${args.name}","description":"${args.description || ''}","language":"en","source":""}]</label_cache>
+    <latest_snapshot/>
+    <master_snapshot><![CDATA[${JSON.stringify(completeFlowDefinition)}]]></master_snapshot>
+    <name>${args.name}</name>
+    <natlang/>
+    <outputs_cache>[]</outputs_cache>
+    <remote_trigger_id/>
+    <run_as>user</run_as>
+    <run_as_tz/>
+    <sc_callable>false</sc_callable>
+    <show_draft_actions>false</show_draft_actions>
+    <show_triggered_flows>false</show_triggered_flows>
+    <status>published</status>
+    <sys_class_name>sys_hub_flow</sys_class_name>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_domain>global</sys_domain>
+    <sys_domain_path>/</sys_domain_path>
+    <sys_id>${flowId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_name>${args.name}</sys_name>
+    <sys_overrides/>
+    <sys_package display_value="Global" source="global">global</sys_package>
+    <sys_policy/>
+    <sys_scope display_value="Global">global</sys_scope>
+    <sys_update_name>sys_hub_flow_${flowId}</sys_update_name>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <type>${args.flow_type || 'flow'}</type>
+  </sys_hub_flow>
+</record_update>]]></payload>
+    <payload_hash>-1</payload_hash>
+    <record_name>${args.name}</record_name>
+    <reverted_from/>
+    <source_table>sys_hub_flow</source_table>
+    <state>current</state>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_id>${updateXmlId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <table>sys_hub_flow</table>
+    <target_name>${args.name}</target_name>
+    <type>Flow Designer</type>
+    <update_domain>global</update_domain>
+    <update_set display_value="${updateSetName}">${updateSetId}</update_set>
+    <view/>
+  </sys_update_xml>
+
+  <!-- Trigger Instance -->
+  ${this.generateTriggerInstanceXML(args, flowId, triggerId, timestamp, updateSetId, updateSetName)}
+
+  <!-- Action Instances -->
+  ${actionInstances.map(instance => instance.xml).join('\n\n  ')}
+
+  <!-- Flow Logic (Connections) -->
+  ${flowLogics.map(logic => logic.xml).join('\n\n  ')}
+</unload>`;
+    return xmlContent;
+  }
+
+  /**
+   * Generate flow components (actions, logic, complete definition)
+   */
+  private generateFlowComponents(flowDefinition: any, flowId: string, triggerId: string, timestamp: string) {
+    const actionInstances: Array<{ id: string; xml: string }> = [];
+    const flowLogics: Array<{ id: string; xml: string }> = [];
+    
+    // Process activities/actions from flow definition
+    const activities = flowDefinition.activities || flowDefinition.steps || [];
+    const actionIds: string[] = [];
+    
+    // Generate action instances
+    activities.forEach((activity: any, index: number) => {
+      const actionId = this.generateGUID();
+      actionIds.push(actionId);
+      
+      const actionXml = this.generateActionInstanceXML(activity, actionId, flowId, index, timestamp);
+      actionInstances.push({ id: actionId, xml: actionXml });
+    });
+    
+    // Generate flow logic (connections between actions)
+    for (let i = 0; i < actionIds.length; i++) {
+      const logicId = this.generateGUID();
+      let fromId = i === 0 ? triggerId : actionIds[i - 1];
+      let toId = actionIds[i];
+      
+      const logicXml = this.generateFlowLogicXML(logicId, flowId, fromId, toId, i, timestamp);
+      flowLogics.push({ id: logicId, xml: logicXml });
+    }
+    
+    // Create complete flow definition with all components
+    const completeFlowDefinition = {
+      trigger: {
+        type: flowDefinition.trigger_type || "manual",
+        table: flowDefinition.table || "incident", 
+        condition: flowDefinition.condition || "",
+        sys_id: triggerId
+      },
+      actions: activities.map((activity: any, index: number) => ({
+        ...activity,
+        sys_id: actionIds[index],
+        sequence: index + 1
+      })),
+      logic: flowLogics.map(logic => ({
+        sys_id: logic.id,
+        from: logic.id === flowLogics[0]?.id ? triggerId : actionIds[flowLogics.indexOf(logic) - 1],
+        to: actionIds[flowLogics.indexOf(logic)]
+      })),
+      inputs: flowDefinition.inputs || [],
+      outputs: flowDefinition.outputs || [],
+      steps: activities
+    };
+    
+    return { actionInstances, flowLogics, completeFlowDefinition };
+  }
+
+  /**
+   * Generate trigger instance XML
+   */
+  private generateTriggerInstanceXML(args: any, flowId: string, triggerId: string, timestamp: string, updateSetId: string, updateSetName: string): string {
+    const updateXmlId = this.generateGUID();
+    
+    return `<sys_update_xml action="INSERT_OR_UPDATE">
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <category>customer</category>
+    <comments/>
+    <name>sys_hub_trigger_instance_${triggerId}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_hub_trigger_instance">
+  <sys_hub_trigger_instance action="INSERT_OR_UPDATE">
+    <active>true</active>
+    <condition>${args.condition || ''}</condition>
+    <dynamic_ref_qual>false</dynamic_ref_qual>
+    <flow display_value="${args.name}">${flowId}</flow>
+    <order>100</order>
+    <sys_class_name>sys_hub_trigger_instance</sys_class_name>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_domain>global</sys_domain>
+    <sys_domain_path>/</sys_domain_path>
+    <sys_id>${triggerId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_name>${args.name} Trigger</sys_name>
+    <sys_overrides/>
+    <sys_package display_value="Global" source="global">global</sys_package>
+    <sys_policy/>
+    <sys_scope display_value="Global">global</sys_scope>
+    <sys_update_name>sys_hub_trigger_instance_${triggerId}</sys_update_name>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <table>${args.table || 'incident'}</table>
+    <trigger_type>${args.trigger_type || 'manual'}</trigger_type>
+  </sys_hub_trigger_instance>
+</record_update>]]></payload>
+    <payload_hash>-1</payload_hash>
+    <record_name>${args.name} Trigger</record_name>
+    <reverted_from/>
+    <source_table>sys_hub_trigger_instance</source_table>
+    <state>current</state>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_id>${updateXmlId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <table>sys_hub_trigger_instance</table>
+    <target_name>${args.name} Trigger</target_name>
+    <type>Flow Designer</type>
+    <update_domain>global</update_domain>
+    <update_set display_value="${updateSetName}">${updateSetId}</update_set>
+    <view/>
+  </sys_update_xml>`;
+  }
+
+  /**
+   * Generate action instance XML
+   */
+  private generateActionInstanceXML(activity: any, actionId: string, flowId: string, sequence: number, timestamp: string): string {
+    const updateXmlId = this.generateGUID();
+    
+    return `<sys_update_xml action="INSERT_OR_UPDATE">
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <category>customer</category>
+    <comments/>
+    <name>sys_hub_action_instance_${actionId}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_hub_action_instance">
+  <sys_hub_action_instance action="INSERT_OR_UPDATE">
+    <action>${activity.action || activity.type || 'script'}</action>
+    <action_name>${activity.name || `Step ${sequence + 1}`}</action_name>
+    <active>true</active>
+    <anchor_x>${activity.x || (200 + sequence * 150)}</anchor_x>
+    <anchor_y>${activity.y || 200}</anchor_y>
+    <flow display_value="Flow">${flowId}</flow>
+    <inputs>${JSON.stringify(activity.inputs || {})}</inputs>
+    <order>${(sequence + 1) * 100}</order>
+    <outputs>${JSON.stringify(activity.outputs || {})}</outputs>
+    <script>${activity.script || activity.code || ''}</script>
+    <sys_class_name>sys_hub_action_instance</sys_class_name>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_domain>global</sys_domain>
+    <sys_domain_path>/</sys_domain_path>
+    <sys_id>${actionId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_name>${activity.name || `Step ${sequence + 1}`}</sys_name>
+    <sys_overrides/>
+    <sys_package display_value="Global" source="global">global</sys_package>
+    <sys_policy/>
+    <sys_scope display_value="Global">global</sys_scope>
+    <sys_update_name>sys_hub_action_instance_${actionId}</sys_update_name>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+  </sys_hub_action_instance>
+</record_update>]]></payload>
+    <payload_hash>-1</payload_hash>
+    <record_name>${activity.name || `Step ${sequence + 1}`}</record_name>
+    <reverted_from/>
+    <source_table>sys_hub_action_instance</source_table>
+    <state>current</state>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_id>${updateXmlId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <table>sys_hub_action_instance</table>
+    <target_name>${activity.name || `Step ${sequence + 1}`}</target_name>
+    <type>Flow Designer</type>
+    <update_domain>global</update_domain>
+    <update_set display_value="Flow Update Set">${flowId.substring(0, 8)}</update_set>
+    <view/>
+  </sys_update_xml>`;
+  }
+
+  /**
+   * Generate flow logic XML (connections between actions)
+   */
+  private generateFlowLogicXML(logicId: string, flowId: string, fromId: string, toId: string, sequence: number, timestamp: string): string {
+    const updateXmlId = this.generateGUID();
+    
+    return `<sys_update_xml action="INSERT_OR_UPDATE">
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <category>customer</category>
+    <comments/>
+    <name>sys_hub_flow_logic_${logicId}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_hub_flow_logic">
+  <sys_hub_flow_logic action="INSERT_OR_UPDATE">
+    <condition>true</condition>
+    <flow display_value="Flow">${flowId}</flow>
+    <from_step>${fromId}</from_step>
+    <order>${(sequence + 1) * 10}</order>
+    <relationship_type>success</relationship_type>
+    <sys_class_name>sys_hub_flow_logic</sys_class_name>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_domain>global</sys_domain>
+    <sys_domain_path>/</sys_domain_path>
+    <sys_id>${logicId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_name>Connection ${sequence + 1}</sys_name>
+    <sys_overrides/>
+    <sys_package display_value="Global" source="global">global</sys_package>
+    <sys_policy/>
+    <sys_scope display_value="Global">global</sys_scope>
+    <sys_update_name>sys_hub_flow_logic_${logicId}</sys_update_name>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <to_step>${toId}</to_step>
+  </sys_hub_flow_logic>
+</record_update>]]></payload>
+    <payload_hash>-1</payload_hash>
+    <record_name>Connection ${sequence + 1}</record_name>
+    <reverted_from/>
+    <source_table>sys_hub_flow_logic</source_table>
+    <state>current</state>
+    <sys_created_by>snow-flow</sys_created_by>
+    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_id>${updateXmlId}</sys_id>
+    <sys_mod_count>0</sys_mod_count>
+    <sys_updated_by>snow-flow</sys_updated_by>
+    <sys_updated_on>${timestamp}</sys_updated_on>
+    <table>sys_hub_flow_logic</table>
+    <target_name>Connection ${sequence + 1}</target_name>
+    <type>Flow Designer</type>
+    <update_domain>global</update_domain>
+    <update_set display_value="Flow Update Set">${flowId.substring(0, 8)}</update_set>
+    <view/>
+  </sys_update_xml>`;
+  }
+
+  /**
+   * Generate Update Set XML for applications (stub for now)
+   */
+  private generateApplicationUpdateSetXML(args: any): string {
+    // TODO: Implement application XML generation
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<unload>
+  <!-- Application Update Set XML not yet implemented -->
+</unload>`;
+  }
+
+  /**
    * Preview widget with test data
    */
   private async previewWidget(args: any) {
