@@ -173,11 +173,19 @@ export class AgentDetector {
     // Determine task type
     const taskType = this.determineTaskType(lowerObjective, serviceNowArtifacts);
     
+    // 🚀 NEW: Accurate agent count for parallel system
+    const isDevelopmentTask = ['widget-creator', 'flow-builder', 'script-writer', 'app-architect'].includes(primaryAgent) ||
+                              supportingAgents.some(agent => ['css-specialist', 'backend-specialist', 'frontend-specialist'].includes(agent));
+    
+    const estimatedAgentCount = isDevelopmentTask 
+      ? Math.max(supportingAgents.length + 1, 6)  // 6+ agents for development (1 primary + 5+ specialists)
+      : Math.min(Math.max(supportingAgents.length + 1, 2), 8); // Original logic for non-development
+
     return {
       primaryAgent,
       supportingAgents,
       complexity,
-      estimatedAgentCount: Math.min(Math.max(supportingAgents.length + 1, 2), 8),
+      estimatedAgentCount,
       requiresUpdateSet,
       requiresApplication,
       taskType,
@@ -213,23 +221,64 @@ export class AgentDetector {
   }
 
   private static determinePrimaryAgent(capabilities: AgentCapability[]): string {
-    if (capabilities.length === 0) return 'orchestrator';
+    if (capabilities.length === 0) return 'queen-coordinator';
     
-    // Special logic for ServiceNow-specific tasks
-    const serviceNowAgents = capabilities.filter(c => 
-      ['flow_designer', 'widget_builder', 'integration_specialist', 'database_expert'].includes(c.type)
+    // Map detected types to new parallel agent types
+    const convertToParallelType = (detectedType: string): string => {
+      const mapping = {
+        'widget_builder': 'widget-creator',
+        'flow_designer': 'flow-builder', 
+        'integration_specialist': 'integration-specialist',
+        'database_expert': 'app-architect',
+        'coder': 'script-writer',
+        'architect': 'app-architect',
+        'tester': 'tester'
+      };
+      return mapping[detectedType] || detectedType;
+    };
+    
+    // Convert all capability types to parallel agent types
+    const parallelCapabilities = capabilities.map(c => ({
+      ...c,
+      type: convertToParallelType(c.type)
+    }));
+    
+    // Special logic for ServiceNow-specific tasks - use new parallel agent types
+    const serviceNowAgents = parallelCapabilities.filter(c => 
+      ['flow-builder', 'widget-creator', 'integration-specialist', 'app-architect'].includes(c.type)
     );
     
     if (serviceNowAgents.length > 0) {
       return serviceNowAgents[0].type;
     }
     
-    return capabilities[0].type;
+    return parallelCapabilities[0].type;
   }
 
   private static determineSupportingAgents(capabilities: AgentCapability[], primaryAgent: string, userMaxAgents?: number): string[] {
-    // Calculate how many supporting agents we need based on user request
-    const requestedSupportingCount = userMaxAgents ? Math.max(userMaxAgents - 1, 1) : 5; // -1 for primary agent
+    // 🚀 NEW: Parallel Agent System - Show 6+ specialized agents for development tasks
+    const isWidgetDevelopment = primaryAgent === 'widget-creator' || capabilities.some(c => c.type === 'widget-creator');
+    const isFlowDevelopment = primaryAgent === 'flow-builder' || capabilities.some(c => c.type === 'flow-builder');
+    const isDevelopmentTask = isWidgetDevelopment || isFlowDevelopment || 
+                              capabilities.some(c => ['widget-creator', 'flow-builder', 'script-writer', 'app-architect'].includes(c.type));
+
+    if (isDevelopmentTask) {
+      // 🚀 Widget development gets full specialized team (6+ agents)
+      if (isWidgetDevelopment) {
+        return ['css-specialist', 'backend-specialist', 'frontend-specialist', 'integration-specialist', 'performance-specialist', 'tester'];
+      }
+      
+      // 🚀 Flow development gets flow-specific team
+      if (isFlowDevelopment) {
+        return ['trigger-specialist', 'action-specialist', 'approval-specialist', 'integration-specialist', 'error-handler', 'tester'];
+      }
+      
+      // 🚀 General development gets adaptive specialized team
+      return ['script-writer', 'css-specialist', 'integration-specialist', 'security-specialist', 'performance-specialist', 'tester'];
+    }
+
+    // 🚀 For non-development tasks, use smart agent selection based on capabilities
+    const requestedSupportingCount = userMaxAgents ? Math.max(userMaxAgents - 1, 1) : 5;
     
     // Start with high-confidence agents (confidence > 0.3)
     let supportingAgents = capabilities
@@ -237,35 +286,14 @@ export class AgentDetector {
       .slice(0, requestedSupportingCount)
       .map(c => c.type);
     
-    // If user wants more agents and we have fewer than requested, add lower-confidence agents
-    if (userMaxAgents && supportingAgents.length < requestedSupportingCount) {
+    // If we need more agents, add specialized agents based on task context
+    if (supportingAgents.length < requestedSupportingCount) {
       const remainingSlots = requestedSupportingCount - supportingAgents.length;
-      const lowConfidenceAgents = capabilities
-        .filter(c => c.type !== primaryAgent && c.confidence <= 0.3 && c.confidence > 0)
-        .slice(0, remainingSlots)
-        .map(c => c.type);
+      const specializedAgents = ['integration-specialist', 'security-specialist', 'tester', 'performance-specialist']
+        .filter(agent => !supportingAgents.includes(agent))
+        .slice(0, remainingSlots);
       
-      supportingAgents = [...supportingAgents, ...lowConfidenceAgents];
-    }
-    
-    // Always include orchestrator for complex tasks (if not already included)
-    if (capabilities.length > 3 && !supportingAgents.includes('orchestrator')) {
-      // Only add if we have room or if no max specified
-      if (!userMaxAgents || supportingAgents.length < requestedSupportingCount) {
-        supportingAgents.push('orchestrator');
-      }
-    }
-    
-    // Always include tester for development tasks (if not already included)
-    const developmentAgents = ['coder', 'architect', 'flow_designer', 'widget_builder'];
-    if (developmentAgents.includes(primaryAgent) && !supportingAgents.includes('tester')) {
-      // Only add if we have room or if no max specified
-      if (!userMaxAgents || supportingAgents.length < requestedSupportingCount) {
-        supportingAgents.push('tester');
-      } else if (userMaxAgents && supportingAgents.length >= requestedSupportingCount) {
-        // Replace least relevant agent with tester for development tasks
-        supportingAgents[supportingAgents.length - 1] = 'tester';
-      }
+      supportingAgents = [...supportingAgents, ...specializedAgents];
     }
     
     // Ensure we don't exceed the requested count
