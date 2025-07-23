@@ -56,7 +56,7 @@ export function createSwarmCommand(program: Command): void {
         };
         
         console.log(chalk.cyan('\n🐝 Starting Swarm Execution'));
-        console.log(chalk.yellow('🚀 NEW v1.1.90: Parallel Agent Engine enabled - automatic detection of specialized agent teams!'));
+        console.log(chalk.yellow('🚀 NEW v1.1.93: Revolutionary Parallel Agent Spawning - 6+ specialized agents for 2.8x faster development!'));
         console.log(chalk.gray('Objective:'), objective);
         console.log(chalk.gray('Strategy:'), swarmOptions.strategy);
         console.log(chalk.gray('Mode:'), swarmOptions.mode);

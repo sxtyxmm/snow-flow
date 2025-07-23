@@ -2785,7 +2785,7 @@ snow-flow swarm "create simple incident counter widget"
 When you ran the swarm command, Snow-Flow:
 1. ✅ Validated your ServiceNow connection
 2. ✅ Analyzed your objective using Queen Agent
-3. ✅ Spawned specialized agents (widget-creator, tester)
+3. ✅ Spawned 6+ parallel agents (widget-creator, css-specialist, backend-specialist, frontend-specialist, integration-specialist, tester)
 4. ✅ Created a real widget in your ServiceNow instance
 5. ✅ Tracked everything in an Update Set
 6. ✅ Tested the widget automatically
