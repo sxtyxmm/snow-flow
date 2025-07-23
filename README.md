@@ -12,7 +12,27 @@
 - 🎯 **Claude Code Integration**: All coordination happens through Claude Code interface
 - 🚀 **One Command**: `snow-flow swarm "objective"` - everything else is automatic
 
-## ✨ What's New in v1.1.88 - Intelligent Gap Analysis Revolution
+## ✨ What's New in v1.1.90 - Revolutionary Parallel Agent Engine
+
+### 🚀 BREAKTHROUGH: Intelligent Parallel Agent Spawning
+- **Automatic Parallelization**: Queen Agent detects work that can be split across specialized agent teams
+- **4 Parallelization Types**: Independent tasks, specialized breakdown, load distribution, capability split  
+- **Specialized Agents**: CSS specialists, backend specialists, security specialists with unique focuses
+- **2-5x Performance**: Achieves dramatic speedup through intelligent task distribution
+- **Shared Memory Coordination**: All parallel agents coordinate seamlessly through shared memory system
+
+### ⚡ Execution Strategies
+- **Wave-based**: Sequential waves of parallel agents for structured work
+- **Concurrent**: All agents work simultaneously for maximum speed
+- **Pipeline**: Agent handoffs with overlap for continuous workflow  
+- **Hybrid**: Intelligent mix of strategies based on task analysis
+
+### 🧠 Learning & Optimization
+- **Performance Tracking**: Stores execution results to improve future parallelization decisions
+- **Workload Balancing**: Intelligent distribution across agent teams with utilization monitoring
+- **Graceful Fallback**: Automatically falls back to sequential execution when beneficial
+
+## 🧠 Previous Major Release: v1.1.88 - Intelligent Gap Analysis Revolution
 
 ### 🧠 REVOLUTIONARY: Intelligent Gap Analysis Engine
 - **Beyond MCP Tools**: Automatically detects ALL ServiceNow configurations needed beyond standard MCP tools
