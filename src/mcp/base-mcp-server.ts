@@ -60,6 +60,7 @@ export abstract class BaseMCPServer {
   protected logger: Logger;
   protected transport: StdioServerTransport;
   protected tools: Map<string, Tool> = new Map();
+  protected config: MCPServerConfig; // Store the config for later use
   
   // Session management
   private sessionToken?: string;
@@ -70,6 +71,8 @@ export abstract class BaseMCPServer {
   private toolMetrics: Map<string, { calls: number; totalTime: number; errors: number }> = new Map();
 
   constructor(config: MCPServerConfig) {
+    // Store the config
+    this.config = config;
     // Initialize server with config
     this.server = new Server(
       {

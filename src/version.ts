@@ -2,13 +2,19 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.1': [
+      '🚨 HOTFIX: Fixed "memory MCP tool is not available" error',
+      '🔧 CONFIG BUG FIX: BaseMCPServer now properly stores config parameter',
+      '✅ MEMORY RESTORED: Memory MCP server works again with requiresAuth: false',
+      '⚡ CRITICAL FIX: this.config was undefined causing authentication checks to fail'
+    ],
     '1.3.0': [
       '🎯 BREAKTHROUGH: Fixed empty flows issue - ServiceNow flows now work completely!',
       '🔧 FLOW COMPONENTS: Added sys_hub_action_instance, sys_hub_trigger_instance, sys_hub_flow_logic creation',
