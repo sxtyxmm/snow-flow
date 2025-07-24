@@ -15,6 +15,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
+import { FlowDefinition, convertToFlowDefinition } from '../utils/flow-structure-builder.js';
 
 // Define FlowInstruction interface to match EnhancedFlowComposer output
 interface FlowInstruction {
@@ -403,8 +404,28 @@ class ServiceNowFlowComposerMCP {
       let deploymentResult = null;
       if (args.deploy_immediately !== false) {
         console.log('🚀 DEPLOYING intelligent flow to ServiceNow...');
-        deploymentResult = await this.client.createFlow(flowDefinition);
-        console.log('🚀 Deployment result:', deploymentResult);
+        
+        // Use the conversion utility to ensure proper format
+        const enhancedFlowDefinition: FlowDefinition = convertToFlowDefinition({
+          name: parsedIntent.flowName,
+          description: parsedIntent.description,
+          table: parsedIntent.table,
+          trigger: parsedIntent.trigger,
+          activities: flowDefinition.activities || [],
+          variables: flowDefinition.variables || [],
+          connections: flowDefinition.connections || [],
+          error_handling: flowDefinition.error_handling || []
+        });
+        
+        // Try enhanced method first, fallback to original if needed
+        try {
+          deploymentResult = await this.client.createFlowWithStructureBuilder(enhancedFlowDefinition);
+          console.log('🚀 Enhanced deployment result:', deploymentResult);
+        } catch (enhancedError) {
+          console.warn('⚠️ Enhanced deployment failed, falling back to original method:', enhancedError);
+          deploymentResult = await this.client.createFlow(flowDefinition);
+          console.log('🚀 Fallback deployment result:', deploymentResult);
+        }
       }
 
       const credentials = await this.oauth.loadCredentials();

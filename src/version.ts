@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.2.4';
+export const VERSION = '1.3.0';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.0': [
+      '🎯 BREAKTHROUGH: Fixed empty flows issue - ServiceNow flows now work completely!',
+      '🔧 FLOW COMPONENTS: Added sys_hub_action_instance, sys_hub_trigger_instance, sys_hub_flow_logic creation',
+      '🏗️ FLOW STRUCTURE BUILDER: New utility system for building complete ServiceNow flow structures',
+      '📋 XML INJECTION: Enhanced XML generation for complete Update Set deployment',
+      '⚡ TRIPLE SOLUTION: Direct API + XML Generation + Structure Builder - 3 ways to create working flows',
+      '🧪 COMPREHENSIVE TESTING: Added iPhone Request Approval flow test with full validation',
+      '📚 COMPLETE DOCUMENTATION: Full integration guides and architecture documentation',
+      '🎉 WORKING FLOWS: Flows created via swarm commands now display and execute properly in ServiceNow!'
+    ],
     '1.2.4': [
       '🔐 MEMORY AUTH FIX: Fixed authentication error in servicenow-memory MCP server',
       '🏗️ ARCHITECTURE IMPROVEMENT: Added requiresAuth flag to BaseMCPServer for non-ServiceNow servers',

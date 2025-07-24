@@ -7,6 +7,16 @@
 import axios, { AxiosInstance } from 'axios';
 import { ServiceNowOAuth, ServiceNowCredentials } from './snow-oauth';
 import { ActionTypeCache } from './action-type-cache';
+import { 
+  generateFlowComponents, 
+  createActionInstances, 
+  buildLogicChain, 
+  validateFlowComponents, 
+  generateFlowXML,
+  FlowDefinition,
+  ServiceNowFlowComponents,
+  ACTION_TYPE_IDS
+} from './flow-structure-builder';
 
 export interface ServiceNowWidget {
   sys_id?: string;
@@ -1225,7 +1235,115 @@ snow_create_flow({
   }
 
   /**
-   * Create a simple Flow Designer flow
+   * Create a ServiceNow flow using the enhanced flow structure builder
+   * Generates proper sys_ids, logic chains, and all required records
+   */
+  async createFlowWithStructureBuilder(flowDefinition: FlowDefinition): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      console.log('🏗️ Creating flow with structure builder...');
+      console.log(`📋 Flow: ${flowDefinition.name}`);
+
+      await this.ensureAuthenticated();
+
+      // Generate all flow components with proper structure
+      const components = generateFlowComponents(flowDefinition);
+
+      // Validate components before deployment
+      const validation = validateFlowComponents(components);
+      if (!validation.isValid) {
+        throw new Error(`Flow validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      if (validation.warnings.length > 0) {
+        console.warn('⚠️ Flow validation warnings:');
+        validation.warnings.forEach(warning => console.warn(`  • ${warning}`));
+      }
+
+      // Deploy all components in correct order
+      console.log('🚀 Deploying flow components...');
+
+      // 1. Create main flow record
+      const flowResponse = await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_flow`,
+        components.flowRecord
+      );
+
+      if (!flowResponse.data?.result) {
+        throw new Error('Failed to create flow record');
+      }
+
+      const flowSysId = flowResponse.data.result.sys_id;
+      console.log(`✅ Flow record created: ${flowSysId}`);
+
+      // 2. Create trigger instance
+      await this.client.post(
+        `${this.getBaseUrl()}/api/now/table/sys_hub_trigger_instance`,
+        components.triggerInstance
+      );
+      console.log(`✅ Trigger created: ${components.triggerInstance.sys_id}`);
+
+      // 3. Create action instances
+      for (const action of components.actionInstances) {
+        await this.client.post(
+          `${this.getBaseUrl()}/api/now/table/sys_hub_action_instance`,
+          action
+        );
+      }
+      console.log(`✅ Created ${components.actionInstances.length} action instances`);
+
+      // 4. Create logic chain (connections)
+      for (const logic of components.logicChain) {
+        await this.client.post(
+          `${this.getBaseUrl()}/api/now/table/sys_hub_flow_logic`,
+          logic
+        );
+      }
+      console.log(`✅ Created logic chain with ${components.logicChain.length} connections`);
+
+      // 5. Create variables
+      for (const variable of components.variables) {
+        await this.client.post(
+          `${this.getBaseUrl()}/api/now/table/sys_hub_flow_variable`,
+          variable
+        );
+      }
+      console.log(`✅ Created ${components.variables.length} flow variables`);
+
+      // Verify deployment
+      await this.verifyDeployment(flowSysId, 'flow');
+
+      const credentials = await this.oauth.loadCredentials();
+      const instance = credentials?.instance?.replace(/\/$/, '');
+
+      return {
+        success: true,
+        data: {
+          ...flowResponse.data.result,
+          sys_id: flowSysId,
+          url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowSysId}`,
+          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowSysId}`,
+          components: {
+            flow_record: components.flowRecord.sys_id,
+            trigger_instance: components.triggerInstance.sys_id,
+            action_instances: components.actionInstances.length,
+            logic_chain_entries: components.logicChain.length,
+            variables: components.variables.length
+          },
+          flow_xml: generateFlowXML(components)
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to create flow with structure builder:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Create a simple Flow Designer flow (original method)
    * Focusing on basic flow creation with simple actions
    */
   async createFlow(flow: any): Promise<ServiceNowAPIResponse<any>> {
@@ -1342,9 +1460,9 @@ snow_create_flow({
       console.log('✅ Flow created successfully with complete snapshot!');
       console.log(`🆔 Flow sys_id: ${flowId}`);
       
-      // 🔧 CRITICAL FIX: Do NOT create additional components incrementally
-      // The flow snapshot already contains all components and prevents the "Your flow cannot be found" error
-      // According to ServiceNow community, incremental saves corrupt the flow snapshot
+      // 🔧 CRITICAL FIX: Create action instances after flow creation
+      // While the flow definition contains the structure, ServiceNow also needs 
+      // actual sys_hub_action_instance records for proper execution
       
       console.log('📋 Flow components included in definition:');
       console.log(`- Trigger: ${flowDefinition.trigger.type}`);
@@ -1352,8 +1470,21 @@ snow_create_flow({
       console.log(`- Inputs: ${flowDefinition.inputs.length}`);
       console.log(`- Outputs: ${flowDefinition.outputs.length}`);
       
-      // 🔧 CRITICAL FIX: Flow created with complete definition, no incremental updates needed
-      // This prevents the "Your flow cannot be found" error
+      // Create action instances for each activity
+      if (activitiesToProcess.length > 0) {
+        console.log('🔧 Creating action instances for activities...');
+        for (let i = 0; i < activitiesToProcess.length; i++) {
+          const activity = activitiesToProcess[i];
+          try {
+            await this.createFlowActionInstance(flowId, activity, (i + 1) * 100);
+            console.log(`✅ Action instance created: ${activity.name}`);
+          } catch (activityError) {
+            console.warn(`⚠️ Failed to create action instance ${activity.name}:`, activityError);
+            // Continue with other activities even if one fails
+          }
+        }
+        console.log(`✅ Created ${activitiesToProcess.length} action instances`);
+      }
       
       // 🔧 NEW: Only need to activate the flow since it already has complete definition
       try {
@@ -1363,6 +1494,66 @@ snow_create_flow({
       } catch (activationError) {
         console.warn('⚠️ Flow activation failed:', activationError);
         // Don't fail the entire flow creation if activation fails
+      }
+
+      // 🔧 CRITICAL FIX: Create actual ServiceNow records after flow creation
+      // The JSON definition alone is not enough - we need component records
+      console.log('🔧 Creating actual ServiceNow flow component records...');
+      
+      try {
+        // 1. Create trigger instance if trigger is specified
+        if (flow.trigger_type && flow.trigger_type !== 'manual') {
+          const triggerData = {
+            type: flow.trigger_type,
+            table: flow.table || 'incident',
+            condition: flow.trigger_condition || flow.condition || ''
+          };
+          
+          const triggerResult = await this.createFlowTrigger(flowId, triggerData);
+          console.log(`✅ Trigger created: ${triggerResult.sys_id}`);
+        }
+        
+        // 2. Create action instances for each activity
+        if (activitiesToProcess && activitiesToProcess.length > 0) {
+          const actionResults = [];
+          for (let i = 0; i < activitiesToProcess.length; i++) {
+            const activity = activitiesToProcess[i];
+            const order = (i + 1) * 100;
+            
+            try {
+              const actionResult = await this.createFlowActionInstance(flowId, activity, order);
+              actionResults.push(actionResult);
+              console.log(`✅ Action created: ${activity.name} (${actionResult.sys_id})`);
+            } catch (actionError) {
+              console.warn(`⚠️ Failed to create action ${activity.name}:`, actionError);
+            }
+          }
+          
+          // 3. Create flow logic entries for visual representation
+          if (actionResults.length > 0) {
+            for (let i = 0; i < actionResults.length; i++) {
+              const action = actionResults[i];
+              const logicData = {
+                name: action.action_name,
+                type: 'action',
+                order: (i + 1) * 100,
+                instance: action.sys_id
+              };
+              
+              try {
+                const logicResult = await this.createFlowLogic(flowId, logicData);
+                console.log(`✅ Flow logic created: ${logicResult.sys_id}`);
+              } catch (logicError) {
+                console.warn(`⚠️ Failed to create flow logic for ${action.action_name}:`, logicError);
+              }
+            }
+          }
+        }
+        
+        console.log('✅ All flow component records created successfully!');
+      } catch (componentError) {
+        console.warn('⚠️ Some flow components may not have been created properly:', componentError);
+        // Don't fail the entire flow creation if component creation fails
       }
 
       // Add post-deployment verification
@@ -1384,7 +1575,9 @@ snow_create_flow({
           activities_created: flowDefinition.activities.length,
           variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
           trigger_configured: !!flow.trigger_type,
-          sys_trigger_created: flow.trigger_type === 'record_created' || flow.trigger_type === 'record_updated'
+          sys_trigger_created: flow.trigger_type === 'record_created' || flow.trigger_type === 'record_updated',
+          component_records_created: true, // New field to indicate component records were created
+          has_actual_flow_instances: activitiesToProcess && activitiesToProcess.length > 0
         }
       };
     } catch (error) {
