@@ -11,6 +11,7 @@ import { MCPExecutionBridge, AgentRecommendation } from './mcp-execution-bridge'
 import { ServicePortalThemeManager } from '../utils/theme-manager';
 import { DependencyDetector } from '../utils/dependency-detector';
 import { GapAnalysisEngine, GapAnalysisResult } from '../intelligence/gap-analysis-engine';
+import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
 
 export interface QueenConfig {
@@ -29,6 +30,7 @@ export class ServiceNowQueen {
   private gapAnalysisEngine: GapAnalysisEngine;
   private activeTasks: Map<string, ServiceNowTask>;
   private config: Required<QueenConfig>;
+  private logger: Logger;
 
   constructor(config: QueenConfig = {}) {
     this.config = {
@@ -39,18 +41,21 @@ export class ServiceNowQueen {
       autoPermissions: config.autoPermissions || false
     };
 
+    // Initialize logger
+    this.logger = new Logger('ServiceNowQueen');
+
     // Initialize hive-mind components
     this.memory = new QueenMemorySystem(this.config.memoryPath);
     this.neuralLearning = new NeuralLearning(this.memory);
     this.agentFactory = new AgentFactory(this.memory);
     this.mcpBridge = new MCPExecutionBridge(this.memory);
-    this.gapAnalysisEngine = new GapAnalysisEngine(this.mcpBridge, console, this.config.autoPermissions);
+    this.gapAnalysisEngine = new GapAnalysisEngine(this.mcpBridge, this.logger, this.config.autoPermissions);
     this.activeTasks = new Map();
 
     if (this.config.debugMode) {
-      console.log('🐝 ServiceNow Queen Agent initialized with hive-mind intelligence');
-      console.log('🔌 MCP Execution Bridge connected for real ServiceNow operations');
-      console.log('🧠 Intelligent Gap Analysis Engine ready for beyond-MCP configurations');
+      this.logger.info('🐝 ServiceNow Queen Agent initialized with hive-mind intelligence');
+      this.logger.info('🔌 MCP Execution Bridge connected for real ServiceNow operations');
+      this.logger.info('🧠 Intelligent Gap Analysis Engine ready for beyond-MCP configurations');
     }
   }
 
@@ -63,12 +68,12 @@ export class ServiceNowQueen {
 
     try {
       if (this.config.debugMode) {
-        console.log(`🎯 Queen analyzing objective: ${objective}`);
-        console.log(`🚨 ENFORCING MCP-FIRST WORKFLOW`);
+        this.logger.info(`🎯 Queen analyzing objective: ${objective}`);
+        this.logger.info(`🚨 ENFORCING MCP-FIRST WORKFLOW`);
       }
 
       // 🚨 PHASE 1: MANDATORY MCP PRE-FLIGHT AUTHENTICATION CHECK
-      console.log('🔐 Step 1: Validating ServiceNow connection...');
+      this.logger.info('🔐 Step 1: Validating ServiceNow connection...');
       const authCheck = await this.mcpBridge.executeAgentRecommendation({
         type: 'mcp_call',
         tool: 'snow_validate_live_connection',
@@ -87,14 +92,14 @@ export class ServiceNowQueen {
 
 ❌ Cannot proceed with Queen Agent operations until authentication works!
         `;
-        console.error(authError);
+        this.logger.error('Authentication failed:', authError);
         throw new Error(authError);
       }
 
-      console.log('✅ ServiceNow authentication validated');
+      this.logger.info('✅ ServiceNow authentication validated');
 
       // 🚨 PHASE 2: MANDATORY SMART DISCOVERY (Prevent Duplication)
-      console.log('🔍 Step 2: Discovering existing artifacts...');
+      this.logger.info('🔍 Step 2: Discovering existing artifacts...');
       const discovery = await this.mcpBridge.executeAgentRecommendation({
         type: 'mcp_call',
         tool: 'snow_comprehensive_search',
@@ -106,9 +111,9 @@ export class ServiceNowQueen {
       });
 
       if (discovery.success && discovery.result?.found?.length > 0) {
-        console.log(`🔍 Found ${discovery.result.found.length} existing artifacts that might be relevant:`);
+        this.logger.info(`🔍 Found ${discovery.result.found.length} existing artifacts that might be relevant:`);
         discovery.result.found.forEach((artifact: any) => {
-          console.log(`💡 Consider reusing: ${artifact.name} (${artifact.sys_id})`);
+          this.logger.info(`💡 Consider reusing: ${artifact.name} (${artifact.sys_id})`);
         });
       }
 
@@ -126,7 +131,7 @@ export class ServiceNowQueen {
       this.activeTasks.set(taskId, task);
 
       // 🚨 PHASE 5: INTELLIGENT GAP ANALYSIS (Beyond MCP Tools)
-      console.log('🧠 Step 4: Running Intelligent Gap Analysis...');
+      this.logger.info('🧠 Step 4: Running Intelligent Gap Analysis...');
       let gapAnalysisResult: GapAnalysisResult | null = null;
       
       try {
@@ -138,32 +143,32 @@ export class ServiceNowQueen {
           riskTolerance: 'medium'
         });
 
-        console.log(`📊 Gap Analysis Complete:`);
-        console.log(`  • Total Requirements: ${gapAnalysisResult.totalRequirements}`);
-        console.log(`  • MCP Coverage: ${gapAnalysisResult.mcpCoverage.coveragePercentage}%`);
-        console.log(`  • Automated: ${gapAnalysisResult.summary.successfulAutomation} configurations`);
-        console.log(`  • Manual Work: ${gapAnalysisResult.summary.requiresManualWork} items`);
+        this.logger.info(`📊 Gap Analysis Complete:`);
+        this.logger.info(`  • Total Requirements: ${gapAnalysisResult.totalRequirements}`);
+        this.logger.info(`  • MCP Coverage: ${gapAnalysisResult.mcpCoverage.coveragePercentage}%`);
+        this.logger.info(`  • Automated: ${gapAnalysisResult.summary.successfulAutomation} configurations`);
+        this.logger.info(`  • Manual Work: ${gapAnalysisResult.summary.requiresManualWork} items`);
 
         // Display manual instructions if needed
         if (gapAnalysisResult.summary.requiresManualWork > 0) {
-          console.log('\n📋 Manual Configuration Required:');
-          gapAnalysisResult.nextSteps.manual.forEach(step => console.log(`  • ${step}`));
+          this.logger.info('\n📋 Manual Configuration Required:');
+          gapAnalysisResult.nextSteps.manual.forEach(step => this.logger.info(`  • ${step}`));
           
           if (gapAnalysisResult.manualGuides) {
-            console.log('\n📚 Detailed manual guides available in gap analysis result');
+            this.logger.info('\n📚 Detailed manual guides available in gap analysis result');
           }
         }
 
         // Display automation successes
         if (gapAnalysisResult.summary.successfulAutomation > 0) {
-          console.log('\n✅ Automated Configurations:');
-          gapAnalysisResult.nextSteps.automated.forEach(step => console.log(`  • ${step}`));
+          this.logger.info('\n✅ Automated Configurations:');
+          gapAnalysisResult.nextSteps.automated.forEach(step => this.logger.info(`  • ${step}`));
         }
 
         // Display recommendations
         if (gapAnalysisResult.nextSteps.recommendations.length > 0) {
-          console.log('\n💡 Recommendations:');
-          gapAnalysisResult.nextSteps.recommendations.forEach(rec => console.log(`  • ${rec}`));
+          this.logger.info('\n💡 Recommendations:');
+          gapAnalysisResult.nextSteps.recommendations.forEach(rec => this.logger.info(`  • ${rec}`));
         }
 
         // Store gap analysis result in task for later reference
@@ -171,7 +176,7 @@ export class ServiceNowQueen {
 
       } catch (gapError) {
         console.warn(`⚠️ Gap Analysis failed: ${gapError instanceof Error ? gapError.message : 'Unknown error'}`);
-        console.log('🔄 Continuing with standard MCP workflow...');
+        this.logger.info('🔄 Continuing with standard MCP workflow...');
       }
 
       // Phase 6: Spawn optimal agent swarm
@@ -189,7 +194,7 @@ export class ServiceNowQueen {
       task.result = result;
 
       if (this.config.debugMode) {
-        console.log(`✅ Queen completed objective in ${duration}ms`);
+        this.logger.info(`✅ Queen completed objective in ${duration}ms`);
       }
 
       return result;
@@ -205,7 +210,7 @@ export class ServiceNowQueen {
 
   private spawnOptimalSwarm(task: ServiceNowTask, analysis: TaskAnalysis): Agent[] {
     if (this.config.debugMode) {
-      console.log(`🐛 Spawning swarm for ${task.type} task (complexity: ${analysis.estimatedComplexity})`);
+      this.logger.info(`🐛 Spawning swarm for ${task.type} task (complexity: ${analysis.estimatedComplexity})`);
     }
 
     // Use learned patterns or optimal sequence
@@ -216,7 +221,7 @@ export class ServiceNowQueen {
     const agents = this.agentFactory.spawnAgentSwarm(agentTypes, task.id);
     
     if (this.config.debugMode) {
-      console.log(`👥 Spawned ${agents.length} agents: ${agents.map(a => a.type).join(', ')}`);
+      this.logger.info(`👥 Spawned ${agents.length} agents: ${agents.map(a => a.type).join(', ')}`);
     }
 
     return agents;
@@ -258,7 +263,7 @@ export class ServiceNowQueen {
 
   private async executeAgentsInParallel(agents: Agent[], objective: string): Promise<any[]> {
     if (this.config.debugMode) {
-      console.log('⚡ Executing agents in parallel');
+      this.logger.info('⚡ Executing agents in parallel');
     }
 
     const promises = agents.map(agent => 
@@ -270,7 +275,7 @@ export class ServiceNowQueen {
 
   private async executeAgentsSequentially(agents: Agent[], objective: string): Promise<any[]> {
     if (this.config.debugMode) {
-      console.log('🔄 Executing agents sequentially');
+      this.logger.info('🔄 Executing agents sequentially');
     }
 
     const results: any[] = [];
@@ -307,7 +312,7 @@ export class ServiceNowQueen {
 
   private async executeFinalDeployment(task: ServiceNowTask, agentResults: any[], analysis: TaskAnalysis): Promise<any> {
     if (this.config.debugMode) {
-      console.log('🚀 Executing final deployment with MCP tools');
+      this.logger.info('🚀 Executing final deployment with MCP tools');
     }
 
     // The Queen coordinates the actual MCP tool calls based on agent recommendations
@@ -672,7 +677,7 @@ function($scope) {
   private async executeDeploymentPlan(plan: any): Promise<any> {
     // Execute real MCP tools through the bridge
     if (this.config.debugMode) {
-      console.log('🚀 Executing deployment plan with MCP Bridge');
+      this.logger.info('🚀 Executing deployment plan with MCP Bridge');
     }
 
     // Create agent recommendation from plan
@@ -736,9 +741,9 @@ function($scope) {
         return; // No dependencies needed
       }
 
-      console.log(`\n📦 Detected ${dependencies.length} external dependencies in widget:`);
+      this.logger.info(`\n📦 Detected ${dependencies.length} external dependencies in widget:`);
       dependencies.forEach(dep => {
-        console.log(`  • ${dep.name} - ${dep.description}`);
+        this.logger.info(`  • ${dep.name} - ${dep.description}`);
       });
 
       // Create MCP tools wrapper for theme manager
@@ -813,22 +818,22 @@ function($scope) {
       );
 
       if (result.success) {
-        console.log(`✅ ${result.message}`);
+        this.logger.info(`✅ ${result.message}`);
       } else {
-        console.log(`⚠️ Dependencies not installed: ${result.message}`);
-        console.log('💡 You may need to manually add these dependencies to your Service Portal theme');
+        this.logger.warn(`⚠️ Dependencies not installed: ${result.message}`);
+        this.logger.info('💡 You may need to manually add these dependencies to your Service Portal theme');
       }
 
     } catch (error: any) {
       console.error('❌ Error handling widget dependencies:', error.message);
       // Don't fail the deployment, just warn
-      console.log('⚠️ Widget deployed successfully but dependencies may need manual installation');
+      this.logger.warn('⚠️ Widget deployed successfully but dependencies may need manual installation');
     }
   }
 
   private async attemptRecovery(task: ServiceNowTask, agents: Agent[], error: Error): Promise<any> {
     if (this.config.debugMode) {
-      console.log(`🔄 Attempting recovery for task ${task.id}`);
+      this.logger.info(`🔄 Attempting recovery for task ${task.id}`);
     }
 
     // Try with reduced complexity or different agent sequence
@@ -857,7 +862,7 @@ function($scope) {
     }
 
     if (this.config.debugMode) {
-      console.log(`📚 Queen learned from ${error ? 'failure' : 'success'}: ${task.objective}`);
+      this.logger.info(`📚 Queen learned from ${error ? 'failure' : 'success'}: ${task.objective}`);
     }
   }
 
@@ -936,7 +941,7 @@ function($scope) {
   importMemory(memoryData: string): void {
     this.memory.importMemory(memoryData);
     if (this.config.debugMode) {
-      console.log('🧠 Queen hive-mind memory imported successfully');
+      this.logger.info('🧠 Queen hive-mind memory imported successfully');
     }
   }
 
@@ -945,7 +950,7 @@ function($scope) {
     // Also reset neural learning weights
     this.neuralLearning = new NeuralLearning(this.memory);
     if (this.config.debugMode) {
-      console.log('🧠 Queen hive-mind memory cleared - starting fresh');
+      this.logger.info('🧠 Queen hive-mind memory cleared - starting fresh');
     }
   }
 
@@ -983,7 +988,7 @@ function($scope) {
 
   async shutdown(): Promise<void> {
     if (this.config.debugMode) {
-      console.log('🛑 Shutting down ServiceNow Queen Agent');
+      this.logger.info('🛑 Shutting down ServiceNow Queen Agent');
     }
     
     // Clean up all agents

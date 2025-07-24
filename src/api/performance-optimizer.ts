@@ -7,6 +7,7 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { Logger } from '../utils/logger.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export interface CacheEntry<T> {
   key: string;
@@ -803,7 +804,7 @@ export class PerformanceOptimizer {
     if (!this.config.persistence_enabled) return;
     
     try {
-      const cacheFile = path.join(process.cwd(), '.snow-flow', 'cache', 'performance_cache.json');
+      const cacheFile = path.join(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow'), 'cache', 'performance_cache.json');
       
       if (fs.existsSync(cacheFile)) {
         const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
@@ -830,7 +831,7 @@ export class PerformanceOptimizer {
     if (!this.config.persistence_enabled) return;
     
     try {
-      const cacheDir = path.join(process.cwd(), '.snow-flow', 'cache');
+      const cacheDir = path.join(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow'), 'cache');
       if (!fs.existsSync(cacheDir)) {
         fs.mkdirSync(cacheDir, { recursive: true });
       }

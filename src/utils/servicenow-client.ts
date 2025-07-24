@@ -7,6 +7,9 @@
 import axios, { AxiosInstance } from 'axios';
 import { ServiceNowOAuth, ServiceNowCredentials } from './snow-oauth';
 import { ActionTypeCache } from './action-type-cache';
+import { snowFlowConfig } from '../config/snow-flow-config.js';
+import { widgetTemplateGenerator } from './widget-template-generator.js';
+import { Logger } from './logger';
 import { 
   generateFlowComponents, 
   createActionInstances, 
@@ -70,11 +73,13 @@ export class ServiceNowClient {
   private oauth: ServiceNowOAuth;
   private credentials: ServiceNowCredentials | null = null;
   private actionTypeCache: ActionTypeCache;
+  private logger: Logger;
 
   constructor() {
+    this.logger = new Logger('ServiceNowClient');
     this.oauth = new ServiceNowOAuth();
     this.client = axios.create({
-      timeout: 30000,
+      timeout: snowFlowConfig.servicenow.timeout,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -84,8 +89,8 @@ export class ServiceNowClient {
     // 🔧 CRITICAL FIX: Add makeRequest method to Axios instance to fix phantom calls
     // Some code expects makeRequest to exist on this.client (the Axios instance)
     (this.client as any).makeRequest = async (config: any) => {
-      console.log('🔧 AXIOS makeRequest called! Config:', config);
-      console.log('🔧 Routing to appropriate HTTP method...');
+      this.logger.debug('🔧 AXIOS makeRequest called! Config:', config);
+      this.logger.debug('🔧 Routing to appropriate HTTP method...');
       
       // Route to the appropriate Axios method based on the request config
       const method = (config.method || 'GET').toLowerCase();
@@ -140,11 +145,11 @@ export class ServiceNowClient {
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           
-          console.log('🔄 Received 401 error, attempting token refresh...');
+          this.logger.info('🔄 Received 401 error, attempting token refresh...');
           const refreshResult = await this.oauth.refreshAccessToken();
           
           if (refreshResult.success && refreshResult.accessToken) {
-            console.log('✅ Token refreshed successfully, retrying request...');
+            this.logger.info('✅ Token refreshed successfully, retrying request...');
             
             // Update local credentials
             if (this.credentials) {
@@ -158,7 +163,7 @@ export class ServiceNowClient {
             return this.client.request(originalRequest);
           } else {
             console.error('❌ Token refresh failed:', refreshResult.error);
-            console.log('💡 Please run "snow-flow auth login" to re-authenticate');
+            this.logger.warn('💡 Please run "snow-flow auth login" to re-authenticate');
           }
         }
         
@@ -226,7 +231,7 @@ export class ServiceNowClient {
       // Try to refresh the token
       const refreshResult = await this.oauth.refreshAccessToken();
       if (refreshResult.success && refreshResult.accessToken) {
-        console.log('✅ Token refreshed successfully');
+        this.logger.info('✅ Token refreshed successfully');
         // Update local credentials
         this.credentials.accessToken = refreshResult.accessToken;
         return; // Success!
@@ -257,11 +262,11 @@ export class ServiceNowClient {
       
       // If token expires in the next 5 minutes, refresh it
       if (expiresAt <= fiveMinutesFromNow) {
-        console.log('🔄 Token expiring soon, refreshing proactively...');
+        this.logger.info('🔄 Token expiring soon, refreshing proactively...');
         const refreshResult = await this.oauth.refreshAccessToken();
         
         if (refreshResult.success) {
-          console.log('✅ Token refreshed proactively');
+          this.logger.info('✅ Token refreshed proactively');
           if (this.credentials && refreshResult.accessToken) {
             this.credentials.accessToken = refreshResult.accessToken;
           }
@@ -381,7 +386,7 @@ export class ServiceNowClient {
 
     for (const test of tests) {
       try {
-        console.log(`Running diagnostic: ${test.name}...`);
+        this.logger.info(`Running diagnostic: ${test.name}...`);
         const result = await test.test();
         diagnostics.tests[test.name] = {
           status: '✅ PASS',
@@ -520,8 +525,8 @@ export class ServiceNowClient {
    */
   async createWidget(widget: ServiceNowWidget): Promise<ServiceNowAPIResponse<ServiceNowWidget>> {
     try {
-      console.log('🎨 Creating ServiceNow widget...');
-      console.log(`📋 Widget Name: ${widget.name}`);
+      this.logger.info('🎨 Creating ServiceNow widget...');
+      this.logger.info(`📋 Widget Name: ${widget.name}`);
       
       // Add pre-deployment validation for widgets
       if (!widget.name || widget.name.trim() === '') {
@@ -531,7 +536,33 @@ export class ServiceNowClient {
         throw new Error('Widget title is required');
       }
       if (!widget.template || widget.template.trim() === '') {
-        console.warn('⚠️ Widget has no template content - this may result in an empty widget');
+        console.warn('⚠️ Widget has no template content - generating functional template automatically');
+        
+        // Generate a functional template instead of deploying an empty widget
+        const generatedWidget = widgetTemplateGenerator.generateWidget({
+          title: widget.title,
+          instruction: widget.description || widget.name || 'auto-generated widget',
+          type: 'info', // Default to info widget for auto-generated templates
+          theme: 'default',
+          responsive: true
+        });
+        
+        // Apply generated components to the widget
+        widget.template = generatedWidget.template;
+        if (!widget.css || widget.css.trim() === '') {
+          widget.css = generatedWidget.css;
+        }
+        if (!widget.client_script || widget.client_script.trim() === '') {
+          widget.client_script = generatedWidget.clientScript;
+        }
+        if (!widget.server_script || widget.server_script.trim() === '') {
+          widget.server_script = generatedWidget.serverScript;
+        }
+        if (!widget.option_schema || widget.option_schema.trim() === '' || widget.option_schema === '[]') {
+          widget.option_schema = generatedWidget.optionSchema;
+        }
+        
+        this.logger.info('✅ Generated functional widget template automatically');
       }
       
       // Ensure we have credentials before making the API call
@@ -555,8 +586,8 @@ export class ServiceNowClient {
         }
       );
       
-      console.log('✅ Widget created successfully!');
-      console.log(`🆔 Widget ID: ${response.data.result.sys_id}`);
+      this.logger.info('✅ Widget created successfully!');
+      this.logger.info(`🆔 Widget ID: ${response.data.result.sys_id}`);
       
       // Add post-deployment verification
       await this.verifyDeployment(response.data.result.sys_id, 'widget');
@@ -579,7 +610,7 @@ export class ServiceNowClient {
    */
   async updateWidget(sysId: string, widget: Partial<ServiceNowWidget>): Promise<ServiceNowAPIResponse<ServiceNowWidget>> {
     try {
-      console.log(`🔄 Updating widget ${sysId}...`);
+      this.logger.info(`🔄 Updating widget ${sysId}...`);
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -596,7 +627,7 @@ export class ServiceNowClient {
         mappedWidget
       );
       
-      console.log('✅ Widget updated successfully!');
+      this.logger.info('✅ Widget updated successfully!');
       
       return {
         success: true,
@@ -647,8 +678,8 @@ export class ServiceNowClient {
    */
   async createWorkflow(workflow: ServiceNowWorkflow): Promise<ServiceNowAPIResponse<ServiceNowWorkflow>> {
     try {
-      console.log('🔄 Creating ServiceNow workflow...');
-      console.log(`📋 Workflow Name: ${workflow.name}`);
+      this.logger.info('🔄 Creating ServiceNow workflow...');
+      this.logger.info(`📋 Workflow Name: ${workflow.name}`);
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/wf_workflow`,
@@ -662,8 +693,8 @@ export class ServiceNowClient {
         }
       );
       
-      console.log('✅ Workflow created successfully!');
-      console.log(`🆔 Workflow ID: ${response.data.result.sys_id}`);
+      this.logger.info('✅ Workflow created successfully!');
+      this.logger.info(`🆔 Workflow ID: ${response.data.result.sys_id}`);
       
       return {
         success: true,
@@ -683,8 +714,8 @@ export class ServiceNowClient {
    */
   async createApplication(application: ServiceNowApplication): Promise<ServiceNowAPIResponse<ServiceNowApplication>> {
     try {
-      console.log('🏗️ Creating ServiceNow application...');
-      console.log(`📋 Application Name: ${application.name}`);
+      this.logger.info('🏗️ Creating ServiceNow application...');
+      this.logger.info(`📋 Application Name: ${application.name}`);
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_app`,
@@ -702,8 +733,8 @@ export class ServiceNowClient {
         }
       );
       
-      console.log('✅ Application created successfully!');
-      console.log(`🆔 Application ID: ${response.data.result.sys_id}`);
+      this.logger.info('✅ Application created successfully!');
+      this.logger.info(`🆔 Application ID: ${response.data.result.sys_id}`);
       
       return {
         success: true,
@@ -723,7 +754,7 @@ export class ServiceNowClient {
    */
   async executeScript(script: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('⚡ Executing ServiceNow script...');
+      this.logger.info('⚡ Executing ServiceNow script...');
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_script_execution`,
@@ -733,7 +764,7 @@ export class ServiceNowClient {
         }
       );
       
-      console.log('✅ Script executed successfully!');
+      this.logger.info('✅ Script executed successfully!');
       
       return {
         success: true,
@@ -834,7 +865,7 @@ export class ServiceNowClient {
         };
       }
     } catch (error) {
-      console.log('Could not fetch flow defaults, using minimal defaults');
+      this.logger.warn('Could not fetch flow defaults, using minimal defaults');
     }
     
     // Return minimal defaults if we can't get from ServiceNow
@@ -1021,7 +1052,7 @@ export class ServiceNowClient {
    */
   async searchFlowActions(searchTerm: string): Promise<any> {
     try {
-      console.log(`🔍 Searching for flow actions: ${searchTerm}`);
+      this.logger.info(`🔍 Searching for flow actions: ${searchTerm}`);
       
       // Search in sys_hub_action_type_base for available action types
       const results = await this.searchRecords(
@@ -1040,7 +1071,7 @@ export class ServiceNowClient {
       const actionTypes = results.success ? results.data.result : [];
       const actionInstances = instanceResults.success ? instanceResults.data.result : [];
       
-      console.log(`✅ Found ${actionTypes.length} action types and ${actionInstances.length} action instances`);
+      this.logger.info(`✅ Found ${actionTypes.length} action types and ${actionInstances.length} action instances`);
       
       return {
         actionTypes,
@@ -1185,7 +1216,7 @@ snow_create_flow({
 })
           `);
         } else {
-          console.log(`✅ ${expectedType} has ${activities.length} activities`);
+          this.logger.info(`✅ ${expectedType} has ${activities.length} activities`);
         }
       } else if (expectedType === 'widget') {
         const hasContent = artifact.template || artifact.client_script || artifact.script;
@@ -1194,7 +1225,7 @@ snow_create_flow({
         }
       }
       
-      console.log(`✅ Deployment verified: ${artifact.name} (${sysId})`);
+      this.logger.info(`✅ Deployment verified: ${artifact.name} (${sysId})`);
       
     } catch (error) {
       console.error(`❌ Deployment verification failed for ${sysId}:`, error);
@@ -1240,8 +1271,8 @@ snow_create_flow({
    */
   async createFlowWithStructureBuilder(flowDefinition: FlowDefinition): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🏗️ Creating flow with structure builder...');
-      console.log(`📋 Flow: ${flowDefinition.name}`);
+      this.logger.info('🏗️ Creating flow with structure builder...');
+      this.logger.info(`📋 Flow: ${flowDefinition.name}`);
 
       await this.ensureAuthenticated();
 
@@ -1260,7 +1291,7 @@ snow_create_flow({
       }
 
       // Deploy all components in correct order
-      console.log('🚀 Deploying flow components...');
+      this.logger.info('🚀 Deploying flow components...');
 
       // 1. Create main flow record
       const flowResponse = await this.client.post(
@@ -1273,14 +1304,14 @@ snow_create_flow({
       }
 
       const flowSysId = flowResponse.data.result.sys_id;
-      console.log(`✅ Flow record created: ${flowSysId}`);
+      this.logger.info(`✅ Flow record created: ${flowSysId}`);
 
       // 2. Create trigger instance
       await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_hub_trigger_instance`,
         components.triggerInstance
       );
-      console.log(`✅ Trigger created: ${components.triggerInstance.sys_id}`);
+      this.logger.info(`✅ Trigger created: ${components.triggerInstance.sys_id}`);
 
       // 3. Create action instances
       for (const action of components.actionInstances) {
@@ -1289,7 +1320,7 @@ snow_create_flow({
           action
         );
       }
-      console.log(`✅ Created ${components.actionInstances.length} action instances`);
+      this.logger.info(`✅ Created ${components.actionInstances.length} action instances`);
 
       // 4. Create logic chain (connections)
       for (const logic of components.logicChain) {
@@ -1298,7 +1329,7 @@ snow_create_flow({
           logic
         );
       }
-      console.log(`✅ Created logic chain with ${components.logicChain.length} connections`);
+      this.logger.info(`✅ Created logic chain with ${components.logicChain.length} connections`);
 
       // 5. Create variables
       for (const variable of components.variables) {
@@ -1307,7 +1338,7 @@ snow_create_flow({
           variable
         );
       }
-      console.log(`✅ Created ${components.variables.length} flow variables`);
+      this.logger.info(`✅ Created ${components.variables.length} flow variables`);
 
       // Verify deployment
       await this.verifyDeployment(flowSysId, 'flow');
@@ -1348,11 +1379,11 @@ snow_create_flow({
    */
   async createFlow(flow: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔄 Creating Flow Designer flow...');
-      console.log(`📋 Flow: ${flow.name}`);
+      this.logger.info('🔄 Creating Flow Designer flow...');
+      this.logger.info(`📋 Flow: ${flow.name}`);
       
       // 🔧 CRITICAL DEBUG: Check if makeRequest exists on this instance
-      console.log('🔧 CRITICAL DEBUG - Client methods check:', {
+      this.logger.debug('🔧 CRITICAL DEBUG - Client methods check:', {
         hasCreateFlow: typeof this.createFlow === 'function',
         hasMakeRequest: typeof this.makeRequest === 'function',
         clientPrototype: Object.getOwnPropertyNames(Object.getPrototypeOf(this)),
@@ -1457,40 +1488,40 @@ snow_create_flow({
       }
       
       const flowId = response.data.result.sys_id;
-      console.log('✅ Flow created successfully with complete snapshot!');
-      console.log(`🆔 Flow sys_id: ${flowId}`);
+      this.logger.info('✅ Flow created successfully with complete snapshot!');
+      this.logger.info(`🆔 Flow sys_id: ${flowId}`);
       
       // 🔧 CRITICAL FIX: Create action instances after flow creation
       // While the flow definition contains the structure, ServiceNow also needs 
       // actual sys_hub_action_instance records for proper execution
       
-      console.log('📋 Flow components included in definition:');
-      console.log(`- Trigger: ${flowDefinition.trigger.type}`);
-      console.log(`- Activities: ${flowDefinition.activities.length}`);
-      console.log(`- Inputs: ${flowDefinition.inputs.length}`);
-      console.log(`- Outputs: ${flowDefinition.outputs.length}`);
+      this.logger.info('📋 Flow components included in definition:');
+      this.logger.info(`- Trigger: ${flowDefinition.trigger.type}`);
+      this.logger.info(`- Activities: ${flowDefinition.activities.length}`);
+      this.logger.info(`- Inputs: ${flowDefinition.inputs.length}`);
+      this.logger.info(`- Outputs: ${flowDefinition.outputs.length}`);
       
       // Create action instances for each activity
       if (activitiesToProcess.length > 0) {
-        console.log('🔧 Creating action instances for activities...');
+        this.logger.info('🔧 Creating action instances for activities...');
         for (let i = 0; i < activitiesToProcess.length; i++) {
           const activity = activitiesToProcess[i];
           try {
             await this.createFlowActionInstance(flowId, activity, (i + 1) * 100);
-            console.log(`✅ Action instance created: ${activity.name}`);
+            this.logger.info(`✅ Action instance created: ${activity.name}`);
           } catch (activityError) {
             console.warn(`⚠️ Failed to create action instance ${activity.name}:`, activityError);
             // Continue with other activities even if one fails
           }
         }
-        console.log(`✅ Created ${activitiesToProcess.length} action instances`);
+        this.logger.info(`✅ Created ${activitiesToProcess.length} action instances`);
       }
       
       // 🔧 NEW: Only need to activate the flow since it already has complete definition
       try {
-        console.log('⚡ Activating flow...');
+        this.logger.info('⚡ Activating flow...');
         await this.activateFlow(flowId);
-        console.log('✅ Flow activated successfully!');
+        this.logger.info('✅ Flow activated successfully!');
       } catch (activationError) {
         console.warn('⚠️ Flow activation failed:', activationError);
         // Don't fail the entire flow creation if activation fails
@@ -1498,7 +1529,7 @@ snow_create_flow({
 
       // 🔧 CRITICAL FIX: Create actual ServiceNow records after flow creation
       // The JSON definition alone is not enough - we need component records
-      console.log('🔧 Creating actual ServiceNow flow component records...');
+      this.logger.info('🔧 Creating actual ServiceNow flow component records...');
       
       try {
         // 1. Create trigger instance if trigger is specified
@@ -1510,7 +1541,7 @@ snow_create_flow({
           };
           
           const triggerResult = await this.createFlowTrigger(flowId, triggerData);
-          console.log(`✅ Trigger created: ${triggerResult.sys_id}`);
+          this.logger.info(`✅ Trigger created: ${triggerResult.sys_id}`);
         }
         
         // 2. Create action instances for each activity
@@ -1523,7 +1554,7 @@ snow_create_flow({
             try {
               const actionResult = await this.createFlowActionInstance(flowId, activity, order);
               actionResults.push(actionResult);
-              console.log(`✅ Action created: ${activity.name} (${actionResult.sys_id})`);
+              this.logger.info(`✅ Action created: ${activity.name} (${actionResult.sys_id})`);
             } catch (actionError) {
               console.warn(`⚠️ Failed to create action ${activity.name}:`, actionError);
             }
@@ -1542,7 +1573,7 @@ snow_create_flow({
               
               try {
                 const logicResult = await this.createFlowLogic(flowId, logicData);
-                console.log(`✅ Flow logic created: ${logicResult.sys_id}`);
+                this.logger.info(`✅ Flow logic created: ${logicResult.sys_id}`);
               } catch (logicError) {
                 console.warn(`⚠️ Failed to create flow logic for ${action.action_name}:`, logicError);
               }
@@ -1550,7 +1581,7 @@ snow_create_flow({
           }
         }
         
-        console.log('✅ All flow component records created successfully!');
+        this.logger.info('✅ All flow component records created successfully!');
       } catch (componentError) {
         console.warn('⚠️ Some flow components may not have been created properly:', componentError);
         // Don't fail the entire flow creation if component creation fails
@@ -1661,8 +1692,8 @@ snow_create_flow({
    */
   async createSubflow(subflow: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔄 Creating Subflow...');
-      console.log(`📋 Subflow: ${subflow.name}`);
+      this.logger.info('🔄 Creating Subflow...');
+      this.logger.info(`📋 Subflow: ${subflow.name}`);
       
       // Add pre-deployment validation
       this.validateFlowBeforeDeployment(subflow);
@@ -1741,8 +1772,8 @@ snow_create_flow({
    */
   async createFlowAction(action: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('⚡ Creating Flow Action...');
-      console.log(`📋 Action: ${action.name}`);
+      this.logger.info('⚡ Creating Flow Action...');
+      this.logger.info(`📋 Action: ${action.name}`);
       
       // Add pre-deployment validation (adapted for actions)
       if (!action.name || action.name.trim() === '') {
@@ -1777,7 +1808,7 @@ snow_create_flow({
 
       // Add basic verification for action creation
       if (response.data.result?.sys_id) {
-        console.log(`✅ Flow Action created: ${action.name} (${response.data.result.sys_id})`);
+        this.logger.info(`✅ Flow Action created: ${action.name} (${response.data.result.sys_id})`);
       }
 
       return {
@@ -1799,7 +1830,7 @@ snow_create_flow({
    */
   private async createFlowActionPrivate(flowId: string, action: any, order: number): Promise<any> {
     try {
-      console.log(`Creating flow action: ${action.type} - ${action.name}`);
+      this.logger.info(`Creating flow action: ${action.type} - ${action.name}`);
       
       // If we have a discovered action type, use it
       let actionTypeId = action.action_type_id;
@@ -1809,7 +1840,7 @@ snow_create_flow({
         const searchResults = await this.searchFlowActions(action.type);
         if (searchResults.actionTypes && searchResults.actionTypes.length > 0) {
           actionTypeId = searchResults.actionTypes[0].sys_id;
-          console.log(`📋 Using discovered action type: ${searchResults.actionTypes[0].name}`);
+          this.logger.info(`📋 Using discovered action type: ${searchResults.actionTypes[0].name}`);
         } else {
           // Fallback to common action types
           const fallbackMap: any = {
@@ -1821,7 +1852,7 @@ snow_create_flow({
             'approval': 'com.glideapp.servicenow_common.approval'
           };
           actionTypeId = fallbackMap[action.type] || 'com.glideapp.servicenow_common.script';
-          console.log(`📋 Using fallback action type: ${actionTypeId}`);
+          this.logger.info(`📋 Using fallback action type: ${actionTypeId}`);
         }
       }
       
@@ -1847,7 +1878,7 @@ snow_create_flow({
         actionData
       );
       
-      console.log(`✅ Flow action created: ${action.name}`);
+      this.logger.info(`✅ Flow action created: ${action.name}`);
       return response.data.result;
     } catch (error) {
       console.error('Failed to create flow action:', error);
@@ -2037,13 +2068,13 @@ try {
             sysTriggerData
           );
           
-          console.log('✅ sys_trigger record created for proper flow execution');
+          this.logger.info('✅ sys_trigger record created for proper flow execution');
         } catch (sysTriggerError) {
           console.warn('Could not create sys_trigger record, flow may not trigger properly:', sysTriggerError);
         }
       }
       
-      console.log('✅ Trigger created successfully');
+      this.logger.info('✅ Trigger created successfully');
       return response.data.result;
     } catch (error) {
       console.error('Failed to create flow trigger:', error);
@@ -2056,7 +2087,7 @@ try {
    */
   private async createFlowVariables(flowId: string, flow: any): Promise<void> {
     try {
-      console.log('📋 Creating flow variables...');
+      this.logger.info('📋 Creating flow variables...');
       
       // Process inputs
       const inputs = flow.inputs || [];
@@ -2079,7 +2110,7 @@ try {
             variableData
           );
         }
-        console.log(`✅ Created ${inputs.length} input variables`);
+        this.logger.info(`✅ Created ${inputs.length} input variables`);
       }
       
       // Process outputs
@@ -2103,7 +2134,7 @@ try {
             variableData
           );
         }
-        console.log(`✅ Created ${outputs.length} output variables`);
+        this.logger.info(`✅ Created ${outputs.length} output variables`);
       }
       
       // Extract variables from flow_definition if available
@@ -2131,7 +2162,7 @@ try {
                 variableData
               );
             }
-            console.log(`✅ Created ${flowDef.variables.length} flow definition variables`);
+            this.logger.info(`✅ Created ${flowDef.variables.length} flow definition variables`);
           }
         } catch (parseError) {
           console.warn('Could not parse flow_definition for variables:', parseError);
@@ -2149,7 +2180,7 @@ try {
    */
   private async createFlowActionInstance(flowId: string, action: any, order: number): Promise<any> {
     try {
-      console.log(`Creating action instance: ${action.name}`);
+      this.logger.info(`Creating action instance: ${action.name}`);
       
       // Map action types to search terms
       const actionSearchMap: any = {
@@ -2235,7 +2266,7 @@ try {
         actionData
       );
       
-      console.log(`✅ Action created: ${action.name}`);
+      this.logger.info(`✅ Action created: ${action.name}`);
       return response.data.result;
     } catch (error) {
       console.error(`Failed to create action instance ${action.name}:`, error);
@@ -2278,7 +2309,7 @@ try {
    */
   async createScriptInclude(scriptInclude: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📝 Creating Script Include...');
+      this.logger.info('📝 Creating Script Include...');
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_script_include`,
@@ -2292,7 +2323,7 @@ try {
         }
       );
       
-      console.log('✅ Script Include created successfully!');
+      this.logger.info('✅ Script Include created successfully!');
       
       return {
         success: true,
@@ -2312,7 +2343,7 @@ try {
    */
   async createBusinessRule(businessRule: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📋 Creating Business Rule...');
+      this.logger.info('📋 Creating Business Rule...');
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_script`,
@@ -2328,7 +2359,7 @@ try {
         }
       );
       
-      console.log('✅ Business Rule created successfully!');
+      this.logger.info('✅ Business Rule created successfully!');
       
       return {
         success: true,
@@ -2348,7 +2379,7 @@ try {
    */
   async createTable(table: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🗄️ Creating Table...');
+      this.logger.info('🗄️ Creating Table...');
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_db_object`,
@@ -2362,7 +2393,7 @@ try {
         }
       );
       
-      console.log('✅ Table created successfully!');
+      this.logger.info('✅ Table created successfully!');
       
       return {
         success: true,
@@ -2382,7 +2413,7 @@ try {
    */
   async createTableField(field: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📊 Creating Table Field...');
+      this.logger.info('📊 Creating Table Field...');
       
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sys_dictionary`,
@@ -2396,7 +2427,7 @@ try {
         }
       );
       
-      console.log('✅ Table Field created successfully!');
+      this.logger.info('✅ Table Field created successfully!');
       
       return {
         success: true,
@@ -2416,7 +2447,7 @@ try {
    */
   async createUpdateSet(updateSet: any): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📦 Creating Update Set...');
+      this.logger.info('📦 Creating Update Set...');
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2432,7 +2463,7 @@ try {
         }
       );
       
-      console.log('✅ Update Set created successfully!');
+      this.logger.info('✅ Update Set created successfully!');
       
       return {
         success: true,
@@ -2452,7 +2483,7 @@ try {
    */
   async setCurrentUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔄 Setting current Update Set...');
+      this.logger.info('🔄 Setting current Update Set...');
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2490,7 +2521,7 @@ try {
         );
       }
       
-      console.log('✅ Current Update Set changed successfully!');
+      this.logger.info('✅ Current Update Set changed successfully!');
       
       return {
         success: true,
@@ -2510,7 +2541,7 @@ try {
    */
   async getCurrentUpdateSet(): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📋 Getting current Update Set...');
+      this.logger.info('📋 Getting current Update Set...');
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2542,7 +2573,7 @@ try {
           };
         }
       } catch (prefError) {
-        console.log('⚠️ User preference lookup failed, trying fallback...');
+        this.logger.info('⚠️ User preference lookup failed, trying fallback...');
       }
       
       // Fallback: Get the most recent in-progress update set for the current user
@@ -2582,7 +2613,7 @@ try {
    */
   async getUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log(`📋 Getting Update Set ${updateSetId}...`);
+      this.logger.info(`📋 Getting Update Set ${updateSetId}...`);
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2609,7 +2640,7 @@ try {
    */
   async listUpdateSets(options: any): Promise<ServiceNowAPIResponse<any[]>> {
     try {
-      console.log('📋 Listing Update Sets...');
+      this.logger.info('📋 Listing Update Sets...');
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2648,7 +2679,7 @@ try {
    */
   async completeUpdateSet(updateSetId: string, notes?: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('✅ Completing Update Set...');
+      this.logger.info('✅ Completing Update Set...');
       
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
@@ -2661,7 +2692,7 @@ try {
         }
       );
       
-      console.log('✅ Update Set completed successfully!');
+      this.logger.info('✅ Update Set completed successfully!');
       
       return {
         success: true,
@@ -2681,7 +2712,7 @@ try {
    */
   async activateUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔄 Activating Update Set...');
+      this.logger.info('🔄 Activating Update Set...');
       
       // Set the update set as current
       const result = await this.setCurrentUpdateSet(updateSetId);
@@ -2695,7 +2726,7 @@ try {
           }
         );
         
-        console.log('✅ Update Set activated successfully!');
+        this.logger.info('✅ Update Set activated successfully!');
         
         return {
           success: true,
@@ -2718,7 +2749,7 @@ try {
    */
   async previewUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔍 Previewing Update Set changes...');
+      this.logger.info('🔍 Previewing Update Set changes...');
       
       // Get Update Set details
       const updateSetResponse = await this.getUpdateSet(updateSetId);
@@ -2765,13 +2796,13 @@ try {
       const currentUpdateSet = await this.getCurrentUpdateSet();
       
       if (currentUpdateSet.success && currentUpdateSet.data) {
-        console.log(`📦 Using existing Update Set: ${currentUpdateSet.data.name}`);
+        this.logger.info(`📦 Using existing Update Set: ${currentUpdateSet.data.name}`);
         return currentUpdateSet;
       }
       
       // Create a new Update Set if none exists
       const updateSetName = `Snow-Flow Changes ${new Date().toISOString().split('T')[0]}`;
-      console.log(`📦 Creating new Update Set: ${updateSetName}`);
+      this.logger.info(`📦 Creating new Update Set: ${updateSetName}`);
       
       const newUpdateSet = await this.createUpdateSet({
         name: updateSetName,
@@ -2797,7 +2828,7 @@ try {
 
   async exportUpdateSet(updateSetId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('📤 Exporting Update Set...');
+      this.logger.info('📤 Exporting Update Set...');
       
       // Get Update Set details first
       const updateSetResponse = await this.getUpdateSet(updateSetId);
@@ -2840,7 +2871,7 @@ try {
    */
   async debugFlow(flowId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      console.log('🔍 Debugging flow structure...');
+      this.logger.info('🔍 Debugging flow structure...');
       
       // Get the flow record
       const flowResponse = await this.client.get(
@@ -3021,10 +3052,10 @@ try {
    * This method provides compatibility for code that expects makeRequest
    */
   async makeRequest(config: any): Promise<any> {
-    console.log('🔧 MAKEQUEST CALLED! Stack trace:', new Error().stack);
-    console.log('🔧 TEMP FIX: makeRequest called with config:', config);
-    console.log('🔧 This instance constructor:', this.constructor.name);
-    console.log('🔧 This instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+    this.logger.info('🔧 MAKEQUEST CALLED! Stack trace:', new Error().stack);
+    this.logger.info('🔧 TEMP FIX: makeRequest called with config:', config);
+    this.logger.info('🔧 This instance constructor:', this.constructor.name);
+    this.logger.info('🔧 This instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
     
     try {
       await this.ensureAuthenticated();
@@ -3034,7 +3065,7 @@ try {
       const url = config.url || config.endpoint;
       const data = config.data || config.body;
       
-      console.log(`🔧 Routing ${method.toUpperCase()} request to: ${url}`);
+      this.logger.info(`🔧 Routing ${method.toUpperCase()} request to: ${url}`);
       
       switch (method) {
         case 'get':

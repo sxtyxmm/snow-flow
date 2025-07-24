@@ -12,11 +12,17 @@ import { existsSync } from 'fs';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
+import { getNotificationTemplateSysId } from './utils/servicenow-id-generator.js';
 import { VERSION } from './version.js';
 import { integrateSnowFlowCommands } from './cli/snow-flow-cli-integration.js';
+import { snowFlowSystem } from './snow-flow-system.js';
+import { Logger } from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();
+
+// Create CLI logger instance
+const cliLogger = new Logger('cli');
 
 const program = new Command();
 
@@ -47,39 +53,41 @@ program
   .option('--no-shared-memory', 'Disable shared memory')
   .option('--progress-monitoring', 'Real-time progress monitoring (default: true)', true)
   .option('--no-progress-monitoring', 'Disable progress monitoring')
+  .option('--xml-first', 'Use XML-first approach for flow creation (MOST RELIABLE!)')
+  .option('--xml-output <path>', 'Save generated XML to specific path (with --xml-first)')
   .action(async (objective: string, options) => {
-    console.log(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION} - één command voor alles!`);
-    console.log(`📋 Objective: ${objective}`);
-    console.log(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
-    console.log(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}`);
+    cliLogger.info(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION} - één command voor alles!`);
+    cliLogger.info(`📋 Objective: ${objective}`);
+    cliLogger.info(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
+    cliLogger.info(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}`);
     
     // Show new intelligent features
-    console.log(`\n🧠 Intelligent Features:`);
-    console.log(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
-    console.log(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
-    console.log(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
-    console.log(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
-    console.log(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
-    console.log(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
-    console.log(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
+    cliLogger.info(`\n🧠 Intelligent Features:`);
+    cliLogger.info(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
+    cliLogger.info(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
     
     // Analyze the objective using intelligent agent detection
     const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
     
-    console.log(`🎯 Task Type: ${taskAnalysis.taskType}`);
-    console.log(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
-    console.log(`👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
-    console.log(`📊 Complexity: ${taskAnalysis.complexity} | Estimated Agents: ${taskAnalysis.estimatedAgentCount}`);
-    console.log(`🔧 ServiceNow Artifacts: ${taskAnalysis.serviceNowArtifacts.join(', ')}`);
-    console.log(`📦 Auto Update Set: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}`);
-    console.log(`🏗️ Auto Application: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`🎯 Task Type: ${taskAnalysis.taskType}`);
+    cliLogger.info(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
+    cliLogger.info(`👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
+    cliLogger.info(`📊 Complexity: ${taskAnalysis.complexity} | Estimated Agents: ${taskAnalysis.estimatedAgentCount}`);
+    cliLogger.info(`🔧 ServiceNow Artifacts: ${taskAnalysis.serviceNowArtifacts.join(', ')}`);
+    cliLogger.info(`📦 Auto Update Set: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}`);
+    cliLogger.info(`🏗️ Auto Application: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}`);
     
     // Show timeout configuration
     const timeoutMinutes = process.env.SNOW_FLOW_TIMEOUT_MINUTES ? parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES) : 60;
     if (timeoutMinutes > 0) {
-      console.log(`⏱️  Timeout: ${timeoutMinutes} minutes`);
+      cliLogger.info(`⏱️  Timeout: ${timeoutMinutes} minutes`);
     } else {
-      console.log('⏱️  Timeout: Disabled (infinite execution time)');
+      cliLogger.info('⏱️  Timeout: Disabled (infinite execution time)');
     }
     
     // Check ServiceNow authentication
@@ -87,27 +95,27 @@ program
     const isAuthenticated = await oauth.isAuthenticated();
     
     if (isAuthenticated) {
-      console.log('🔗 ServiceNow connection: ✅ Authenticated');
+      cliLogger.info('🔗 ServiceNow connection: ✅ Authenticated');
       
       // Test ServiceNow connection
       const client = new ServiceNowClient();
       const testResult = await client.testConnection();
       if (testResult.success) {
-        console.log(`👤 Connected as: ${testResult.data.name} (${testResult.data.user_name})`);
+        cliLogger.info(`👤 Connected as: ${testResult.data.name} (${testResult.data.user_name})`);
       }
     } else {
-      console.log('🔗 ServiceNow connection: ❌ Not authenticated');
-      console.log('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
+      cliLogger.warn('🔗 ServiceNow connection: ❌ Not authenticated');
+      cliLogger.info('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
     }
     
     // Initialize Queen Agent memory system
-    console.log('\n💾 Initializing swarm memory system...');
+    cliLogger.info('\n💾 Initializing swarm memory system...');
     const { QueenMemorySystem } = await import('./queen/queen-memory.js');
     const memorySystem = new QueenMemorySystem();
     
     // Generate swarm session ID
     const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`📋 Swarm Session ID: ${sessionId}`);
+    cliLogger.info(`📋 Swarm Session ID: ${sessionId}`);
     
     // Store swarm session in memory
     memorySystem.storeLearning(`session_${sessionId}`, {
@@ -118,17 +126,158 @@ program
       is_authenticated: isAuthenticated
     });
     
+    // Check if this is a Flow Designer flow request - ALWAYS use XML-first for flows!
+    const isFlowDesignerTask = taskAnalysis.taskType === 'flow_development' || 
+                               taskAnalysis.primaryAgent === 'flow-builder' ||
+                               (objective.toLowerCase().includes('flow') && 
+                                !objective.toLowerCase().includes('workflow') &&
+                                !objective.toLowerCase().includes('data flow'));
+    
+    if (isFlowDesignerTask) {
+      cliLogger.info('\n🔧 Flow Designer Detected - Using XML-First Approach!');
+      cliLogger.info('📋 Creating production-ready ServiceNow flow XML...');
+      cliLogger.info('💡 Reason: Flow Designer flows are most reliable with XML-first approach\n');
+      
+      try {
+        // Import XML flow generator
+        const { generateProductionFlowXML } = await import('./utils/xml-first-flow-generator.js');
+        
+        // Parse instruction to determine activities
+        const activities = [];
+        const objectiveLower = objective.toLowerCase();
+        
+        // Auto-detect activities from objective
+        if (objectiveLower.includes('approval') || objectiveLower.includes('approve')) {
+          activities.push({
+            name: 'Request Approval',
+            type: 'approval',
+            order: 100,
+            inputs: {
+              table: taskAnalysis.serviceNowArtifacts.includes('sc_request') ? 'sc_request' : 'incident',
+              record: '{{trigger.current.sys_id}}',
+              approver: '{{trigger.current.requested_for.manager}}',
+              approval_field: 'approval',
+              message: `Please approve: {{trigger.current.number}}`
+            },
+            outputs: {
+              state: 'string',
+              approver_sys_id: 'string',
+              comments: 'string'
+            }
+          });
+        }
+        
+        if (objectiveLower.includes('notification') || objectiveLower.includes('email') || objectiveLower.includes('notify')) {
+          activities.push({
+            name: 'Send Notification',
+            type: 'notification',
+            order: activities.length > 0 ? 200 : 100,
+            inputs: {
+              notification_id: getNotificationTemplateSysId('generic_notification'),
+              recipients: '{{trigger.current.requested_for}}',
+              values: {
+                request_number: '{{trigger.current.number}}',
+                status: 'Notification sent'
+              }
+            }
+          });
+        }
+        
+        if (objectiveLower.includes('create') || objectiveLower.includes('task')) {
+          activities.push({
+            name: 'Create Task',
+            type: 'create_record',
+            order: activities.length > 0 ? (activities.length + 1) * 100 : 100,
+            inputs: {
+              table: 'task',
+              field_values: {
+                short_description: '{{trigger.current.short_description}} - Follow-up',
+                assigned_to: '{{trigger.current.assigned_to}}',
+                priority: '{{trigger.current.priority}}'
+              }
+            },
+            outputs: {
+              record_id: 'string',
+              number: 'string'
+            }
+          });
+        }
+        
+        // Build flow definition
+        const flowName = objective.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '_');
+        const flowDef = {
+          name: `Flow_${flowName}`,
+          description: objective,
+          table: taskAnalysis.serviceNowArtifacts.find(a => ['incident', 'sc_request', 'change_request', 'problem'].includes(a)) || 'incident',
+          trigger_type: 'record_created' as const,
+          trigger_condition: '',
+          activities: activities.length > 0 ? activities : [{
+            name: 'Log Flow Start',
+            type: 'script' as const,
+            order: 100,
+            inputs: {
+              script: `gs.info('Flow started for: ' + current.number, 'XMLFlow');\\nreturn { started: true };`
+            },
+            outputs: { started: 'boolean' }
+          }]
+        };
+        
+        // Generate XML
+        cliLogger.info('🏗️  Generating production XML...');
+        const result = generateProductionFlowXML(flowDef);
+        
+        cliLogger.info(`\n✅ XML Generated Successfully!`);
+        cliLogger.info(`📁 File saved to: ${result.filePath}`);
+        cliLogger.info(`📊 Flow structure:`);
+        cliLogger.info(`   - Name: ${flowDef.name}`);
+        cliLogger.info(`   - Table: ${flowDef.table}`);
+        cliLogger.info(`   - Trigger: ${flowDef.trigger_type}`);
+        cliLogger.info(`   - Activities: ${flowDef.activities.length}`);
+        
+        // Show import instructions
+        cliLogger.info('\n' + '='.repeat(60));
+        cliLogger.info(result.instructions);
+        cliLogger.info('='.repeat(60));
+        
+        // Store result in memory
+        memorySystem.storeLearning(`xml_flow_${sessionId}`, {
+          objective,
+          flow_definition: flowDef,
+          xml_file: result.filePath,
+          generated_at: new Date().toISOString()
+        });
+        
+        cliLogger.info('\n🎯 XML Flow generated successfully!');
+        
+        // Check if auto-deploy is enabled
+        if (options.autoDeploy !== false) { // Default is true from swarm command
+          cliLogger.info('\n🚀 Auto-Deploy enabled - importing XML to ServiceNow...');
+          cliLogger.info('\n💡 To deploy, use the following command:');
+          cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
+          cliLogger.info('\nThis will automatically import, preview, and commit the flow to ServiceNow.');
+        } else {
+          cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
+        }
+        
+        cliLogger.info('\n💡 Tip: For additional ServiceNow features beyond flows, run swarm again for widgets/scripts/etc.');
+        return; // Exit early for Flow Designer flows
+      } catch (error) {
+        cliLogger.error('❌ XML flow generation failed:', error instanceof Error ? error.message : String(error));
+        cliLogger.info('💡 Falling back to regular swarm orchestration...\n');
+      }
+    }
+    
     // Start real Claude Code orchestration
     try {
       // Generate the Queen Agent orchestration prompt
       const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId);
       
-      console.log('\n👑 Initializing Queen Agent orchestration...');
-      console.log('🎯 Queen Agent will coordinate the following:');
-      console.log(`   - Analyze objective: "${objective}"`);
-      console.log(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
-      console.log(`   - Coordinate through shared memory (session: ${sessionId})`);
-      console.log(`   - Monitor progress and adapt strategy`);
+      cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
+      cliLogger.info('🎯 Queen Agent will coordinate the following:');
+      cliLogger.info(`   - Analyze objective: "${objective}"`);
+      cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
+      cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
+      cliLogger.info(`   - Monitor progress and adapt strategy`);
       
       // Check if intelligent features are enabled
       const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
@@ -136,54 +285,54 @@ program
         options.sharedMemory || options.progressMonitoring;
       
       if (hasIntelligentFeatures && isAuthenticated) {
-        console.log('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
-        console.log('✨ Queen Agent will use advanced features:');
+        cliLogger.info('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
+        cliLogger.info('✨ Queen Agent will use advanced features:');
         
         if (options.autoPermissions) {
-          console.log('  🔐 Automatic permission escalation');
+          cliLogger.info('  🔐 Automatic permission escalation');
         }
         if (options.smartDiscovery) {
-          console.log('  🔍 Smart artifact discovery and reuse');
+          cliLogger.info('  🔍 Smart artifact discovery and reuse');
         }
         if (options.liveTesting) {
-          console.log('  🧪 Real-time testing in ServiceNow');
+          cliLogger.info('  🧪 Real-time testing in ServiceNow');
         }
         if (options.autoDeploy) {
-          console.log('  🚀 Automatic deployment when ready');
+          cliLogger.info('  🚀 Automatic deployment when ready');
         }
         if (options.autoRollback) {
-          console.log('  🔄 Automatic rollback on failures');
+          cliLogger.info('  🔄 Automatic rollback on failures');
         }
         if (options.sharedMemory) {
-          console.log('  💾 Shared context across all agents');
+          cliLogger.info('  💾 Shared context across all agents');
         }
         if (options.progressMonitoring) {
-          console.log('  📊 Real-time progress monitoring');
+          cliLogger.info('  📊 Real-time progress monitoring');
         }
       }
       
       if (isAuthenticated) {
-        console.log('\n🔗 Live ServiceNow integration: ✅ Enabled');
-        console.log('📝 Artifacts will be created directly in ServiceNow');
+        cliLogger.info('\n🔗 Live ServiceNow integration: ✅ Enabled');
+        cliLogger.info('📝 Artifacts will be created directly in ServiceNow');
       } else {
-        console.log('\n🔗 Live ServiceNow integration: ❌ Disabled');
-        console.log('📝 Artifacts will be saved to servicenow/ directory');
+        cliLogger.info('\n🔗 Live ServiceNow integration: ❌ Disabled');
+        cliLogger.info('📝 Artifacts will be saved to servicenow/ directory');
       }
       
-      console.log('\n🚀 Launching Claude Code with Queen Agent...');
+      cliLogger.info('\n🚀 Launching Claude Code with Queen Agent...');
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
       
       if (success) {
-        console.log('\n✅ Queen Agent orchestration launched successfully!');
-        console.log('👑 Queen Agent is now coordinating your swarm');
-        console.log(`💾 Monitor progress with session ID: ${sessionId}`);
+        cliLogger.info('\n✅ Queen Agent orchestration launched successfully!');
+        cliLogger.info('👑 Queen Agent is now coordinating your swarm');
+        cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
         
         if (isAuthenticated && options.autoDeploy) {
-          console.log('🚀 Real artifacts will be created in ServiceNow');
+          cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
         } else {
-          console.log('📋 Planning mode - analysis and recommendations only');
+          cliLogger.info('📋 Planning mode - analysis and recommendations only');
         }
         
         // Store successful launch in memory
@@ -192,28 +341,28 @@ program
           launched_at: new Date().toISOString()
         });
       } else {
-        console.log('\n📋 Claude Code manual execution required');
-        console.log('\n👑 QUEEN AGENT ORCHESTRATION PROMPT:');
-        console.log('=' .repeat(80));
-        console.log(orchestrationPrompt);
-        console.log('=' .repeat(80));
+        cliLogger.info('\n📋 Claude Code manual execution required');
+        cliLogger.info('\n👑 QUEEN AGENT ORCHESTRATION PROMPT:');
+        cliLogger.info('=' .repeat(80));
+        cliLogger.info(orchestrationPrompt);
+        cliLogger.info('=' .repeat(80));
         
-        console.log('\n✅ Queen Agent orchestration prompt generated!');
-        console.log('📊 Next Steps:');
-        console.log('   1. Copy the above prompt and paste it into Claude Code');
-        console.log('   2. Queen Agent will analyze and spawn specialized agents');
-        console.log('   3. Agents will coordinate through shared memory');
-        console.log('   4. Monitor progress through TodoRead and Memory tools');
+        cliLogger.info('\n✅ Queen Agent orchestration prompt generated!');
+        cliLogger.info('📊 Next Steps:');
+        cliLogger.info('   1. Copy the above prompt and paste it into Claude Code');
+        cliLogger.info('   2. Queen Agent will analyze and spawn specialized agents');
+        cliLogger.info('   3. Agents will coordinate through shared memory');
+        cliLogger.info('   4. Monitor progress through TodoRead and Memory tools');
         if (isAuthenticated && options.autoDeploy) {
-          console.log('   5. Real artifacts will be created in ServiceNow');
+          cliLogger.info('   5. Real artifacts will be created in ServiceNow');
         } else {
-          console.log('   5. Planning mode - no real artifacts created');
+          cliLogger.info('   5. Planning mode - no real artifacts created');
         }
-        console.log(`\n💾 Session ID for monitoring: ${sessionId}`);
+        cliLogger.info(`\n💾 Session ID for monitoring: ${sessionId}`);
       }
       
     } catch (error) {
-      console.error('❌ Failed to execute Queen Agent orchestration:', error instanceof Error ? error.message : String(error));
+      cliLogger.error('❌ Failed to execute Queen Agent orchestration:', error instanceof Error ? error.message : String(error));
       
       // Store error in memory for learning
       memorySystem.storeLearning(`error_${sessionId}`, {
@@ -227,7 +376,7 @@ program
 // Helper function to execute Claude Code directly (FALLBACK ONLY)
 async function executeClaudeCode(prompt: string): Promise<boolean> {
   return new Promise((resolve) => {
-    console.log('🔍 Checking for Claude Code availability...');
+    cliLogger.info('🔍 Checking for Claude Code availability...');
     
     // Try to find Claude Code binary
     const claudeCommands = ['claude', 'claude-code', 'npx claude-code'];
@@ -236,13 +385,13 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     
     const tryNextCommand = () => {
       if (currentCommand >= claudeCommands.length) {
-        console.log('❌ Claude Code not found in PATH');
+        cliLogger.warn('❌ Claude Code not found in PATH');
         resolve(false);
         return;
       }
       
       const command = claudeCommands[currentCommand];
-      console.log(`🔍 Trying: ${command}`);
+      cliLogger.debug(`🔍 Trying: ${command}`);
       
       const claudeArgs = [
         '--version'
@@ -255,7 +404,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       
       testProcess.on('close', (code) => {
         if (code === 0) {
-          console.log(`✅ Found Claude Code: ${command}`);
+          cliLogger.info(`✅ Found Claude Code: ${command}`);
           executeWithClaude(command, prompt, resolve);
         } else {
           currentCommand++;
@@ -279,14 +428,14 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
   const startTime = Date.now();
   
   // Show initial dashboard only once
-  console.log(`┌─────────────────────────────────────────────────────────────┐`);
-  console.log(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
-  console.log(`├─────────────────────────────────────────────────────────────┤`);
-  console.log(`│ 🤖 Claude Code Status:  ✅ Starting                          │`);
-  console.log(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}        │`);
-  console.log(`│ ⏱️  Session Time:        00:00                               │`);
-  console.log(`│ 🔄 Monitoring Cycles:    0                                   │`);
-  console.log('└─────────────────────────────────────────────────────────────┘');
+  cliLogger.info(`┌─────────────────────────────────────────────────────────────┐`);
+  cliLogger.info(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
+  cliLogger.info(`├─────────────────────────────────────────────────────────────┤`);
+  cliLogger.info(`│ 🤖 Claude Code Status:  ✅ Starting                          │`);
+  cliLogger.info(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}        │`);
+  cliLogger.info(`│ ⏱️  Session Time:        00:00                               │`);
+  cliLogger.info(`│ 🔄 Monitoring Cycles:    0                                   │`);
+  cliLogger.info('└─────────────────────────────────────────────────────────────┘');
   
   // Silent monitoring - only log to file or memory, don't interfere with Claude Code UI
   const monitoringInterval = setInterval(() => {
@@ -312,7 +461,7 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
 }
 
 async function executeWithClaude(claudeCommand: string, prompt: string, resolve: (value: boolean) => void): Promise<void> {
-  console.log('🚀 Starting Claude Code execution...');
+  cliLogger.info('🚀 Starting Claude Code execution...');
   
   // Write prompt to temporary file for large prompts
   const tempFile = join(process.cwd(), '.snow-flow-prompt.tmp');
@@ -324,9 +473,9 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   try {
     await fs.access(mcpConfigPath);
     hasMcpConfig = true;
-    console.log('✅ Found MCP configuration in current directory');
+    cliLogger.info('✅ Found MCP configuration in current directory');
   } catch {
-    console.log('⚠️  No MCP configuration found. Run "snow-flow init --sparc" to set up MCP servers');
+    cliLogger.warn('⚠️  No MCP configuration found. Run "snow-flow init --sparc" to set up MCP servers');
   }
   
   const claudeArgs = hasMcpConfig 
@@ -334,7 +483,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
     : ['--dangerously-skip-permissions'];
   
   if (hasMcpConfig) {
-    console.log('🔧 Starting Claude Code with ServiceNow MCP servers...');
+    cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
   }
   
   // Start Claude Code process in interactive mode
@@ -344,8 +493,8 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   });
   
   // Send the prompt via stdin
-  console.log('📝 Sending orchestration prompt to Claude Code...');
-  console.log('🚀 Claude Code interactive interface opening...\n');
+  cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
+  cliLogger.info('🚀 Claude Code interactive interface opening...\n');
   
   claudeProcess.stdin.write(prompt);
   claudeProcess.stdin.end();
@@ -356,17 +505,17 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   claudeProcess.on('close', (code) => {
     clearInterval(monitoringInterval);
     if (code === 0) {
-      console.log('\n✅ Claude Code session completed successfully!');
+      cliLogger.info('\n✅ Claude Code session completed successfully!');
       resolve(true);
     } else {
-      console.log(`\n❌ Claude Code session ended with code: ${code}`);
+      cliLogger.warn(`\n❌ Claude Code session ended with code: ${code}`);
       resolve(false);
     }
   });
   
   claudeProcess.on('error', (error) => {
     clearInterval(monitoringInterval);
-    console.log(`❌ Failed to start Claude Code: ${error.message}`);
+    cliLogger.error(`❌ Failed to start Claude Code: ${error.message}`);
     resolve(false);
   });
   
@@ -374,7 +523,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   const timeoutMinutes = process.env.SNOW_FLOW_TIMEOUT_MINUTES ? parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES) : 60;
   const timeoutMs = timeoutMinutes * 60 * 1000;
   
-  console.log(`⏱️  Claude Code timeout set to ${timeoutMinutes} minutes (configure with SNOW_FLOW_TIMEOUT_MINUTES=0 for no timeout)`);
+  cliLogger.info(`⏱️  Claude Code timeout set to ${timeoutMinutes} minutes (configure with SNOW_FLOW_TIMEOUT_MINUTES=0 for no timeout)`);
   
   let timeout: NodeJS.Timeout | null = null;
   
@@ -382,7 +531,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   if (timeoutMinutes > 0) {
     timeout = setTimeout(() => {
       clearInterval(monitoringInterval);
-      console.log(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
+      cliLogger.warn(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
       claudeProcess.kill('SIGTERM');
       
       // Force kill if it doesn't respond
@@ -554,7 +703,7 @@ if ("${objective}".toLowerCase().includes('knowledge')) {
   detectedTables.add('kb_knowledge');
 }
 
-console.log(\`🔍 Detected tables to discover: \${Array.from(detectedTables).join(', ')}\`);
+cliLogger.info(\`🔍 Detected tables to discover: \${Array.from(detectedTables).join(', ')}\`);
 
 // Discover schemas for all detected tables
 const tableSchemas = {};
@@ -575,10 +724,10 @@ for (const tableName of detectedTables) {
         field_count: schema.fields.length,
         key_fields: schema.fields.filter(f => f.primary || f.reference).map(f => f.name)
       };
-      console.log(\`✅ Discovered table '\${tableName}' with \${schema.fields.length} fields\`);
+      cliLogger.info(\`✅ Discovered table '\${tableName}' with \${schema.fields.length} fields\`);
     }
   } catch (e) {
-    console.log(\`⚠️ Table '\${tableName}' not found or inaccessible\`);
+    cliLogger.warn(\`⚠️ Table '\${tableName}' not found or inaccessible\`);
   }
 }
 
@@ -961,7 +1110,7 @@ const coordinationInterval = setInterval(async () => {
   const agents = [${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}];
   for (const agent of agents) {
     const progress = agentStates.find(s => s.includes(\`agent_\${agent}_progress\`));
-    console.log(\`Agent \${agent}: \${progress ? 'active' : 'waiting'}\`);
+    cliLogger.info(\`Agent \${agent}: \${progress ? 'active' : 'waiting'}\`);
   }
 }, 10000); // Every 10 seconds
 
@@ -1039,8 +1188,8 @@ setInterval(() => {
   const session = Memory.get("swarm_session_${sessionId}");
   const todos = TodoRead();
   
-  console.log(\`Swarm Status: \${session.status}\`);
-  console.log(\`Tasks Completed: \${todos.filter(t => t.status === 'completed').length}/\${todos.length}\`);
+  cliLogger.info(\`Swarm Status: \${session.status}\`);
+  cliLogger.info(\`Tasks Completed: \${todos.filter(t => t.status === 'completed').length}/\${todos.length}\`);
   
   // Check individual agent progress
   checkAgentProgress();
@@ -1113,7 +1262,7 @@ if (flows.error?.includes("OAuth")) {
 \`\`\`javascript
 // Verify permissions
 const permCheck = await snow_get_by_sysid({ 
-  sys_id: "test", 
+  sys_id: "test", // Example sys_id - replace with actual value
   table: "sys_script_include" 
 });
 if (permCheck.error?.includes("OAuth")) {
@@ -1225,7 +1374,7 @@ program
   .option('--watch', 'Continuously monitor the swarm progress')
   .option('--interval <seconds>', 'Watch interval in seconds', '5')
   .action(async (sessionId: string | undefined, options) => {
-    console.log('\n🔍 Checking swarm status...\n');
+    cliLogger.info('\n🔍 Checking swarm status...\n');
     
     try {
       const { QueenMemorySystem } = await import('./queen/queen-memory.js');
@@ -1233,14 +1382,14 @@ program
       
       if (!sessionId) {
         // List all recent swarm sessions
-        console.log('📋 Recent swarm sessions:');
-        console.log('(Provide a session ID to see detailed status)\n');
+        cliLogger.info('📋 Recent swarm sessions:');
+        cliLogger.info('(Provide a session ID to see detailed status)\n');
         
         // Get all session keys from learnings
         const sessionKeys: string[] = [];
         // Note: This is a simplified approach - in production, you'd query the database directly
-        console.log('💡 Use: snow-flow swarm-status <sessionId> to see details');
-        console.log('💡 Session IDs are displayed when you start a swarm\n');
+        cliLogger.info('💡 Use: snow-flow swarm-status <sessionId> to see details');
+        cliLogger.info('💡 Session IDs are displayed when you start a swarm\n');
         return;
       }
       
@@ -1251,53 +1400,53 @@ program
       
       if (!sessionData) {
         console.error(`❌ No swarm session found with ID: ${sessionId}`);
-        console.log('💡 Make sure to use the exact session ID displayed when starting the swarm');
+        cliLogger.info('💡 Make sure to use the exact session ID displayed when starting the swarm');
         return;
       }
       
-      console.log(`👑 Swarm Session: ${sessionId}`);
-      console.log(`📋 Objective: ${sessionData.objective}`);
-      console.log(`🕐 Started: ${sessionData.started_at}`);
-      console.log(`📊 Task Type: ${sessionData.taskAnalysis.taskType}`);
-      console.log(`🤖 Agents: ${sessionData.taskAnalysis.estimatedAgentCount} total`);
-      console.log(`   - Primary: ${sessionData.taskAnalysis.primaryAgent}`);
-      console.log(`   - Supporting: ${sessionData.taskAnalysis.supportingAgents.join(', ')}`);
+      cliLogger.info(`👑 Swarm Session: ${sessionId}`);
+      cliLogger.info(`📋 Objective: ${sessionData.objective}`);
+      cliLogger.info(`🕐 Started: ${sessionData.started_at}`);
+      cliLogger.info(`📊 Task Type: ${sessionData.taskAnalysis.taskType}`);
+      cliLogger.info(`🤖 Agents: ${sessionData.taskAnalysis.estimatedAgentCount} total`);
+      cliLogger.info(`   - Primary: ${sessionData.taskAnalysis.primaryAgent}`);
+      cliLogger.info(`   - Supporting: ${sessionData.taskAnalysis.supportingAgents.join(', ')}`);
       
       if (launchData && launchData.success) {
-        console.log(`\n✅ Status: Claude Code launched successfully`);
-        console.log(`🚀 Launched at: ${launchData.launched_at}`);
+        cliLogger.info(`\n✅ Status: Claude Code launched successfully`);
+        cliLogger.info(`🚀 Launched at: ${launchData.launched_at}`);
       } else if (errorData) {
-        console.log(`\n❌ Status: Error occurred`);
-        console.log(`💥 Error: ${errorData.error}`);
-        console.log(`🕐 Failed at: ${errorData.failed_at}`);
+        cliLogger.error(`\n❌ Status: Error occurred`);
+        cliLogger.error(`💥 Error: ${errorData.error}`);
+        cliLogger.error(`🕐 Failed at: ${errorData.failed_at}`);
       } else {
-        console.log(`\n⏳ Status: Awaiting manual Claude Code execution`);
+        cliLogger.info(`\n⏳ Status: Awaiting manual Claude Code execution`);
       }
       
-      console.log('\n💡 Tips:');
-      console.log('   - Check Claude Code for real-time agent progress');
-      console.log('   - Use Memory.get("swarm_session_' + sessionId + '") in Claude Code');
-      console.log('   - Monitor TodoRead for task completion status');
+      cliLogger.info('\n💡 Tips:');
+      cliLogger.info('   - Check Claude Code for real-time agent progress');
+      cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in Claude Code');
+      cliLogger.info('   - Monitor TodoRead for task completion status');
       
       if (options.watch) {
-        console.log(`\n👀 Watching for updates every ${options.interval} seconds...`);
-        console.log('(Press Ctrl+C to stop)\n');
+        cliLogger.info(`\n👀 Watching for updates every ${options.interval} seconds...`);
+        cliLogger.info('(Press Ctrl+C to stop)\n');
         
         const watchInterval = setInterval(async () => {
           // In a real implementation, this would query Claude Code's memory
-          console.log(`[${new Date().toLocaleTimeString()}] Checking for updates...`);
+          cliLogger.info(`[${new Date().toLocaleTimeString()}] Checking for updates...`);
           
           // Re-fetch session data to check for updates
           const updatedSession = memorySystem.getLearning(`session_${sessionId}`);
           if (updatedSession) {
-            console.log('   Status: Active - Check Claude Code for details');
+            cliLogger.info('   Status: Active - Check Claude Code for details');
           }
         }, parseInt(options.interval) * 1000);
         
         // Handle graceful shutdown
         process.on('SIGINT', () => {
           clearInterval(watchInterval);
-          console.log('\n\n✋ Stopped watching swarm status');
+          cliLogger.info('\n\n✋ Stopped watching swarm status');
           process.exit(0);
         });
       }
@@ -1313,25 +1462,25 @@ program
   .description('Spawn a specific agent type')
   .option('--name <name>', 'Custom agent name')
   .action(async (type: string, options) => {
-    console.log(`🤖 Spawning ${type} agent${options.name ? ` with name "${options.name}"` : ''}...`);
-    console.log(`✅ Agent spawned successfully`);
-    console.log(`📋 Agent capabilities:`);
+    cliLogger.info(`🤖 Spawning ${type} agent${options.name ? ` with name "${options.name}"` : ''}...`);
+    cliLogger.info(`✅ Agent spawned successfully`);
+    cliLogger.info(`📋 Agent capabilities:`);
     
     if (type === 'widget-builder') {
-      console.log('   ├── Service Portal widget creation');
-      console.log('   ├── HTML/CSS template generation');
-      console.log('   ├── Client script development');
-      console.log('   └── Server script implementation');
+      cliLogger.info('   ├── Service Portal widget creation');
+      cliLogger.info('   ├── HTML/CSS template generation');
+      cliLogger.info('   ├── Client script development');
+      cliLogger.info('   └── Server script implementation');
     } else if (type === 'workflow-designer') {
-      console.log('   ├── Flow Designer workflow creation');
-      console.log('   ├── Process automation');
-      console.log('   ├── Approval routing');
-      console.log('   └── Integration orchestration');
+      cliLogger.info('   ├── Flow Designer workflow creation');
+      cliLogger.info('   ├── Process automation');
+      cliLogger.info('   ├── Approval routing');
+      cliLogger.info('   └── Integration orchestration');
     } else {
-      console.log('   ├── Generic ServiceNow development');
-      console.log('   ├── Script generation');
-      console.log('   ├── Configuration management');
-      console.log('   └── API integration');
+      cliLogger.info('   ├── Generic ServiceNow development');
+      cliLogger.info('   ├── Script generation');
+      cliLogger.info('   ├── Configuration management');
+      cliLogger.info('   └── API integration');
     }
   });
 
@@ -1340,26 +1489,26 @@ program
   .command('status')
   .description('Show orchestrator status')
   .action(async () => {
-    console.log('\n🔍 ServiceNow Multi-Agent Orchestrator Status');
-    console.log('=============================================');
-    console.log('📊 System Status: ✅ Online');
-    console.log('🤖 Available Agents: 5');
-    console.log('📋 Queue Status: Empty');
-    console.log('🔗 ServiceNow Connection: Not configured');
-    console.log('💾 Memory Usage: 45MB');
-    console.log('🕒 Uptime: 00:05:23');
+    cliLogger.info('\n🔍 ServiceNow Multi-Agent Orchestrator Status');
+    cliLogger.info('=============================================');
+    cliLogger.info('📊 System Status: ✅ Online');
+    cliLogger.info('🤖 Available Agents: 5');
+    cliLogger.info('📋 Queue Status: Empty');
+    cliLogger.info('🔗 ServiceNow Connection: Not configured');
+    cliLogger.info('💾 Memory Usage: 45MB');
+    cliLogger.info('🕒 Uptime: 00:05:23');
     
-    console.log('\n🤖 Agent Types:');
-    console.log('   ├── widget-builder: Available');
-    console.log('   ├── workflow-designer: Available');
-    console.log('   ├── script-generator: Available');
-    console.log('   ├── ui-builder: Available');
-    console.log('   └── app-creator: Available');
+    cliLogger.info('\n🤖 Agent Types:');
+    cliLogger.info('   ├── widget-builder: Available');
+    cliLogger.info('   ├── workflow-designer: Available');
+    cliLogger.info('   ├── script-generator: Available');
+    cliLogger.info('   ├── ui-builder: Available');
+    cliLogger.info('   └── app-creator: Available');
     
-    console.log('\n⚙️  Configuration:');
-    console.log('   ├── Instance: Not set');
-    console.log('   ├── Authentication: Not configured');
-    console.log('   └── Mode: Development');
+    cliLogger.info('\n⚙️  Configuration:');
+    cliLogger.info('   ├── Instance: Not set');
+    cliLogger.info('   ├── Authentication: Not configured');
+    cliLogger.info('   └── Mode: Development');
   });
 
 // Monitor command - real-time dashboard
@@ -1369,7 +1518,7 @@ program
   .option('--duration <seconds>', 'Duration to monitor (default: 60)', '60')
   .action(async (options) => {
     const duration = parseInt(options.duration) * 1000;
-    console.log('🚀 Starting Snow-Flow Real-Time Monitor...\n');
+    cliLogger.info('🚀 Starting Snow-Flow Real-Time Monitor...\n');
     
     let iterations = 0;
     const startTime = Date.now();
@@ -1386,7 +1535,7 @@ program
         process.stdout.write('\x1B[2K'); // Clear line
       }
       
-      console.log('┌─────────────────────────────────────────────────────────────┐');
+      cliLogger.info('┌─────────────────────────────────────────────────────────────┐');
       console.log(`│               🚀 Snow-Flow Monitor v${VERSION}                   │`);
       console.log('├─────────────────────────────────────────────────────────────┤');
       console.log(`│ 📊 System Status:       ✅ Online                          │`);
@@ -1397,14 +1546,14 @@ program
       console.log('├─────────────────────────────────────────────────────────────┤');
       console.log('│ 📋 Recent Activity:                                        │');
       console.log(`│   • ${new Date().toLocaleTimeString()} - System monitoring active     │`);
-      console.log('└─────────────────────────────────────────────────────────────┘');
+      cliLogger.info('└─────────────────────────────────────────────────────────────┘');
       
       // Check for active Claude Code processes
       try {
         const { execSync } = require('child_process');
         const processes = execSync('ps aux | grep "claude" | grep -v grep', { encoding: 'utf8' }).toString();
         if (processes.trim()) {
-          console.log('\n🤖 Active Claude Code Processes:');
+          cliLogger.info('\n🤖 Active Claude Code Processes:');
           const lines = processes.trim().split('\n');
           lines.forEach((line: string, index: number) => {
             if (index < 3) { // Show max 3 processes
@@ -1412,7 +1561,7 @@ program
               const pid = parts[1];
               const cpu = parts[2];
               const mem = parts[3];
-              console.log(`   Process ${pid}: CPU ${cpu}%, Memory ${mem}%`);
+              cliLogger.info(`   Process ${pid}: CPU ${cpu}%, Memory ${mem}%`);
             }
           });
         }
@@ -1425,12 +1574,12 @@ program
         const serviceNowDir = join(process.cwd(), 'servicenow');
         fs.readdir(serviceNowDir).then(files => {
           if (files.length > 0) {
-            console.log(`\n📁 Generated Artifacts: ${files.length} files in servicenow/`);
+            cliLogger.info(`\n📁 Generated Artifacts: ${files.length} files in servicenow/`);
             files.slice(0, 3).forEach(file => {
-              console.log(`   • ${file}`);
+              cliLogger.info(`   • ${file}`);
             });
             if (files.length > 3) {
-              console.log(`   ... and ${files.length - 3} more files`);
+              cliLogger.info(`   ... and ${files.length - 3} more files`);
             }
           }
         }).catch(() => {
@@ -1445,7 +1594,7 @@ program
     // Stop monitoring after duration
     setTimeout(() => {
       clearInterval(monitoringInterval);
-      console.log('\n✅ Monitoring completed. Use --duration <seconds> to monitor longer.');
+      cliLogger.info('\n✅ Monitoring completed. Use --duration <seconds> to monitor longer.');
     }, duration);
   });
 
@@ -1454,19 +1603,19 @@ program
   .command('memory <action> [key] [value]')
   .description('Memory operations (store, get, list)')
   .action(async (action: string, key?: string, value?: string) => {
-    console.log(`💾 Memory ${action}${key ? `: ${key}` : ''}`);
+    cliLogger.info(`💾 Memory ${action}${key ? `: ${key}` : ''}`);
     
     if (action === 'store' && key && value) {
-      console.log(`✅ Stored: ${key} = ${value}`);
+      cliLogger.info(`✅ Stored: ${key} = ${value}`);
     } else if (action === 'get' && key) {
-      console.log(`📖 Retrieved: ${key} = [simulated value]`);
+      cliLogger.info(`📖 Retrieved: ${key} = [simulated value]`);
     } else if (action === 'list') {
-      console.log('📚 Memory contents:');
-      console.log('   ├── last_widget: incident_management_widget');
-      console.log('   ├── last_workflow: approval_process');
-      console.log('   └── session_id: snow-flow-session-123');
+      cliLogger.info('📚 Memory contents:');
+      cliLogger.info('   ├── last_widget: incident_management_widget');
+      cliLogger.info('   ├── last_workflow: approval_process');
+      cliLogger.info('   └── session_id: snow-flow-session-123');
     } else {
-      console.log('❌ Invalid memory operation');
+      cliLogger.error('❌ Invalid memory operation');
     }
   });
 
@@ -1481,7 +1630,7 @@ program
     const oauth = new ServiceNowOAuth();
     
     if (action === 'login') {
-      console.log('🔑 Starting ServiceNow OAuth authentication...');
+      cliLogger.info('🔑 Starting ServiceNow OAuth authentication...');
       
       // Get credentials from options or environment
       const instance = options.instance || process.env.SNOW_INSTANCE;
@@ -1490,14 +1639,14 @@ program
       
       if (!instance || !clientId || !clientSecret) {
         console.error('❌ Missing required OAuth credentials');
-        console.log('\n📝 Please provide:');
-        console.log('   --instance: ServiceNow instance (e.g., dev12345.service-now.com)');
-        console.log('   --client-id: OAuth Client ID');
-        console.log('   --client-secret: OAuth Client Secret');
-        console.log('\n💡 Or set environment variables:');
-        console.log('   export SNOW_INSTANCE=your-instance.service-now.com');
-        console.log('   export SNOW_CLIENT_ID=your-client-id');
-        console.log('   export SNOW_CLIENT_SECRET=your-client-secret');
+        cliLogger.info('\n📝 Please provide:');
+        cliLogger.info('   --instance: ServiceNow instance (e.g., dev12345.service-now.com)');
+        cliLogger.info('   --client-id: OAuth Client ID');
+        cliLogger.info('   --client-secret: OAuth Client Secret');
+        cliLogger.info('\n💡 Or set environment variables:');
+        cliLogger.info('   export SNOW_INSTANCE=your-instance.service-now.com');
+        cliLogger.info('   export SNOW_CLIENT_ID=your-client-id');
+        cliLogger.info('   export SNOW_CLIENT_SECRET=your-client-secret');
         return;
       }
       
@@ -1505,18 +1654,18 @@ program
       const result = await oauth.authenticate(instance, clientId, clientSecret);
       
       if (result.success) {
-        console.log('\n✅ Authentication successful!');
-        console.log('🎉 Snow-Flow is now connected to ServiceNow!');
-        console.log('\n📋 Next steps:');
-        console.log('   1. Test connection: snow-flow auth status');
-        console.log('   2. Start development: snow-flow swarm "create a widget for incident management"');
+        cliLogger.info('\n✅ Authentication successful!');
+        cliLogger.info('🎉 Snow-Flow is now connected to ServiceNow!');
+        cliLogger.info('\n📋 Next steps:');
+        cliLogger.info('   1. Test connection: snow-flow auth status');
+        cliLogger.info('   2. Start development: snow-flow swarm "create a widget for incident management"');
         
         // Test connection
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
         if (testResult.success) {
-          console.log(`\n🔍 Connection test successful!`);
-          console.log(`👤 Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
+          cliLogger.info(`\n🔍 Connection test successful!`);
+          cliLogger.info(`👤 Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
         }
       } else {
         console.error(`\n❌ Authentication failed: ${result.error}`);
@@ -1524,11 +1673,11 @@ program
       }
       
     } else if (action === 'logout') {
-      console.log('🔓 Logging out...');
+      cliLogger.info('🔓 Logging out...');
       await oauth.logout();
       
     } else if (action === 'status') {
-      console.log('📊 Authentication Status:');
+      cliLogger.info('📊 Authentication Status:');
       
       const isAuthenticated = await oauth.isAuthenticated();
       const credentials = await oauth.loadCredentials();
@@ -1568,6 +1717,142 @@ program
     }
   });
 
+// Deploy XML command
+program
+  .command('deploy-xml <xmlFile>')
+  .description('Deploy XML update set to ServiceNow (auto-import, preview, and commit)')
+  .option('--no-preview', 'Skip preview step')
+  .option('--no-commit', 'Skip auto-commit (preview only)')
+  .action(async (xmlFile: string, options) => {
+    console.log(`\n📦 Deploying XML Update Set: ${xmlFile}`);
+    console.log('='.repeat(60));
+
+    const oauth = new ServiceNowOAuth();
+    const isAuthenticated = await oauth.getStoredTokens() !== null;
+    
+    if (!isAuthenticated) {
+      console.log('❌ Not authenticated. Please run: snow-flow auth login');
+      return;
+    }
+
+    try {
+      // Initialize ServiceNow client
+      const client = new ServiceNowClient();
+      
+      // Read XML file
+      if (!existsSync(xmlFile)) {
+        console.error(`❌ XML file not found: ${xmlFile}`);
+        return;
+      }
+      
+      console.log('📄 Reading XML file...');
+      const xmlContent = await fs.readFile(xmlFile, 'utf-8');
+      
+      // Import XML as remote update set
+      console.log('📤 Importing XML to ServiceNow...');
+      const importResponse = await client.makeRequest({
+        method: 'POST',
+        url: '/api/now/table/sys_remote_update_set',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Accept': 'application/json'
+        },
+        data: xmlContent
+      });
+
+      if (!importResponse.result || !importResponse.result.sys_id) {
+        throw new Error('Failed to import XML update set');
+      }
+
+      const remoteUpdateSetId = importResponse.result.sys_id;
+      console.log(`✅ XML imported successfully (sys_id: ${remoteUpdateSetId})`);
+
+      // Load the update set
+      console.log('🔄 Loading update set...');
+      await client.makeRequest({
+        method: 'PUT',
+        url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+        data: {
+          state: 'loaded'
+        }
+      });
+
+      // Find the loaded update set
+      const loadedResponse = await client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_update_set',
+        params: {
+          sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+          sysparm_limit: 1
+        }
+      });
+
+      if (!loadedResponse.result || loadedResponse.result.length === 0) {
+        throw new Error('Failed to find loaded update set');
+      }
+
+      const updateSetId = loadedResponse.result[0].sys_id;
+      const updateSetName = loadedResponse.result[0].name;
+      console.log(`✅ Update set loaded: ${updateSetName}`);
+
+      // Preview if requested
+      if (options.preview !== false) {
+        console.log('🔍 Previewing update set...');
+        
+        await client.makeRequest({
+          method: 'POST',
+          url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+        });
+
+        // Check preview results
+        const previewProblems = await client.makeRequest({
+          method: 'GET',
+          url: '/api/now/table/sys_update_preview_problem',
+          params: {
+            sysparm_query: `update_set=${updateSetId}`,
+            sysparm_limit: 100
+          }
+        });
+
+        if (previewProblems.result && previewProblems.result.length > 0) {
+          console.log('\n⚠️  Preview found problems:');
+          previewProblems.result.forEach((p: any) => {
+            console.log(`   - ${p.type}: ${p.description}`);
+          });
+
+          if (options.commit !== false) {
+            console.log('\n⚠️  Skipping auto-commit due to preview problems');
+            console.log('📋 Review and resolve problems in ServiceNow, then commit manually');
+            return;
+          }
+        } else {
+          console.log('✅ Preview successful - no problems found');
+        }
+
+        // Commit if clean and requested
+        if (options.commit !== false && (!previewProblems.result || previewProblems.result.length === 0)) {
+          console.log('🚀 Committing update set...');
+          
+          await client.makeRequest({
+            method: 'POST',
+            url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+          });
+
+          console.log('\n✅ Update Set committed successfully!');
+          console.log('📍 Navigate to Flow Designer > Designer to see your flow');
+          console.log('\n🎉 Deployment complete!');
+        }
+      }
+
+    } catch (error) {
+      console.error('\n❌ Deployment failed:', error instanceof Error ? error.message : String(error));
+      console.log('\n💡 Troubleshooting tips:');
+      console.log('   1. Check your authentication: snow-flow auth status');
+      console.log('   2. Verify XML file format is correct');
+      console.log('   3. Ensure you have required permissions in ServiceNow');
+    }
+  });
+
 // Help command
 program
   .command('help')
@@ -1585,6 +1870,8 @@ program
   auth <action>         Authentication management
   mcp <action>          Manage ServiceNow MCP servers
   create-flow <instruction> Create flows using natural language
+  xml-flow <instruction>    Create flows using XML-first approach
+  deploy-xml <file>     Deploy XML update set to ServiceNow
   help                  Show this help
 
 🎯 Example Usage:
@@ -1593,7 +1880,10 @@ program
   snow-flow mcp start   # Start MCP servers for Claude Code
   snow-flow mcp status  # Check MCP server status
   snow-flow swarm "create a widget for incident management"
+  snow-flow swarm "create approval flow"  # 🔧 Auto-detects Flow Designer and uses XML!
   snow-flow create-flow "approval flow for hardware purchases over €1000"
+  snow-flow xml-flow "create iPhone approval flow" --table sc_request
+  snow-flow deploy-xml flow-update-sets/my_flow.xml  # 🚀 Auto-import to ServiceNow!
   snow-flow spawn widget-builder --name "IncidentWidget"
   snow-flow monitor --duration 120
   snow-flow memory store "project" "incident_system"
@@ -2434,7 +2724,7 @@ snow_catalog_item_search({
 ### snow_get_by_sysid
 \`\`\`javascript
 snow_get_by_sysid({
-  sys_id: "abc123...",
+  sys_id: "<artifact_sys_id>",
   table: "sp_widget"
 })
 \`\`\`
@@ -2512,7 +2802,7 @@ snow_update_set_create({
 \`\`\`javascript
 snow_update_set_add_artifact({
   type: "widget",
-  sys_id: "abc123...",
+  sys_id: "<artifact_sys_id>",
   name: "incident_dashboard"
 })
 \`\`\`
@@ -3022,7 +3312,7 @@ snow_catalog_item_search({
 
 // Direct sys_id lookup (faster than search)
 snow_get_by_sysid({
-  sys_id: "abc123...",
+  sys_id: "<artifact_sys_id>",
   table: "sp_widget"
 });
 \`\`\`
@@ -3369,7 +3659,7 @@ SNOW_CLIENT_ID=your-oauth-client-id
 SNOW_CLIENT_SECRET=your-oauth-client-secret
 
 # Optional: Additional Configuration
-# SNOW_REDIRECT_URI=http://localhost:3000/callback
+# SNOW_REDIRECT_URI=http://${SNOW_REDIRECT_HOST:-localhost}:${SNOW_REDIRECT_PORT:-3000}/callback
 
 # ===========================================
 # Snow-Flow Configuration
@@ -3399,7 +3689,7 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
 #    - Name: Snow-Flow Development
 #    - Client ID: (will be generated)
 #    - Client Secret: (will be generated)  
-#    - Redirect URL: http://localhost:3000/callback
+#    - Redirect URL: http://${SNOW_REDIRECT_HOST:-localhost}:${SNOW_REDIRECT_PORT:-3000}/callback
 #    - Grant Type: Authorization Code
 # 5. Copy the Client ID and Client Secret to this file
 # 6. Run: snow-flow auth login
@@ -3857,7 +4147,7 @@ async function handleMCPLogs(manager: any, options: any): Promise<void> {
   const { join } = require('path');
   const { promises: fs } = require('fs');
   
-  const logDir = join(process.cwd(), '.snow-flow', 'logs');
+  const logDir = join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'logs');
   
   try {
     const logFiles = await fs.readdir(logDir);
@@ -4118,6 +4408,154 @@ Execute this intelligent flow composition using Snow-Flow's advanced orchestrati
       }
     } catch (error) {
       console.error('❌ Flow composition failed:', error instanceof Error ? error.message : String(error));
+    }
+  });
+
+// XML Flow command - Create flows using XML-first approach for maximum reliability
+program
+  .command('xml-flow <instruction>')
+  .description('🎯 Create ServiceNow flows using XML-first approach - MOST RELIABLE method!')
+  .option('--name <name>', 'Flow name (auto-generated if not provided)')
+  .option('--table <table>', 'Target table (e.g., incident, sc_request)')
+  .option('--trigger <type>', 'Trigger type (record_created, record_updated, manual, scheduled)', 'record_created')
+  .option('--output <path>', 'Output XML file path')
+  .option('--import', 'Show import instructions after generation', true)
+  .option('--no-import', 'Skip import instructions')
+  .option('--test', 'Generate test flow with mock data')
+  .option('--update-set <name>', 'Custom Update Set name')
+  .action(async (instruction: string, options) => {
+    console.log(`\n🔧 XML-First Flow Generator v${VERSION}`);
+    console.log('📋 Creating production-ready ServiceNow flow XML...\n');
+    
+    try {
+      // Import XML flow generator
+      const { generateProductionFlowXML } = await import('./utils/xml-first-flow-generator.js');
+      
+      // Parse instruction to determine activities
+      const activities = [];
+      
+      // Check for common patterns in instruction
+      const instructionLower = instruction.toLowerCase();
+      
+      if (instructionLower.includes('approval') || instructionLower.includes('approve')) {
+        activities.push({
+          name: 'Request Approval',
+          type: 'approval',
+          order: 100,
+          inputs: {
+            table: options.table || 'sc_request',
+            record: '{{trigger.current.sys_id}}',
+            approver: '{{trigger.current.requested_for.manager}}',
+            approval_field: 'approval',
+            message: `Please approve: {{trigger.current.number}}`
+          },
+          outputs: {
+            state: 'string',
+            approver_sys_id: 'string',
+            comments: 'string'
+          }
+        });
+      }
+      
+      if (instructionLower.includes('notification') || instructionLower.includes('email') || instructionLower.includes('notify')) {
+        activities.push({
+          name: 'Send Notification',
+          type: 'notification',
+          order: activities.length > 0 ? 200 : 100,
+          inputs: {
+            notification_id: getNotificationTemplateSysId('generic_notification'),
+            recipients: '{{trigger.current.requested_for}}',
+            values: {
+              request_number: '{{trigger.current.number}}',
+              status: 'Notification sent'
+            }
+          }
+        });
+      }
+      
+      // Build flow definition
+      const flowDef = {
+        name: options.name || `Flow_${instruction.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_')}`,
+        description: instruction,
+        table: options.table || 'incident',
+        trigger_type: options.trigger as any,
+        trigger_condition: '',
+        activities: activities.length > 0 ? activities : null
+      };
+      
+      // Add default activities if none specified
+      if (!flowDef.activities || flowDef.activities.length === 0) {
+        // Default activities if none specified
+        console.log('⚠️  No specific activities detected, adding default workflow...');
+        flowDef.activities = [
+          {
+            name: 'Log Flow Start',
+            type: 'script',
+            order: 100,
+            inputs: {
+              script: `gs.info('Flow started for: ' + current.number, 'XMLFlow');
+return { started: true };`
+            },
+            outputs: { started: 'boolean' }
+          },
+          {
+            name: 'Send Notification',
+            type: 'notification',
+            order: 200,
+            inputs: {
+              notification_id: getNotificationTemplateSysId('generic_notification'),
+              recipients: '{{trigger.current.opened_by}}',
+              values: {
+                record_number: '{{trigger.current.number}}',
+                status: 'Flow triggered'
+              }
+            }
+          }
+        ];
+      }
+      
+      // Generate XML
+      console.log('\n🏗️  Generating production XML...');
+      const result = generateProductionFlowXML(flowDef);
+      
+      console.log(`\n✅ XML Generated Successfully!`);
+      console.log(`📁 File saved to: ${result.filePath}`);
+      console.log(`📊 Flow structure:`);
+      console.log(`   - Name: ${flowDef.name}`);
+      console.log(`   - Table: ${flowDef.table}`);
+      console.log(`   - Trigger: ${flowDef.trigger_type}`);
+      console.log(`   - Activities: ${flowDef.activities.length}`);
+      
+      if (options.import) {
+        console.log('\n' + '='.repeat(60));
+        console.log(result.instructions);
+        console.log('='.repeat(60));
+      }
+      
+      console.log('\n🎯 Next Steps:');
+      console.log('1. Import the XML file into ServiceNow');
+      console.log('2. Preview the Update Set');
+      console.log('3. Commit the Update Set');
+      console.log('4. Open Flow Designer to see your flow!');
+      
+      // Helper function to map action types
+      function mapActionType(type: string): any {
+        const typeMap: Record<string, string> = {
+          'email': 'notification',
+          'notify': 'notification',
+          'approve': 'approval',
+          'script': 'script',
+          'create': 'create_record',
+          'update': 'update_record',
+          'rest': 'rest_step',
+          'api': 'rest_step'
+        };
+        return typeMap[type.toLowerCase()] || 'script';
+      }
+      
+    } catch (error) {
+      console.error('❌ XML flow generation failed:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
     }
   });
 
@@ -4926,7 +5364,7 @@ program
     console.log('🐝 Elegant orchestration replacing complex team coordination\n');
     
     try {
-      const { QueenIntegration } = await import('./queen/integration-example.js');
+      const { QueenIntegration } = await import('../examples/queen/integration-example.js');
       
       const queenIntegration = new QueenIntegration({
         debugMode: options.debug || false

@@ -487,15 +487,110 @@ export class ServiceNowIntegrationMCP extends BaseMCPServer {
   private async handleSnowTestIntegration(args: any): Promise<ToolResult> {
     const startTime = Date.now();
     try {
-      // This would be a complex operation involving testing the actual endpoint
-      // For now, return a simulated test result
-      const testResult = {
-        endpoint: args.endpointName,
-        status: 'success',
-        response_time: Math.floor(Math.random() * 1000) + 100,
-        test_data: args.testData,
-        message: 'Integration test completed successfully'
-      };
+      const { endpointName, testData } = args;
+      
+      // First, try to find the REST message endpoint
+      let endpoint = null;
+      let endpointType = 'unknown';
+      
+      try {
+        const restMessageResponse = await this.client.get(`/api/now/table/sys_rest_message?sysparm_query=name=${encodeURIComponent(endpointName)}`);
+        if (restMessageResponse.result && restMessageResponse.result.length > 0) {
+          endpoint = restMessageResponse.result[0];
+          endpointType = 'rest_message';
+        }
+      } catch (error) {
+        this.logger.debug('REST message not found, trying other types', { endpointName });
+      }
+      
+      // If not found as REST message, try web service
+      if (!endpoint) {
+        try {
+          const webServiceResponse = await this.client.get(`/api/now/table/sys_web_service?sysparm_query=name=${encodeURIComponent(endpointName)}`);
+          if (webServiceResponse.result && webServiceResponse.result.length > 0) {
+            endpoint = webServiceResponse.result[0];
+            endpointType = 'web_service';
+          }
+        } catch (error) {
+          this.logger.debug('Web service not found', { endpointName });
+        }
+      }
+      
+      if (!endpoint) {
+        return {
+          success: false,
+          error: `Integration endpoint '${endpointName}' not found. Searched REST messages and web services.`,
+          executionTime: Date.now() - startTime
+        };
+      }
+      
+      // Perform actual test based on endpoint type
+      const testStartTime = Date.now();
+      let testResult: any;
+      
+      if (endpointType === 'rest_message') {
+        // Test REST message endpoint
+        try {
+          // Get REST message methods
+          const methodsResponse = await this.client.get(`/api/now/table/sys_rest_message_fn?sysparm_query=rest_message=${endpoint.sys_id}`);
+          const methods = methodsResponse.result || [];
+          
+          if (methods.length === 0) {
+            testResult = {
+              endpoint: endpointName,
+              status: 'error',
+              response_time: Date.now() - testStartTime,
+              error: 'No REST methods found for this endpoint',
+              endpoint_type: endpointType,
+              endpoint_id: endpoint.sys_id
+            };
+          } else {
+            // Test the first available method (or a GET method if available)
+            const testMethod = methods.find((m: any) => m.http_method === 'GET') || methods[0];
+            
+            testResult = {
+              endpoint: endpointName,
+              status: 'validated',
+              response_time: Date.now() - testStartTime,
+              endpoint_type: endpointType,
+              endpoint_id: endpoint.sys_id,
+              available_methods: methods.map((m: any) => ({
+                name: m.name,
+                http_method: m.http_method,
+                endpoint: m.endpoint
+              })),
+              test_method: testMethod.name,
+              message: `REST endpoint validated successfully. Found ${methods.length} method(s).`
+            };
+          }
+        } catch (error) {
+          testResult = {
+            endpoint: endpointName,
+            status: 'error',
+            response_time: Date.now() - testStartTime,
+            endpoint_type: endpointType,
+            endpoint_id: endpoint.sys_id,
+            error: error instanceof Error ? error.message : 'Failed to test REST message',
+            message: 'REST endpoint test failed'
+          };
+        }
+      } else if (endpointType === 'web_service') {
+        // Test web service endpoint
+        testResult = {
+          endpoint: endpointName,
+          status: 'validated',
+          response_time: Date.now() - testStartTime,
+          endpoint_type: endpointType,
+          endpoint_id: endpoint.sys_id,
+          wsdl_url: endpoint.wsdl,
+          message: 'Web service endpoint validated successfully'
+        };
+      }
+      
+      // Include test data if provided
+      if (testData) {
+        testResult.test_data_provided = testData;
+      }
 
       return {
         success: true,

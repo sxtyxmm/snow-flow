@@ -6,11 +6,13 @@
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import os from 'os';
 import { createServer } from 'http';
 import { URL } from 'url';
 import axios from 'axios';
 import net from 'net';
 import crypto from 'crypto';
+import { snowFlowConfig } from '../config/snow-flow-config.js';
 
 export interface ServiceNowAuthResult {
   success: boolean;
@@ -45,7 +47,7 @@ export class ServiceNowOAuth {
 
   constructor() {
     // Store tokens in user's home directory
-    const configDir = join(process.env.HOME || process.env.USERPROFILE || '', '.snow-flow');
+    const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow');
     this.tokenPath = join(configDir, 'auth.json');
   }
 
@@ -110,9 +112,12 @@ export class ServiceNowOAuth {
         };
       }
       
-      // Use fixed port 3005 for ServiceNow OAuth
-      const port = 3005;
-      const redirectUri = `http://localhost:${port}/callback`;
+      // Get OAuth redirect configuration from environment or use defaults
+      const oauthConfig = snowFlowConfig.servicenow.oauth;
+      const port = oauthConfig.redirectPort;
+      const host = oauthConfig.redirectHost;
+      const path = oauthConfig.redirectPath;
+      const redirectUri = `http://${host}:${port}${path}`;
       
       // Check if port is available
       const isPortAvailable = await this.checkPortAvailable(port);
@@ -204,7 +209,7 @@ export class ServiceNowOAuth {
     return new Promise((resolve) => {
       const server = createServer(async (req, res) => {
         try {
-          const url = new URL(req.url!, `http://localhost:${port}`);
+          const url = new URL(req.url!, `http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
           
           if (url.pathname === '/callback') {
             const code = url.searchParams.get('code');
@@ -323,7 +328,7 @@ export class ServiceNowOAuth {
       });
       
       server.listen(port, () => {
-        console.log(`🌐 OAuth callback server started on http://localhost:${port}`);
+        console.log(`🌐 OAuth callback server started on http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
         console.log('🚀 Please open the authorization URL in your browser...');
         console.log('⏳ Waiting for OAuth callback...');
         
@@ -406,7 +411,7 @@ export class ServiceNowOAuth {
    */
   private async saveTokens(tokenData: any): Promise<void> {
     try {
-      const configDir = join(process.env.HOME || process.env.USERPROFILE || '', '.snow-flow');
+      const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow');
       await fs.mkdir(configDir, { recursive: true });
       
       const expiresAt = new Date();
@@ -672,7 +677,7 @@ export class ServiceNowOAuth {
       console.error('');
       console.error('💡 To get OAuth credentials:');
       console.error('   • ServiceNow: System OAuth > Application Registry > New OAuth Application');
-      console.error('   • Redirect URI: http://localhost:3005/callback');
+      console.error(`   • Redirect URI: http://${snowFlowConfig.servicenow.oauth.redirectHost}:${snowFlowConfig.servicenow.oauth.redirectPort}${snowFlowConfig.servicenow.oauth.redirectPath}`);
       console.error('   • Scopes: useraccount write admin');
       console.error('');
       

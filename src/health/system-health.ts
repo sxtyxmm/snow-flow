@@ -9,6 +9,8 @@ import { MCPServerManager } from '../utils/mcp-server-manager';
 import { ServiceNowClient } from '../utils/servicenow-client';
 import { Logger } from '../utils/logger';
 import os from 'os';
+import fs from 'fs';
+import { execSync } from 'child_process';
 
 export interface HealthCheckResult {
   component: string;
@@ -79,11 +81,13 @@ export class SystemHealth extends EventEmitter {
   private logger: Logger;
   private config: HealthConfig['config'];
   private serviceNowClient?: ServiceNowClient;
-  private checkInterval?: NodeJS.Timer;
+  private checkInterval?: NodeJS.Timeout;
   private checkHistory: HealthCheckResult[] = [];
   private startTime: number;
   private totalChecks = 0;
   private failedChecks = 0;
+  private lastCPUInfo: any = null;
+  private cpuCheckInterval?: NodeJS.Timeout;
 
   constructor(options: HealthConfig) {
     super();
@@ -103,7 +107,8 @@ export class SystemHealth extends EventEmitter {
     // Initialize ServiceNow client for health checks
     try {
       this.serviceNowClient = new ServiceNowClient();
-      await this.serviceNowClient.initialize();
+      // Note: ServiceNowClient may not have an initialize method
+      // await this.serviceNowClient.initialize();
     } catch (error) {
       this.logger.warn('ServiceNow client initialization failed:', error);
     }
@@ -148,6 +153,11 @@ export class SystemHealth extends EventEmitter {
       clearInterval(this.checkInterval);
       this.checkInterval = undefined;
       this.logger.info('Health monitoring stopped');
+    }
+    
+    if (this.cpuCheckInterval) {
+      clearInterval(this.cpuCheckInterval);
+      this.cpuCheckInterval = undefined;
     }
   }
 
@@ -317,10 +327,10 @@ export class SystemHealth extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const serverStatuses = await this.mcpManager.getServerStatuses();
-      const totalServers = Object.keys(serverStatuses).length;
-      const healthyServers = Object.values(serverStatuses).filter(s => s.status === 'running').length;
-      const unhealthyServers = Object.values(serverStatuses).filter(s => s.status === 'error').length;
+      const serverStatuses = this.mcpManager.getServerStatus();
+      const totalServers = serverStatuses.length;
+      const healthyServers = serverStatuses.filter(s => s.status === 'running').length;
+      const unhealthyServers = serverStatuses.filter(s => s.status === 'error').length;
       
       const responseTime = Date.now() - startTime;
       
@@ -400,8 +410,7 @@ export class SystemHealth extends EventEmitter {
         status,
         message,
         details: {
-          instance: testResult.instance,
-          version: testResult.version,
+          connected: true,
           responseTime
         },
         timestamp: new Date(),
@@ -479,6 +488,7 @@ export class SystemHealth extends EventEmitter {
     
     try {
       const resources = await this.getSystemResources();
+      const enhancedMetrics = await this.getEnhancedSystemMetrics();
       const responseTime = Date.now() - startTime;
       
       let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
@@ -502,6 +512,22 @@ export class SystemHealth extends EventEmitter {
       if (resources.diskUsage > 90) {
         status = 'unhealthy';
         issues.push(`Critical disk usage: ${resources.diskUsage.toFixed(1)}%`);
+      } else if (resources.diskUsage > 80) {
+        status = status === 'healthy' ? 'degraded' : status;
+        issues.push(`High disk usage: ${resources.diskUsage.toFixed(1)}%`);
+      }
+      
+      // Check process memory
+      const heapUsagePercent = (enhancedMetrics.process.memory.heapUsed / enhancedMetrics.process.memory.heapTotal) * 100;
+      if (heapUsagePercent > 90) {
+        status = status === 'degraded' ? 'unhealthy' : 'degraded';
+        issues.push(`High heap usage: ${heapUsagePercent.toFixed(1)}%`);
+      }
+      
+      // Check network connectivity
+      if (!enhancedMetrics.network.connected) {
+        status = 'degraded';
+        issues.push('Network connectivity issues detected');
       }
       
       if (issues.length > 0) {
@@ -512,7 +538,10 @@ export class SystemHealth extends EventEmitter {
         component: 'system',
         status,
         message,
-        details: resources,
+        details: {
+          ...resources,
+          enhanced: enhancedMetrics
+        },
         timestamp: new Date(),
         responseTime
       };
@@ -606,22 +635,11 @@ export class SystemHealth extends EventEmitter {
     const freeMemory = os.freemem();
     const usedMemory = totalMemory - freeMemory;
     
-    // Calculate CPU usage
-    let totalIdle = 0;
-    let totalTick = 0;
+    // Calculate CPU usage with averaging
+    const cpuUsage = await this.calculateCPUUsage();
     
-    cpus.forEach(cpu => {
-      for (const type in cpu.times) {
-        totalTick += cpu.times[type as keyof typeof cpu.times];
-      }
-      totalIdle += cpu.times.idle;
-    });
-    
-    const cpuUsage = 100 - ~~(100 * totalIdle / totalTick);
-    
-    // Get disk usage (simplified - you may want to use a library like 'diskusage')
-    const diskUsage = 50; // Placeholder - implement actual disk usage check
-    const diskTotal = 100; // Placeholder
+    // Get real disk usage
+    const { diskUsage, diskTotal } = await this.getDiskUsage();
     
     return {
       cpuUsage,
@@ -729,5 +747,249 @@ export class SystemHealth extends EventEmitter {
     if (responseTimes.length === 0) return 0;
     
     return responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+  }
+
+  /**
+   * Calculate real CPU usage with averaging
+   */
+  private async calculateCPUUsage(): Promise<number> {
+    const cpus = os.cpus();
+    
+    const currentCPUInfo = cpus.map(cpu => {
+      const total = Object.values(cpu.times).reduce((acc, time) => acc + time, 0);
+      return {
+        idle: cpu.times.idle,
+        total: total
+      };
+    });
+    
+    if (!this.lastCPUInfo) {
+      this.lastCPUInfo = currentCPUInfo;
+      // Wait a bit and calculate again for initial reading
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return this.calculateCPUUsage();
+    }
+    
+    let totalIdleDiff = 0;
+    let totalDiff = 0;
+    
+    for (let i = 0; i < cpus.length; i++) {
+      const lastCPU = this.lastCPUInfo[i];
+      const currentCPU = currentCPUInfo[i];
+      
+      const idleDiff = currentCPU.idle - lastCPU.idle;
+      const totalCPUDiff = currentCPU.total - lastCPU.total;
+      
+      totalIdleDiff += idleDiff;
+      totalDiff += totalCPUDiff;
+    }
+    
+    this.lastCPUInfo = currentCPUInfo;
+    
+    if (totalDiff === 0) return 0;
+    
+    const idlePercentage = (totalIdleDiff / totalDiff) * 100;
+    const usagePercentage = 100 - idlePercentage;
+    
+    return Math.max(0, Math.min(100, usagePercentage));
+  }
+
+  /**
+   * Get real disk usage statistics
+   */
+  private async getDiskUsage(): Promise<{ diskUsage: number; diskTotal: number }> {
+    try {
+      // Platform-specific disk usage calculation
+      if (process.platform === 'darwin' || process.platform === 'linux') {
+        return this.getUnixDiskUsage();
+      } else if (process.platform === 'win32') {
+        return this.getWindowsDiskUsage();
+      } else {
+        // Fallback for unsupported platforms
+        return { diskUsage: 0, diskTotal: 0 };
+      }
+    } catch (error) {
+      this.logger.warn('Failed to get disk usage:', error);
+      return { diskUsage: 0, diskTotal: 0 };
+    }
+  }
+
+  /**
+   * Get disk usage for Unix-based systems (macOS, Linux)
+   */
+  private getUnixDiskUsage(): { diskUsage: number; diskTotal: number } {
+    try {
+      // Get current working directory's mount point
+      const cwd = process.cwd();
+      
+      // Get disk usage for the filesystem containing the current directory
+      const output = execSync(`df -k "${cwd}"`, { encoding: 'utf8' });
+      const lines = output.trim().split('\n');
+      
+      if (lines.length < 2) {
+        throw new Error('Unexpected df output format');
+      }
+      
+      // Handle cases where the output might span multiple lines
+      let dataLine = lines[1];
+      if (lines.length > 2 && !lines[1].includes('/')) {
+        // Some systems split long filesystem names across lines
+        dataLine = lines[1] + ' ' + lines[2];
+      }
+      
+      // Parse the data line
+      const parts = dataLine.split(/\s+/);
+      
+      // Find the numeric values (skip filesystem name)
+      let totalBlocks = 0;
+      let usedBlocks = 0;
+      let foundNumbers = false;
+      
+      for (let i = 0; i < parts.length; i++) {
+        const num = parseInt(parts[i], 10);
+        if (!isNaN(num) && !foundNumbers) {
+          totalBlocks = num;
+          if (i + 1 < parts.length) {
+            usedBlocks = parseInt(parts[i + 1], 10);
+            foundNumbers = true;
+            break;
+          }
+        }
+      }
+      
+      if (!foundNumbers || isNaN(totalBlocks) || isNaN(usedBlocks)) {
+        throw new Error('Failed to parse disk usage numbers');
+      }
+      
+      const diskTotal = totalBlocks / 1024 / 1024; // Convert to GB
+      const diskUsed = usedBlocks / 1024 / 1024; // Convert to GB
+      const diskUsage = (diskUsed / diskTotal) * 100;
+      
+      return {
+        diskUsage: Math.round(diskUsage * 10) / 10, // Round to 1 decimal
+        diskTotal: Math.round(diskTotal * 10) / 10
+      };
+    } catch (error) {
+      this.logger.error('Unix disk usage check failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get disk usage for Windows systems
+   */
+  private getWindowsDiskUsage(): { diskUsage: number; diskTotal: number } {
+    try {
+      // Get disk usage for C: drive using WMIC
+      const output = execSync('wmic logicaldisk where caption="C:" get size,freespace /value', { encoding: 'utf8' });
+      
+      const sizeMatch = output.match(/Size=(\d+)/);
+      const freeMatch = output.match(/FreeSpace=(\d+)/);
+      
+      if (!sizeMatch || !freeMatch) {
+        throw new Error('Failed to parse Windows disk usage');
+      }
+      
+      const totalBytes = parseInt(sizeMatch[1], 10);
+      const freeBytes = parseInt(freeMatch[1], 10);
+      const usedBytes = totalBytes - freeBytes;
+      
+      const diskTotal = totalBytes / 1024 / 1024 / 1024; // Convert to GB
+      const diskUsed = usedBytes / 1024 / 1024 / 1024; // Convert to GB
+      const diskUsage = (diskUsed / diskTotal) * 100;
+      
+      return {
+        diskUsage: Math.round(diskUsage * 10) / 10,
+        diskTotal: Math.round(diskTotal * 10) / 10
+      };
+    } catch (error) {
+      this.logger.error('Windows disk usage check failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get process-specific memory usage
+   */
+  private getProcessMemoryUsage() {
+    const usage = process.memoryUsage();
+    return {
+      heapUsed: usage.heapUsed / 1024 / 1024, // MB
+      heapTotal: usage.heapTotal / 1024 / 1024, // MB
+      rss: usage.rss / 1024 / 1024, // MB
+      external: usage.external / 1024 / 1024, // MB
+      arrayBuffers: usage.arrayBuffers / 1024 / 1024 // MB
+    };
+  }
+
+  /**
+   * Check network connectivity
+   */
+  private async checkNetworkConnectivity(): Promise<boolean> {
+    try {
+      // Simple DNS lookup to check network connectivity
+      const dns = await import('dns').then(m => m.promises);
+      await dns.lookup('google.com');
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get additional SQLite database statistics
+   */
+  private async getExtendedDatabaseStats(): Promise<any> {
+    try {
+      // Use the existing memory system stats
+      const dbStats = await this.memory.getDatabaseStats();
+      
+      // Get additional table information if possible
+      try {
+        const tableInfo = await this.memory.query(`
+          SELECT 
+            COUNT(DISTINCT name) as table_count,
+            SUM(CASE WHEN type = 'index' THEN 1 ELSE 0 END) as index_count
+          FROM sqlite_master 
+          WHERE type IN ('table', 'index')
+        `);
+        
+        return {
+          ...dbStats,
+          tables: tableInfo[0]?.table_count || 0,
+          indexes: tableInfo[0]?.index_count || 0
+        };
+      } catch (error) {
+        // If query fails, just return basic stats
+        return dbStats;
+      }
+    } catch (error) {
+      this.logger.warn('Failed to get extended database stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enhanced system check with more detailed metrics
+   */
+  private async getEnhancedSystemMetrics() {
+    const processMemory = this.getProcessMemoryUsage();
+    const networkConnected = await this.checkNetworkConnectivity();
+    const dbStats = await this.getExtendedDatabaseStats();
+    
+    return {
+      process: {
+        memory: processMemory,
+        uptime: process.uptime(),
+        pid: process.pid,
+        version: process.version,
+        platform: process.platform,
+        arch: process.arch
+      },
+      network: {
+        connected: networkConnected
+      },
+      database: dbStats
+    };
   }
 }

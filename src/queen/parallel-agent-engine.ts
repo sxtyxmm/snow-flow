@@ -8,6 +8,7 @@ import { EventEmitter } from 'eventemitter3';
 import { TodoItem, TodoStatus } from '../types/todo.types';
 import { Agent, AgentType, ServiceNowTask } from './types';
 import { QueenMemorySystem } from './queen-memory';
+import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
 
 export interface ParallelizationOpportunity {
@@ -57,6 +58,7 @@ export class ParallelAgentEngine extends EventEmitter {
   private activeExecutionPlans: Map<string, ParallelExecutionPlan>;
   private agentWorkloads: Map<string, AgentWorkload>;
   private parallelizationHistory: Map<string, { success: boolean; speedup: number; }>;
+  private logger = new Logger('ParallelAgentEngine');
 
   constructor(memory: QueenMemorySystem) {
     super();
@@ -77,7 +79,11 @@ export class ParallelAgentEngine extends EventEmitter {
     objectiveType: ServiceNowTask['type'],
     currentAgents: Agent[]
   ): Promise<ParallelizationOpportunity[]> {
-    console.log('🧠 Analyzing parallelization opportunities...');
+    this.logger.info('🧠 Analyzing parallelization opportunities', { 
+      todoCount: todos.length,
+      objectiveType,
+      currentAgentCount: currentAgents.length
+    });
     
     const opportunities: ParallelizationOpportunity[] = [];
     
@@ -102,7 +108,11 @@ export class ParallelAgentEngine extends EventEmitter {
       .filter(opp => opp.confidence > 0.5 && opp.estimatedSpeedup > 1.1) // Lower thresholds
       .sort((a, b) => (b.confidence * b.estimatedSpeedup) - (a.confidence * a.estimatedSpeedup));
 
-    console.log(`🎯 Found ${rankedOpportunities.length} high-confidence parallelization opportunities`);
+    this.logger.info(`🎯 Found ${rankedOpportunities.length} high-confidence parallelization opportunities`, {
+      totalOpportunities: opportunities.length,
+      rankedCount: rankedOpportunities.length,
+      averageConfidence: rankedOpportunities.reduce((sum, opp) => sum + opp.confidence, 0) / rankedOpportunities.length || 0
+    });
     
     // Store opportunities for learning
     await this.storeOpportunities(todos, rankedOpportunities);
@@ -141,11 +151,14 @@ export class ParallelAgentEngine extends EventEmitter {
     
     this.activeExecutionPlans.set(planId, plan);
     
-    console.log(`📋 Created execution plan ${planId}:`);
-    console.log(`  • Strategy: ${strategy}`);
-    console.log(`  • Team size: ${agentTeam.length} agents`);
-    console.log(`  • Est. completion: ${estimatedCompletion} minutes`);
-    console.log(`  • Max parallelism: ${plan.maxParallelism} concurrent agents`);
+    this.logger.info(`📋 Created execution plan ${planId}`, {
+      planId,
+      strategy,
+      teamSize: agentTeam.length,
+      estimatedCompletion,
+      maxParallelism: plan.maxParallelism,
+      opportunityCount: opportunities.length
+    });
     
     return plan;
   }
@@ -164,7 +177,12 @@ export class ParallelAgentEngine extends EventEmitter {
       estimatedSpeedup: string;
     };
   }> {
-    console.log(`🚀 Executing parallel plan ${plan.planId}`);
+    this.logger.info(`🚀 Executing parallel plan ${plan.planId}`, {
+      planId: plan.planId,
+      strategy: plan.executionStrategy,
+      agentTeamSize: plan.agentTeam.length,
+      maxParallelism: plan.maxParallelism
+    });
     
     const spawnedAgents: Agent[] = [];
     

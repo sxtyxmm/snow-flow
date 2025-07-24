@@ -8,6 +8,7 @@ import { BaseMCPServer } from './base-mcp-server';
 import { MemorySystem } from '../memory/memory-system';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 
 interface TodoItem {
   id: string;
@@ -36,7 +37,7 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     this.config = config;
 
     // Initialize memory path
-    this.memoryPath = process.env.MEMORY_PATH || path.join(process.cwd(), '.snow-flow', 'memory');
+    this.memoryPath = process.env.MEMORY_PATH || path.join(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow'), 'memory');
     
     // Ensure memory directory exists
     if (!fs.existsSync(this.memoryPath)) {

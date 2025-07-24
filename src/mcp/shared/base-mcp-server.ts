@@ -9,6 +9,7 @@ import { ServiceNowOAuth } from '../../utils/snow-oauth.js';
 import { Logger } from '../../utils/logger.js';
 import { AgentContextProvider } from './agent-context-provider.js';
 import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
+import { MCPResourceManager } from './mcp-resource-manager.js';
 
 export interface MCPToolResult {
   content: Array<{
@@ -31,6 +32,7 @@ export abstract class BaseMCPServer {
   protected logger: Logger;
   protected contextProvider: AgentContextProvider;
   protected memory: MCPMemoryManager;
+  protected resourceManager: MCPResourceManager;
 
   constructor(name: string, version: string = '1.0.0') {
     this.server = new Server(
@@ -41,6 +43,7 @@ export abstract class BaseMCPServer {
       {
         capabilities: {
           tools: {},
+          resources: {},
         },
       }
     );
@@ -50,6 +53,7 @@ export abstract class BaseMCPServer {
     this.logger = new Logger(name);
     this.contextProvider = new AgentContextProvider();
     this.memory = MCPMemoryManager.getInstance();
+    this.resourceManager = new MCPResourceManager(name);
   }
 
   /**
@@ -216,7 +220,7 @@ ${errorText}
 
 💡 To get OAuth credentials:
    • ServiceNow: System OAuth > Application Registry > New OAuth Application
-   • Redirect URI: http://localhost:3005/callback
+   • Redirect URI: http://localhost:3005/callback (configurable via SNOW_REDIRECT_* env vars)
    • Scopes: useraccount write admin`
         }
       ]
@@ -903,16 +907,1476 @@ ${errorText}
   }
   
   private async escalateToGlobalScope(operation: string, context: AgentContext): Promise<any> {
-    // Implementation would escalate permissions or scope
-    // This is a placeholder for actual escalation logic
-    this.logger.info(`Attempting scope escalation for ${operation}`);
-    return { success: false, reason: 'Escalation not implemented yet' };
+    this.logger.info(`🔝 Attempting permission escalation for ${operation}`);
+    
+    try {
+      // Enhanced authentication validation
+      const authValidation = await this.validateServiceNowConnection();
+      if (!authValidation.success) {
+        return {
+          success: false,
+          reason: 'Authentication validation failed before escalation',
+          recovery_action: 'Run: snow-flow auth login',
+          auth_error: authValidation.error
+        };
+      }
+
+      // Get current user information with enhanced OAuth scope handling
+      this.logger.info('🔍 Analyzing current user permissions and OAuth scopes...');
+      
+      let currentUser: any = null;
+      let currentRoles: string[] = [];
+      let oAuthScopes: string[] = [];
+      
+      try {
+        // Get current user details
+        const userResponse = await this.client.makeRequest({
+          method: 'GET',
+          endpoint: '/api/now/v2/table/sys_user',
+          params: {
+            sysparm_query: 'active=true^user_name=javascript:gs.getUserName()',
+            sysparm_fields: 'sys_id,user_name,name,email,active,locked_out,roles',
+            sysparm_limit: 1
+          }
+        });
+        
+        if (userResponse.data?.result?.[0]) {
+          currentUser = userResponse.data.result[0];
+          this.logger.info(`👤 Current user: ${currentUser.name} (${currentUser.user_name})`);
+        }
+
+        // Get detailed role information
+        const rolesResponse = await this.client.makeRequest({
+          method: 'GET',
+          endpoint: '/api/now/v2/table/sys_user_has_role',
+          params: {
+            sysparm_query: `user.user_name=${currentUser?.user_name || 'javascript:gs.getUserName()'}`,
+            sysparm_fields: 'role.name,role.description,state,inherited',
+            sysparm_limit: 100
+          }
+        });
+        
+        if (rolesResponse.data?.result) {
+          currentRoles = rolesResponse.data.result
+            .filter((r: any) => r.state === 'active')
+            .map((r: any) => r['role.name'])
+            .filter(Boolean);
+          
+          this.logger.info(`🛡️ Active roles: ${currentRoles.join(', ')}`);
+        }
+
+        // Check OAuth token scopes if available
+        try {
+          // Attempt to get token info if method exists
+          if (typeof (this.oauth as any).getTokenInfo === 'function') {
+            const tokenInfo = await (this.oauth as any).getTokenInfo();
+            if (tokenInfo?.scope) {
+              oAuthScopes = tokenInfo.scope.split(' ');
+              this.logger.info(`🔑 OAuth scopes: ${oAuthScopes.join(', ')}`);
+            }
+          } else {
+            this.logger.debug('OAuth getTokenInfo method not available');
+          }
+        } catch (scopeError) {
+          this.logger.debug('Could not retrieve OAuth scope information', { error: scopeError });
+        }
+
+      } catch (roleError) {
+        this.logger.warn('Could not fetch complete user information', { error: roleError });
+        // Continue with limited information
+      }
+
+      // Enhanced role analysis based on operation type
+      const requiredRoles = this.determineRequiredRoles(operation);
+      const requiredScopes = this.determineRequiredOAuthScopes(operation);
+      const missingRoles = requiredRoles.filter(role => !currentRoles.includes(role));
+      const missingScopes = requiredScopes.filter(scope => !oAuthScopes.includes(scope));
+
+      this.logger.info(`📊 Permission Analysis:`, {
+        required_roles: requiredRoles,
+        current_roles: currentRoles,
+        missing_roles: missingRoles,
+        required_scopes: requiredScopes,
+        current_scopes: oAuthScopes,
+        missing_scopes: missingScopes
+      });
+
+      // Check if user has sufficient permissions
+      if (missingRoles.length === 0 && missingScopes.length === 0) {
+        // User has all required permissions, issue might be elsewhere
+        return {
+          success: true,
+          reason: 'User has all required roles and scopes - permission issue may be configuration related',
+          current_roles: currentRoles,
+          current_scopes: oAuthScopes,
+          diagnostic_actions: [
+            'Check ACL rules for the specific table/operation',
+            'Verify application scope permissions',
+            'Check domain separation settings',
+            'Review field-level security',
+            'Validate write permissions for target table'
+          ]
+        };
+      }
+
+      // Enhanced automatic role assignment with better error handling
+      let autoAssignmentAttempted = false;
+      const canAutoAssign = currentRoles.includes('admin') || 
+                           currentRoles.includes('user_admin') || 
+                           currentRoles.includes('system_administrator');
+      
+      if (canAutoAssign && missingRoles.length > 0) {
+        this.logger.info('🤖 Attempting automatic role assignment...');
+        
+        try {
+          const assignmentResult = await this.attemptEnhancedRoleAssignment(
+            currentUser?.sys_id, 
+            missingRoles,
+            context
+          );
+          
+          if (assignmentResult.success) {
+            autoAssignmentAttempted = true;
+            
+            // Update context with successful assignment
+            await this.memory.updateSharedContext({
+              session_id: context.session_id,
+              context_key: `permission_escalation_${operation}`,
+              context_value: JSON.stringify({
+                escalation_type: 'automatic_role_assignment',
+                assigned_roles: assignmentResult.assigned_roles,
+                timestamp: new Date().toISOString(),
+                operation: operation
+              }),
+              created_by_agent: context.agent_id
+            });
+            
+            return {
+              success: true,
+              reason: 'Roles automatically assigned successfully',
+              assigned_roles: assignmentResult.assigned_roles,
+              assignment_details: assignmentResult.details,
+              recommended_action: 'Retry the original operation - new permissions are active'
+            };
+          }
+        } catch (assignError) {
+          this.logger.warn('Automatic role assignment failed', { error: assignError });
+          autoAssignmentAttempted = true; // We tried
+        }
+      }
+
+      // Enhanced OAuth scope elevation attempt
+      if (missingScopes.length > 0) {
+        this.logger.info('🔑 Attempting OAuth scope elevation...');
+        
+        try {
+          const scopeElevationResult = await this.attemptOAuthScopeElevation(
+            missingScopes,
+            operation,
+            context
+          );
+          
+          if (scopeElevationResult.success) {
+            return {
+              success: true,
+              reason: 'OAuth scopes elevated successfully',
+              elevated_scopes: scopeElevationResult.elevated_scopes,
+              recommended_action: 'Retry the original operation with elevated OAuth permissions'
+            };
+          }
+        } catch (scopeError) {
+          this.logger.warn('OAuth scope elevation failed', { error: scopeError });
+        }
+      }
+
+      // Request Queen intervention for complex permission issues
+      await this.requestQueenIntervention(context, {
+        type: 'permission_escalation_required',
+        priority: 'high',
+        description: `Permission escalation needed for ${operation}. Missing roles: ${missingRoles.join(', ')}. Missing OAuth scopes: ${missingScopes.join(', ')}.`,
+        attempted_solutions: [
+          ...(autoAssignmentAttempted ? ['automatic_role_assignment'] : []),
+          ...(missingScopes.length > 0 ? ['oauth_scope_elevation'] : [])
+        ]
+      });
+
+      // Comprehensive manual escalation instructions
+      const manualSteps = [
+        `1. ServiceNow Administrator Actions Required:`,
+        `   • Navigate to User Administration > Users`,
+        `   • Find user: ${currentUser?.name || 'Current User'} (${currentUser?.user_name || 'unknown'})`,
+        `   • Add missing roles: ${missingRoles.join(', ')}`,
+        ...missingScopes.length > 0 ? [
+          `2. OAuth Application Configuration:`,
+          `   • Update OAuth application scopes to include: ${missingScopes.join(', ')}`,
+          `   • Re-authorize application with elevated permissions`
+        ] : [],
+        `${missingScopes.length > 0 ? '3' : '2'}. Verification Steps:`,
+        `   • Test permissions: snow_validate_live_connection({ test_level: "permissions" })`,
+        `   • Retry operation: ${operation}`
+      ];
+
+      return {
+        success: false,
+        reason: 'Manual permission escalation required',
+        current_user: currentUser,
+        current_roles: currentRoles,
+        missing_roles: missingRoles,
+        current_oauth_scopes: oAuthScopes,
+        missing_oauth_scopes: missingScopes,
+        escalation_required: true,
+        auto_assignment_attempted: autoAssignmentAttempted,
+        manual_steps: manualSteps,
+        estimated_time: `${5 + (missingRoles.length * 2)}–${10 + (missingRoles.length * 3)} minutes with admin access`,
+        priority: missingRoles.includes('admin') || missingRoles.includes('system_administrator') ? 'critical' : 'high'
+      };
+
+    } catch (error) {
+      this.logger.error('🚨 Permission escalation process failed', { error, operation, context });
+      
+      return {
+        success: false,
+        reason: 'Critical error during permission escalation',
+        error: error instanceof Error ? error.message : String(error),
+        error_type: this.categorizeError(error instanceof Error ? error.message : String(error)),
+        recovery_actions: [
+          '1. Verify ServiceNow connection: snow_validate_live_connection()',
+          '2. Check authentication status: snow_auth_diagnostics()',
+          '3. Confirm API access is enabled in ServiceNow',
+          '4. Contact ServiceNow administrator for manual role assignment',
+          '5. Review system logs for additional error details'
+        ],
+        escalation_required: true,
+        contact_admin: true
+      };
+    }
+  }
+
+  /**
+   * Determine required roles based on operation type
+   */
+  private determineRequiredRoles(operation: string): string[] {
+    const roles: string[] = [];
+    
+    // Base roles for most operations
+    if (operation.includes('deploy') || operation.includes('create') || operation.includes('update')) {
+      roles.push('rest_service', 'web_service_admin');
+    }
+    
+    // Widget operations
+    if (operation.includes('widget')) {
+      roles.push('sp_admin', 'sp_portal_admin');
+    }
+    
+    // Flow operations  
+    if (operation.includes('flow') || operation.includes('workflow')) {
+      roles.push('flow_designer', 'admin');
+    }
+    
+    // Application operations
+    if (operation.includes('application') || operation.includes('app')) {
+      roles.push('app_creator', 'admin');
+    }
+    
+    // Update set operations
+    if (operation.includes('update_set')) {
+      roles.push('admin');
+    }
+    
+    // Global scope operations
+    if (operation.includes('global')) {
+      roles.push('admin', 'system_administrator');
+    }
+    
+    return Array.from(new Set(roles)); // Remove duplicates
+  }
+
+  /**
+   * Determine required OAuth scopes based on operation type
+   */
+  private determineRequiredOAuthScopes(operation: string): string[] {
+    const scopes: string[] = ['useraccount']; // Base scope for most operations
+    
+    // Operations that require write access
+    if (operation.includes('deploy') || operation.includes('create') || operation.includes('update')) {
+      scopes.push('write');
+    }
+    
+    // Administrative operations
+    if (operation.includes('admin') || operation.includes('global') || operation.includes('system')) {
+      scopes.push('admin');
+    }
+    
+    // Flow Designer operations may need specific scopes
+    if (operation.includes('flow') || operation.includes('workflow')) {
+      scopes.push('write', 'admin');
+    }
+    
+    return Array.from(new Set(scopes)); // Remove duplicates
+  }
+
+  /**
+   * Enhanced role assignment with better validation
+   */
+  private async attemptEnhancedRoleAssignment(
+    userSysId: string, 
+    roles: string[], 
+    context: AgentContext
+  ): Promise<{success: boolean, assigned_roles?: string[], details?: any, error?: string}> {
+    try {
+      const assignedRoles: string[] = [];
+      const assignmentDetails: any[] = [];
+      
+      for (const roleName of roles) {
+        try {
+          // Get the role sys_id with enhanced validation
+          const roleResponse = await this.client.makeRequest({
+            method: 'GET',
+            endpoint: '/api/now/v2/table/sys_user_role',
+            params: {
+              sysparm_query: `name=${roleName}^active=true`,
+              sysparm_fields: 'sys_id,name,description,can_delegate',
+              sysparm_limit: 1
+            }
+          });
+          
+          if (roleResponse.data?.result?.[0]) {
+            const role = roleResponse.data.result[0];
+            
+            // Check if user already has this role
+            const existingRoleResponse = await this.client.makeRequest({
+              method: 'GET',
+              endpoint: '/api/now/v2/table/sys_user_has_role',
+              params: {
+                sysparm_query: `user=${userSysId}^role=${role.sys_id}`,
+                sysparm_limit: 1
+              }
+            });
+            
+            if (existingRoleResponse.data?.result?.length > 0) {
+              this.logger.info(`User already has role: ${roleName}`);
+              assignedRoles.push(roleName);
+              continue;
+            }
+            
+            // Attempt to assign role
+            const assignmentResponse = await this.client.makeRequest({
+              method: 'POST',
+              endpoint: '/api/now/v2/table/sys_user_has_role',
+              data: {
+                user: userSysId,
+                role: role.sys_id,
+                state: 'active',
+                granted_by: 'snow_flow_automation'
+              }
+            });
+            
+            if (assignmentResponse.data?.result) {
+              assignedRoles.push(roleName);
+              assignmentDetails.push({
+                role: roleName,
+                sys_id: assignmentResponse.data.result.sys_id,
+                status: 'assigned'
+              });
+              this.logger.info(`Successfully assigned role: ${roleName}`);
+            }
+          } else {
+            this.logger.warn(`Role not found: ${roleName}`);
+          }
+        } catch (roleError) {
+          this.logger.warn(`Failed to assign role ${roleName}`, { error: roleError });
+          assignmentDetails.push({
+            role: roleName,
+            status: 'failed',
+            error: roleError instanceof Error ? roleError.message : String(roleError)
+          });
+        }
+      }
+      
+      return {
+        success: assignedRoles.length > 0,
+        assigned_roles: assignedRoles,
+        details: assignmentDetails
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Attempt OAuth scope elevation
+   */
+  private async attemptOAuthScopeElevation(
+    missingScopes: string[],
+    operation: string,
+    context: AgentContext
+  ): Promise<{success: boolean, elevated_scopes?: string[], error?: string}> {
+    try {
+      this.logger.info('Requesting OAuth scope elevation...', { missing_scopes: missingScopes });
+      
+      // In most ServiceNow OAuth implementations, scope elevation requires
+      // re-authorization through the OAuth flow. We can't dynamically elevate
+      // scopes without user interaction.
+      
+      // Check if we can refresh token with additional scopes
+      let currentToken = null;
+      try {
+        if (typeof (this.oauth as any).getTokenInfo === 'function') {
+          currentToken = await (this.oauth as any).getTokenInfo();
+        }
+      } catch (error) {
+        this.logger.debug('Could not get current token info', { error });
+      }
+      
+      if (!currentToken) {
+        return {
+          success: false,
+          error: 'No active OAuth token found or method not available'
+        };
+      }
+      
+      // Attempt token refresh - this typically won't add new scopes
+      // but might refresh existing elevated permissions
+      const refreshResult = await this.oauth.refreshAccessToken();
+      if (!refreshResult.success) {
+        return {
+          success: false,
+          error: 'Failed to refresh OAuth token'
+        };
+      }
+      
+      // Check if the refresh gave us the scopes we need
+      let newTokenInfo = null;
+      try {
+        if (typeof (this.oauth as any).getTokenInfo === 'function') {
+          newTokenInfo = await (this.oauth as any).getTokenInfo();
+        }
+      } catch (error) {
+        this.logger.debug('Could not get new token info after refresh', { error });
+      }
+      
+      const newScopes = newTokenInfo?.scope?.split(' ') || [];
+      const actuallyMissing = missingScopes.filter(scope => !newScopes.includes(scope));
+      
+      if (actuallyMissing.length === 0) {
+        return {
+          success: true,
+          elevated_scopes: missingScopes
+        };
+      }
+      
+      // For missing scopes, we need manual re-authorization
+      return {
+        success: false,
+        error: `OAuth scopes require manual re-authorization: ${actuallyMissing.join(', ')}`
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Enhanced deployment context extraction
+   */
+  private async extractEnhancedDeploymentContext(operation: string, context: AgentContext): Promise<any> {
+    try {
+      // Extract from agent context
+      const contextData = context as any;
+      
+      // Enhanced artifact type detection
+      const artifactType = this.extractArtifactType(operation);
+      const artifactName = contextData.artifact_name || 
+                          this.extractArtifactName(operation) || 
+                          `fallback_${artifactType}_${Date.now()}`;
+      
+      // Determine current scope from various sources
+      let currentScope = contextData.current_scope || 'scoped_application';
+      if (contextData.deployment_config?.sys_scope) {
+        currentScope = contextData.deployment_config.sys_scope;
+      }
+      
+      // Analyze original error for better global scope strategy
+      const originalError = contextData.original_error || 'Scoped deployment failed';
+      const globalScopeStrategy = this.analyzeErrorForGlobalScopeStrategy(originalError);
+      
+      return {
+        artifact_type: artifactType,
+        artifact_name: artifactName,
+        current_scope: currentScope,
+        original_error: originalError,
+        global_scope_strategy: globalScopeStrategy,
+        deployment_config: contextData.deployment_config || {},
+        operation_context: {
+          session_id: context.session_id,
+          agent_id: context.agent_id,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      this.logger.warn('Failed to extract enhanced deployment context', { error });
+      return null;
+    }
+  }
+
+  /**
+   * Analyze error for global scope strategy
+   */
+  private analyzeErrorForGlobalScopeStrategy(error: string): string {
+    const errorLower = error.toLowerCase();
+    
+    if (errorLower.includes('scope') || errorLower.includes('application')) {
+      return 'direct_global_deployment';
+    }
+    if (errorLower.includes('permission') || errorLower.includes('access')) {
+      return 'elevated_permissions_deployment';
+    }
+    if (errorLower.includes('table') || errorLower.includes('field')) {
+      return 'schema_aware_deployment';
+    }
+    
+    return 'standard_global_deployment';
+  }
+
+  /**
+   * Validate global scope deployment permissions
+   */
+  private async validateGlobalScopePermissions(
+    artifactType: string,
+    context: AgentContext
+  ): Promise<{canProceed: boolean, missing_permissions?: string[], recommended_actions?: string[]}> {
+    try {
+      // Check basic global scope permissions
+      const requiredRoles = ['admin'];
+      const requiredScopes = ['write', 'admin'];
+      
+      // Get current user roles (simplified check)
+      let hasAdminRole = false;
+      try {
+        const rolesResponse = await this.client.makeRequest({
+          method: 'GET',
+          endpoint: '/api/now/v2/table/sys_user_has_role',
+          params: {
+            sysparm_query: 'user.user_name=javascript:gs.getUserName()^role.name=admin',
+            sysparm_limit: 1
+          }
+        });
+        hasAdminRole = rolesResponse.data?.result?.length > 0;
+      } catch (roleCheckError) {
+        this.logger.warn('Could not verify admin role', { error: roleCheckError });
+      }
+      
+      if (!hasAdminRole) {
+        return {
+          canProceed: false,
+          missing_permissions: ['admin'],
+          recommended_actions: [
+            'Request admin role from ServiceNow administrator',
+            'Use snow_escalate_permissions() for automatic elevation',
+            'Consider scoped deployment alternative'
+          ]
+        };
+      }
+      
+      return { canProceed: true };
+    } catch (error) {
+      this.logger.warn('Permission validation failed', { error });
+      return {
+        canProceed: false,
+        missing_permissions: ['unknown'],
+        recommended_actions: ['Check authentication and try again']
+      };
+    }
+  }
+
+  /**
+   * Determine global deployment strategy
+   */
+  private determineGlobalDeploymentStrategy(deploymentContext: any): any {
+    const strategies = {
+      direct_global_deployment: {
+        name: 'Direct Global Deployment',
+        reasons: ['Scope-related error detected', 'Standard global scope approach'],
+        estimated_success_rate: 0.75
+      },
+      elevated_permissions_deployment: {
+        name: 'Elevated Permissions Deployment',
+        reasons: ['Permission error detected', 'Admin-level deployment required'],
+        estimated_success_rate: 0.60
+      },
+      schema_aware_deployment: {
+        name: 'Schema-Aware Deployment',
+        reasons: ['Table/field error detected', 'Enhanced validation required'],
+        estimated_success_rate: 0.80
+      },
+      standard_global_deployment: {
+        name: 'Standard Global Deployment',
+        reasons: ['Generic error', 'Default global scope approach'],
+        estimated_success_rate: 0.65
+      }
+    };
+    
+    return strategies[deploymentContext.global_scope_strategy] || strategies.standard_global_deployment;
+  }
+
+  /**
+   * Attempt automatic role assignment (usually requires admin privileges)
+   */
+  private async attemptRoleAssignment(userId: string, roles: string[]): Promise<{success: boolean, error?: string}> {
+    try {
+      // This typically fails in most ServiceNow instances for security reasons
+      // But we attempt it for completeness
+      for (const roleName of roles) {
+        // First, get the role sys_id
+        const roleResponse = await this.client.makeRequest({
+          method: 'GET',
+          endpoint: '/api/now/v2/table/sys_user_role',
+          params: {
+            sysparm_query: `name=${roleName}`,
+            sysparm_fields: 'sys_id,name',
+            sysparm_limit: 1
+          }
+        });
+        
+        if (roleResponse.data?.result?.[0]) {
+          const roleSysId = roleResponse.data.result[0].sys_id;
+          
+          // Attempt to assign role to user
+          await this.client.makeRequest({
+            method: 'POST',
+            endpoint: '/api/now/v2/table/sys_user_has_role',
+            data: {
+              user: userId,
+              role: roleSysId
+            }
+          });
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
   
   private async fallbackToGlobalScope(operation: string, context: AgentContext): Promise<any> {
-    // Implementation would fallback to global scope deployment
-    this.logger.info(`Attempting global scope fallback for ${operation}`);
-    return { success: false, reason: 'Global scope fallback not implemented yet' };
+    this.logger.info(`🌐 Attempting intelligent global scope fallback for ${operation}`);
+    
+    try {
+      // Enhanced pre-flight validation
+      const authValidation = await this.validateServiceNowConnection();
+      if (!authValidation.success) {
+        return {
+          success: false,
+          reason: 'Authentication validation failed before global scope fallback',
+          auth_error: authValidation.error,
+          recovery_action: 'Fix authentication first, then retry global scope deployment'
+        };
+      }
+
+      // Comprehensive deployment context extraction with validation
+      const deploymentContext = await this.extractEnhancedDeploymentContext(operation, context);
+      
+      if (!deploymentContext) {
+        this.logger.warn('Unable to extract deployment context - attempting generic global scope deployment');
+        return await this.attemptGenericGlobalScopeDeployment(operation, context);
+      }
+
+      // Validate global scope deployment permissions
+      const globalScopeValidation = await this.validateGlobalScopePermissions(
+        deploymentContext.artifact_type,
+        context
+      );
+      
+      if (!globalScopeValidation.canProceed) {
+        return {
+          success: false,
+          reason: 'Insufficient permissions for global scope deployment',
+          missing_permissions: globalScopeValidation.missing_permissions,
+          recommended_actions: globalScopeValidation.recommended_actions,
+          escalation_required: true
+        };
+      }
+
+      this.logger.info('🔧 Configuring global scope deployment', {
+        original_scope: deploymentContext.current_scope,
+        artifact_type: deploymentContext.artifact_type,
+        artifact_name: deploymentContext.artifact_name,
+        global_scope_strategy: deploymentContext.global_scope_strategy
+      });
+
+      // Enhanced deployment strategy based on artifact type and complexity
+      let globalDeploymentResult;
+      const deploymentStrategy = this.determineGlobalDeploymentStrategy(deploymentContext);
+      
+      this.logger.info(`📋 Using deployment strategy: ${deploymentStrategy.name}`, {
+        reasons: deploymentStrategy.reasons,
+        estimated_success_rate: deploymentStrategy.estimated_success_rate
+      });
+
+      switch (deploymentContext.artifact_type.toLowerCase()) {
+        case 'widget':
+          globalDeploymentResult = await this.deployWidgetInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+          break;
+          
+        case 'flow':
+        case 'workflow':
+          globalDeploymentResult = await this.deployFlowInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+          break;
+          
+        case 'script':
+        case 'script_include':
+          globalDeploymentResult = await this.deployScriptInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+          break;
+          
+        case 'business_rule':
+          globalDeploymentResult = await this.deployBusinessRuleInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+          break;
+          
+        case 'table':
+          globalDeploymentResult = await this.deployTableInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+          break;
+          
+        case 'application':
+          // Enhanced application scope handling
+          return await this.handleApplicationScopeFallback(deploymentContext, context);
+          
+        default:
+          globalDeploymentResult = await this.deployGenericArtifactInGlobalScopeEnhanced(
+            deploymentContext, 
+            deploymentStrategy
+          );
+      }
+
+      // Enhanced result processing with comprehensive validation
+      if (globalDeploymentResult.success) {
+        this.logger.info('✅ Global scope deployment successful', {
+          sys_id: globalDeploymentResult.sys_id,
+          artifact_type: deploymentContext.artifact_type,
+          deployment_time_ms: globalDeploymentResult.deployment_time_ms,
+          strategy_used: deploymentStrategy.name
+        });
+
+        // Enhanced context update with deployment tracking
+        await this.updateContextWithEnhancedGlobalDeployment(context, {
+          ...globalDeploymentResult,
+          deployment_context: deploymentContext,
+          strategy_used: deploymentStrategy
+        });
+
+        // Post-deployment validation
+        const validationResult = await this.validateGlobalDeployment(
+          globalDeploymentResult.sys_id,
+          deploymentContext.artifact_type
+        );
+
+        return {
+          success: true,
+          reason: 'Successfully deployed in global scope with validation',
+          deployment_details: {
+            sys_id: globalDeploymentResult.sys_id,
+            scope: 'global',
+            artifact_type: deploymentContext.artifact_type,
+            artifact_name: deploymentContext.artifact_name,
+            fallback_reason: deploymentContext.original_error,
+            strategy_used: deploymentStrategy.name,
+            deployment_time_ms: globalDeploymentResult.deployment_time_ms,
+            validation_status: validationResult.status,
+            functional_verification: validationResult.functional_tests
+          },
+          next_steps: [
+            '1. Verify artifact functionality in global scope',
+            '2. Review and update ACL permissions if needed',
+            '3. Document scope change for future reference',
+            '4. Test integration with other components',
+            '5. Consider long-term scope strategy'
+          ],
+          warnings: validationResult.warnings || [],
+          recommendations: this.generateGlobalScopeRecommendations(deploymentContext, globalDeploymentResult)
+        };
+      } else {
+        // Enhanced failure handling with intelligent retry suggestions
+        const failureAnalysis = await this.analyzeGlobalScopeFailure(
+          globalDeploymentResult,
+          deploymentContext,
+          deploymentStrategy
+        );
+
+        this.logger.error('❌ Global scope deployment failed', {
+          original_error: deploymentContext.original_error,
+          global_deployment_error: globalDeploymentResult.error,
+          failure_analysis: failureAnalysis
+        });
+
+        return {
+          success: false,
+          reason: 'Global scope deployment failed after comprehensive attempts',
+          original_error: deploymentContext.original_error,
+          global_deployment_error: globalDeploymentResult.error,
+          failure_analysis: failureAnalysis,
+          alternative_strategies: [
+            '1. Manual Update Set creation and deployment',
+            '2. Phased deployment (create components separately)',
+            '3. XML-based deployment approach',
+            '4. ServiceNow Studio development environment',
+            '5. Direct database approach (requires elevated access)'
+          ],
+          diagnostic_commands: [
+            'snow_deployment_debug() - Get detailed error analysis',
+            'snow_validate_deployment() - Pre-deployment validation',
+            'snow_auth_diagnostics() - Check authentication and permissions',
+            'snow_comprehensive_search() - Find similar existing artifacts'
+          ],
+          manual_options: failureAnalysis.manual_steps,
+          escalation_required: failureAnalysis.requires_admin_intervention,
+          estimated_manual_effort: failureAnalysis.estimated_manual_time
+        };
+      }
+
+    } catch (error) {
+      this.logger.error('🚨 Global scope fallback process failed critically', { 
+        error, 
+        operation, 
+        context,
+        stack: error instanceof Error ? error.stack : 'No stack trace available'
+      });
+      
+      // Request immediate Queen intervention for critical failures
+      await this.requestQueenIntervention(context, {
+        type: 'global_scope_fallback_failure',
+        priority: 'critical',
+        description: `Critical failure during global scope fallback for ${operation}: ${error instanceof Error ? error.message : String(error)}`,
+        attempted_solutions: ['global_scope_deployment', 'enhanced_validation']
+      });
+
+      return {
+        success: false,
+        reason: 'Critical error during global scope fallback process',
+        error: error instanceof Error ? error.message : String(error),
+        error_type: this.categorizeError(error instanceof Error ? error.message : String(error)),
+        stack_trace: error instanceof Error ? error.stack : null,
+        recovery_actions: [
+          '1. Emergency: Verify ServiceNow instance connectivity',
+          '2. Critical: Check authentication and API access',
+          '3. High: Review deployment configuration for errors',
+          '4. Medium: Contact ServiceNow administrator immediately',
+          '5. Low: Review system logs for additional context'
+        ],
+        emergency_contact: true,
+        requires_immediate_attention: true,
+        fallback_options: [
+          'Switch to manual deployment process',
+          'Use ServiceNow Studio for development',
+          'Create support ticket with ServiceNow',
+          'Engage emergency deployment procedures'
+        ]
+      };
+    }
+  }
+
+  /**
+   * Extract deployment context from operation and context
+   */
+  private extractDeploymentContext(operation: string, context: AgentContext): any {
+    try {
+      // Try to extract context from agent context or operation string
+      const contextData = context as any; // Allow access to additional properties
+      
+      return {
+        artifact_type: this.extractArtifactType(operation),
+        artifact_name: contextData.artifact_name || this.extractArtifactName(operation),
+        current_scope: contextData.current_scope || 'scoped_application',
+        original_error: contextData.original_error || 'Scoped deployment failed',
+        deployment_config: contextData.deployment_config || {}
+      };
+    } catch (error) {
+      this.logger.warn('Failed to extract deployment context', { error });
+      return null;
+    }
+  }
+
+  /**
+   * Extract artifact type from operation string
+   */
+  private extractArtifactType(operation: string): string {
+    const patterns = [
+      { pattern: /widget/i, type: 'widget' },
+      { pattern: /flow|workflow/i, type: 'flow' },
+      { pattern: /script.*include/i, type: 'script_include' },
+      { pattern: /business.*rule/i, type: 'business_rule' },
+      { pattern: /application|app/i, type: 'application' },
+      { pattern: /script/i, type: 'script' }
+    ];
+    
+    for (const { pattern, type } of patterns) {
+      if (pattern.test(operation)) {
+        return type;
+      }
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * Extract artifact name from operation string
+   */
+  private extractArtifactName(operation: string): string {
+    // Try to extract name from common patterns
+    const nameMatch = operation.match(/deploy(?:ing)?\s+([a-zA-Z0-9_\-\s]+)/i);
+    return nameMatch ? nameMatch[1].trim() : 'fallback_artifact';
+  }
+
+  /**
+   * Deploy widget in global scope
+   */
+  private async deployWidgetInGlobalScope(context: any): Promise<any> {
+    try {
+      const widgetData = {
+        ...context.deployment_config,
+        name: context.artifact_name,
+        sys_scope: 'global' // Force global scope
+      };
+
+      const response = await this.client.makeRequest({
+        method: 'POST',
+        endpoint: '/api/now/v2/table/sp_widget',
+        data: widgetData
+      });
+
+      if (response.data?.result) {
+        return {
+          success: true,
+          sys_id: response.data.result.sys_id,
+          name: response.data.result.name
+        };
+      }
+
+      return { success: false, error: 'No result returned from widget creation' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  /**
+   * Deploy flow in global scope
+   */
+  private async deployFlowInGlobalScope(context: any): Promise<any> {
+    try {
+      const flowData = {
+        ...context.deployment_config,
+        name: context.artifact_name,
+        sys_scope: 'global' // Force global scope
+      };
+
+      const response = await this.client.makeRequest({
+        method: 'POST',
+        endpoint: '/api/now/v2/table/wf_workflow',
+        data: flowData
+      });
+
+      if (response.data?.result) {
+        return {
+          success: true,
+          sys_id: response.data.result.sys_id,
+          name: response.data.result.name
+        };
+      }
+
+      return { success: false, error: 'No result returned from flow creation' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  /**
+   * Deploy script include in global scope
+   */
+  private async deployScriptInGlobalScope(context: any): Promise<any> {
+    try {
+      const scriptData = {
+        ...context.deployment_config,
+        name: context.artifact_name,
+        sys_scope: 'global' // Force global scope
+      };
+
+      const response = await this.client.makeRequest({
+        method: 'POST',
+        endpoint: '/api/now/v2/table/sys_script_include',
+        data: scriptData
+      });
+
+      if (response.data?.result) {
+        return {
+          success: true,
+          sys_id: response.data.result.sys_id,
+          name: response.data.result.name
+        };
+      }
+
+      return { success: false, error: 'No result returned from script creation' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  /**
+   * Deploy business rule in global scope
+   */
+  private async deployBusinessRuleInGlobalScope(context: any): Promise<any> {
+    try {
+      const ruleData = {
+        ...context.deployment_config,
+        name: context.artifact_name,
+        sys_scope: 'global' // Force global scope
+      };
+
+      const response = await this.client.makeRequest({
+        method: 'POST',
+        endpoint: '/api/now/v2/table/sys_script',
+        data: ruleData
+      });
+
+      if (response.data?.result) {
+        return {
+          success: true,
+          sys_id: response.data.result.sys_id,
+          name: response.data.result.name
+        };
+      }
+
+      return { success: false, error: 'No result returned from business rule creation' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  /**
+   * Generic global scope deployment for unknown artifact types
+   */
+  private async deployGenericArtifactInGlobalScope(context: any): Promise<any> {
+    try {
+      // Attempt deployment based on common table patterns
+      const possibleTables = [
+        'sys_script_include',
+        'sys_script',
+        'sys_ui_script',
+        'sys_ui_page'
+      ];
+
+      for (const table of possibleTables) {
+        try {
+          const data = {
+            ...context.deployment_config,
+            name: context.artifact_name,
+            sys_scope: 'global'
+          };
+
+          const response = await this.client.makeRequest({
+            method: 'POST',
+            endpoint: `/api/now/v2/table/${table}`,
+            data
+          });
+
+          if (response.data?.result) {
+            return {
+              success: true,
+              sys_id: response.data.result.sys_id,
+              name: response.data.result.name,
+              table_used: table
+            };
+          }
+        } catch (tableError) {
+          // Continue to next table
+          this.logger.debug(`Failed to deploy to ${table}`, { error: tableError });
+        }
+      }
+
+      return { success: false, error: 'No suitable table found for deployment' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  /**
+   * Update context with global deployment information
+   */
+  private async updateContextWithGlobalDeployment(context: AgentContext, deploymentResult: any): Promise<void> {
+    try {
+      // Store deployment information in memory for coordination
+      await this.memory.updateSharedContext({
+        session_id: context.session_id,
+        context_key: 'global_deployment_fallback',
+        context_value: JSON.stringify({
+          original_context: context,
+          global_deployment: deploymentResult,
+          timestamp: new Date().toISOString()
+        }),
+        created_by_agent: context.agent_id
+      });
+    } catch (error) {
+      this.logger.warn('Failed to update context with global deployment', { error });
+    }
+  }
+
+  /**
+   * Enhanced context update with deployment tracking
+   */
+  private async updateContextWithEnhancedGlobalDeployment(context: AgentContext, deploymentResult: any): Promise<void> {
+    try {
+      await this.memory.updateSharedContext({
+        session_id: context.session_id,
+        context_key: 'enhanced_global_deployment',
+        context_value: JSON.stringify({
+          deployment_result: deploymentResult,
+          context: context,
+          timestamp: new Date().toISOString()
+        }),
+        created_by_agent: context.agent_id
+      });
+    } catch (error) {
+      this.logger.warn('Failed to update enhanced global deployment context', { error });
+    }
+  }
+
+  /**
+   * Enhanced widget deployment in global scope
+   */
+  private async deployWidgetInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      const result = await this.deployWidgetInGlobalScope(context);
+      
+      return {
+        ...result,
+        deployment_time_ms: Date.now() - startTime,
+        strategy_applied: strategy.name
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Enhanced flow deployment in global scope
+   */
+  private async deployFlowInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      const result = await this.deployFlowInGlobalScope(context);
+      
+      return {
+        ...result,
+        deployment_time_ms: Date.now() - startTime,
+        strategy_applied: strategy.name
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Enhanced script deployment in global scope
+   */
+  private async deployScriptInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      const result = await this.deployScriptInGlobalScope(context);
+      
+      return {
+        ...result,
+        deployment_time_ms: Date.now() - startTime,
+        strategy_applied: strategy.name
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Enhanced business rule deployment in global scope
+   */
+  private async deployBusinessRuleInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      const result = await this.deployBusinessRuleInGlobalScope(context);
+      
+      return {
+        ...result,
+        deployment_time_ms: Date.now() - startTime,
+        strategy_applied: strategy.name
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Enhanced table deployment in global scope
+   */
+  private async deployTableInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      
+      const tableData = {
+        ...context.deployment_config,
+        name: context.artifact_name,
+        sys_scope: 'global'
+      };
+
+      const response = await this.client.makeRequest({
+        method: 'POST',
+        endpoint: '/api/now/v2/table/sys_db_object',
+        data: tableData
+      });
+
+      if (response.data?.result) {
+        return {
+          success: true,
+          sys_id: response.data.result.sys_id,
+          name: response.data.result.name,
+          deployment_time_ms: Date.now() - startTime,
+          strategy_applied: strategy.name
+        };
+      }
+
+      return { 
+        success: false, 
+        error: 'No result returned from table creation',
+        deployment_time_ms: Date.now() - startTime
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Enhanced generic artifact deployment in global scope
+   */
+  private async deployGenericArtifactInGlobalScopeEnhanced(context: any, strategy: any): Promise<any> {
+    try {
+      const startTime = Date.now();
+      const result = await this.deployGenericArtifactInGlobalScope(context);
+      
+      return {
+        ...result,
+        deployment_time_ms: Date.now() - startTime,
+        strategy_applied: strategy.name
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error),
+        deployment_time_ms: 0
+      };
+    }
+  }
+
+  /**
+   * Handle application scope fallback
+   */
+  private async handleApplicationScopeFallback(deploymentContext: any, context: AgentContext): Promise<any> {
+    try {
+      this.logger.info('🏢 Handling application scope fallback...');
+      
+      return {
+        success: false,
+        reason: 'Applications require special scope handling - cannot deploy in global scope',
+        alternative_strategies: [
+          '1. Create scoped application with broader permissions',
+          '2. Deploy individual components separately in global scope',
+          '3. Request administrator to configure application scope',
+          '4. Use ServiceNow Studio for application development'
+        ],
+        manual_steps: [
+          'Navigate to System Applications > Studio',
+          'Create new scoped application',
+          'Configure appropriate scope permissions',
+          'Deploy components within application scope'
+        ],
+        estimated_time: '15-30 minutes with proper permissions'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        reason: 'Failed to analyze application scope requirements'
+      };
+    }
+  }
+
+  /**
+   * Attempt generic global scope deployment
+   */
+  private async attemptGenericGlobalScopeDeployment(operation: string, context: AgentContext): Promise<any> {
+    try {
+      this.logger.info('🌐 Attempting generic global scope deployment...');
+      
+      return {
+        success: false,
+        reason: 'Generic global scope deployment requires more specific context',
+        recommended_actions: [
+          'Provide more specific deployment context',
+          'Use artifact-specific deployment methods',
+          'Check deployment configuration',
+          'Contact administrator for manual deployment'
+        ]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Validate global deployment
+   */
+  private async validateGlobalDeployment(sysId: string, artifactType: string): Promise<any> {
+    try {
+      const table = this.getTableForType(artifactType);
+      
+      const validationResponse = await this.client.makeRequest({
+        method: 'GET',
+        endpoint: `/api/now/v2/table/${table}/${sysId}`,
+        params: {
+          sysparm_fields: 'sys_id,name,active,sys_scope'
+        }
+      });
+
+      if (validationResponse.data?.result) {
+        const artifact = validationResponse.data.result;
+        return {
+          status: 'validated',
+          functional_tests: [
+            `Artifact exists: ${artifact.name}`,
+            `Scope: ${artifact.sys_scope || 'global'}`,
+            `Active: ${artifact.active || 'unknown'}`
+          ],
+          warnings: artifact.sys_scope !== 'global' ? ['Artifact may not be in global scope'] : []
+        };
+      }
+
+      return {
+        status: 'validation_failed',
+        functional_tests: [],
+        warnings: ['Could not validate artifact deployment']
+      };
+    } catch (error) {
+      return {
+        status: 'validation_error',
+        functional_tests: [],
+        warnings: [`Validation error: ${error instanceof Error ? error.message : String(error)}`]
+      };
+    }
+  }
+
+  /**
+   * Generate global scope recommendations
+   */
+  private generateGlobalScopeRecommendations(deploymentContext: any, deploymentResult: any): string[] {
+    const recommendations = [
+      '✅ Document this global scope deployment for future reference',
+      '🔍 Review ACL permissions to ensure proper access control',
+      '📋 Consider creating Update Set for deployment tracking'
+    ];
+
+    if (deploymentContext.artifact_type === 'widget') {
+      recommendations.push('🎨 Test widget rendering in Service Portal');
+    }
+
+    if (deploymentContext.artifact_type === 'flow') {
+      recommendations.push('⚡ Activate flow and test trigger conditions');
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Analyze global scope failure
+   */
+  private async analyzeGlobalScopeFailure(deploymentResult: any, deploymentContext: any, strategy: any): Promise<any> {
+    const errorMessage = deploymentResult.error || 'Unknown error';
+    const errorType = this.categorizeError(errorMessage);
+    
+    return {
+      error_category: errorType,
+      strategy_used: strategy.name,
+      requires_admin_intervention: errorType === 'permissions' || errorType === 'authentication',
+      estimated_manual_time: '10-30 minutes',
+      manual_steps: [
+        '1. Review ServiceNow system logs for detailed error information',
+        '2. Check user permissions and roles',
+        '3. Verify artifact configuration meets ServiceNow requirements',
+        '4. Consider alternative deployment approaches',
+        '5. Contact ServiceNow administrator if permission issues persist'
+      ],
+      technical_details: {
+        original_error: deploymentContext.original_error,
+        global_deployment_error: errorMessage,
+        artifact_type: deploymentContext.artifact_type,
+        deployment_strategy: strategy.name
+      }
+    };
   }
   
   private async delay(ms: number): Promise<void> {
@@ -926,6 +2390,64 @@ ${errorText}
     if (process.env.SNOW_FLOW_MOCK_MODE === 'true') {
       throw new Error(`Mock mode is not supported for ${operation}. All operations must use real ServiceNow instance.`);
     }
+  }
+
+  /**
+   * List available MCP resources
+   */
+  protected async listMCPResources(): Promise<any> {
+    try {
+      const resources = await this.resourceManager.listResources();
+      this.logger.debug(`Listed ${resources.length} MCP resources`);
+      
+      return {
+        resources: resources.map(resource => ({
+          uri: resource.uri,
+          name: resource.name,
+          description: resource.description,
+          mimeType: resource.mimeType
+        }))
+      };
+    } catch (error) {
+      this.logger.error('Failed to list MCP resources:', error);
+      return { resources: [] };
+    }
+  }
+
+  /**
+   * Read a specific MCP resource by URI
+   */
+  protected async readMCPResource(uri: string): Promise<any> {
+    try {
+      const resource = await this.resourceManager.readResource(uri);
+      this.logger.debug(`Read MCP resource: ${uri}`);
+      
+      return {
+        contents: [{
+          uri: resource.uri,
+          mimeType: resource.mimeType,
+          text: resource.text
+        }]
+      };
+    } catch (error) {
+      this.logger.error(`Failed to read MCP resource ${uri}:`, error);
+      throw new Error(`Resource not found or inaccessible: ${uri}`);
+    }
+  }
+
+  /**
+   * Get resource manager statistics
+   */
+  protected getMCPResourceStats(): any {
+    return this.resourceManager.getResourceStats();
+  }
+
+  /**
+   * Clear resource cache (useful for development)
+   */
+  protected clearMCPResourceCache(): void {
+    this.resourceManager.clearCache();
+    this.logger.debug('MCP resource cache cleared');
   }
 
   /**

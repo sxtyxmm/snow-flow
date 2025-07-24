@@ -6,6 +6,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { EventEmitter } from 'events';
+import os from 'os';
 
 export interface MCPServer {
   name: string;
@@ -35,8 +36,8 @@ export class MCPServerManager extends EventEmitter {
 
   constructor(configPath?: string) {
     super();
-    this.configPath = configPath || join(process.cwd(), '.snow-flow', 'mcp-servers.json');
-    this.logPath = join(process.cwd(), '.snow-flow', 'logs');
+    this.configPath = configPath || join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'mcp-servers.json');
+    this.logPath = join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'logs');
   }
 
   /**
@@ -44,7 +45,7 @@ export class MCPServerManager extends EventEmitter {
    */
   async initialize(): Promise<void> {
     // Ensure directories exist
-    await fs.mkdir(join(process.cwd(), '.snow-flow'), { recursive: true });
+    await fs.mkdir(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), { recursive: true });
     await fs.mkdir(this.logPath, { recursive: true });
 
     // Load existing configuration

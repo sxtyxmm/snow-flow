@@ -6,6 +6,7 @@
 import { config } from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import os from 'os';
 import { Logger } from './logger.js';
 
 // Load environment variables
@@ -85,7 +86,7 @@ export class MCPConfigManager {
       },
       memory: {
         provider: (process.env.MEMORY_PROVIDER as 'file' | 'neo4j' | 'redis') || 'file',
-        path: process.env.MEMORY_PATH || join(process.cwd(), '.snow-flow', 'memory'),
+        path: process.env.MEMORY_PATH || join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'memory'),
         connectionString: process.env.MEMORY_CONNECTION_STRING,
         maxSize: parseInt(process.env.MEMORY_MAX_SIZE || '1000'),
         ttl: parseInt(process.env.MEMORY_TTL || '86400') // 24 hours
@@ -100,12 +101,12 @@ export class MCPConfigManager {
       logging: {
         level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
         enableFileLogging: process.env.ENABLE_FILE_LOGGING === 'true',
-        logPath: process.env.LOG_PATH || join(process.cwd(), '.snow-flow', 'logs')
+        logPath: process.env.LOG_PATH || join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'logs')
       }
     };
 
     // Try to load from config file if it exists
-    const configPath = join(process.cwd(), '.snow-flow', 'config.json');
+    const configPath = join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'config.json');
     if (existsSync(configPath)) {
       try {
         const fileConfig = JSON.parse(readFileSync(configPath, 'utf8'));

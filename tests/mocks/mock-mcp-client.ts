@@ -5,6 +5,8 @@
  * Tests Queen ↔ MCP communication patterns
  */
 
+import { generateServiceNowSysId, generateMockSysId, generateUpdateSetName, generateCatalogItemName } from '../../utils/servicenow-id-generator.js';
+
 export interface MockMcpResponse {
   success: boolean;
   result?: any;
@@ -35,11 +37,11 @@ export class MockMcpClient {
       return {
         success: true,
         result: {
-          sys_id: 'mock-widget-' + Math.random().toString(36).substring(7),
+          sys_id: generateMockSysId('widget'),
           name: params.config?.name || 'mock_widget',
           type: 'widget',
           deployed: true,
-          update_set: 'mock-update-set-123'
+          update_set: generateMockSysId('update_set')
         },
         toolUsed: 'snow_deploy',
         executionTime: Date.now() - startTime
@@ -50,11 +52,11 @@ export class MockMcpClient {
       return {
         success: true,
         result: {
-          sys_id: 'mock-flow-' + Math.random().toString(36).substring(7),
+          sys_id: generateMockSysId('flow'),
           name: 'Mock Approval Flow',
           type: 'flow',
           deployed: true,
-          update_set: 'mock-update-set-123'
+          update_set: generateMockSysId('update_set')
         },
         toolUsed: 'snow_deploy',
         executionTime: Date.now() - startTime
@@ -95,7 +97,7 @@ export class MockMcpClient {
     return {
       success: true,
       result: {
-        sys_id: 'mock-flow-' + Math.random().toString(36).substring(7),
+        sys_id: generateMockSysId('flow'),
         name: 'AI Generated Flow',
         instruction: params.instruction,
         flow_type: params.flow_type || 'flow',
@@ -127,19 +129,19 @@ export class MockMcpClient {
     
     const mockArtifacts = [
       {
-        sys_id: 'mock-widget-001',
+        sys_id: generateMockSysId('widget'),
         name: 'incident_dashboard_widget',
         type: 'widget',
         description: 'Dashboard widget for incident statistics'
       },
       {
-        sys_id: 'mock-flow-001',
+        sys_id: generateMockSysId('flow'),
         name: 'approval_workflow',
         type: 'flow',
         description: 'Approval workflow for service requests'
       },
       {
-        sys_id: 'mock-script-001',
+        sys_id: generateMockSysId('script'),
         name: 'data_processor_script',
         type: 'script',
         description: 'Data processing script include'
@@ -190,15 +192,15 @@ export class MockMcpClient {
     
     const mockCatalogItems = [
       {
-        sys_id: 'mock-catalog-iphone',
-        name: 'iPhone 6S',
+        sys_id: generateMockSysId('catalog'),
+        name: generateCatalogItemName('iPhone'),
         short_description: 'iPhone 6S mobile device',
         price: '599.00',
         category: 'Mobile Devices'
       },
       {
-        sys_id: 'mock-catalog-laptop',
-        name: 'MacBook Pro',
+        sys_id: generateMockSysId('catalog'),
+        name: generateCatalogItemName('MacBook'),
         short_description: 'MacBook Pro laptop computer',
         price: '2399.00',
         category: 'Laptops'
@@ -288,11 +290,11 @@ export class MockMcpClient {
     return {
       success: true,
       result: {
-        sys_id: 'mock-update-set-' + Math.random().toString(36).substring(7),
-        name: params.name,
+        sys_id: generateMockSysId('update_set'),
+        name: params.name || generateUpdateSetName('Mock'),
         description: params.description,
         state: 'in_progress',
-        created_by: 'mock-user',
+        created_by: generateMockSysId('user'),
         created_on: new Date().toISOString(),
         is_active: true
       },

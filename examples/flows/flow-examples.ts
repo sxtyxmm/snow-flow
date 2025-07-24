@@ -9,7 +9,7 @@ import {
   convertToFlowDefinition, 
   FlowDefinition, 
   ACTION_TYPE_IDS 
-} from './flow-structure-builder';
+} from '../../src/utils/flow-structure-builder';
 
 /**
  * Example 1: Incident Notification Flow

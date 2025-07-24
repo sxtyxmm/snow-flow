@@ -6,8 +6,9 @@
  * Simulates real deployment workflows without ServiceNow dependency
  */
 
-import { createServiceNowQueen, ServiceNowQueen } from './index.js';
-import { MockMcpClient, MockMcpResponse } from '../test/mocks/mock-mcp-client.js';
+import { createServiceNowQueen, ServiceNowQueen } from '../../src/queen/index.js';
+import { MockMcpClient, MockMcpResponse } from '../../src/test/mocks/mock-mcp-client.js';
+import { Logger } from '../../src/utils/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -24,6 +25,7 @@ export class AdvancedQueenTester {
   private queen: ServiceNowQueen | null = null;
   private mockMcp: MockMcpClient;
   private results: AdvancedTestResult[] = [];
+  private logger = new Logger('AdvancedQueenTester');
 
   constructor() {
     this.mockMcp = new MockMcpClient();
@@ -37,10 +39,10 @@ export class AdvancedQueenTester {
       fs.mkdirSync(testDir, { recursive: true });
     }
 
-    console.log('🧠 ADVANCED QUEEN AGENT INTEGRATION TESTER');
-    console.log('==========================================');
-    console.log('Testing Queen ↔ MCP communication patterns');
-    console.log('Using mock MCP client for realistic workflow simulation\n');
+    this.logger.info('🧠 ADVANCED QUEEN AGENT INTEGRATION TESTER', {
+      message: 'Testing Queen ↔ MCP communication patterns',
+      details: 'Using mock MCP client for realistic workflow simulation'
+    });
   }
 
   /**
@@ -50,7 +52,7 @@ export class AdvancedQueenTester {
     const startTime = Date.now();
     
     try {
-      console.log('🎯 ADVANCED TEST 1: Widget Creation Workflow');
+      this.logger.info('🎯 ADVANCED TEST 1: Widget Creation Workflow');
       
       // Initialize Queen
       this.queen = createServiceNowQueen({
@@ -60,22 +62,27 @@ export class AdvancedQueenTester {
       });
 
       const objective = "Create a dashboard widget showing incident statistics with interactive charts";
-      console.log(`  Objective: "${objective}"`);
+      this.logger.info(`Objective: "${objective}"`, { testId: 1, objective });
 
       // Step 1: Queen analyzes objective
-      console.log('  🔍 Step 1: Queen analyzing objective...');
+      this.logger.info('  🔍 Step 1: Queen analyzing objective');
       const status = this.queen.getHiveMindStatus();
-      console.log(`    Initial status: ${status.activeTasks} tasks, ${status.activeAgents} agents`);
+      this.logger.debug('Initial Queen status', { 
+        activeTasks: status.activeTasks, 
+        activeAgents: status.activeAgents 
+      });
 
       // Step 2: Simulate Queen coordinating with MCP tools
-      console.log('  🤖 Step 2: Simulating MCP coordination...');
+      this.logger.info('  🤖 Step 2: Simulating MCP coordination');
       
       // Research phase - find existing artifacts
       const findResult = await this.mockMcp.snow_find_artifact({
         query: 'incident dashboard',
         type: 'widget'
       });
-      console.log(`    Found ${findResult.result?.artifacts?.length || 0} existing artifacts`);
+      this.logger.debug('Artifact discovery completed', { 
+        artifactCount: findResult.result?.artifacts?.length || 0 
+      });
 
       // Creation phase - deploy new widget
       const deployResult = await this.mockMcp.snow_deploy({
@@ -94,13 +101,15 @@ export class AdvancedQueenTester {
         throw new Error(`Widget deployment failed: ${deployResult.error}`);
       }
 
-      console.log(`    Widget deployed: ${deployResult.result?.sys_id}`);
+      this.logger.info(`Widget deployed successfully`, { 
+        sysId: deployResult.result?.sys_id 
+      });
 
       // Step 3: Testing phase
-      console.log('  🧪 Step 3: Testing deployed widget...');
+      this.logger.info('  🧪 Step 3: Testing deployed widget');
       
       // Note: In real implementation, Queen would coordinate test execution
-      console.log('    Widget validation completed');
+      this.logger.debug('Widget validation completed');
 
       const mcpStats = this.mockMcp.getUsageStats();
       const duration = Date.now() - startTime;
@@ -113,9 +122,11 @@ export class AdvancedQueenTester {
         mcpCalls: mcpStats.totalCalls
       };
 
-      console.log(`  ✅ PASS (${duration}ms): Widget workflow completed`);
-      console.log(`     MCP calls made: ${mcpStats.totalCalls}`);
-      console.log(`     Widget sys_id: ${deployResult.result?.sys_id}`);
+      this.logger.info(`  ✅ PASS (${duration}ms): Widget workflow completed`, {
+        duration,
+        mcpCalls: mcpStats.totalCalls,
+        widgetSysId: deployResult.result?.sys_id
+      });
       
       return result;
 
@@ -130,7 +141,7 @@ export class AdvancedQueenTester {
         error: (error as Error).message
       };
 
-      console.log(`  ❌ FAIL (${duration}ms): ${(error as Error).message}`);
+      this.logger.error(`  ❌ FAIL (${duration}ms): Widget creation workflow failed`, error);
       return result;
     }
   }
@@ -142,27 +153,29 @@ export class AdvancedQueenTester {
     const startTime = Date.now();
     
     try {
-      console.log('🎯 ADVANCED TEST 2: Flow Creation and Testing Workflow');
+      this.logger.info('🎯 ADVANCED TEST 2: Flow Creation and Testing Workflow');
       
       const objective = "Create an approval workflow for iPhone catalog requests with notifications";
-      console.log(`  Objective: "${objective}"`);
+      this.logger.info(`Objective: "${objective}"`, { testId: 2, objective });
 
       // Step 1: Research existing catalog items
-      console.log('  🔍 Step 1: Researching catalog items...');
+      this.logger.info('  🔍 Step 1: Researching catalog items');
       
       const catalogResult = await this.mockMcp.snow_catalog_item_search({
         query: 'iPhone',
         fuzzy_match: true
       });
       
-      console.log(`    Found ${catalogResult.result?.catalog_items?.length || 0} catalog items`);
+      this.logger.debug('Catalog item discovery completed', { 
+        itemCount: catalogResult.result?.catalog_items?.length || 0 
+      });
       
       if (catalogResult.result?.catalog_items?.length === 0) {
         throw new Error('No iPhone catalog items found for flow linking');
       }
 
       // Step 2: Create approval flow
-      console.log('  🔄 Step 2: Creating approval flow...');
+      this.logger.info('  🔄 Step 2: Creating approval flow');
       
       const flowResult = await this.mockMcp.snow_create_flow({
         instruction: objective,
@@ -174,11 +187,13 @@ export class AdvancedQueenTester {
         throw new Error(`Flow creation failed: ${flowResult.error}`);
       }
       
-      console.log(`    Flow created: ${flowResult.result?.sys_id}`);
-      console.log(`    Complexity: ${flowResult.result?.analysis?.complexity}`);
+      this.logger.info('Flow created successfully', {
+        sysId: flowResult.result?.sys_id,
+        complexity: flowResult.result?.analysis?.complexity
+      });
 
       // Step 3: Test flow with mock data
-      console.log('  🧪 Step 3: Testing flow with mock data...');
+      this.logger.info('  🧪 Step 3: Testing flow with mock data');
       
       const testResult = await this.mockMcp.snow_test_flow_with_mock({
         flow_id: flowResult.result?.sys_id,
@@ -192,8 +207,10 @@ export class AdvancedQueenTester {
         throw new Error(`Flow testing failed: ${testResult.error}`);
       }
       
-      console.log(`    Test completed: ${testResult.result?.test_results?.steps_executed} steps executed`);
-      console.log(`    Approvals simulated: ${testResult.result?.test_results?.approvals_simulated}`);
+      this.logger.info('Flow test completed', {
+        stepsExecuted: testResult.result?.test_results?.steps_executed,
+        approvalsSimulated: testResult.result?.test_results?.approvals_simulated
+      });
 
       const mcpStats = this.mockMcp.getUsageStats();
       const duration = Date.now() - startTime;
@@ -206,9 +223,11 @@ export class AdvancedQueenTester {
         mcpCalls: mcpStats.totalCalls
       };
 
-      console.log(`  ✅ PASS (${duration}ms): Flow workflow completed`);
-      console.log(`     Steps executed: ${testResult.result?.test_results?.steps_executed}`);
-      console.log(`     Test warnings: ${testResult.result?.test_results?.warnings?.length || 0}`);
+      this.logger.info(`  ✅ PASS (${duration}ms): Flow workflow completed`, {
+        duration,
+        stepsExecuted: testResult.result?.test_results?.steps_executed,
+        testWarnings: testResult.result?.test_results?.warnings?.length || 0
+      });
       
       return result;
 
@@ -223,7 +242,7 @@ export class AdvancedQueenTester {
         error: (error as Error).message
       };
 
-      console.log(`  ❌ FAIL (${duration}ms): ${(error as Error).message}`);
+      this.logger.error(`  ❌ FAIL (${duration}ms): Flow creation workflow failed`, error);
       return result;
     }
   }
@@ -235,20 +254,20 @@ export class AdvancedQueenTester {
     const startTime = Date.now();
     
     try {
-      console.log('🎯 ADVANCED TEST 3: Multi-Agent Coordination');
+      this.logger.info('🎯 ADVANCED TEST 3: Multi-Agent Coordination');
       
       if (!this.queen) {
         throw new Error('Queen not initialized');
       }
 
       const objective = "Create a complete service catalog solution with widget, flow, and testing";
-      console.log(`  Objective: "${objective}"`);
+      this.logger.info(`Objective: "${objective}"`, { testId: 3, objective });
 
       // Step 1: Queen should coordinate multiple agents
-      console.log('  👥 Step 1: Coordinating multiple agents...');
+      this.logger.info('  👥 Step 1: Coordinating multiple agents');
       
       const initialStatus = this.queen.getHiveMindStatus();
-      console.log(`    Initial agents: ${initialStatus.activeAgents}`);
+      this.logger.debug('Initial agent status', { activeAgents: initialStatus.activeAgents });
 
       // Simulate multi-phase coordination
       const phases = [
@@ -261,7 +280,7 @@ export class AdvancedQueenTester {
 
       for (let i = 0; i < phases.length; i++) {
         const phase = phases[i];
-        console.log(`  📋 Step ${i + 2}: ${phase.name}...`);
+        this.logger.info(`  📋 Step ${i + 2}: ${phase.name}`, { phaseIndex: i, phaseName: phase.name });
         
         // Simulate phase execution
         if (phase.tools.includes('snow_find_artifact')) {
@@ -293,11 +312,11 @@ export class AdvancedQueenTester {
           });
         }
 
-        console.log(`    ${phase.name} completed`);
+        this.logger.debug(`${phase.name} completed`, { phaseIndex: i });
       }
 
       // Step 2: Create update set for tracking
-      console.log('  📝 Step 7: Creating update set...');
+      this.logger.info('  📝 Step 7: Creating update set');
       
       const updateSetResult = await this.mockMcp.snow_update_set_create({
         name: 'Queen Agent - Service Catalog Solution',
@@ -308,7 +327,9 @@ export class AdvancedQueenTester {
         throw new Error('Update set creation failed');
       }
       
-      console.log(`    Update set created: ${updateSetResult.result?.sys_id}`);
+      this.logger.info('Update set created successfully', { 
+        sysId: updateSetResult.result?.sys_id 
+      });
 
       const mcpStats = this.mockMcp.getUsageStats();
       const duration = Date.now() - startTime;
@@ -321,10 +342,12 @@ export class AdvancedQueenTester {
         mcpCalls: mcpStats.totalCalls
       };
 
-      console.log(`  ✅ PASS (${duration}ms): Multi-agent coordination successful`);
-      console.log(`     Phases completed: ${phases.length}`);
-      console.log(`     Total MCP calls: ${mcpStats.totalCalls}`);
-      console.log(`     Update set: ${updateSetResult.result?.sys_id}`);
+      this.logger.info(`  ✅ PASS (${duration}ms): Multi-agent coordination successful`, {
+        duration,
+        phasesCompleted: phases.length,
+        totalMcpCalls: mcpStats.totalCalls,
+        updateSetSysId: updateSetResult.result?.sys_id
+      });
       
       return result;
 
@@ -339,7 +362,7 @@ export class AdvancedQueenTester {
         error: (error as Error).message
       };
 
-      console.log(`  ❌ FAIL (${duration}ms): ${(error as Error).message}`);
+      this.logger.error(`  ❌ FAIL (${duration}ms): Multi-agent coordination failed`, error);
       return result;
     }
   }
@@ -351,14 +374,14 @@ export class AdvancedQueenTester {
     const startTime = Date.now();
     
     try {
-      console.log('🎯 ADVANCED TEST 4: Error Handling and Recovery');
+      this.logger.info('🎯 ADVANCED TEST 4: Error Handling and Recovery');
       
       if (!this.queen) {
         throw new Error('Queen not initialized');
       }
 
       // Test 4.1: Handle invalid flow instruction
-      console.log('  ⚠️  Step 1: Testing invalid flow instruction...');
+      this.logger.info('  ⚠️  Step 1: Testing invalid flow instruction');
       
       const invalidFlowResult = await this.mockMcp.snow_create_flow({
         instruction: 'bad', // Too short
@@ -369,10 +392,10 @@ export class AdvancedQueenTester {
         throw new Error('Expected flow creation to fail with invalid instruction');
       }
       
-      console.log(`    Expected error caught: ${invalidFlowResult.error}`);
+      this.logger.debug('Expected error caught', { error: invalidFlowResult.error });
 
       // Test 4.2: Handle missing parameters
-      console.log('  ⚠️  Step 2: Testing missing parameters...');
+      this.logger.info('  ⚠️  Step 2: Testing missing parameters');
       
       const missingParamsResult = await this.mockMcp.snow_test_flow_with_mock({
         // Missing flow_id
@@ -383,10 +406,10 @@ export class AdvancedQueenTester {
         throw new Error('Expected test to fail with missing flow_id');
       }
       
-      console.log(`    Expected error caught: ${missingParamsResult.error}`);
+      this.logger.debug('Expected error caught', { error: missingParamsResult.error });
 
       // Test 4.3: Successful recovery after error
-      console.log('  🔄 Step 3: Testing recovery after errors...');
+      this.logger.info('  🔄 Step 3: Testing recovery after errors');
       
       const recoveryFlowResult = await this.mockMcp.snow_create_flow({
         instruction: 'Create a proper approval workflow for service requests with notifications',
@@ -397,7 +420,9 @@ export class AdvancedQueenTester {
         throw new Error('Recovery flow creation should succeed');
       }
       
-      console.log(`    Recovery successful: ${recoveryFlowResult.result?.sys_id}`);
+      this.logger.info('Recovery successful', { 
+        sysId: recoveryFlowResult.result?.sys_id 
+      });
 
       const mcpStats = this.mockMcp.getUsageStats();
       const duration = Date.now() - startTime;
@@ -410,9 +435,11 @@ export class AdvancedQueenTester {
         mcpCalls: mcpStats.totalCalls
       };
 
-      console.log(`  ✅ PASS (${duration}ms): Error handling working correctly`);
-      console.log(`     Errors handled: 2`);
-      console.log(`     Recovery successful: 1`);
+      this.logger.info(`  ✅ PASS (${duration}ms): Error handling working correctly`, {
+        duration,
+        errorsHandled: 2,
+        recoverySuccessful: 1
+      });
       
       return result;
 
@@ -427,7 +454,7 @@ export class AdvancedQueenTester {
         error: (error as Error).message
       };
 
-      console.log(`  ❌ FAIL (${duration}ms): ${(error as Error).message}`);
+      this.logger.error(`  ❌ FAIL (${duration}ms): Error handling test failed`, error);
       return result;
     }
   }
@@ -436,7 +463,7 @@ export class AdvancedQueenTester {
    * Run all advanced tests
    */
   async runAllAdvancedTests(): Promise<void> {
-    console.log('🚀 STARTING ADVANCED QUEEN INTEGRATION TESTS\n');
+    this.logger.info('🚀 STARTING ADVANCED QUEEN INTEGRATION TESTS');
     
     const tests = [
       () => this.testWidgetCreationWorkflow(),
@@ -449,7 +476,7 @@ export class AdvancedQueenTester {
       this.mockMcp.clearHistory(); // Clear between tests
       const result = await test();
       this.results.push(result);
-      console.log(''); // Space between tests
+      this.logger.debug('Test completed, starting next test');
     }
 
     await this.generateAdvancedReport();

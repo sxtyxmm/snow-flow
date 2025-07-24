@@ -372,6 +372,105 @@ test_generate_reports({
 });
 ```
 
+### Deployment Agent MCP ⭐ NEW v1.3.1
+
+**Purpose**: Enable complete deployment workflows including XML Update Set auto-import
+
+**Core Tools:**
+```javascript
+// Universal deployment with agent coordination
+snow_deploy({
+  type: "widget|flow|script|xml_update_set",
+  config: artifact_configuration,
+  agent_context: {
+    session_id: "swarm_123",
+    agent_id: "deployment_agent_001"
+  },
+  auto_update_set: true,
+  fallback_strategy: "manual_steps"
+});
+
+// 🚀 NEW: XML Update Set auto-import with safety controls
+snow_deploy({
+  type: "xml_update_set",
+  xml_file_path: "/path/to/flow_export.xml",
+  auto_preview: true,  // Automatically preview after import
+  auto_commit: true,   // Only commit if preview is clean
+  agent_context: {
+    session_id: "swarm_123",
+    agent_id: "deployment_agent_001"
+  }
+});
+
+// XML deployment workflow with comprehensive validation
+xml_deploy_with_validation({
+  xml_file_path: "flow-update-sets/approval_workflow.xml",
+  validation_steps: [
+    "syntax_check",
+    "dependency_validation", 
+    "conflict_detection",
+    "preview_analysis"
+  ],
+  safety_controls: {
+    require_clean_preview: true,
+    backup_before_commit: true,
+    rollback_on_failure: true
+  }
+});
+
+// Batch deployment with dependency management
+batch_deploy_artifacts({
+  artifacts: [
+    { type: "widget", config: widget_config },
+    { type: "flow", config: flow_config },
+    { type: "xml_update_set", xml_file_path: "export.xml" }
+  ],
+  deployment_order: "dependency_aware",
+  rollback_strategy: "atomic",
+  agent_coordination: true
+});
+```
+
+**Memory Integration:**
+```sql
+-- Track XML deployment operations
+INSERT INTO servicenow_artifacts (sys_id, artifact_type, name, created_by_agent, session_id, status)
+VALUES (?, 'xml_update_set', ?, 'deployment_agent_001', ?, 'importing');
+
+-- Store deployment safety status
+INSERT INTO deployment_history (
+  session_id, artifact_sys_id, deployment_type, 
+  success, deployment_time, agent_id, safety_checks
+) VALUES (?, ?, 'xml_import', ?, ?, ?, ?);
+
+-- Update coordination for dependent agents
+INSERT INTO shared_context (session_id, context_key, context_value, created_by_agent)
+VALUES (?, 'xml_deployment_complete', ?, 'deployment_agent_001');
+```
+
+**XML Deployment Safety Features:**
+```javascript
+// Comprehensive safety validation before commit
+async validateXMLDeployment(xml_file, context) {
+  // 1. Import to remote update set
+  const import_result = await this.importXMLToRemote(xml_file);
+  
+  // 2. Load and preview changes
+  const preview_result = await this.previewUpdateSet(import_result.remote_update_set_id);
+  
+  // 3. Analyze preview for problems
+  const problems = await this.analyzePreviewProblems(preview_result);
+  
+  // 4. Only commit if clean
+  if (problems.length === 0) {
+    return await this.commitUpdateSet(import_result.remote_update_set_id);
+  } else {
+    await this.notifyAgentOfProblems(context.agent_id, problems);
+    return { status: 'preview_problems', problems: problems };
+  }
+}
+```
+
 ## 💾 Memory Integration Architecture
 
 ### Shared Memory Tables for MCP Tools

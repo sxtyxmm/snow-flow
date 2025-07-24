@@ -2,6 +2,7 @@
 /**
  * ServiceNow Deployment MCP Server - Agent-Integrated Version
  * Provides specialized deployment tools with full agent coordination
+ * NEW v1.3.1: Complete XML Update Set auto-import with preview and commit controls
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -14,6 +15,7 @@ import { AgentContext } from './shared/mcp-memory-manager.js';
 import { ScopeManager, DeploymentContext } from '../managers/scope-manager.js';
 import { GlobalScopeStrategy, ScopeType } from '../strategies/global-scope-strategy.js';
 import { artifactTracker } from '../utils/artifact-tracker.js';
+import { promises as fs } from 'fs';
 
 export class ServiceNowDeploymentMCP extends BaseMCPServer {
   private scopeManager: ScopeManager;
@@ -49,8 +51,22 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
             properties: {
               type: {
                 type: 'string',
-                enum: ['widget', 'flow', 'application', 'script', 'business_rule', 'table', 'batch'],
-                description: 'Type of artifact to deploy'
+                enum: ['widget', 'flow', 'application', 'script', 'business_rule', 'table', 'batch', 'xml_update_set'],
+                description: 'Type of artifact to deploy (use xml_update_set for XML import)'
+              },
+              xml_file_path: {
+                type: 'string',
+                description: 'Path to XML update set file (for xml_update_set type)'
+              },
+              auto_preview: {
+                type: 'boolean',
+                description: 'Automatically preview the update set after import (default: true)',
+                default: true
+              },
+              auto_commit: {
+                type: 'boolean',
+                description: 'Automatically commit the update set if preview is clean (default: true)',
+                default: true
               },
               instruction: {
                 type: 'string',
@@ -265,6 +281,8 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
           let result;
           if (args.type === 'batch') {
             result = await this.deployBatch(args, context, updateSetId);
+          } else if (args.type === 'xml_update_set') {
+            result = await this.deployXMLUpdateSet(args, context);
           } else {
             result = await this.deploySingleArtifact(args, context, updateSetId);
           }
@@ -553,6 +571,170 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       );
 
       throw error;
+    }
+  }
+
+  /**
+   * Deploy XML Update Set to ServiceNow
+   */
+  private async deployXMLUpdateSet(args: any, context: AgentContext): Promise<MCPToolResult> {
+    const { xml_file_path, auto_preview = true, auto_commit = true } = args;
+    
+    if (!xml_file_path) {
+      throw new Error('XML file path is required for xml_update_set deployment');
+    }
+
+    this.logger.info('🚀 Deploying XML Update Set', { 
+      file: xml_file_path,
+      auto_preview,
+      auto_commit
+    });
+
+    try {
+      // Read XML file
+      await this.reportProgress(context, 20, 'Reading XML file');
+      const xmlContent = await fs.readFile(xml_file_path, 'utf-8');
+
+      // Import XML as remote update set
+      await this.reportProgress(context, 40, 'Importing XML to ServiceNow');
+      const importResponse = await this.client.makeRequest({
+        method: 'POST',
+        url: '/api/now/table/sys_remote_update_set',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Accept': 'application/json'
+        },
+        data: xmlContent
+      });
+
+      if (!importResponse.result || !importResponse.result.sys_id) {
+        throw new Error('Failed to import XML update set');
+      }
+
+      const remoteUpdateSetId = importResponse.result.sys_id;
+      this.logger.info('✅ XML imported successfully', { sys_id: remoteUpdateSetId });
+
+      // Load the update set
+      await this.reportProgress(context, 60, 'Loading update set');
+      await this.client.makeRequest({
+        method: 'PUT',
+        url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+        data: {
+          state: 'loaded'
+        }
+      });
+
+      // Find the loaded update set
+      const loadedResponse = await this.client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_update_set',
+        params: {
+          sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+          sysparm_limit: 1
+        }
+      });
+
+      if (!loadedResponse.result || loadedResponse.result.length === 0) {
+        throw new Error('Failed to find loaded update set');
+      }
+
+      const updateSetId = loadedResponse.result[0].sys_id;
+      const updateSetName = loadedResponse.result[0].name;
+
+      // Preview if requested
+      if (auto_preview) {
+        await this.reportProgress(context, 80, 'Previewing update set');
+        
+        const previewResponse = await this.client.makeRequest({
+          method: 'POST',
+          url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+        });
+
+        // Check preview results
+        const previewProblems = await this.client.makeRequest({
+          method: 'GET',
+          url: '/api/now/table/sys_update_preview_problem',
+          params: {
+            sysparm_query: `update_set=${updateSetId}`,
+            sysparm_limit: 100
+          }
+        });
+
+        if (previewProblems.result && previewProblems.result.length > 0) {
+          const problems = previewProblems.result.map((p: any) => 
+            `- ${p.type}: ${p.description}`
+          ).join('\n');
+
+          if (auto_commit) {
+            this.logger.warn('Preview found problems, skipping auto-commit', { problems });
+          }
+
+          return this.createSuccessResponse(
+            'XML imported and previewed with problems',
+            {
+              update_set_id: updateSetId,
+              update_set_name: updateSetName,
+              preview_status: 'problems_found',
+              problems: previewProblems.result,
+              next_steps: [
+                '1. Review preview problems in ServiceNow',
+                '2. Resolve any issues',
+                '3. Commit manually when ready'
+              ]
+            }
+          );
+        }
+
+        // Commit if clean and requested
+        if (auto_commit) {
+          await this.reportProgress(context, 95, 'Committing update set');
+          
+          await this.client.makeRequest({
+            method: 'POST',
+            url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+          });
+
+          return this.createSuccessResponse(
+            '✅ XML Update Set imported, previewed, and committed successfully!',
+            {
+              update_set_id: updateSetId,
+              update_set_name: updateSetName,
+              status: 'committed',
+              flow_location: 'Flow Designer > Designer',
+              next_steps: [
+                '1. Navigate to Flow Designer',
+                '2. Your flow should be visible in the list',
+                '3. Open the flow to verify all components'
+              ]
+            }
+          );
+        }
+      }
+
+      // Return success without preview/commit
+      return this.createSuccessResponse(
+        'XML Update Set imported successfully',
+        {
+          update_set_id: updateSetId,
+          update_set_name: updateSetName,
+          status: 'imported',
+          next_steps: [
+            '1. Navigate to System Update Sets > Local Update Sets',
+            '2. Find your update set: ' + updateSetName,
+            '3. Click Preview Update Set',
+            '4. Review and commit when ready'
+          ]
+        }
+      );
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      if (errorMsg.includes('ENOENT')) {
+        throw new Error(`XML file not found: ${xml_file_path}`);
+      }
+      
+      throw new Error(`Failed to deploy XML update set: ${errorMsg}`);
     }
   }
 

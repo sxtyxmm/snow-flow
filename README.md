@@ -12,9 +12,31 @@
 - 🎯 **Claude Code Integration**: All coordination happens through Claude Code interface
 - 🚀 **One Command**: `snow-flow swarm "objective"` - everything else is automatic
 
-## ✨ What's New in v1.1.93 - Revolutionary Parallel Agent Spawning WORKING!
+## ✨ What's New in v1.3.1 - Flow Designer XML Auto-Deployment COMPLETE!
 
-### 🚀 BREAKTHROUGH: 6+ Parallel Agents Working Simultaneously!
+### 🚀 BREAKTHROUGH: Complete XML Update Set Auto-Import!
+- **✅ ZERO MANUAL STEPS**: One command imports, previews, and commits XML update sets automatically
+- **✅ FLOW DESIGNER INTEGRATION**: Automatic detection of Flow Designer artifacts in swarm commands
+- **✅ XML GENERATION & DEPLOYMENT**: Complete workflow from swarm creation to XML deployment
+- **✅ SAFETY CONTROLS**: Auto-preview with problem detection, only commits if clean
+- **✅ NEW CLI COMMAND**: `snow-flow deploy-xml <file>` for standalone XML deployment
+- **✅ MCP INTEGRATION**: Extended deployment MCP to support xml_update_set type
+
+### 🔄 Flow Designer XML Workflow
+```bash
+# 1. Create flow with swarm
+snow-flow swarm "create approval workflow for equipment requests"
+
+# 2. Export XML automatically generated in flow-update-sets/
+# 3. Deploy XML with single command - no manual import!
+snow-flow deploy-xml flow-update-sets/flow_approval_workflow.xml
+
+# ✅ Complete automation: Import → Load → Preview → Commit (only if clean)
+```
+
+### 🚀 Previous Release: v1.1.93 - Revolutionary Parallel Agent Spawning WORKING!
+
+#### 🚀 BREAKTHROUGH: 6+ Parallel Agents Working Simultaneously!
 - **✅ PROVEN RESULTS**: 6+ specialized agents spawn automatically for widget development
 - **✅ 2.8x SPEEDUP**: Demonstrated 2.8x faster development vs single-agent approach
 - **✅ SPECIALIZED TEAMS**: widget-creator, css-specialist, backend-specialist, frontend-specialist, integration-specialist, performance-specialist, ui-ux-specialist, tester
@@ -171,6 +193,10 @@ snow-flow swarm "Create incident management dashboard with real-time charts"
 
 # 🧠 NEW: Advanced example showing Gap Analysis Engine
 snow-flow queen "create ITSM solution with LDAP authentication and custom approval workflows"
+
+# 🚀 NEW: Complete Flow Designer XML deployment workflow
+snow-flow swarm "create approval workflow for equipment requests"
+snow-flow deploy-xml flow-update-sets/flow_approval_workflow.xml
 ```
 
 ### 🧠 What You'll See with Gap Analysis Engine
@@ -233,10 +259,24 @@ snow-flow memory stats
 snow-flow memory export <file>
 ```
 
+### 🚀 NEW: XML Update Set Deployment
+```bash
+# Deploy XML update sets automatically (Import → Preview → Commit)
+snow-flow deploy-xml <xmlFile>
+
+# Deploy with custom options
+snow-flow deploy-xml flow.xml --no-preview  # Skip preview step
+snow-flow deploy-xml flow.xml --no-commit   # Preview only, don't commit
+
+# Example: Deploy generated flow XML
+snow-flow deploy-xml flow-update-sets/flow_approval_workflow.xml
+```
+
 ### 🚀 Intelligent Features (Enabled by Default)
 - **🧠 Gap Analysis Engine**: Automatically detects ALL ServiceNow configurations beyond MCP tools
 - **🤖 Auto-Resolution**: Attempts automatic configuration of system properties, navigation, auth
 - **📚 Manual Guides**: Generates detailed step-by-step instructions for complex setups
+- **🚀 XML Auto-Deployment**: Complete XML update set import workflow with safety controls
 - **Smart Discovery**: Automatically discovers and reuses existing artifacts
 - **Live Testing**: Real-time testing during development on your ServiceNow instance
 - **Auto Deploy**: Automatic deployment when ready (safe with update sets)
@@ -294,16 +334,26 @@ snow-flow swarm "Create incident dashboard widget with pie charts and filter opt
 # 4. Automatic deployment to ServiceNow with Update Set tracking
 ```
 
-### Flow Creation
+### Flow Creation & XML Deployment
 ```bash
-# Complex approval workflow
+# Complex approval workflow with automatic XML generation
 snow-flow swarm "Build approval flow for equipment requests with manager and finance approval"
 
 # The Queen Agent will:
 # 1. Spawn Flow Builder + Security Agent
 # 2. Flow Builder designs multi-step approval process
 # 3. Security Agent validates permissions and compliance
-# 4. Live testing with mock data before deployment
+# 4. Automatic XML generation in flow-update-sets/ directory
+# 5. Display deploy-xml command for seamless deployment
+
+# 🚀 NEW: Complete XML deployment workflow
+snow-flow deploy-xml flow-update-sets/flow_equipment_approval.xml
+
+# ✅ Automatic process:
+# • Import XML to ServiceNow
+# • Load remote update set  
+# • Preview changes & check for conflicts
+# • Commit automatically if clean (or prompt if issues found)
 ```
 
 ### Complete Solutions

@@ -7,6 +7,7 @@ import express, { Express, Request, Response } from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { Logger } from '../utils/logger.js';
 import { ServiceDiscoveryClient } from './service-discovery-client.js';
+import { MCPResourceManager } from './shared/mcp-resource-manager.js';
 
 export interface MCPServerConfig {
   name: string;
@@ -22,6 +23,7 @@ export class HttpTransportWrapper {
   private logger: Logger;
   private config: MCPServerConfig;
   private serviceDiscovery: ServiceDiscoveryClient;
+  private resourceManager: MCPResourceManager;
   private isReady: boolean = false;
 
   constructor(mcpServer: Server, config: MCPServerConfig) {
@@ -30,6 +32,7 @@ export class HttpTransportWrapper {
     this.logger = new Logger(`HttpTransport:${config.name}`);
     this.app = express();
     this.serviceDiscovery = new ServiceDiscoveryClient();
+    this.resourceManager = new MCPResourceManager(config.name);
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -137,6 +140,8 @@ export class HttpTransportWrapper {
 
     // Service info endpoint
     this.app.get('/info', (req: Request, res: Response) => {
+      const resourceStats = this.resourceManager.getResourceStats();
+      
       res.json({
         name: this.config.name,
         version: this.config.version,
@@ -150,8 +155,43 @@ export class HttpTransportWrapper {
             '/mcp/list-resources',
             '/mcp/read-resource'
           ]
+        },
+        resources: {
+          total: resourceStats.total,
+          cached: resourceStats.cached,
+          categories: resourceStats.categories
         }
       });
+    });
+
+    // Resource management endpoint
+    this.app.get('/resources', async (req: Request, res: Response) => {
+      try {
+        const resources = await this.resourceManager.listResources();
+        const stats = this.resourceManager.getResourceStats();
+        
+        res.json({
+          resources,
+          stats
+        });
+      } catch (error) {
+        this.handleError(res, error);
+      }
+    });
+
+    // Resource content endpoint
+    this.app.get('/resources/*', async (req: Request, res: Response) => {
+      try {
+        const resourcePath = req.params[0];
+        const uri = `servicenow://${resourcePath}`;
+        
+        const resource = await this.resourceManager.readResource(uri);
+        
+        res.set('Content-Type', resource.mimeType);
+        res.send(resource.text);
+      } catch (error) {
+        this.handleError(res, error);
+      }
     });
 
     // 404 handler
@@ -213,13 +253,38 @@ export class HttpTransportWrapper {
           break;
 
         case 'listResources':
-          // Handle list resources - return empty list if not supported
-          result = { resources: [] };
+          // Handle list resources - return available resources
+          try {
+            const resources = await this.resourceManager.listResources();
+            result = { resources };
+            this.logger.debug(`Listed ${resources.length} resources`);
+          } catch (error) {
+            this.logger.error('Failed to list resources:', error);
+            result = { resources: [] };
+          }
           break;
 
         case 'readResource':
-          // Handle read resource - throw error if not supported
-          throw new Error('Resource reading not implemented for this server');
+          // Handle read resource - read specific resource by URI
+          if (!params.uri) {
+            throw new Error('Resource URI is required for readResource');
+          }
+          
+          try {
+            const resource = await this.resourceManager.readResource(params.uri);
+            result = {
+              contents: [{
+                uri: resource.uri,
+                mimeType: resource.mimeType,
+                text: resource.text
+              }]
+            };
+            this.logger.debug(`Read resource: ${params.uri}`);
+          } catch (error) {
+            this.logger.error(`Failed to read resource ${params.uri}:`, error);
+            throw new Error(`Failed to read resource: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          break;
 
         default:
           throw new Error(`Unsupported MCP method: ${method}`);

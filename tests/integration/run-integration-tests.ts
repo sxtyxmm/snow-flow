@@ -6,7 +6,7 @@
  * Can be called from npm scripts or directly
  */
 
-import { QueenIntegrationTester } from './integration-test.js';
+import { QueenIntegrationTester } from '../../src/queen/integration-test.js';
 
 async function runTests() {
   console.log('🐝 QUEEN AGENT INTEGRATION TESTER');

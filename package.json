@@ -14,6 +14,7 @@
     "test": "jest",
     "test:memory": "node dist/memory/memory-test.js",
     "test:mcp-integration": "node dist/memory/mcp-integration-example.js",
+    "test:health": "node dist/health/test-system-health.js",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "setup-mcp": "node scripts/setup-mcp.js",

@@ -3,8 +3,8 @@
  * Shows how to use the Queen Agent with Claude Code interface
  */
 
-import { QueenAgent, QueenObjective } from './queen-agent';
-import { TodoItem, TodoStatus } from '../types/todo.types';
+import { QueenAgent, QueenObjective } from '../../src/agents/queen-agent';
+import { TodoItem, TodoStatus } from '../../src/types/todo.types';
 
 /**
  * Example of how the Queen Agent integrates with Claude Code

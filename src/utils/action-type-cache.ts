@@ -5,6 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { ServiceNowClient } from './servicenow-client.js';
 import { Logger } from './logger.js';
 
@@ -35,7 +36,7 @@ export class ActionTypeCache {
   constructor(client: ServiceNowClient) {
     this.logger = new Logger('ActionTypeCache');
     this.client = client;
-    this.cacheDir = path.join(process.cwd(), '.snow-flow', 'cache');
+    this.cacheDir = path.join(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow'), 'cache');
     this.ensureCacheDir();
   }
 

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2025-07-24T09:28:35.976Z">
+  <!-- Remote Update Set for Import -->
+  <sys_remote_update_set action="INSERT_OR_UPDATE">
+    <sys_id>501b51bd9d7a4d8caa94731a91223f3c</sys_id>
+    <name>Flow_build_automated_approval_flow_with_notifications_Import</name>
+    <description>Flow import: Flow_build_automated_approval_flow_with_notifications</description>
+    <remote_sys_id>501b51bd9d7a4d8caa94731a91223f3c</remote_sys_id>
+    <state>loaded</state>
+    <application>global</application>
+    <sys_created_by>admin</sys_created_by>
+    <sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on>
+  </sys_remote_update_set>
+
+  <!-- Update XML Record for Flow -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>48aa736aba944c8fab770d143b3e5f6b</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_flow_f3536333f0a142fa8fa86d4a55366eae</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow"><sys_hub_flow action="INSERT_OR_UPDATE"><sys_id>f3536333f0a142fa8fa86d4a55366eae</sys_id><name>Flow_build_automated_approval_flow_with_notifications</name><internal_name>flow_build_automated_approval_flow_with_notifications</internal_name><description>build automated approval flow with notifications</description><active>true</active><type>flow</type><category>custom</category><sys_scope display_value="Global">global</sys_scope><sys_app display_value="Global">global</sys_app><sys_package display_value="Global" source="global">global</sys_package><access>package_private</access><run_as>user</run_as><sys_class_name>sys_hub_flow</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-07-24T09:28:35.976Z</sys_updated_on><latest_snapshot>0caa79984a76445885cc8e7caec71f2d</latest_snapshot><master_snapshot>0caa79984a76445885cc8e7caec71f2d</master_snapshot><natlang/><copied_from/><copied_from_name/><show_draft_actions>false</show_draft_actions><show_row_wfr_actions>false</show_row_wfr_actions><show_wf_actions>false</show_wf_actions><sys_overrides/><sys_policy/></sys_hub_flow></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_flow</source_table>
+    <sys_recorded_at>2025-07-24T09:28:35.976Z</sys_recorded_at>
+    <type>Flow Designer Flow</type>
+    <update_set/>
+  </sys_update_xml>
+
+  <!-- Flow Snapshot Record -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>ddcc7d6a4d7d436daba2237c7728970b</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_flow_snapshot_0caa79984a76445885cc8e7caec71f2d</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><sys_id>0caa79984a76445885cc8e7caec71f2d</sys_id><name>Flow_build_automated_approval_flow_with_notifications</name><flow>f3536333f0a142fa8fa86d4a55366eae</flow><note>Initial version</note><snapshot><![CDATA[{
+  "$id": "root",
+  "type": "object",
+  "properties": {
+    "schemaVersion": "1.0",
+    "id": "f3536333f0a142fa8fa86d4a55366eae",
+    "name": "Flow_build_automated_approval_flow_with_notifications",
+    "description": "build automated approval flow with notifications",
+    "graph": {
+      "graphData": {
+        "nodeData": {
+          "actions": [
+            {
+              "id": "42e89a9d68db4da08911c7471e00bfd0",
+              "name": "Trigger",
+              "type": "trigger",
+              "base_type": "trigger",
+              "parents": [],
+              "children": [
+                "cda9d551980f4e1ea0dd6f02b83cf92a"
+              ],
+              "outputs": {
+                "condition": "",
+                "table": "incident"
+              },
+              "x": 100,
+              "y": 100
+            },
+            {
+              "id": "cda9d551980f4e1ea0dd6f02b83cf92a",
+              "name": "Request Approval",
+              "type": "e3a61c920b200300d97d8bf637673a30",
+              "base_type": "action",
+              "action_type_id": "e3a61c920b200300d97d8bf637673a30",
+              "parents": [
+                "42e89a9d68db4da08911c7471e00bfd0"
+              ],
+              "children": [
+                "40303f07b0e24e3f98476bfac4066596"
+              ],
+              "inputs": {
+                "table": "incident",
+                "record": "{{trigger.current.sys_id}}",
+                "approver": "{{trigger.current.requested_for.manager}}",
+                "approval_field": "approval",
+                "message": "Please approve: {{trigger.current.number}}"
+              },
+              "outputs": {
+                "state": "string",
+                "approver_sys_id": "string",
+                "comments": "string"
+              },
+              "x": 300,
+              "y": 100
+            },
+            {
+              "id": "40303f07b0e24e3f98476bfac4066596",
+              "name": "Send Notification",
+              "type": "716281160b100300d97d8bf637673ac7",
+              "base_type": "action",
+              "action_type_id": "716281160b100300d97d8bf637673ac7",
+              "parents": [
+                "cda9d551980f4e1ea0dd6f02b83cf92a"
+              ],
+              "children": [],
+              "inputs": {
+                "notification_id": "3c7d23a4db01030077c9a4d3ca961985",
+                "recipients": "{{trigger.current.requested_for}}",
+                "values": {
+                  "request_number": "{{trigger.current.number}}",
+                  "status": "Notification sent"
+                }
+              },
+              "outputs": {},
+              "x": 500,
+              "y": 100
+            }
+          ]
+        }
+      }
+    },
+    "triggers": [
+      {
+        "id": "42e89a9d68db4da08911c7471e00bfd0",
+        "type": "9b5a67a4db01030077c9a4d3ca961911",
+        "table": "incident",
+        "condition": ""
+      }
+    ]
+  }
+}]]]]><![CDATA[></snapshot><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on></sys_hub_flow_snapshot></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_flow_snapshot</source_table>
+    <type>Flow Designer Snapshot</type>
+  </sys_update_xml>
+
+  <!-- Trigger Instance -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>d970cfcf86ba46c98504ee0c1845f2c6</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_trigger_instance_42e89a9d68db4da08911c7471e00bfd0</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_trigger_instance"><sys_hub_trigger_instance action="INSERT_OR_UPDATE"><sys_id>42e89a9d68db4da08911c7471e00bfd0</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><trigger_type>9b5a67a4db01030077c9a4d3ca961911</trigger_type><table>incident</table><condition></condition><order>100</order><active>true</active><sys_class_name>sys_hub_trigger_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_trigger_instance></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_trigger_instance</source_table>
+    <type>Flow Designer Trigger</type>
+  </sys_update_xml>
+
+  
+  <!-- Action Instance: Request Approval -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>9f4316d172634e8eb2cd6f32e300ba45</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_action_instance_cda9d551980f4e1ea0dd6f02b83cf92a</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance"><sys_hub_action_instance action="INSERT_OR_UPDATE"><sys_id>cda9d551980f4e1ea0dd6f02b83cf92a</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><action_type display_value="">e3a61c920b200300d97d8bf637673a30</action_type><name>Request Approval</name><order>100</order><active>true</active><inputs><![CDATA[{"table":"incident","record":"{{trigger.current.sys_id}}","approver":"{{trigger.current.requested_for.manager}}","approval_field":"approval","message":"Please approve: {{trigger.current.number}}"}]]]]><![CDATA[></inputs><outputs><![CDATA[{"state":"string","approver_sys_id":"string","comments":"string"}]]]]><![CDATA[></outputs><condition></condition><comment_text/><sys_class_name>sys_hub_action_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_action_instance></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_action_instance</source_table>
+    <type>Flow Designer Action</type>
+  </sys_update_xml>
+
+  <!-- Action Instance: Send Notification -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>ae964e6bbb274f95a7f8c035431d03ac</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_action_instance_40303f07b0e24e3f98476bfac4066596</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance"><sys_hub_action_instance action="INSERT_OR_UPDATE"><sys_id>40303f07b0e24e3f98476bfac4066596</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><action_type display_value="">716281160b100300d97d8bf637673ac7</action_type><name>Send Notification</name><order>200</order><active>true</active><inputs><![CDATA[{"notification_id":"3c7d23a4db01030077c9a4d3ca961985","recipients":"{{trigger.current.requested_for}}","values":{"request_number":"{{trigger.current.number}}","status":"Notification sent"}}]]]]><![CDATA[></inputs><outputs><![CDATA[{}]]]]><![CDATA[></outputs><condition></condition><comment_text/><sys_class_name>sys_hub_action_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_action_instance></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_action_instance</source_table>
+    <type>Flow Designer Action</type>
+  </sys_update_xml>
+  
+  <!-- Flow Logic: Trigger -> First Activity -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>522e4803be624975a9ad399677f4f022</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_flow_logic_58035bba12b142d0b0b8a8d1f3c1eb6b</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic"><sys_hub_flow_logic action="INSERT_OR_UPDATE"><sys_id>58035bba12b142d0b0b8a8d1f3c1eb6b</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><from_element>42e89a9d68db4da08911c7471e00bfd0</from_element><from_element_type>trigger</from_element_type><to_element>cda9d551980f4e1ea0dd6f02b83cf92a</to_element><to_element_type>action</to_element_type><connection_type>success</connection_type><order>100</order><sys_class_name>sys_hub_flow_logic</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_flow_logic></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_flow_logic</source_table>
+    <type>Flow Designer Logic</type>
+  </sys_update_xml>
+
+  <!-- Flow Logic: Activity 1 -> Activity 2 -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>b6e2c538b4e040a89af4edccc82a4df8</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_flow_logic_492983e8d5f24bec85a97bb9244a81d1</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic"><sys_hub_flow_logic action="INSERT_OR_UPDATE"><sys_id>492983e8d5f24bec85a97bb9244a81d1</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><from_element>cda9d551980f4e1ea0dd6f02b83cf92a</from_element><from_element_type>action</from_element_type><to_element>40303f07b0e24e3f98476bfac4066596</to_element><to_element_type>action</to_element_type><connection_type>success</connection_type><order>200</order><sys_class_name>sys_hub_flow_logic</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_flow_logic></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_flow_logic</source_table>
+    <type>Flow Designer Logic</type>
+  </sys_update_xml>
+
+  <!-- Flow Logic: Last Activity -> End -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>a342485eb09a4011a6fdbecd864b470e</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application>global</application>
+    <name>sys_hub_flow_logic_0b5963b61aac41eba1b6f9a8cac74457</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic"><sys_hub_flow_logic action="INSERT_OR_UPDATE"><sys_id>0b5963b61aac41eba1b6f9a8cac74457</sys_id><flow>f3536333f0a142fa8fa86d4a55366eae</flow><from_element>40303f07b0e24e3f98476bfac4066596</from_element><from_element_type>action</from_element_type><to_element>END</to_element><to_element_type>end</to_element_type><connection_type>success</connection_type><order>400</order><sys_class_name>sys_hub_flow_logic</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-24T09:28:35.976Z</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_flow_logic></record_update>]]></payload>
+    <remote_update_set>501b51bd9d7a4d8caa94731a91223f3c</remote_update_set>
+    <source_table>sys_hub_flow_logic</source_table>
+    <type>Flow Designer Logic</type>
+  </sys_update_xml>
+</unload>

@@ -23,6 +23,7 @@ import { createServiceNowQueen, ServiceNowQueen } from './index.js';
 import { AgentFactory } from './agent-factory.js';
 import { NeuralLearning } from './neural-learning.js';
 import { QueenMemorySystem } from './queen-memory.js';
+import { generateServiceNowSysId } from '../utils/servicenow-id-generator.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -427,7 +428,7 @@ class QueenIntegrationTester {
       memorySystem.storeArtifact({
         type: 'widget',
         name: 'test_dashboard_widget',
-        sys_id: 'test-12345',
+        sys_id: generateServiceNowSysId(),
         config: { template: 'dashboard', css: 'responsive' },
         dependencies: ['Chart.js']
       });

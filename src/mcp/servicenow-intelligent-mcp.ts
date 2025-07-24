@@ -16,6 +16,7 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
 import { Logger } from '../utils/logger.js';
+import { widgetTemplateGenerator } from '../utils/widget-template-generator.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -1709,8 +1710,189 @@ export class ServiceNowIntelligentMCP {
   }
 
   private async deployArtifact(artifact: any) {
-    // Deploy the modified artifact back to ServiceNow
-    return { success: true, message: 'Artifact deployed successfully' };
+    this.logger.info('Deploying modified artifact to ServiceNow', {
+      type: artifact.type,
+      sys_id: artifact.sys_id,
+      name: artifact.name
+    });
+
+    try {
+      // Determine the table name based on artifact type
+      let tableName: string;
+      let updateData: any = {};
+
+      switch (artifact.type) {
+        case 'widget':
+          tableName = 'sp_widget';
+          updateData = {
+            name: artifact.name,
+            title: artifact.title,
+            description: artifact.description,
+            template: artifact.template,
+            css: artifact.css,
+            client_script: artifact.client_script,
+            server_script: artifact.server_script,
+            option_schema: artifact.option_schema
+          };
+          break;
+
+        case 'flow':
+          tableName = 'sys_hub_flow';
+          updateData = {
+            name: artifact.name,
+            description: artifact.description,
+            active: artifact.active,
+            trigger_conditions: artifact.trigger_conditions,
+            flow_definition: typeof artifact.flow_definition === 'string' 
+              ? artifact.flow_definition 
+              : JSON.stringify(artifact.flow_definition)
+          };
+          break;
+
+        case 'subflow':
+          tableName = 'sys_hub_subflow';
+          updateData = {
+            name: artifact.name,
+            description: artifact.description,
+            inputs: typeof artifact.inputs === 'string' 
+              ? artifact.inputs 
+              : JSON.stringify(artifact.inputs || []),
+            outputs: typeof artifact.outputs === 'string' 
+              ? artifact.outputs 
+              : JSON.stringify(artifact.outputs || [])
+          };
+          break;
+
+        case 'business_rule':
+          tableName = 'sys_script';
+          updateData = {
+            name: artifact.name,
+            description: artifact.description,
+            script: artifact.script,
+            condition: artifact.condition,
+            when: artifact.when,
+            active: artifact.active
+          };
+          break;
+
+        case 'script_include':
+          tableName = 'sys_script_include';
+          updateData = {
+            name: artifact.name,
+            description: artifact.description,
+            script: artifact.script,
+            api_name: artifact.api_name,
+            active: artifact.active
+          };
+          break;
+
+        case 'client_script':
+          tableName = 'sys_script_client';
+          updateData = {
+            name: artifact.name,
+            description: artifact.description,
+            script: artifact.script,
+            table: artifact.table,
+            type: artifact.script_type,
+            condition: artifact.condition,
+            active: artifact.active
+          };
+          break;
+
+        case 'ui_policy':
+          tableName = 'sys_ui_policy';
+          updateData = {
+            short_description: artifact.name,
+            description: artifact.description,
+            conditions: artifact.condition,
+            on_load: artifact.on_load,
+            reverse_if_false: artifact.reverse_if_false,
+            active: artifact.active
+          };
+          break;
+
+        case 'application':
+          tableName = 'sys_app';
+          updateData = {
+            name: artifact.name,
+            short_description: artifact.short_description,
+            description: artifact.description,
+            version: artifact.version,
+            active: artifact.active
+          };
+          break;
+
+        default:
+          // Use the artifact's table property if available, or try to infer from type
+          tableName = artifact.table || artifact.type;
+          updateData = { ...artifact };
+          delete updateData.sys_id;
+          delete updateData.type;
+          delete updateData.table;
+          delete updateData.modified;
+          delete updateData.modification_applied;
+          break;
+      }
+
+      // Remove undefined/null values to avoid overwriting with empty data
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined || updateData[key] === null) {
+          delete updateData[key];
+        }
+      });
+
+      // Update the artifact in ServiceNow using the sys_id
+      const result = await this.client.put(`/api/now/table/${tableName}/${artifact.sys_id}`, updateData);
+
+      if (result.result) {
+        this.logger.info('Artifact successfully deployed to ServiceNow', {
+          type: artifact.type,
+          sys_id: artifact.sys_id,
+          name: artifact.name,
+          table: tableName
+        });
+
+        // Get instance info for URL generation
+        const instanceInfo = await this.client.getInstanceInfo();
+        const baseUrl = instanceInfo.result?.instance_url || 
+                       `https://${process.env.SNOW_INSTANCE?.replace(/\/$/, '') || 'instance'}.service-now.com`;
+
+        return {
+          success: true,
+          message: 'Artifact deployed successfully',
+          data: {
+            sys_id: artifact.sys_id,
+            name: artifact.name,
+            type: artifact.type,
+            table: tableName,
+            url: `${baseUrl}/nav_to.do?uri=${tableName}.do?sys_id=${artifact.sys_id}`,
+            last_updated: new Date().toISOString()
+          }
+        };
+      } else {
+        throw new Error('No result returned from ServiceNow API');
+      }
+
+    } catch (error) {
+      this.logger.error('Failed to deploy artifact to ServiceNow', {
+        type: artifact.type,
+        sys_id: artifact.sys_id,
+        name: artifact.name,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: `Failed to deploy artifact: ${error instanceof Error ? error.message : String(error)}`,
+        error: error instanceof Error ? error.message : String(error),
+        data: {
+          sys_id: artifact.sys_id,
+          name: artifact.name,
+          type: artifact.type,
+          deployment_attempt: new Date().toISOString()
+        }
+      };
+    }
   }
 
   private async updateMemoryIndex(artifact: any, modification: any) {
@@ -3823,10 +4005,21 @@ export class ServiceNowIntelligentMCP {
             simplifiedArtifact.config.flow_definition = JSON.stringify(flowDef);
             simplifiedArtifact.config.name += '_simplified';
           } else if (artifact.type === 'widget') {
-            // Simplify widget - basic template only
-            simplifiedArtifact.config.template = '<div>{{::data.message || "Widget loaded"}}</div>';
-            simplifiedArtifact.config.css = '';
-            simplifiedArtifact.config.client_script = '';
+            // Generate simplified but functional widget template
+            const widgetInstruction = artifact.config.description || artifact.config.name || 'simplified widget';
+            const generatedWidget = widgetTemplateGenerator.generateWidget({
+              title: artifact.config.title || artifact.config.name,
+              instruction: widgetInstruction,
+              type: 'info', // Use info type for simplified widgets
+              theme: 'minimal',
+              responsive: true
+            });
+            
+            simplifiedArtifact.config.template = generatedWidget.template;
+            simplifiedArtifact.config.css = generatedWidget.css;
+            simplifiedArtifact.config.client_script = generatedWidget.clientScript;
+            simplifiedArtifact.config.server_script = generatedWidget.serverScript;
+            simplifiedArtifact.config.option_schema = generatedWidget.optionSchema;
             simplifiedArtifact.config.name += '_simplified';
           }
           
@@ -3886,7 +4079,22 @@ try {
             cleanedConfig.type = 'subflow'; // Subflows are simpler
             cleanedConfig.category = 'custom';
           } else if (artifact.type === 'widget') {
-            cleanedConfig.template = '<div>Minimal Widget</div>';
+            // Generate minimal but functional widget template
+            const widgetInstruction = artifact.config.description || artifact.config.name || 'minimal widget';
+            const generatedWidget = widgetTemplateGenerator.generateWidget({
+              title: artifact.config.title || artifact.config.name,
+              instruction: widgetInstruction,
+              type: 'info', // Use info type for minimal widgets
+              theme: 'minimal',
+              responsive: true
+            });
+            
+            cleanedConfig.template = generatedWidget.template;
+            cleanedConfig.css = generatedWidget.css;
+            cleanedConfig.client_script = generatedWidget.clientScript;
+            cleanedConfig.server_script = generatedWidget.serverScript;
+            cleanedConfig.option_schema = generatedWidget.optionSchema;
+            cleanedConfig.title = artifact.config.title || artifact.config.name;
           }
 
           minimalArtifact.config = cleanedConfig;

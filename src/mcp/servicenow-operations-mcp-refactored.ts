@@ -15,6 +15,7 @@
 
 import { BaseMCPServer, ToolResult } from './base-mcp-server.js';
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { generateMockSysId, generateRequestNumber } from '../utils/servicenow-id-generator.js';
 
 // Operational table mappings for ServiceNow
 const operationalTableMapping = {
@@ -1309,13 +1310,13 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       flow: flowResponse.result.name,
       link_type,
       link_created: true,
-      sys_id: 'mock_link_' + Date.now()
+      sys_id: generateMockSysId('catalog_flow_link')
     };
 
     if (test_link) {
       // Simulate creating a test request
       result.test_request = {
-        number: 'REQ0012345',
+        number: generateRequestNumber(),
         state: 'pending',
         flow_triggered: true
       };

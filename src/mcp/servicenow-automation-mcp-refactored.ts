@@ -536,15 +536,106 @@ export class ServiceNowAutomationMCP extends BaseMCPServer {
 
       const job = jobResponse.data.result[0];
 
-      // In a real implementation, this would trigger the job execution
-      // For now, return a simulated test result
-      const testResult = {
-        job_name: job.name,
-        job_id: job.sys_id,
-        test_status: 'success',
-        execution_time: Math.floor(Math.random() * 5000) + 1000,
-        message: 'Job executed successfully in test mode'
-      };
+      // Execute the scheduled job and monitor its execution
+      const executionStartTime = Date.now();
+      let testResult: any;
+      
+      try {
+        // Trigger the scheduled job execution
+        this.logger.info('Triggering scheduled job execution', { 
+          jobName: job.name, 
+          jobId: job.sys_id 
+        });
+        
+        // Method 1: Try to execute via sys_trigger endpoint
+        const triggerResponse = await this.client.post('/api/now/table/sys_trigger', {
+          script: `gs.eventQueue('sysauto.script.execute', null, '${job.sys_id}', '');`,
+          name: `Test execution of ${job.name}`,
+          next_action: new Date(Date.now() + 5000).toISOString() // Execute in 5 seconds
+        });
+
+        if (triggerResponse.result) {
+          this.logger.info('Job execution trigger created', { 
+            triggerId: triggerResponse.result.sys_id 
+          });
+          
+          // Wait a brief moment for execution to begin
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Check for recent execution history
+          const executionHistoryResponse = await this.client.get(
+            `/api/now/table/sys_execution_tracker?sysparm_query=source=${job.sys_id}^ORDERBYDESCsys_created_on&sysparm_limit=1`
+          );
+          
+          const realExecutionTime = Date.now() - executionStartTime;
+          
+          if (executionHistoryResponse.result && executionHistoryResponse.result.length > 0) {
+            const execution = executionHistoryResponse.result[0];
+            testResult = {
+              job_name: job.name,
+              job_id: job.sys_id,
+              test_status: 'executed',
+              execution_time: realExecutionTime,
+              trigger_id: triggerResponse.result.sys_id,
+              execution_tracker_id: execution.sys_id,
+              execution_state: execution.state,
+              execution_progress: execution.completion_percentage || 0,
+              message: `Job execution initiated successfully. Trigger created: ${triggerResponse.result.sys_id}`,
+              details: {
+                job_active: job.active,
+                job_script: job.script ? 'Present' : 'Missing',
+                job_condition: job.condition_script || 'None',
+                execution_history_found: true
+              }
+            };
+          } else {
+            testResult = {
+              job_name: job.name,
+              job_id: job.sys_id,
+              test_status: 'triggered',
+              execution_time: realExecutionTime,
+              trigger_id: triggerResponse.result.sys_id,
+              message: `Job execution trigger created successfully. Check sys_execution_tracker for progress.`,
+              details: {
+                job_active: job.active,
+                job_script: job.script ? 'Present' : 'Missing',
+                job_condition: job.condition_script || 'None',
+                execution_history_found: false
+              }
+            };
+          }
+          
+        } else {
+          throw new Error('Failed to create execution trigger');
+        }
+        
+      } catch (executionError) {
+        // If direct execution fails, perform validation instead
+        this.logger.warn('Job execution failed, performing validation instead', {
+          jobName: job.name,
+          error: executionError instanceof Error ? executionError.message : String(executionError)
+        });
+        
+        const realExecutionTime = Date.now() - executionStartTime;
+        
+        testResult = {
+          job_name: job.name,
+          job_id: job.sys_id,
+          test_status: 'validated',
+          execution_time: realExecutionTime,
+          message: `Job validation completed. Execution failed: ${executionError instanceof Error ? executionError.message : String(executionError)}`,
+          details: {
+            job_active: job.active,
+            job_script: job.script ? 'Present' : 'Missing',
+            job_condition: job.condition_script || 'None',
+            job_run_as: job.run_as || 'system',
+            job_schedule: job.run_period || 'Not scheduled',
+            validation_performed: true,
+            execution_attempted: true,
+            execution_error: executionError instanceof Error ? executionError.message : String(executionError)
+          }
+        };
+      }
 
       return {
         success: true,

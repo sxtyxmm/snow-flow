@@ -4,13 +4,15 @@
  * Shows how to integrate the Queen Agent with existing snow-flow CLI
  */
 
-import { createServiceNowQueen, ServiceNowQueen } from './index.js';
+import { createServiceNowQueen, ServiceNowQueen } from '../../src/queen/index.js';
+import { Logger } from '../../src/utils/logger';
 
 /**
  * Example: Queen Agent integration for snow-flow CLI
  */
 export class QueenIntegration {
   public queen: ServiceNowQueen;
+  private logger = new Logger('QueenIntegration');
 
   constructor(options: {
     debugMode?: boolean;
@@ -27,7 +29,7 @@ export class QueenIntegration {
    * Replace existing swarm command with Queen intelligence
    */
   async executeSwarmObjective(objective: string, options: any = {}): Promise<any> {
-    console.log('🐝 Queen Agent taking over swarm coordination...');
+    this.logger.info('🐝 Queen Agent taking over swarm coordination', { objective, options });
     
     try {
       // Queen analyzes, spawns agents, coordinates, and deploys
@@ -45,7 +47,7 @@ export class QueenIntegration {
       };
       
     } catch (error) {
-      console.error('❌ Queen Agent execution failed:', error);
+      this.logger.error('❌ Queen Agent execution failed', error);
       return {
         success: false,
         error: (error as Error).message,
@@ -58,7 +60,7 @@ export class QueenIntegration {
    * Replace SPARC team commands with dynamic agent spawning
    */
   async executeDynamicTeam(taskType: 'widget' | 'flow' | 'app', objective: string): Promise<any> {
-    console.log(`🎯 Queen spawning optimal ${taskType} team...`);
+    this.logger.info(`🎯 Queen spawning optimal ${taskType} team`, { taskType, objective });
     
     // Queen automatically spawns optimal agents based on task analysis
     const result = await this.queen.executeObjective(objective);
@@ -76,7 +78,7 @@ export class QueenIntegration {
    * Memory-driven development workflow
    */
   async memoryDrivenWorkflow(objective: string): Promise<any> {
-    console.log('💾 Using Queen memory for optimal workflow...');
+    this.logger.info('💾 Using Queen memory for optimal workflow', { objective });
     
     // Queen uses memory to find similar past successes
     const result = await this.queen.executeObjective(objective);
@@ -97,29 +99,26 @@ export class QueenIntegration {
   logHiveMindStatus(): void {
     const status = this.queen.getHiveMindStatus();
     
-    console.log('\n🐝 HIVE-MIND STATUS 🐝');
-    console.log('═══════════════════════');
-    console.log(`📋 Active Tasks: ${status.activeTasks}`);
-    console.log(`👥 Active Agents: ${status.activeAgents}`);
-    console.log(`🧠 Learned Patterns: ${status.memoryStats.patterns}`);
-    console.log(`📚 Stored Artifacts: ${status.memoryStats.artifacts}`);
-    console.log(`💡 Learning Insights: ${status.memoryStats.learnings}`);
+    this.logger.info('\n🐝 HIVE-MIND STATUS 🐝', {
+      activeTasks: status.activeTasks,
+      activeAgents: status.activeAgents,
+      learnedPatterns: status.memoryStats.patterns,
+      storedArtifacts: status.memoryStats.artifacts,
+      learningInsights: status.memoryStats.learnings
+    });
     
     if (status.factoryStats.agentTypeCounts) {
-      console.log('\n👥 AGENT BREAKDOWN:');
-      Object.entries(status.factoryStats.agentTypeCounts).forEach(([type, count]) => {
-        console.log(`   ${type}: ${count}`);
-      });
+      this.logger.info('\n👥 AGENT BREAKDOWN:', { agentTypeCounts: status.factoryStats.agentTypeCounts });
     }
     
-    console.log('═══════════════════════\n');
+    this.logger.debug('Hive-mind status display completed');
   }
 
   /**
    * Graceful shutdown
    */
   async shutdown(): Promise<void> {
-    console.log('🛑 Shutting down Queen Agent...');
+    this.logger.info('🛑 Shutting down Queen Agent');
     await this.queen.shutdown();
   }
 }
@@ -200,7 +199,7 @@ export const CLI_INTEGRATION_EXAMPLES = {
   // Replace complex swarm orchestration
   async swarmReplacement(args: string[], options: any) {
     const objective = args.join(' ');
-    console.log('🐝 Queen Agent replacing swarm orchestration...');
+    this.logger.info('🐝 Queen Agent replacing swarm orchestration', { objective, options });
     
     return await replaceSwarmCommand(objective, options);
   },
@@ -208,7 +207,7 @@ export const CLI_INTEGRATION_EXAMPLES = {
   // Replace SPARC team system
   async teamReplacement(teamType: string, args: string[]) {
     const objective = args.join(' ');
-    console.log(`🎯 Queen Agent replacing ${teamType} team...`);
+    this.logger.info(`🎯 Queen Agent replacing ${teamType} team`, { teamType, objective });
     
     return await replaceTeamCommand(teamType, objective);
   },
@@ -216,7 +215,7 @@ export const CLI_INTEGRATION_EXAMPLES = {
   // Single command does everything
   async queenCommand(args: string[], options: any) {
     const objective = args.join(' ');
-    console.log('👑 Queen Agent taking full control...');
+    this.logger.info('👑 Queen Agent taking full control', { objective, options });
     
     const queenIntegration = new QueenIntegration({
       debugMode: options.debug
