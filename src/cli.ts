@@ -404,38 +404,40 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       return false;
     }
     
+    
     // Check for MCP config
     const mcpConfigPath = join(process.cwd(), '.mcp.json');
     const hasMcpConfig = existsSync(mcpConfigPath);
     
-    // Launch Claude Code with MCP config
+    // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
     const claudeArgs = hasMcpConfig 
-      ? ['--mcp-config', '.mcp.json', '.']
-      : ['.'];
+      ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
+      : ['--dangerously-skip-permissions'];
     
     cliLogger.info('🚀 Launching Claude Code automatically...');
     if (hasMcpConfig) {
       cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
     }
     
-    // Start Claude Code process in interactive mode
+    // Start Claude Code process in interactive mode with stdin piping
     const claudeProcess = spawn('claude', claudeArgs, {
-      stdio: ['pipe', 'inherit', 'inherit'],
-      shell: true,
+      stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin, inherit stdout/stderr
+      cwd: process.cwd(),
       env: { ...process.env }
     });
     
-    // Send the prompt to Claude Code
+    // Send the prompt via stdin
     cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
     cliLogger.info('🚀 Claude Code interface opening...\n');
     
-    // Write prompt and close stdin to trigger execution
+    // Write prompt to stdin
     claudeProcess.stdin.write(prompt);
     claudeProcess.stdin.end();
     
     // Set up process monitoring
     return new Promise((resolve) => {
-      claudeProcess.on('close', (code) => {
+      claudeProcess.on('close', async (code) => {
+        
         if (code === 0) {
           cliLogger.info('\n✅ Claude Code session completed successfully!');
           resolve(true);

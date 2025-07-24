@@ -2,13 +2,19 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.9';
+export const VERSION = '1.3.10';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.10': [
+      '🔥 RAW MODE FIX: Used --dangerously-skip-permissions flag',
+      '📝 STDIN RESTORED: Proper prompt injection via stdin',
+      '✅ FULLY AUTOMATIC: No manual input required anymore',
+      '🚀 LIKE OLD VERSIONS: Works exactly like v1.0-1.2 did'
+    ],
     '1.3.9': [
       '🚀 CLAUDE CODE AUTO-LAUNCH: Restored automatic Claude Code launching',
       '🤖 PROCESS SPAWNING: Claude CLI detection and proper process spawning',
