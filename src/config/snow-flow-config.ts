@@ -17,51 +17,51 @@ const ConfigSchema = z.object({
     dataDir: z.string().default(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow')),
     maxConcurrentOperations: z.number().min(1).max(100).default(10),
     sessionTimeout: z.number().min(300000).default(3600000), // 1 hour default
-  }),
+  }).default({}),
 
   // Agent configuration
   agents: z.object({
     queen: z.object({
       maxWorkerAgents: z.number().min(1).max(50).default(10),
-      spawnTimeout: z.number().min(5000).default(parseInt(process.env.SNOW_FLOW_SPAWN_TIMEOUT || '30000')),
+      spawnTimeout: z.number().min(5000).default(30000),
       coordinationInterval: z.number().min(1000).default(5000),
       decisionThreshold: z.number().min(0).max(1).default(0.7),
       retryAttempts: z.number().min(1).max(10).default(3),
-    }),
+    }).default({}),
     worker: z.object({
       heartbeatInterval: z.number().min(1000).default(10000),
       taskTimeout: z.number().min(60000).default(300000), // 5 minutes
       maxMemoryUsage: z.number().min(100).default(500), // MB
       autoShutdownIdle: z.number().min(60000).default(600000), // 10 minutes
-    }),
+    }).default({}),
     specializations: z.object({
       widgetCreator: z.object({
         enabled: z.boolean().default(true),
         priority: z.number().min(1).max(10).default(8),
         capabilities: z.array(z.string()).default(['html', 'css', 'javascript', 'servicenow-api']),
-      }),
+      }).default({}),
       flowBuilder: z.object({
         enabled: z.boolean().default(true),
         priority: z.number().min(1).max(10).default(8),
         capabilities: z.array(z.string()).default(['flow-designer', 'triggers', 'actions', 'approvals']),
-      }),
+      }).default({}),
       scriptWriter: z.object({
         enabled: z.boolean().default(true),
         priority: z.number().min(1).max(10).default(7),
         capabilities: z.array(z.string()).default(['business-rules', 'script-includes', 'client-scripts']),
-      }),
+      }).default({}),
       securityAgent: z.object({
         enabled: z.boolean().default(true),
         priority: z.number().min(1).max(10).default(9),
         capabilities: z.array(z.string()).default(['acl', 'security-scan', 'compliance']),
-      }),
+      }).default({}),
       testAgent: z.object({
         enabled: z.boolean().default(true),
         priority: z.number().min(1).max(10).default(6),
         capabilities: z.array(z.string()).default(['unit-test', 'integration-test', 'performance-test']),
-      }),
-    }),
-  }),
+      }).default({}),
+    }).default({}),
+  }).default({}),
 
   // Memory system configuration
   memory: z.object({
@@ -69,65 +69,65 @@ const ConfigSchema = z.object({
     schema: z.object({
       version: z.string().default('1.0.0'),
       autoMigrate: z.boolean().default(true),
-    }),
+    }).default({}),
     cache: z.object({
       enabled: z.boolean().default(true),
       maxSize: z.number().min(10).default(100), // MB
       ttl: z.number().min(60000).default(3600000), // 1 hour
-    }),
+    }).default({}),
     ttl: z.object({
       default: z.number().min(3600000).default(86400000), // 24 hours
       session: z.number().min(3600000).default(86400000), // 24 hours
       artifact: z.number().min(86400000).default(604800000), // 7 days
       metric: z.number().min(86400000).default(2592000000), // 30 days
-    }),
+    }).default({}),
     cleanup: z.object({
       enabled: z.boolean().default(true),
       interval: z.number().min(3600000).default(86400000), // 24 hours
       retentionDays: z.number().min(7).default(30),
-    }),
-  }),
+    }).default({}),
+  }).default({}),
 
   // MCP server configuration
   mcp: z.object({
     servers: z.object({
       deployment: z.object({
         enabled: z.boolean().default(true),
-        port: z.number().min(3000).max(65535).default(parseInt(process.env.MCP_DEPLOYMENT_PORT || '3001')),
+        port: z.number().min(3000).max(65535).default(3001),
         host: z.string().default('localhost'),
-      }),
+      }).default({}),
       intelligent: z.object({
         enabled: z.boolean().default(true),
-        port: z.number().min(3000).max(65535).default(parseInt(process.env.MCP_INTELLIGENT_PORT || '3002')),
+        port: z.number().min(3000).max(65535).default(3002),
         host: z.string().default('localhost'),
-      }),
+      }).default({}),
       operations: z.object({
         enabled: z.boolean().default(true),
-        port: z.number().min(3000).max(65535).default(parseInt(process.env.MCP_OPERATIONS_PORT || '3003')),
+        port: z.number().min(3000).max(65535).default(3003),
         host: z.string().default('localhost'),
-      }),
+      }).default({}),
       flowComposer: z.object({
         enabled: z.boolean().default(true),
-        port: z.number().min(3000).max(65535).default(parseInt(process.env.MCP_FLOW_COMPOSER_PORT || '3004')),
+        port: z.number().min(3000).max(65535).default(3004),
         host: z.string().default('localhost'),
-      }),
+      }).default({}),
       platformDevelopment: z.object({
         enabled: z.boolean().default(true),
-        port: z.number().min(3000).max(65535).default(parseInt(process.env.MCP_PLATFORM_DEV_PORT || '3005')),
+        port: z.number().min(3000).max(65535).default(3005),
         host: z.string().default('localhost'),
-      }),
-    }),
+      }).default({}),
+    }).default({}),
     transport: z.object({
       type: z.enum(['stdio', 'http', 'websocket']).default('stdio'),
-      timeout: z.number().min(5000).default(parseInt(process.env.MCP_TIMEOUT || '30000')),
+      timeout: z.number().min(5000).default(30000),
       retryAttempts: z.number().min(1).max(10).default(3),
       retryDelay: z.number().min(1000).default(5000),
-    }),
+    }).default({}),
     authentication: z.object({
       required: z.boolean().default(true),
       tokenExpiry: z.number().min(3600000).default(86400000), // 24 hours
-    }),
-  }),
+    }).default({}),
+  }).default({}),
 
   // ServiceNow connection settings
   servicenow: z.object({
@@ -143,18 +143,18 @@ const ConfigSchema = z.object({
       maxRetries: z.number().min(0).max(10).default(3),
       retryDelay: z.number().min(1000).default(2000),
       backoffMultiplier: z.number().min(1).max(5).default(2),
-    }),
+    }).default({}),
     cache: z.object({
       enabled: z.boolean().default(true),
       ttl: z.number().min(60000).default(300000), // 5 minutes
       maxSize: z.number().min(10).default(50), // MB
-    }),
+    }).default({}),
     oauth: z.object({
       redirectHost: z.string().default('localhost'),
-      redirectPort: z.number().min(3000).max(65535).default(parseInt(process.env.SNOW_REDIRECT_PORT || '3005')),
+      redirectPort: z.number().min(3000).max(65535).default(3005),
       redirectPath: z.string().default('/callback'),
-    }),
-  }),
+    }).default({}),
+  }).default({}),
 
   // Monitoring configuration
   monitoring: z.object({
@@ -163,7 +163,7 @@ const ConfigSchema = z.object({
       sampleRate: z.number().min(0).max(1).default(1),
       metricsRetention: z.number().min(86400000).default(604800000), // 7 days
       aggregationInterval: z.number().min(60000).default(300000), // 5 minutes
-    }),
+    }).default({}),
     health: z.object({
       enabled: z.boolean().default(true),
       checkInterval: z.number().min(30000).default(60000), // 1 minute
@@ -172,15 +172,15 @@ const ConfigSchema = z.object({
         memoryUsage: z.number().min(0).max(1).default(0.8), // 80%
         cpuUsage: z.number().min(0).max(1).default(0.8), // 80%
         errorRate: z.number().min(0).max(1).default(0.05), // 5%
-      }),
-    }),
+      }).default({}),
+    }).default({}),
     alerts: z.object({
       enabled: z.boolean().default(true),
       channels: z.array(z.enum(['console', 'file', 'webhook'])).default(['console']),
       webhookUrl: z.string().url().optional(),
       severityThreshold: z.enum(['info', 'warn', 'error']).default('warn'),
-    }),
-  }),
+    }).default({}),
+  }).default({}),
 
   // Health check configuration
   health: z.object({
@@ -189,13 +189,13 @@ const ConfigSchema = z.object({
       mcp: z.boolean().default(true),
       servicenow: z.boolean().default(true),
       queen: z.boolean().default(true),
-    }),
+    }).default({}),
     thresholds: z.object({
       responseTime: z.number().min(100).default(5000), // ms
       memoryUsage: z.number().min(100).default(1000), // MB
       queueSize: z.number().min(10).default(100),
-    }),
-  }),
+    }).default({}),
+  }).default({}),
 
   // Feature flags
   features: z.object({
@@ -208,7 +208,7 @@ const ConfigSchema = z.object({
     progressMonitoring: z.boolean().default(true),
     neuralPatterns: z.boolean().default(false),
     cognitiveAnalysis: z.boolean().default(false),
-  }),
+  }).default({}),
 });
 
 export type ISnowFlowConfig = z.infer<typeof ConfigSchema>;
@@ -378,17 +378,26 @@ export class SnowFlowConfig {
     }
     if (process.env.SNOW_REQUEST_TIMEOUT) {
       env.servicenow = env.servicenow || {};
-      env.servicenow.timeout = parseInt(process.env.SNOW_REQUEST_TIMEOUT);
+      const value = parseInt(process.env.SNOW_REQUEST_TIMEOUT);
+      if (!isNaN(value)) {
+        env.servicenow.timeout = value;
+      }
     }
     if (process.env.SNOW_MAX_RETRIES) {
       env.servicenow = env.servicenow || {};
       env.servicenow.retryConfig = env.servicenow.retryConfig || {};
-      env.servicenow.retryConfig.maxRetries = parseInt(process.env.SNOW_MAX_RETRIES);
+      const value = parseInt(process.env.SNOW_MAX_RETRIES);
+      if (!isNaN(value)) {
+        env.servicenow.retryConfig.maxRetries = value;
+      }
     }
     if (process.env.SNOW_RETRY_DELAY) {
       env.servicenow = env.servicenow || {};
       env.servicenow.retryConfig = env.servicenow.retryConfig || {};
-      env.servicenow.retryConfig.retryDelay = parseInt(process.env.SNOW_RETRY_DELAY);
+      const value = parseInt(process.env.SNOW_RETRY_DELAY);
+      if (!isNaN(value)) {
+        env.servicenow.retryConfig.retryDelay = value;
+      }
     }
     if (process.env.SNOW_REDIRECT_HOST) {
       env.servicenow = env.servicenow || {};
@@ -398,7 +407,10 @@ export class SnowFlowConfig {
     if (process.env.SNOW_REDIRECT_PORT) {
       env.servicenow = env.servicenow || {};
       env.servicenow.oauth = env.servicenow.oauth || {};
-      env.servicenow.oauth.redirectPort = parseInt(process.env.SNOW_REDIRECT_PORT);
+      const value = parseInt(process.env.SNOW_REDIRECT_PORT);
+      if (!isNaN(value)) {
+        env.servicenow.oauth.redirectPort = value;
+      }
     }
     if (process.env.SNOW_REDIRECT_PATH) {
       env.servicenow = env.servicenow || {};
@@ -421,53 +433,101 @@ export class SnowFlowConfig {
     }
     if (process.env.SNOW_FLOW_MAX_CONCURRENT_OPS) {
       env.system = env.system || {};
-      env.system.maxConcurrentOperations = parseInt(process.env.SNOW_FLOW_MAX_CONCURRENT_OPS);
+      const value = parseInt(process.env.SNOW_FLOW_MAX_CONCURRENT_OPS);
+      if (!isNaN(value)) {
+        env.system.maxConcurrentOperations = value;
+      }
     }
     if (process.env.SNOW_FLOW_SESSION_TIMEOUT) {
       env.system = env.system || {};
-      env.system.sessionTimeout = parseInt(process.env.SNOW_FLOW_SESSION_TIMEOUT);
+      const value = parseInt(process.env.SNOW_FLOW_SESSION_TIMEOUT);
+      if (!isNaN(value)) {
+        env.system.sessionTimeout = value;
+      }
     }
     
     // Agent configuration
     if (process.env.SNOW_FLOW_MAX_WORKER_AGENTS) {
       env.agents = env.agents || {};
       env.agents.queen = env.agents.queen || {};
-      env.agents.queen.maxWorkerAgents = parseInt(process.env.SNOW_FLOW_MAX_WORKER_AGENTS);
+      const value = parseInt(process.env.SNOW_FLOW_MAX_WORKER_AGENTS);
+      if (!isNaN(value)) {
+        env.agents.queen.maxWorkerAgents = value;
+      }
     }
     if (process.env.SNOW_FLOW_SPAWN_TIMEOUT) {
       env.agents = env.agents || {};
       env.agents.queen = env.agents.queen || {};
-      env.agents.queen.spawnTimeout = parseInt(process.env.SNOW_FLOW_SPAWN_TIMEOUT);
+      const value = parseInt(process.env.SNOW_FLOW_SPAWN_TIMEOUT);
+      if (!isNaN(value)) {
+        env.agents.queen.spawnTimeout = value;
+      }
     }
     if (process.env.SNOW_FLOW_COORDINATION_INTERVAL) {
       env.agents = env.agents || {};
       env.agents.queen = env.agents.queen || {};
-      env.agents.queen.coordinationInterval = parseInt(process.env.SNOW_FLOW_COORDINATION_INTERVAL);
+      const value = parseInt(process.env.SNOW_FLOW_COORDINATION_INTERVAL);
+
+      if (!isNaN(value)) {
+
+        env.agents.queen.coordinationInterval = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_RETRY_ATTEMPTS) {
       env.agents = env.agents || {};
       env.agents.queen = env.agents.queen || {};
-      env.agents.queen.retryAttempts = parseInt(process.env.SNOW_FLOW_RETRY_ATTEMPTS);
+      const value = parseInt(process.env.SNOW_FLOW_RETRY_ATTEMPTS);
+
+      if (!isNaN(value)) {
+
+        env.agents.queen.retryAttempts = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_HEARTBEAT_INTERVAL) {
       env.agents = env.agents || {};
       env.agents.worker = env.agents.worker || {};
-      env.agents.worker.heartbeatInterval = parseInt(process.env.SNOW_FLOW_HEARTBEAT_INTERVAL);
+      const value = parseInt(process.env.SNOW_FLOW_HEARTBEAT_INTERVAL);
+
+      if (!isNaN(value)) {
+
+        env.agents.worker.heartbeatInterval = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_TASK_TIMEOUT) {
       env.agents = env.agents || {};
       env.agents.worker = env.agents.worker || {};
-      env.agents.worker.taskTimeout = parseInt(process.env.SNOW_FLOW_TASK_TIMEOUT);
+      const value = parseInt(process.env.SNOW_FLOW_TASK_TIMEOUT);
+
+      if (!isNaN(value)) {
+
+        env.agents.worker.taskTimeout = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_MAX_MEMORY_USAGE) {
       env.agents = env.agents || {};
       env.agents.worker = env.agents.worker || {};
-      env.agents.worker.maxMemoryUsage = parseInt(process.env.SNOW_FLOW_MAX_MEMORY_USAGE);
+      const value = parseInt(process.env.SNOW_FLOW_MAX_MEMORY_USAGE);
+
+      if (!isNaN(value)) {
+
+        env.agents.worker.maxMemoryUsage = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_AUTO_SHUTDOWN_IDLE) {
       env.agents = env.agents || {};
       env.agents.worker = env.agents.worker || {};
-      env.agents.worker.autoShutdownIdle = parseInt(process.env.SNOW_FLOW_AUTO_SHUTDOWN_IDLE);
+      const value = parseInt(process.env.SNOW_FLOW_AUTO_SHUTDOWN_IDLE);
+
+      if (!isNaN(value)) {
+
+        env.agents.worker.autoShutdownIdle = value;
+
+      }
     }
     
     // MCP server configuration
@@ -475,31 +535,61 @@ export class SnowFlowConfig {
       env.mcp = env.mcp || {};
       env.mcp.servers = env.mcp.servers || {};
       env.mcp.servers.deployment = env.mcp.servers.deployment || {};
-      env.mcp.servers.deployment.port = parseInt(process.env.MCP_DEPLOYMENT_PORT);
+      const value = parseInt(process.env.MCP_DEPLOYMENT_PORT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.servers.deployment.port = value;
+
+      }
     }
     if (process.env.MCP_INTELLIGENT_PORT) {
       env.mcp = env.mcp || {};
       env.mcp.servers = env.mcp.servers || {};
       env.mcp.servers.intelligent = env.mcp.servers.intelligent || {};
-      env.mcp.servers.intelligent.port = parseInt(process.env.MCP_INTELLIGENT_PORT);
+      const value = parseInt(process.env.MCP_INTELLIGENT_PORT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.servers.intelligent.port = value;
+
+      }
     }
     if (process.env.MCP_OPERATIONS_PORT) {
       env.mcp = env.mcp || {};
       env.mcp.servers = env.mcp.servers || {};
       env.mcp.servers.operations = env.mcp.servers.operations || {};
-      env.mcp.servers.operations.port = parseInt(process.env.MCP_OPERATIONS_PORT);
+      const value = parseInt(process.env.MCP_OPERATIONS_PORT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.servers.operations.port = value;
+
+      }
     }
     if (process.env.MCP_FLOW_COMPOSER_PORT) {
       env.mcp = env.mcp || {};
       env.mcp.servers = env.mcp.servers || {};
       env.mcp.servers.flowComposer = env.mcp.servers.flowComposer || {};
-      env.mcp.servers.flowComposer.port = parseInt(process.env.MCP_FLOW_COMPOSER_PORT);
+      const value = parseInt(process.env.MCP_FLOW_COMPOSER_PORT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.servers.flowComposer.port = value;
+
+      }
     }
     if (process.env.MCP_PLATFORM_DEV_PORT) {
       env.mcp = env.mcp || {};
       env.mcp.servers = env.mcp.servers || {};
       env.mcp.servers.platformDevelopment = env.mcp.servers.platformDevelopment || {};
-      env.mcp.servers.platformDevelopment.port = parseInt(process.env.MCP_PLATFORM_DEV_PORT);
+      const value = parseInt(process.env.MCP_PLATFORM_DEV_PORT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.servers.platformDevelopment.port = value;
+
+      }
     }
     if (process.env.MCP_HOST) {
       env.mcp = env.mcp || {};
@@ -513,22 +603,46 @@ export class SnowFlowConfig {
     if (process.env.MCP_TIMEOUT) {
       env.mcp = env.mcp || {};
       env.mcp.transport = env.mcp.transport || {};
-      env.mcp.transport.timeout = parseInt(process.env.MCP_TIMEOUT);
+      const value = parseInt(process.env.MCP_TIMEOUT);
+
+      if (!isNaN(value)) {
+
+        env.mcp.transport.timeout = value;
+
+      }
     }
     if (process.env.MCP_RETRY_ATTEMPTS) {
       env.mcp = env.mcp || {};
       env.mcp.transport = env.mcp.transport || {};
-      env.mcp.transport.retryAttempts = parseInt(process.env.MCP_RETRY_ATTEMPTS);
+      const value = parseInt(process.env.MCP_RETRY_ATTEMPTS);
+
+      if (!isNaN(value)) {
+
+        env.mcp.transport.retryAttempts = value;
+
+      }
     }
     if (process.env.MCP_RETRY_DELAY) {
       env.mcp = env.mcp || {};
       env.mcp.transport = env.mcp.transport || {};
-      env.mcp.transport.retryDelay = parseInt(process.env.MCP_RETRY_DELAY);
+      const value = parseInt(process.env.MCP_RETRY_DELAY);
+
+      if (!isNaN(value)) {
+
+        env.mcp.transport.retryDelay = value;
+
+      }
     }
     if (process.env.MCP_AUTH_TOKEN_EXPIRY) {
       env.mcp = env.mcp || {};
       env.mcp.authentication = env.mcp.authentication || {};
-      env.mcp.authentication.tokenExpiry = parseInt(process.env.MCP_AUTH_TOKEN_EXPIRY);
+      const value = parseInt(process.env.MCP_AUTH_TOKEN_EXPIRY);
+
+      if (!isNaN(value)) {
+
+        env.mcp.authentication.tokenExpiry = value;
+
+      }
     }
     
     // Memory system configuration
@@ -544,42 +658,90 @@ export class SnowFlowConfig {
     if (process.env.SNOW_FLOW_CACHE_MAX_SIZE) {
       env.memory = env.memory || {};
       env.memory.cache = env.memory.cache || {};
-      env.memory.cache.maxSize = parseInt(process.env.SNOW_FLOW_CACHE_MAX_SIZE);
+      const value = parseInt(process.env.SNOW_FLOW_CACHE_MAX_SIZE);
+
+      if (!isNaN(value)) {
+
+        env.memory.cache.maxSize = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_CACHE_TTL) {
       env.memory = env.memory || {};
       env.memory.cache = env.memory.cache || {};
-      env.memory.cache.ttl = parseInt(process.env.SNOW_FLOW_CACHE_TTL);
+      const value = parseInt(process.env.SNOW_FLOW_CACHE_TTL);
+
+      if (!isNaN(value)) {
+
+        env.memory.cache.ttl = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_DEFAULT_TTL) {
       env.memory = env.memory || {};
       env.memory.ttl = env.memory.ttl || {};
-      env.memory.ttl.default = parseInt(process.env.SNOW_FLOW_DEFAULT_TTL);
+      const value = parseInt(process.env.SNOW_FLOW_DEFAULT_TTL);
+
+      if (!isNaN(value)) {
+
+        env.memory.ttl.default = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_SESSION_TTL) {
       env.memory = env.memory || {};
       env.memory.ttl = env.memory.ttl || {};
-      env.memory.ttl.session = parseInt(process.env.SNOW_FLOW_SESSION_TTL);
+      const value = parseInt(process.env.SNOW_FLOW_SESSION_TTL);
+
+      if (!isNaN(value)) {
+
+        env.memory.ttl.session = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_ARTIFACT_TTL) {
       env.memory = env.memory || {};
       env.memory.ttl = env.memory.ttl || {};
-      env.memory.ttl.artifact = parseInt(process.env.SNOW_FLOW_ARTIFACT_TTL);
+      const value = parseInt(process.env.SNOW_FLOW_ARTIFACT_TTL);
+
+      if (!isNaN(value)) {
+
+        env.memory.ttl.artifact = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_METRIC_TTL) {
       env.memory = env.memory || {};
       env.memory.ttl = env.memory.ttl || {};
-      env.memory.ttl.metric = parseInt(process.env.SNOW_FLOW_METRIC_TTL);
+      const value = parseInt(process.env.SNOW_FLOW_METRIC_TTL);
+
+      if (!isNaN(value)) {
+
+        env.memory.ttl.metric = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_CLEANUP_INTERVAL) {
       env.memory = env.memory || {};
       env.memory.cleanup = env.memory.cleanup || {};
-      env.memory.cleanup.interval = parseInt(process.env.SNOW_FLOW_CLEANUP_INTERVAL);
+      const value = parseInt(process.env.SNOW_FLOW_CLEANUP_INTERVAL);
+
+      if (!isNaN(value)) {
+
+        env.memory.cleanup.interval = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_RETENTION_DAYS) {
       env.memory = env.memory || {};
       env.memory.cleanup = env.memory.cleanup || {};
-      env.memory.cleanup.retentionDays = parseInt(process.env.SNOW_FLOW_RETENTION_DAYS);
+      const value = parseInt(process.env.SNOW_FLOW_RETENTION_DAYS);
+
+      if (!isNaN(value)) {
+
+        env.memory.cleanup.retentionDays = value;
+
+      }
     }
     
     // Monitoring configuration
@@ -591,40 +753,82 @@ export class SnowFlowConfig {
     if (process.env.SNOW_FLOW_SAMPLE_RATE) {
       env.monitoring = env.monitoring || {};
       env.monitoring.performance = env.monitoring.performance || {};
-      env.monitoring.performance.sampleRate = parseFloat(process.env.SNOW_FLOW_SAMPLE_RATE);
+      const floatValue = parseFloat(process.env.SNOW_FLOW_SAMPLE_RATE);
+
+      if (!isNaN(floatValue)) {
+
+        env.monitoring.performance.sampleRate = floatValue;
+
+      }
     }
     if (process.env.SNOW_FLOW_METRICS_RETENTION) {
       env.monitoring = env.monitoring || {};
       env.monitoring.performance = env.monitoring.performance || {};
-      env.monitoring.performance.metricsRetention = parseInt(process.env.SNOW_FLOW_METRICS_RETENTION);
+      const value = parseInt(process.env.SNOW_FLOW_METRICS_RETENTION);
+
+      if (!isNaN(value)) {
+
+        env.monitoring.performance.metricsRetention = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_AGGREGATION_INTERVAL) {
       env.monitoring = env.monitoring || {};
       env.monitoring.performance = env.monitoring.performance || {};
-      env.monitoring.performance.aggregationInterval = parseInt(process.env.SNOW_FLOW_AGGREGATION_INTERVAL);
+      const value = parseInt(process.env.SNOW_FLOW_AGGREGATION_INTERVAL);
+
+      if (!isNaN(value)) {
+
+        env.monitoring.performance.aggregationInterval = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_HEALTH_CHECK_INTERVAL) {
       env.monitoring = env.monitoring || {};
       env.monitoring.health = env.monitoring.health || {};
-      env.monitoring.health.checkInterval = parseInt(process.env.SNOW_FLOW_HEALTH_CHECK_INTERVAL);
+      const value = parseInt(process.env.SNOW_FLOW_HEALTH_CHECK_INTERVAL);
+
+      if (!isNaN(value)) {
+
+        env.monitoring.health.checkInterval = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_MEMORY_THRESHOLD) {
       env.monitoring = env.monitoring || {};
       env.monitoring.health = env.monitoring.health || {};
       env.monitoring.health.thresholds = env.monitoring.health.thresholds || {};
-      env.monitoring.health.thresholds.memoryUsage = parseFloat(process.env.SNOW_FLOW_MEMORY_THRESHOLD);
+      const floatValue = parseFloat(process.env.SNOW_FLOW_MEMORY_THRESHOLD);
+
+      if (!isNaN(floatValue)) {
+
+        env.monitoring.health.thresholds.memoryUsage = floatValue;
+
+      }
     }
     if (process.env.SNOW_FLOW_CPU_THRESHOLD) {
       env.monitoring = env.monitoring || {};
       env.monitoring.health = env.monitoring.health || {};
       env.monitoring.health.thresholds = env.monitoring.health.thresholds || {};
-      env.monitoring.health.thresholds.cpuUsage = parseFloat(process.env.SNOW_FLOW_CPU_THRESHOLD);
+      const floatValue = parseFloat(process.env.SNOW_FLOW_CPU_THRESHOLD);
+
+      if (!isNaN(floatValue)) {
+
+        env.monitoring.health.thresholds.cpuUsage = floatValue;
+
+      }
     }
     if (process.env.SNOW_FLOW_ERROR_RATE_THRESHOLD) {
       env.monitoring = env.monitoring || {};
       env.monitoring.health = env.monitoring.health || {};
       env.monitoring.health.thresholds = env.monitoring.health.thresholds || {};
-      env.monitoring.health.thresholds.errorRate = parseFloat(process.env.SNOW_FLOW_ERROR_RATE_THRESHOLD);
+      const floatValue = parseFloat(process.env.SNOW_FLOW_ERROR_RATE_THRESHOLD);
+
+      if (!isNaN(floatValue)) {
+
+        env.monitoring.health.thresholds.errorRate = floatValue;
+
+      }
     }
     if (process.env.SNOW_FLOW_WEBHOOK_URL) {
       env.monitoring = env.monitoring || {};
@@ -641,17 +845,35 @@ export class SnowFlowConfig {
     if (process.env.SNOW_FLOW_RESPONSE_TIME_THRESHOLD) {
       env.health = env.health || {};
       env.health.thresholds = env.health.thresholds || {};
-      env.health.thresholds.responseTime = parseInt(process.env.SNOW_FLOW_RESPONSE_TIME_THRESHOLD);
+      const value = parseInt(process.env.SNOW_FLOW_RESPONSE_TIME_THRESHOLD);
+
+      if (!isNaN(value)) {
+
+        env.health.thresholds.responseTime = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_HEALTH_MEMORY_THRESHOLD) {
       env.health = env.health || {};
       env.health.thresholds = env.health.thresholds || {};
-      env.health.thresholds.memoryUsage = parseInt(process.env.SNOW_FLOW_HEALTH_MEMORY_THRESHOLD);
+      const value = parseInt(process.env.SNOW_FLOW_HEALTH_MEMORY_THRESHOLD);
+
+      if (!isNaN(value)) {
+
+        env.health.thresholds.memoryUsage = value;
+
+      }
     }
     if (process.env.SNOW_FLOW_QUEUE_SIZE_THRESHOLD) {
       env.health = env.health || {};
       env.health.thresholds = env.health.thresholds || {};
-      env.health.thresholds.queueSize = parseInt(process.env.SNOW_FLOW_QUEUE_SIZE_THRESHOLD);
+      const value = parseInt(process.env.SNOW_FLOW_QUEUE_SIZE_THRESHOLD);
+
+      if (!isNaN(value)) {
+
+        env.health.thresholds.queueSize = value;
+
+      }
     }
     
     // Feature flags

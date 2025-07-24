@@ -133,6 +133,8 @@ program
                                 !objective.toLowerCase().includes('workflow') &&
                                 !objective.toLowerCase().includes('data flow'));
     
+    let xmlFlowResult: any = null;
+    
     if (isFlowDesignerTask) {
       cliLogger.info('\n🔧 Flow Designer Detected - Using XML-First Approach!');
       cliLogger.info('📋 Creating production-ready ServiceNow flow XML...');
@@ -225,6 +227,7 @@ program
         // Generate XML
         cliLogger.info('🏗️  Generating production XML...');
         const result = generateProductionFlowXML(flowDef);
+        xmlFlowResult = { ...result, flowDefinition: flowDef };
         
         cliLogger.info(`\n✅ XML Generated Successfully!`);
         cliLogger.info(`📁 File saved to: ${result.filePath}`);
@@ -259,8 +262,8 @@ program
           cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
         }
         
-        cliLogger.info('\n💡 Tip: For additional ServiceNow features beyond flows, run swarm again for widgets/scripts/etc.');
-        return; // Exit early for Flow Designer flows
+        cliLogger.info('\n💡 XML template generated. Now launching Queen Agent for intelligent flow development...');
+        // DO NOT RETURN HERE - Continue to Queen Agent orchestration!
       } catch (error) {
         cliLogger.error('❌ XML flow generation failed:', error instanceof Error ? error.message : String(error));
         cliLogger.info('💡 Falling back to regular swarm orchestration...\n');
@@ -270,7 +273,7 @@ program
     // Start real Claude Code orchestration
     try {
       // Generate the Queen Agent orchestration prompt
-      const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId);
+      const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, xmlFlowResult);
       
       cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
       cliLogger.info('🎯 Queen Agent will coordinate the following:');
@@ -341,22 +344,35 @@ program
           launched_at: new Date().toISOString()
         });
       } else {
-        cliLogger.info('\n📋 Claude Code manual execution required');
-        cliLogger.info('\n👑 QUEEN AGENT ORCHESTRATION PROMPT:');
+        cliLogger.info('\n🚀 SNOW-FLOW ORCHESTRATION COMPLETE!');
+        cliLogger.info('🤖 Now it\'s time for Claude Code agents to do the work...\n');
+        
+        cliLogger.info('👑 QUEEN AGENT ORCHESTRATION PROMPT FOR CLAUDE CODE:');
         cliLogger.info('=' .repeat(80));
         cliLogger.info(orchestrationPrompt);
         cliLogger.info('=' .repeat(80));
         
-        cliLogger.info('\n✅ Queen Agent orchestration prompt generated!');
-        cliLogger.info('📊 Next Steps:');
-        cliLogger.info('   1. Copy the above prompt and paste it into Claude Code');
-        cliLogger.info('   2. Queen Agent will analyze and spawn specialized agents');
-        cliLogger.info('   3. Agents will coordinate through shared memory');
-        cliLogger.info('   4. Monitor progress through TodoRead and Memory tools');
+        cliLogger.info('\n✅ Snow-Flow has prepared the orchestration!');
+        cliLogger.info('📊 CRITICAL NEXT STEPS:');
+        cliLogger.info('   1. Copy the ENTIRE prompt above');
+        cliLogger.info('   2. Paste it into Claude Code (the AI assistant)');
+        cliLogger.info('   3. Claude Code will spawn multiple specialized agents as workhorses');
+        cliLogger.info('   4. These agents will implement your flow with all required logic');
+        cliLogger.info('   5. Agents will enhance the basic XML template with real functionality');
+        
+        cliLogger.info('\n🎯 Remember:');
+        cliLogger.info('   - Snow-Flow = Orchestrator (coordinates the work)');
+        cliLogger.info('   - Claude Code = Workhorses (implement the solution)');
+        
+        if (xmlFlowResult) {
+          cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
+          cliLogger.info('   ⚠️  This is just a BASIC template - agents must enhance it!');
+        }
+        
         if (isAuthenticated && options.autoDeploy) {
-          cliLogger.info('   5. Real artifacts will be created in ServiceNow');
+          cliLogger.info('\n🚀 Deployment Mode: Agents will create REAL artifacts in ServiceNow');
         } else {
-          cliLogger.info('   5. Planning mode - no real artifacts created');
+          cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
         }
         cliLogger.info(`\n💾 Session ID for monitoring: ${sessionId}`);
       }
@@ -373,53 +389,83 @@ program
   });
 
 
-// Helper function to execute Claude Code directly (FALLBACK ONLY)
+// Helper function to execute Claude Code directly
 async function executeClaudeCode(prompt: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    cliLogger.info('🔍 Checking for Claude Code availability...');
+  cliLogger.info('🤖 Preparing Claude Code agent orchestration...');
+  
+  try {
+    // Check if Claude CLI is available
+    const { execSync } = require('child_process');
+    try {
+      execSync('which claude', { stdio: 'ignore' });
+    } catch {
+      cliLogger.warn('⚠️  Claude Code CLI not found in PATH');
+      cliLogger.info('📋 Please install Claude Desktop or copy the prompt manually');
+      return false;
+    }
     
-    // Try to find Claude Code binary
-    const claudeCommands = ['claude', 'claude-code', 'npx claude-code'];
+    // Check for MCP config
+    const mcpConfigPath = join(process.cwd(), '.mcp.json');
+    const hasMcpConfig = existsSync(mcpConfigPath);
     
-    let currentCommand = 0;
+    // Launch Claude Code with MCP config
+    const claudeArgs = hasMcpConfig 
+      ? ['--mcp-config', '.mcp.json', '.']
+      : ['.'];
     
-    const tryNextCommand = () => {
-      if (currentCommand >= claudeCommands.length) {
-        cliLogger.warn('❌ Claude Code not found in PATH');
-        resolve(false);
-        return;
-      }
-      
-      const command = claudeCommands[currentCommand];
-      cliLogger.debug(`🔍 Trying: ${command}`);
-      
-      const claudeArgs = [
-        '--version'
-      ];
-      
-      // Test if Claude Code is available
-      const testProcess = spawn(command, claudeArgs, {
-        stdio: ['ignore', 'pipe', 'pipe']
-      });
-      
-      testProcess.on('close', (code) => {
+    cliLogger.info('🚀 Launching Claude Code automatically...');
+    if (hasMcpConfig) {
+      cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
+    }
+    
+    // Start Claude Code process in interactive mode
+    const claudeProcess = spawn('claude', claudeArgs, {
+      stdio: ['pipe', 'inherit', 'inherit'],
+      shell: true,
+      env: { ...process.env }
+    });
+    
+    // Send the prompt to Claude Code
+    cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
+    cliLogger.info('🚀 Claude Code interface opening...\n');
+    
+    // Write prompt and close stdin to trigger execution
+    claudeProcess.stdin.write(prompt);
+    claudeProcess.stdin.end();
+    
+    // Set up process monitoring
+    return new Promise((resolve) => {
+      claudeProcess.on('close', (code) => {
         if (code === 0) {
-          cliLogger.info(`✅ Found Claude Code: ${command}`);
-          executeWithClaude(command, prompt, resolve);
+          cliLogger.info('\n✅ Claude Code session completed successfully!');
+          resolve(true);
         } else {
-          currentCommand++;
-          tryNextCommand();
+          cliLogger.warn(`\n⚠️  Claude Code session ended with code: ${code}`);
+          resolve(false);
         }
       });
       
-      testProcess.on('error', () => {
-        currentCommand++;
-        tryNextCommand();
+      claudeProcess.on('error', (error) => {
+        cliLogger.error(`❌ Failed to start Claude Code: ${error.message}`);
+        resolve(false);
       });
-    };
+      
+      // Set timeout (configurable via environment variable)
+      const timeoutMinutes = parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES || '0');
+      if (timeoutMinutes > 0) {
+        setTimeout(() => {
+          cliLogger.warn(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
+          claudeProcess.kill('SIGTERM');
+          resolve(false);
+        }, timeoutMinutes * 60 * 1000);
+      }
+    });
     
-    tryNextCommand();
-  });
+  } catch (error) {
+    cliLogger.error('❌ Error launching Claude Code:', error instanceof Error ? error.message : String(error));
+    cliLogger.info('📋 Claude Code prompt generated - please copy and paste manually');
+    return false;
+  }
 }
 
 // Real-time monitoring dashboard for Claude Code process
@@ -551,7 +597,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
 }
 
 // Helper function to build Queen Agent orchestration prompt
-function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string): string {
+function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string, xmlFlowResult: any = null): string {
   // Check if intelligent features are enabled
   const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
     options.liveTesting || options.autoDeploy || options.autoRollback || 
@@ -572,6 +618,23 @@ You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mis
 - **Supporting Agents**: ${taskAnalysis.supportingAgents.join(', ')}
 - **Estimated Total Agents**: ${taskAnalysis.estimatedAgentCount}
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
+
+${xmlFlowResult ? `## 🔧 Flow Designer XML Template Generated
+An initial XML template has been created as a starting point:
+- **File Path**: ${xmlFlowResult.filePath}
+- **Flow Name**: ${xmlFlowResult.flowDefinition.name}
+- **Table**: ${xmlFlowResult.flowDefinition.table}
+- **Activities**: ${xmlFlowResult.flowDefinition.activities.length}
+
+**IMPORTANT**: This is just a basic template! You must spawn Claude Code agents to:
+1. Analyze the detailed requirements from the objective
+2. Design the complete flow logic with all activities
+3. Add approval steps, notifications, conditions, etc.
+4. Test the flow implementation
+5. Deploy to ServiceNow
+
+The XML template is saved but needs significant enhancement by your agents!
+` : ''}
 - **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 
 ## 📊 Table Discovery Intelligence
@@ -3659,7 +3722,7 @@ SNOW_CLIENT_ID=your-oauth-client-id
 SNOW_CLIENT_SECRET=your-oauth-client-secret
 
 # Optional: Additional Configuration
-# SNOW_REDIRECT_URI=http://${SNOW_REDIRECT_HOST:-localhost}:${SNOW_REDIRECT_PORT:-3000}/callback
+# SNOW_REDIRECT_URI=http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback
 
 # ===========================================
 # Snow-Flow Configuration
@@ -3689,7 +3752,7 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
 #    - Name: Snow-Flow Development
 #    - Client ID: (will be generated)
 #    - Client Secret: (will be generated)  
-#    - Redirect URL: http://${SNOW_REDIRECT_HOST:-localhost}:${SNOW_REDIRECT_PORT:-3000}/callback
+#    - Redirect URL: http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback
 #    - Grant Type: Authorization Code
 # 5. Copy the Client ID and Client Secret to this file
 # 6. Run: snow-flow auth login

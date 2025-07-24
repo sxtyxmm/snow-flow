@@ -2,13 +2,58 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.1';
+export const VERSION = '1.3.9';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.9': [
+      '🚀 CLAUDE CODE AUTO-LAUNCH: Restored automatic Claude Code launching',
+      '🤖 PROCESS SPAWNING: Claude CLI detection and proper process spawning',
+      '📝 PROMPT INJECTION: Automatic prompt sending to Claude Code via stdin',
+      '🔧 MCP INTEGRATION: Auto-loads MCP servers when .mcp.json exists'
+    ],
+    '1.3.8': [
+      '🤖 CLAUDE CODE FIX: Restored proper Claude Code agent spawning',
+      '🚀 SWARM ORCHESTRATION: Snow-flow is orchestrator, Claude Code agents are workhorses',
+      '🔧 NO EARLY EXIT: Flow Designer tasks now continue to full agent orchestration',
+      '📋 CLEAR INSTRUCTIONS: Better messaging about Snow-flow vs Claude Code roles'
+    ],
+    '1.3.7': [
+      '🚀 RELEASE VERSION: Combined all fixes from 1.3.2-1.3.6 into stable release',
+      '✅ ZOD VALIDATION: Completely fixed all configuration schema issues',
+      '🧠 HIERARCHICAL MEMORY: ServiceNow-specific memory patterns for agent coordination',
+      '📦 PRODUCTION READY: All version numbers aligned and ready for npm publish'
+    ],
+    '1.3.6': [
+      '🐛 ZOD FIX: Fixed nested object validation errors in configuration schema',
+      '🔧 NESTED DEFAULTS: Added .default({}) to all nested objects in ConfigSchema',
+      '✅ STARTUP FIX: Package now starts correctly without Zod validation errors',
+      '💾 BACKWARDS COMPATIBLE: All configuration objects have proper default values'
+    ],
+    '1.3.5': [
+      '🧠 HIERARCHICAL MEMORY: Enhanced memory system with ServiceNow-specific patterns',
+      '🤖 AGENT CAPABILITIES: 15+ specialized ServiceNow agent types defined',
+      '📊 PATTERN LEARNING: Success/failure pattern recognition for continuous improvement',
+      '🔗 RELATIONSHIP TRACKING: Graph-like connections between artifacts'
+    ],
+    '1.3.4': [
+      '🐛 ZOD FIX ATTEMPT 2: Added .default({}) to all top-level objects',
+      '🔧 CONFIG SCHEMA: Fixed "Required" errors for all config properties',
+      '⚠️ PARTIAL FIX: Resolved top-level validation but nested objects still failed'
+    ],
+    '1.3.3': [
+      '🐛 ZOD FIX ATTEMPT 1: Fixed parseInt() returning NaN for undefined env vars',
+      '🔧 DYNAMIC DEFAULTS: Removed dynamic parseInt() from schema defaults',
+      '✅ NAN CHECKS: Added validation in loadFromEnvironment() method',
+      '⚠️ PARTIAL FIX: Resolved NaN errors but uncovered nested object issues'
+    ],
+    '1.3.2': [
+      '🚨 BUG INTRODUCED: Zod validation errors preventing package startup',
+      '❌ ISSUE: parseInt() with undefined env vars causing NaN in defaults'
+    ],
     '1.3.1': [
       '🚨 HOTFIX: Fixed "memory MCP tool is not available" error',
       '🔧 CONFIG BUG FIX: BaseMCPServer now properly stores config parameter',

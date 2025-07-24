@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { SnowFlowConfig } from './config/snow-flow-config';
+import { SnowFlowConfig, ISnowFlowConfig } from './config/snow-flow-config';
 import { ServiceNowQueen } from './queen/servicenow-queen';
 import { MemorySystem } from './memory/memory-system';
 import { MCPServerManager } from './utils/mcp-server-manager';
@@ -49,7 +49,7 @@ export class SnowFlowSystem extends EventEmitter {
   private sessions: Map<string, SwarmSession> = new Map();
   private initialized = false;
 
-  constructor(config?: Partial<SnowFlowConfig>) {
+  constructor(config?: Partial<ISnowFlowConfig>) {
     super();
     this.config = new SnowFlowConfig(config);
     this.logger = new Logger('SnowFlowSystem');
