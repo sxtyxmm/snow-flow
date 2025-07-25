@@ -186,74 +186,95 @@ program
   .option('--no-progress-monitoring', 'Disable progress monitoring')
   .option('--xml-first', 'Use XML-first approach for flow creation (MOST RELIABLE!)')
   .option('--xml-output <path>', 'Save generated XML to specific path (with --xml-first)')
+  .option('--verbose', 'Show detailed execution information')
   .action(async (objective: string, options) => {
-    cliLogger.info(`\n🚀 Starting ServiceNow Multi-Agent Swarm v${VERSION} - één command voor alles!`);
+    // Always show essential info
+    cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
     cliLogger.info(`📋 Objective: ${objective}`);
-    cliLogger.info(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
-    cliLogger.info(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}`);
     
-    // Show new intelligent features
-    cliLogger.info(`\n🧠 Intelligent Features:`);
-    cliLogger.info(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
-    cliLogger.info(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
+    // Only show detailed config in verbose mode
+    if (options.verbose) {
+      cliLogger.info(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
+      cliLogger.info(`🔄 Parallel: ${options.parallel ? 'Yes' : 'No'} | Monitor: ${options.monitor ? 'Yes' : 'No'}`);
+      
+      // Show new intelligent features
+      cliLogger.info(`\n🧠 Intelligent Features:`);
+      cliLogger.info(`  🔐 Auto Permissions: ${options.autoPermissions ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  🔍 Smart Discovery: ${options.smartDiscovery ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  🧪 Live Testing: ${options.liveTesting ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
+      cliLogger.info(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
+    } else if (options.autoDeploy) {
+      // In non-verbose mode, only show critical deployment warning
+      cliLogger.info(`🚀 Auto-Deploy: ENABLED - Will create real artifacts in ServiceNow`);
+    }
     
     // Analyze the objective using intelligent agent detection
     const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
     
     // Debug logging to understand task type detection
-    if (process.env.DEBUG) {
-      cliLogger.info(`🔍 DEBUG - Detected artifacts: [${taskAnalysis.serviceNowArtifacts.join(', ')}]`);
-      cliLogger.info(`🔍 DEBUG - Flow keywords in objective: ${objective.toLowerCase().includes('flow')}`);
-      cliLogger.info(`🔍 DEBUG - Widget keywords in objective: ${objective.toLowerCase().includes('widget')}`);
+    if (process.env.DEBUG || options.verbose) {
+      if (process.env.DEBUG) {
+        cliLogger.info(`🔍 DEBUG - Detected artifacts: [${taskAnalysis.serviceNowArtifacts.join(', ')}]`);
+        cliLogger.info(`🔍 DEBUG - Flow keywords in objective: ${objective.toLowerCase().includes('flow')}`);
+        cliLogger.info(`🔍 DEBUG - Widget keywords in objective: ${objective.toLowerCase().includes('widget')}`);
+      }
+      
+      cliLogger.info(`\n📊 Task Analysis:`);
+      cliLogger.info(`  🎯 Task Type: ${taskAnalysis.taskType}`);
+      cliLogger.info(`  🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
+      cliLogger.info(`  👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
+      cliLogger.info(`  📊 Complexity: ${taskAnalysis.complexity} | Estimated Agents: ${taskAnalysis.estimatedAgentCount}`);
+      cliLogger.info(`  🔧 ServiceNow Artifacts: ${taskAnalysis.serviceNowArtifacts.join(', ')}`);
+      cliLogger.info(`  📦 Auto Update Set: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}`);
+      cliLogger.info(`  🏗️ Auto Application: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}`);
     }
     
-    cliLogger.info(`🎯 Task Type: ${taskAnalysis.taskType}`);
-    cliLogger.info(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
-    cliLogger.info(`👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
-    cliLogger.info(`📊 Complexity: ${taskAnalysis.complexity} | Estimated Agents: ${taskAnalysis.estimatedAgentCount}`);
-    cliLogger.info(`🔧 ServiceNow Artifacts: ${taskAnalysis.serviceNowArtifacts.join(', ')}`);
-    cliLogger.info(`📦 Auto Update Set: ${taskAnalysis.requiresUpdateSet ? '✅ Yes' : '❌ No'}`);
-    cliLogger.info(`🏗️ Auto Application: ${taskAnalysis.requiresApplication ? '✅ Yes' : '❌ No'}`);
-    
-    // Show timeout configuration
+    // Show timeout configuration only in verbose mode
     const timeoutMinutes = process.env.SNOW_FLOW_TIMEOUT_MINUTES ? parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES) : 60;
-    if (timeoutMinutes > 0) {
-      cliLogger.info(`⏱️  Timeout: ${timeoutMinutes} minutes`);
-    } else {
-      cliLogger.info('⏱️  Timeout: Disabled (infinite execution time)');
+    if (options.verbose) {
+      if (timeoutMinutes > 0) {
+        cliLogger.info(`⏱️  Timeout: ${timeoutMinutes} minutes`);
+      } else {
+        cliLogger.info('⏱️  Timeout: Disabled (infinite execution time)');
+      }
     }
     
     // Check ServiceNow authentication
     const oauth = new ServiceNowOAuth();
     const isAuthenticated = await oauth.isAuthenticated();
     
-    if (isAuthenticated) {
-      cliLogger.info('🔗 ServiceNow connection: ✅ Authenticated');
-      
-      // Test ServiceNow connection
-      const client = new ServiceNowClient();
-      const testResult = await client.testConnection();
-      if (testResult.success) {
-        cliLogger.info(`👤 Connected as: ${testResult.data.name} (${testResult.data.user_name})`);
+    if (options.verbose) {
+      if (isAuthenticated) {
+        cliLogger.info('🔗 ServiceNow connection: ✅ Authenticated');
+        
+        // Test ServiceNow connection
+        const client = new ServiceNowClient();
+        const testResult = await client.testConnection();
+        if (testResult.success) {
+          cliLogger.info(`👤 Connected as: ${testResult.data.name} (${testResult.data.user_name})`);
+        }
+      } else {
+        cliLogger.warn('🔗 ServiceNow connection: ❌ Not authenticated');
+        cliLogger.info('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
       }
-    } else {
-      cliLogger.warn('🔗 ServiceNow connection: ❌ Not authenticated');
-      cliLogger.info('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
+    } else if (!isAuthenticated) {
+      // In non-verbose mode, only warn if not authenticated
+      cliLogger.warn('⚠️  Not authenticated. Run "snow-flow auth login" for ServiceNow integration');
     }
     
     // Initialize Queen Agent memory system
-    cliLogger.info('\n💾 Initializing swarm memory system...');
+    if (options.verbose) {
+      cliLogger.info('\n💾 Initializing swarm memory system...');
+    }
     const { QueenMemorySystem } = await import('./queen/queen-memory.js');
     const memorySystem = new QueenMemorySystem();
     
     // Generate swarm session ID
     const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    cliLogger.info(`📋 Swarm Session ID: ${sessionId}`);
+    cliLogger.info(`\n🔖 Session: ${sessionId}`);
     
     // Store swarm session in memory
     memorySystem.storeLearning(`session_${sessionId}`, {
@@ -274,9 +295,7 @@ program
     let xmlFlowResult: any = null;
     
     if (isFlowDesignerTask) {
-      cliLogger.info('\n🔧 Flow Designer Detected - Using XML-First Approach!');
-      cliLogger.info('📋 Creating production-ready ServiceNow flow XML...');
-      cliLogger.info('💡 Reason: Flow Designer flows are most reliable with XML-first approach\n');
+      cliLogger.info('\n🔧 Flow Designer detected - generating XML...');
       
       try {
         // Import IMPROVED XML flow generator (fixes "too small to work" issue!)
@@ -363,7 +382,9 @@ program
         };
         
         // Generate IMPROVED XML with enhanced structure
-        cliLogger.info('🏗️  Generating IMPROVED production XML...');
+        if (options.verbose) {
+          cliLogger.info('🏗️  Generating IMPROVED production XML...');
+        }
         
         // Convert to improved flow definition
         const improvedFlowDef = {
@@ -381,19 +402,21 @@ program
         const result = generateImprovedFlowXML(improvedFlowDef);
         xmlFlowResult = { ...result, flowDefinition: flowDef };
         
-        cliLogger.info(`\n✅ IMPROVED XML Generated Successfully!`);
-        cliLogger.info(`📁 File saved to: ${result.filePath}`);
-        cliLogger.info(`🔥 IMPROVEMENTS: Uses v2 tables, Base64+gzip encoding, complete label_cache!`);
-        cliLogger.info(`📊 Flow structure:`);
-        cliLogger.info(`   - Name: ${flowDef.name}`);
-        cliLogger.info(`   - Table: ${flowDef.table}`);
-        cliLogger.info(`   - Trigger: ${flowDef.trigger_type}`);
-        cliLogger.info(`   - Activities: ${flowDef.activities.length}`);
+        cliLogger.info(`✅ XML generated: ${result.filePath}`);
         
-        // Show import instructions
-        cliLogger.info('\n' + '='.repeat(60));
-        cliLogger.info(result.instructions);
-        cliLogger.info('='.repeat(60));
+        if (options.verbose) {
+          cliLogger.info(`🔥 IMPROVEMENTS: Uses v2 tables, Base64+gzip encoding, complete label_cache!`);
+          cliLogger.info(`📊 Flow structure:`);
+          cliLogger.info(`   - Name: ${flowDef.name}`);
+          cliLogger.info(`   - Table: ${flowDef.table}`);
+          cliLogger.info(`   - Trigger: ${flowDef.trigger_type}`);
+          cliLogger.info(`   - Activities: ${flowDef.activities.length}`);
+          
+          // Show import instructions
+          cliLogger.info('\n' + '='.repeat(60));
+          cliLogger.info(result.instructions);
+          cliLogger.info('='.repeat(60));
+        }
         
         // Store result in memory
         memorySystem.storeLearning(`xml_flow_${sessionId}`, {
@@ -403,11 +426,9 @@ program
           generated_at: new Date().toISOString()
         });
         
-        cliLogger.info('\n🎯 XML Flow generated successfully!');
-        
         // Check if auto-deploy is enabled
         if (options.autoDeploy !== false) { // Default is true from swarm command
-          cliLogger.info('\n🚀 Auto-Deploy enabled - importing XML to ServiceNow...');
+          cliLogger.info('🚀 Deploying to ServiceNow...');
           
           try {
             // Automatically deploy the XML file
@@ -417,8 +438,7 @@ program
             });
             
             if (deploySuccess) {
-              cliLogger.info('\n✅ Flow automatically deployed to ServiceNow!');
-              cliLogger.info('🎯 The flow is now available in Flow Designer');
+              cliLogger.info('✅ Flow deployed to ServiceNow!');
               
               // Store deployment success in memory
               memorySystem.storeLearning(`deployment_${sessionId}`, {
@@ -428,21 +448,22 @@ program
                 flow_name: flowDef.name
               });
             } else {
-              cliLogger.warn('\n⚠️  Automatic deployment encountered issues');
-              cliLogger.info('💡 You can manually deploy later with:');
-              cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
+              cliLogger.warn('⚠️  Deployment encountered issues');
+              cliLogger.info(`💡 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
             }
           } catch (deployError) {
-            cliLogger.error('❌ Automatic deployment failed:', deployError instanceof Error ? deployError.message : String(deployError));
-            cliLogger.info('💡 The XML has been generated successfully. You can manually deploy later with:');
-            cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
+            cliLogger.error('❌ Deployment failed:', deployError instanceof Error ? deployError.message : String(deployError));
+            cliLogger.info(`💡 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
           }
         } else {
-          cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
+          if (options.verbose) {
+            cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
+          } else {
+            cliLogger.info(`📋 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
+          }
         }
         
-        cliLogger.info('\n💡 XML template generated. Now launching Queen Agent for intelligent flow development...');
-        // DO NOT RETURN HERE - Continue to Queen Agent orchestration!
+        // Continue to Queen Agent orchestration
       } catch (error) {
         cliLogger.error('❌ XML flow generation failed:', error instanceof Error ? error.message : String(error));
         cliLogger.info('💡 Falling back to regular swarm orchestration...\n');
@@ -454,19 +475,23 @@ program
       // Generate the Queen Agent orchestration prompt
       const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, xmlFlowResult);
       
-      cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
-      cliLogger.info('🎯 Queen Agent will coordinate the following:');
-      cliLogger.info(`   - Analyze objective: "${objective}"`);
-      cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
-      cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
-      cliLogger.info(`   - Monitor progress and adapt strategy`);
+      if (options.verbose) {
+        cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
+        cliLogger.info('🎯 Queen Agent will coordinate the following:');
+        cliLogger.info(`   - Analyze objective: "${objective}"`);
+        cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
+        cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
+        cliLogger.info(`   - Monitor progress and adapt strategy`);
+      } else {
+        cliLogger.info('\n👑 Launching Queen Agent...');
+      }
       
       // Check if intelligent features are enabled
       const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
         options.liveTesting || options.autoDeploy || options.autoRollback || 
         options.sharedMemory || options.progressMonitoring;
       
-      if (hasIntelligentFeatures && isAuthenticated) {
+      if (options.verbose && hasIntelligentFeatures && isAuthenticated) {
         cliLogger.info('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
         cliLogger.info('✨ Queen Agent will use advanced features:');
         
@@ -493,28 +518,33 @@ program
         }
       }
       
-      if (isAuthenticated) {
-        cliLogger.info('\n🔗 Live ServiceNow integration: ✅ Enabled');
-        cliLogger.info('📝 Artifacts will be created directly in ServiceNow');
-      } else {
-        cliLogger.info('\n🔗 Live ServiceNow integration: ❌ Disabled');
-        cliLogger.info('📝 Artifacts will be saved to servicenow/ directory');
+      if (options.verbose) {
+        if (isAuthenticated) {
+          cliLogger.info('\n🔗 Live ServiceNow integration: ✅ Enabled');
+          cliLogger.info('📝 Artifacts will be created directly in ServiceNow');
+        } else {
+          cliLogger.info('\n🔗 Live ServiceNow integration: ❌ Disabled');
+          cliLogger.info('📝 Artifacts will be saved to servicenow/ directory');
+        }
       }
       
-      cliLogger.info('\n🚀 Launching Claude Code with Queen Agent...');
+      cliLogger.info('🚀 Launching Claude Code...');
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
       
       if (success) {
-        cliLogger.info('\n✅ Queen Agent orchestration launched successfully!');
-        cliLogger.info('👑 Queen Agent is now coordinating your swarm');
-        cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
+        cliLogger.info('✅ Claude Code launched successfully!');
         
-        if (isAuthenticated && options.autoDeploy) {
-          cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
-        } else {
-          cliLogger.info('📋 Planning mode - analysis and recommendations only');
+        if (options.verbose) {
+          cliLogger.info('👑 Queen Agent is now coordinating your swarm');
+          cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
+          
+          if (isAuthenticated && options.autoDeploy) {
+            cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
+          } else {
+            cliLogger.info('📋 Planning mode - analysis and recommendations only');
+          }
         }
         
         // Store successful launch in memory
@@ -523,37 +553,47 @@ program
           launched_at: new Date().toISOString()
         });
       } else {
-        cliLogger.info('\n🚀 SNOW-FLOW ORCHESTRATION COMPLETE!');
-        cliLogger.info('🤖 Now it\'s time for Claude Code agents to do the work...\n');
-        
-        cliLogger.info('👑 QUEEN AGENT ORCHESTRATION PROMPT FOR CLAUDE CODE:');
-        cliLogger.info('=' .repeat(80));
-        cliLogger.info(orchestrationPrompt);
-        cliLogger.info('=' .repeat(80));
-        
-        cliLogger.info('\n✅ Snow-Flow has prepared the orchestration!');
-        cliLogger.info('📊 CRITICAL NEXT STEPS:');
-        cliLogger.info('   1. Copy the ENTIRE prompt above');
-        cliLogger.info('   2. Paste it into Claude Code (the AI assistant)');
-        cliLogger.info('   3. Claude Code will spawn multiple specialized agents as workhorses');
-        cliLogger.info('   4. These agents will implement your flow with all required logic');
-        cliLogger.info('   5. Agents will enhance the basic XML template with real functionality');
-        
-        cliLogger.info('\n🎯 Remember:');
-        cliLogger.info('   - Snow-Flow = Orchestrator (coordinates the work)');
-        cliLogger.info('   - Claude Code = Workhorses (implement the solution)');
-        
-        if (xmlFlowResult) {
-          cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
-          cliLogger.info('   ⚠️  This is just a BASIC template - agents must enhance it!');
-        }
-        
-        if (isAuthenticated && options.autoDeploy) {
-          cliLogger.info('\n🚀 Deployment Mode: Agents will create REAL artifacts in ServiceNow');
+        if (options.verbose) {
+          cliLogger.info('\n🚀 SNOW-FLOW ORCHESTRATION COMPLETE!');
+          cliLogger.info('🤖 Now it\'s time for Claude Code agents to do the work...\n');
+          
+          cliLogger.info('👑 QUEEN AGENT ORCHESTRATION PROMPT FOR CLAUDE CODE:');
+          cliLogger.info('=' .repeat(80));
+          cliLogger.info(orchestrationPrompt);
+          cliLogger.info('=' .repeat(80));
+          
+          cliLogger.info('\n✅ Snow-Flow has prepared the orchestration!');
+          cliLogger.info('📊 CRITICAL NEXT STEPS:');
+          cliLogger.info('   1. Copy the ENTIRE prompt above');
+          cliLogger.info('   2. Paste it into Claude Code (the AI assistant)');
+          cliLogger.info('   3. Claude Code will spawn multiple specialized agents as workhorses');
+          cliLogger.info('   4. These agents will implement your flow with all required logic');
+          cliLogger.info('   5. Agents will enhance the basic XML template with real functionality');
+          
+          cliLogger.info('\n🎯 Remember:');
+          cliLogger.info('   - Snow-Flow = Orchestrator (coordinates the work)');
+          cliLogger.info('   - Claude Code = Workhorses (implement the solution)');
+          
+          if (xmlFlowResult) {
+            cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
+            cliLogger.info('   ⚠️  This is just a BASIC template - agents must enhance it!');
+          }
+          
+          if (isAuthenticated && options.autoDeploy) {
+            cliLogger.info('\n🚀 Deployment Mode: Agents will create REAL artifacts in ServiceNow');
+          } else {
+            cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
+          }
+          cliLogger.info(`\n💾 Session ID for monitoring: ${sessionId}`);
         } else {
-          cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
+          // Non-verbose mode - just show the essential info
+          cliLogger.info('\n📋 Manual Claude Code execution required');
+          cliLogger.info('💡 Run with --verbose to see the full orchestration prompt');
+          
+          if (xmlFlowResult) {
+            cliLogger.info(`📁 XML generated: ${xmlFlowResult.filePath}`);
+          }
         }
-        cliLogger.info(`\n💾 Session ID for monitoring: ${sessionId}`);
       }
       
     } catch (error) {

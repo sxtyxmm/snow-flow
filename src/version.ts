@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.13';
+export const VERSION = '1.3.14';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.14': [
+      '🎯 CLEANER OUTPUT: Dramatically reduced verbose logging in swarm command',
+      '🚀 FOCUSED UI: Only essential information shown by default',
+      '📊 --verbose FLAG: Added flag to see detailed execution information',
+      '✨ STREAMLINED: No more walls of text before anything happens',
+      '💡 SMART DEFAULTS: Shows objective, session ID, and actual progress only',
+      '🔧 BETTER UX: Clean, professional output focused on what matters'
+    ],
     '1.3.13': [
       '🐛 FIX ERROR MESSAGES: Separated XML generation and deployment error handling',
       '✅ CORRECT ERRORS: "XML flow generation failed" no longer shows for deployment issues',
