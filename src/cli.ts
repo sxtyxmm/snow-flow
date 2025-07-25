@@ -285,7 +285,7 @@ program
       is_authenticated: isAuthenticated
     });
     
-    // Check if this is a Flow Designer flow request - ALWAYS use XML-first for flows!
+    // Check if this is a Flow Designer flow request
     const isFlowDesignerTask = taskAnalysis.taskType === 'flow_development' || 
                                taskAnalysis.primaryAgent === 'flow-builder' ||
                                (objective.toLowerCase().includes('flow') && 
@@ -294,186 +294,10 @@ program
     
     let xmlFlowResult: any = null;
     
-    if (isFlowDesignerTask) {
-      cliLogger.info('\n🔧 Flow Designer detected - generating XML...');
-      
-      try {
-        // Import IMPROVED XML flow generator (fixes "too small to work" issue!)
-        const { generateImprovedFlowXML } = await import('./utils/improved-flow-xml-generator.js');
-        
-        // Parse instruction to determine activities
-        const activities = [];
-        const objectiveLower = objective.toLowerCase();
-        
-        // Auto-detect activities from objective
-        if (objectiveLower.includes('approval') || objectiveLower.includes('approve')) {
-          activities.push({
-            name: 'Request Approval',
-            type: 'approval',
-            order: 100,
-            inputs: {
-              table: taskAnalysis.serviceNowArtifacts.includes('sc_request') ? 'sc_request' : 'incident',
-              record: '{{trigger.current.sys_id}}',
-              approver: '{{trigger.current.requested_for.manager}}',
-              approval_field: 'approval',
-              message: `Please approve: {{trigger.current.number}}`
-            },
-            outputs: {
-              state: 'string',
-              approver_sys_id: 'string',
-              comments: 'string'
-            }
-          });
-        }
-        
-        if (objectiveLower.includes('notification') || objectiveLower.includes('email') || objectiveLower.includes('notify')) {
-          activities.push({
-            name: 'Send Notification',
-            type: 'notification',
-            order: activities.length > 0 ? 200 : 100,
-            inputs: {
-              notification_id: getNotificationTemplateSysId('generic_notification'),
-              recipients: '{{trigger.current.requested_for}}',
-              values: {
-                request_number: '{{trigger.current.number}}',
-                status: 'Notification sent'
-              }
-            }
-          });
-        }
-        
-        if (objectiveLower.includes('create') || objectiveLower.includes('task')) {
-          activities.push({
-            name: 'Create Task',
-            type: 'create_record',
-            order: activities.length > 0 ? (activities.length + 1) * 100 : 100,
-            inputs: {
-              table: 'task',
-              field_values: {
-                short_description: '{{trigger.current.short_description}} - Follow-up',
-                assigned_to: '{{trigger.current.assigned_to}}',
-                priority: '{{trigger.current.priority}}'
-              }
-            },
-            outputs: {
-              record_id: 'string',
-              number: 'string'
-            }
-          });
-        }
-        
-        // Build flow definition
-        const flowName = objective.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '_');
-        const flowDef = {
-          name: `Flow_${flowName}`,
-          description: objective,
-          table: taskAnalysis.serviceNowArtifacts.find(a => ['incident', 'sc_request', 'change_request', 'problem'].includes(a)) || 'incident',
-          trigger_type: 'record_created' as const,
-          trigger_condition: '',
-          activities: activities.length > 0 ? activities : [{
-            name: 'Log Flow Start',
-            type: 'script' as const,
-            order: 100,
-            inputs: {
-              script: `gs.info('Flow started for: ' + current.number, 'XMLFlow');\\nreturn { started: true };`
-            },
-            outputs: { started: 'boolean' }
-          }]
-        };
-        
-        // Generate IMPROVED XML with enhanced structure
-        if (options.verbose) {
-          cliLogger.info('🏗️  Generating IMPROVED production XML...');
-        }
-        
-        // Convert to improved flow definition
-        const improvedFlowDef = {
-          ...flowDef,
-          run_as: 'user' as const,
-          accessible_from: 'package_private' as const,
-          category: 'custom',
-          tags: ['auto-generated'],
-          activities: flowDef.activities.map((act: any) => ({
-            ...act,
-            description: act.description || act.name
-          }))
-        };
-        
-        const result = generateImprovedFlowXML(improvedFlowDef);
-        xmlFlowResult = { ...result, flowDefinition: flowDef };
-        
-        cliLogger.info(`✅ XML generated: ${result.filePath}`);
-        
-        if (options.verbose) {
-          cliLogger.info(`🔥 IMPROVEMENTS: Uses v2 tables, Base64+gzip encoding, complete label_cache!`);
-          cliLogger.info(`📊 Flow structure:`);
-          cliLogger.info(`   - Name: ${flowDef.name}`);
-          cliLogger.info(`   - Table: ${flowDef.table}`);
-          cliLogger.info(`   - Trigger: ${flowDef.trigger_type}`);
-          cliLogger.info(`   - Activities: ${flowDef.activities.length}`);
-          
-          // Show import instructions
-          cliLogger.info('\n' + '='.repeat(60));
-          cliLogger.info(result.instructions);
-          cliLogger.info('='.repeat(60));
-        }
-        
-        // Store result in memory
-        memorySystem.storeLearning(`xml_flow_${sessionId}`, {
-          objective,
-          flow_definition: flowDef,
-          xml_file: result.filePath,
-          generated_at: new Date().toISOString()
-        });
-        
-        // Check if auto-deploy is enabled
-        if (options.autoDeploy !== false) { // Default is true from swarm command
-          cliLogger.info('🚀 Deploying to ServiceNow...');
-          
-          try {
-            // Automatically deploy the XML file
-            const deploySuccess = await deployXMLToServiceNow(result.filePath, {
-              preview: true,
-              commit: true
-            });
-            
-            if (deploySuccess) {
-              cliLogger.info('✅ Flow deployed to ServiceNow!');
-              
-              // Store deployment success in memory
-              memorySystem.storeLearning(`deployment_${sessionId}`, {
-                success: true,
-                xml_file: result.filePath,
-                deployed_at: new Date().toISOString(),
-                flow_name: flowDef.name
-              });
-            } else {
-              cliLogger.warn('⚠️  Deployment encountered issues');
-              cliLogger.info(`💡 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
-            }
-          } catch (deployError) {
-            cliLogger.error('❌ Deployment failed:', deployError instanceof Error ? deployError.message : String(deployError));
-            cliLogger.info(`💡 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
-          }
-        } else {
-          if (options.verbose) {
-            cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
-          } else {
-            cliLogger.info(`📋 Manual deploy: snow-flow deploy-xml "${result.filePath}"`);
-          }
-        }
-        
-        // Continue to Queen Agent orchestration
-      } catch (error) {
-        cliLogger.error('❌ XML flow generation failed:', error instanceof Error ? error.message : String(error));
-        cliLogger.info('💡 Falling back to regular swarm orchestration...\n');
-      }
-    }
-    
     // Start real Claude Code orchestration
     try {
       // Generate the Queen Agent orchestration prompt
-      const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, xmlFlowResult);
+      const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, isFlowDesignerTask);
       
       if (options.verbose) {
         cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
@@ -818,7 +642,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
 }
 
 // Helper function to build Queen Agent orchestration prompt
-function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string, xmlFlowResult: any = null): string {
+function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string, isFlowDesignerTask: boolean = false): string {
   // Check if intelligent features are enabled
   const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
     options.liveTesting || options.autoDeploy || options.autoRollback || 
@@ -840,21 +664,24 @@ You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mis
 - **Estimated Total Agents**: ${taskAnalysis.estimatedAgentCount}
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
 
-${xmlFlowResult ? `## 🔧 Flow Designer XML Template Generated
-An initial XML template has been created as a starting point:
-- **File Path**: ${xmlFlowResult.filePath}
-- **Flow Name**: ${xmlFlowResult.flowDefinition.name}
-- **Table**: ${xmlFlowResult.flowDefinition.table}
-- **Activities**: ${xmlFlowResult.flowDefinition.activities.length}
+${isFlowDesignerTask ? `## 🔧 Flow Designer Task Detected
+You need to create a ServiceNow Flow Designer flow. Follow these steps:
 
-**IMPORTANT**: This is just a basic template! You must spawn Claude Code agents to:
-1. Analyze the detailed requirements from the objective
-2. Design the complete flow logic with all activities
-3. Add approval steps, notifications, conditions, etc.
-4. Test the flow implementation
-5. Deploy to ServiceNow
+1. **Analyze Requirements**: Parse the objective to understand all required activities
+2. **Design Flow Structure**: Plan the flow with triggers, activities, and logic
+3. **Generate XML**: Use the improved flow XML generator to create production-ready XML
+4. **Deploy to ServiceNow**: Use snow-flow deploy-xml or MCP tools to deploy
 
-The XML template is saved but needs significant enhancement by your agents!
+**Important Flow Development Instructions**:
+- Use \`generateImprovedFlowXML\` from './utils/improved-flow-xml-generator.js'
+- Generate flows with v2 tables, Base64+gzip encoding, and complete label_cache
+- Include appropriate activities based on the objective:
+  - Approval activities for approval workflows
+  - Notification activities for email/messaging
+  - Create record activities for task creation
+  - Script activities for custom logic
+- Save generated XML to flow-update-sets directory
+- Deploy using: \`snow-flow deploy-xml "path/to/flow.xml"\`
 ` : ''}
 - **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 

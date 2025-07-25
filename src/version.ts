@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.14';
+export const VERSION = '1.3.15';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.15': [
+      '🎯 SWARM SIMPLIFIED: Removed XML generation from swarm command',
+      '✨ ORCHESTRATION ONLY: Swarm now only launches Claude Code',
+      '🤖 AGENT RESPONSIBILITY: XML generation moved to Claude Code agents',
+      '🚀 CLEANER ARCHITECTURE: Better separation of orchestration vs implementation',
+      '📋 FLOW INSTRUCTIONS: Claude Code gets clear instructions for flow tasks',
+      '🔧 NO PREMATURE WORK: No more generating/deploying before agents start'
+    ],
     '1.3.14': [
       '🎯 CLEANER OUTPUT: Dramatically reduced verbose logging in swarm command',
       '🚀 FOCUSED UI: Only essential information shown by default',
