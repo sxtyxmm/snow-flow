@@ -674,7 +674,9 @@ You need to create a ServiceNow Flow Designer flow. Follow these steps:
 
 **Important Flow Development Instructions**:
 - Use \`generateImprovedFlowXML\` from './utils/improved-flow-xml-generator.js'
-- Generate flows with v2 tables, Base64+gzip encoding, and complete label_cache
+- This generator follows EXACT patterns extracted from real ServiceNow Flow Designer XML examples
+- CRITICAL: Use v2 tables (sys_hub_action_instance_v2), Base64+gzip encoding, complete label_cache
+- The generator creates production-ready XML that ServiceNow can actually import (not "too small to work")
 - Include appropriate activities based on the objective:
   - Approval activities for approval workflows
   - Notification activities for email/messaging
