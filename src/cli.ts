@@ -141,8 +141,8 @@ program
       cliLogger.info('💡 Reason: Flow Designer flows are most reliable with XML-first approach\n');
       
       try {
-        // Import XML flow generator
-        const { generateProductionFlowXML } = await import('./utils/xml-first-flow-generator.js');
+        // Import IMPROVED XML flow generator (fixes "too small to work" issue!)
+        const { generateImprovedFlowXML } = await import('./utils/improved-flow-xml-generator.js');
         
         // Parse instruction to determine activities
         const activities = [];
@@ -224,13 +224,28 @@ program
           }]
         };
         
-        // Generate XML
-        cliLogger.info('🏗️  Generating production XML...');
-        const result = generateProductionFlowXML(flowDef);
+        // Generate IMPROVED XML with enhanced structure
+        cliLogger.info('🏗️  Generating IMPROVED production XML...');
+        
+        // Convert to improved flow definition
+        const improvedFlowDef = {
+          ...flowDef,
+          run_as: 'user' as const,
+          accessible_from: 'package_private' as const,
+          category: 'custom',
+          tags: ['auto-generated'],
+          activities: flowDef.activities.map((act: any) => ({
+            ...act,
+            description: act.description || act.name
+          }))
+        };
+        
+        const result = generateImprovedFlowXML(improvedFlowDef);
         xmlFlowResult = { ...result, flowDefinition: flowDef };
         
-        cliLogger.info(`\n✅ XML Generated Successfully!`);
+        cliLogger.info(`\n✅ IMPROVED XML Generated Successfully!`);
         cliLogger.info(`📁 File saved to: ${result.filePath}`);
+        cliLogger.info(`🔥 IMPROVEMENTS: Uses v2 tables, Base64+gzip encoding, complete label_cache!`);
         cliLogger.info(`📊 Flow structure:`);
         cliLogger.info(`   - Name: ${flowDef.name}`);
         cliLogger.info(`   - Table: ${flowDef.table}`);
@@ -4493,8 +4508,8 @@ program
     console.log('📋 Creating production-ready ServiceNow flow XML...\n');
     
     try {
-      // Import XML flow generator
-      const { generateProductionFlowXML } = await import('./utils/xml-first-flow-generator.js');
+      // Import IMPROVED XML flow generator (fixes "too small to work" issue!)
+      const { generateImprovedFlowXML } = await import('./utils/improved-flow-xml-generator.js');
       
       // Parse instruction to determine activities
       const activities = [];
@@ -4579,12 +4594,27 @@ return { started: true };`
         ];
       }
       
-      // Generate XML
-      console.log('\n🏗️  Generating production XML...');
-      const result = generateProductionFlowXML(flowDef);
+      // Generate IMPROVED XML with enhanced structure
+      console.log('\n🏗️  Generating IMPROVED production XML...');
       
-      console.log(`\n✅ XML Generated Successfully!`);
+      // Convert to improved flow definition
+      const improvedFlowDef = {
+        ...flowDef,
+        run_as: 'user' as const,
+        accessible_from: 'package_private' as const,
+        category: 'custom',
+        tags: ['cli-generated'],
+        activities: flowDef.activities.map((act: any) => ({
+          ...act,
+          description: act.description || act.name
+        }))
+      };
+      
+      const result = generateImprovedFlowXML(improvedFlowDef);
+      
+      console.log(`\n✅ IMPROVED XML Generated Successfully!`);
       console.log(`📁 File saved to: ${result.filePath}`);
+      console.log(`🔥 IMPROVEMENTS: Uses v2 tables, Base64+gzip encoding, complete label_cache!`);
       console.log(`📊 Flow structure:`);
       console.log(`   - Name: ${flowDef.name}`);
       console.log(`   - Table: ${flowDef.table}`);

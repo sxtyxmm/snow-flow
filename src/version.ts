@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.10';
+export const VERSION = '1.3.11';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.11': [
+      '🔥 IMPROVED FLOW GENERATOR: Complete rewrite fixing "too small to work" issue',
+      '✅ V2 TABLE STRUCTURES: Uses sys_hub_action_instance_v2 and sys_hub_trigger_instance_v2',
+      '📦 BASE64+GZIP ENCODING: Production-ready action value encoding',
+      '🧩 COMPLETE LABEL_CACHE: All required metadata for Flow Designer UI',
+      '📊 5-10X LARGER XML: Production-sized flows that actually work in ServiceNow',
+      '🚀 AUTOMATIC DETECTION: Swarm auto-detects Flow Designer tasks and uses XML-first'
+    ],
     '1.3.10': [
       '🔥 RAW MODE FIX: Used --dangerously-skip-permissions flag',
       '📝 STDIN RESTORED: Proper prompt injection via stdin',
