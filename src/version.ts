@@ -2,13 +2,18 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.15';
+export const VERSION = '1.3.16';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.16': [
+      '🔄 VERSION BUMP: Clean version update for npm publish',
+      '✨ INCLUDES: All improvements from v1.3.15',
+      '📦 READY: Package prepared for npm distribution'
+    ],
     '1.3.15': [
       '🎯 SWARM SIMPLIFIED: Removed XML generation from swarm command',
       '✨ ORCHESTRATION ONLY: Swarm now only launches Claude Code',
