@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.11';
+export const VERSION = '1.3.12';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.12': [
+      '🚀 AUTO-DEPLOY XML: Swarm command now automatically deploys flow XML to ServiceNow',
+      '✨ ZERO MANUAL STEPS: Generate → Import → Preview → Commit all automatic',
+      '🎯 SMART ERROR HANDLING: Falls back to manual deployment if issues occur',
+      '🔧 SHARED DEPLOYMENT: Both swarm and deploy-xml use same deployment logic',
+      '💾 DEPLOYMENT TRACKING: Successful deployments tracked in memory system',
+      '✅ COMPLETE AUTOMATION: No more manual "deploy-xml" command needed'
+    ],
     '1.3.11': [
       '🔥 IMPROVED FLOW GENERATOR: Complete rewrite fixing "too small to work" issue',
       '✅ V2 TABLE STRUCTURES: Uses sys_hub_action_instance_v2 and sys_hub_trigger_instance_v2',

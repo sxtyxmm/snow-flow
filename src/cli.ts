@@ -31,6 +31,137 @@ program
   .description('ServiceNow Multi-Agent Development Framework')
   .version(VERSION);
 
+// Helper function to deploy XML to ServiceNow
+async function deployXMLToServiceNow(xmlFile: string, options: { preview?: boolean, commit?: boolean } = {}): Promise<boolean> {
+  const oauth = new ServiceNowOAuth();
+  const isAuthenticated = await oauth.getStoredTokens() !== null;
+  
+  if (!isAuthenticated) {
+    cliLogger.error('❌ Not authenticated. Please run: snow-flow auth login');
+    return false;
+  }
+
+  try {
+    // Initialize ServiceNow client
+    const client = new ServiceNowClient();
+    
+    // Read XML file
+    if (!existsSync(xmlFile)) {
+      cliLogger.error(`❌ XML file not found: ${xmlFile}`);
+      return false;
+    }
+    
+    cliLogger.info('📄 Reading XML file...');
+    const xmlContent = await fs.readFile(xmlFile, 'utf-8');
+    
+    // Import XML as remote update set
+    cliLogger.info('📤 Importing XML to ServiceNow...');
+    const importResponse = await client.makeRequest({
+      method: 'POST',
+      url: '/api/now/table/sys_remote_update_set',
+      headers: {
+        'Content-Type': 'application/xml',
+        'Accept': 'application/json'
+      },
+      data: xmlContent
+    });
+
+    if (!importResponse.result || !importResponse.result.sys_id) {
+      throw new Error('Failed to import XML update set');
+    }
+
+    const remoteUpdateSetId = importResponse.result.sys_id;
+    cliLogger.info(`✅ XML imported successfully (sys_id: ${remoteUpdateSetId})`);
+
+    // Load the update set
+    cliLogger.info('🔄 Loading update set...');
+    await client.makeRequest({
+      method: 'PUT',
+      url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+      data: {
+        state: 'loaded'
+      }
+    });
+
+    // Find the loaded update set
+    const loadedResponse = await client.makeRequest({
+      method: 'GET',
+      url: '/api/now/table/sys_update_set',
+      params: {
+        sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+        sysparm_limit: 1
+      }
+    });
+
+    if (!loadedResponse.result || loadedResponse.result.length === 0) {
+      throw new Error('Failed to find loaded update set');
+    }
+
+    const updateSetId = loadedResponse.result[0].sys_id;
+    const updateSetName = loadedResponse.result[0].name;
+    cliLogger.info(`✅ Update set loaded: ${updateSetName}`);
+
+    // Preview if requested
+    if (options.preview !== false) {
+      cliLogger.info('🔍 Previewing update set...');
+      
+      await client.makeRequest({
+        method: 'POST',
+        url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+      });
+
+      // Check preview results
+      const previewProblems = await client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_update_preview_problem',
+        params: {
+          sysparm_query: `update_set=${updateSetId}`,
+          sysparm_limit: 100
+        }
+      });
+
+      if (previewProblems.result && previewProblems.result.length > 0) {
+        cliLogger.warn('\n⚠️  Preview found problems:');
+        previewProblems.result.forEach((p: any) => {
+          cliLogger.warn(`   - ${p.type}: ${p.description}`);
+        });
+
+        if (options.commit !== false) {
+          cliLogger.warn('\n⚠️  Skipping auto-commit due to preview problems');
+          cliLogger.info('📋 Review and resolve problems in ServiceNow, then commit manually');
+          return false;
+        }
+      } else {
+        cliLogger.info('✅ Preview successful - no problems found');
+      }
+
+      // Commit if clean and requested
+      if (options.commit !== false && (!previewProblems.result || previewProblems.result.length === 0)) {
+        cliLogger.info('🚀 Committing update set...');
+        
+        await client.makeRequest({
+          method: 'POST',
+          url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+        });
+
+        cliLogger.info('\n✅ Update Set committed successfully!');
+        cliLogger.info('📍 Navigate to Flow Designer > Designer to see your flow');
+        cliLogger.info('\n🎉 Deployment complete!');
+        return true;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    cliLogger.error('\n❌ Deployment failed:', error instanceof Error ? error.message : String(error));
+    cliLogger.info('\n💡 Troubleshooting tips:');
+    cliLogger.info('   1. Check your authentication: snow-flow auth status');
+    cliLogger.info('   2. Verify XML file format is correct');
+    cliLogger.info('   3. Ensure you have required permissions in ServiceNow');
+    return false;
+  }
+}
+
 // Swarm command - the main orchestration command with EVERYTHING
 program
   .command('swarm <objective>')
@@ -270,9 +401,29 @@ program
         // Check if auto-deploy is enabled
         if (options.autoDeploy !== false) { // Default is true from swarm command
           cliLogger.info('\n🚀 Auto-Deploy enabled - importing XML to ServiceNow...');
-          cliLogger.info('\n💡 To deploy, use the following command:');
-          cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
-          cliLogger.info('\nThis will automatically import, preview, and commit the flow to ServiceNow.');
+          
+          // Automatically deploy the XML file
+          const deploySuccess = await deployXMLToServiceNow(result.filePath, {
+            preview: true,
+            commit: true
+          });
+          
+          if (deploySuccess) {
+            cliLogger.info('\n✅ Flow automatically deployed to ServiceNow!');
+            cliLogger.info('🎯 The flow is now available in Flow Designer');
+            
+            // Store deployment success in memory
+            memorySystem.storeLearning(`deployment_${sessionId}`, {
+              success: true,
+              xml_file: result.filePath,
+              deployed_at: new Date().toISOString(),
+              flow_name: flowDef.name
+            });
+          } else {
+            cliLogger.warn('\n⚠️  Automatic deployment encountered issues');
+            cliLogger.info('💡 You can manually deploy later with:');
+            cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
+          }
         } else {
           cliLogger.info('📋 Use the import instructions above to deploy to ServiceNow');
         }
@@ -1807,129 +1958,14 @@ program
     console.log(`\n📦 Deploying XML Update Set: ${xmlFile}`);
     console.log('='.repeat(60));
 
-    const oauth = new ServiceNowOAuth();
-    const isAuthenticated = await oauth.getStoredTokens() !== null;
-    
-    if (!isAuthenticated) {
-      console.log('❌ Not authenticated. Please run: snow-flow auth login');
-      return;
-    }
+    // Use the shared deploy function
+    const success = await deployXMLToServiceNow(xmlFile, {
+      preview: options.preview,
+      commit: options.commit
+    });
 
-    try {
-      // Initialize ServiceNow client
-      const client = new ServiceNowClient();
-      
-      // Read XML file
-      if (!existsSync(xmlFile)) {
-        console.error(`❌ XML file not found: ${xmlFile}`);
-        return;
-      }
-      
-      console.log('📄 Reading XML file...');
-      const xmlContent = await fs.readFile(xmlFile, 'utf-8');
-      
-      // Import XML as remote update set
-      console.log('📤 Importing XML to ServiceNow...');
-      const importResponse = await client.makeRequest({
-        method: 'POST',
-        url: '/api/now/table/sys_remote_update_set',
-        headers: {
-          'Content-Type': 'application/xml',
-          'Accept': 'application/json'
-        },
-        data: xmlContent
-      });
-
-      if (!importResponse.result || !importResponse.result.sys_id) {
-        throw new Error('Failed to import XML update set');
-      }
-
-      const remoteUpdateSetId = importResponse.result.sys_id;
-      console.log(`✅ XML imported successfully (sys_id: ${remoteUpdateSetId})`);
-
-      // Load the update set
-      console.log('🔄 Loading update set...');
-      await client.makeRequest({
-        method: 'PUT',
-        url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
-        data: {
-          state: 'loaded'
-        }
-      });
-
-      // Find the loaded update set
-      const loadedResponse = await client.makeRequest({
-        method: 'GET',
-        url: '/api/now/table/sys_update_set',
-        params: {
-          sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
-          sysparm_limit: 1
-        }
-      });
-
-      if (!loadedResponse.result || loadedResponse.result.length === 0) {
-        throw new Error('Failed to find loaded update set');
-      }
-
-      const updateSetId = loadedResponse.result[0].sys_id;
-      const updateSetName = loadedResponse.result[0].name;
-      console.log(`✅ Update set loaded: ${updateSetName}`);
-
-      // Preview if requested
-      if (options.preview !== false) {
-        console.log('🔍 Previewing update set...');
-        
-        await client.makeRequest({
-          method: 'POST',
-          url: `/api/now/table/sys_update_set/${updateSetId}/preview`
-        });
-
-        // Check preview results
-        const previewProblems = await client.makeRequest({
-          method: 'GET',
-          url: '/api/now/table/sys_update_preview_problem',
-          params: {
-            sysparm_query: `update_set=${updateSetId}`,
-            sysparm_limit: 100
-          }
-        });
-
-        if (previewProblems.result && previewProblems.result.length > 0) {
-          console.log('\n⚠️  Preview found problems:');
-          previewProblems.result.forEach((p: any) => {
-            console.log(`   - ${p.type}: ${p.description}`);
-          });
-
-          if (options.commit !== false) {
-            console.log('\n⚠️  Skipping auto-commit due to preview problems');
-            console.log('📋 Review and resolve problems in ServiceNow, then commit manually');
-            return;
-          }
-        } else {
-          console.log('✅ Preview successful - no problems found');
-        }
-
-        // Commit if clean and requested
-        if (options.commit !== false && (!previewProblems.result || previewProblems.result.length === 0)) {
-          console.log('🚀 Committing update set...');
-          
-          await client.makeRequest({
-            method: 'POST',
-            url: `/api/now/table/sys_update_set/${updateSetId}/commit`
-          });
-
-          console.log('\n✅ Update Set committed successfully!');
-          console.log('📍 Navigate to Flow Designer > Designer to see your flow');
-          console.log('\n🎉 Deployment complete!');
-        }
-      }
-
-    } catch (error) {
-      console.error('\n❌ Deployment failed:', error instanceof Error ? error.message : String(error));
-      console.log('\n💡 Troubleshooting tips:');
-      console.log('   1. Check your authentication: snow-flow auth status');
-      console.log('   2. Verify XML file format is correct');
-      console.log('   3. Ensure you have required permissions in ServiceNow');
+    if (!success) {
+      process.exit(1);
     }
   });
 
