@@ -205,6 +205,13 @@ program
     // Analyze the objective using intelligent agent detection
     const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
     
+    // Debug logging to understand task type detection
+    if (process.env.DEBUG) {
+      cliLogger.info(`🔍 DEBUG - Detected artifacts: [${taskAnalysis.serviceNowArtifacts.join(', ')}]`);
+      cliLogger.info(`🔍 DEBUG - Flow keywords in objective: ${objective.toLowerCase().includes('flow')}`);
+      cliLogger.info(`🔍 DEBUG - Widget keywords in objective: ${objective.toLowerCase().includes('widget')}`);
+    }
+    
     cliLogger.info(`🎯 Task Type: ${taskAnalysis.taskType}`);
     cliLogger.info(`🧠 Primary Agent: ${taskAnalysis.primaryAgent}`);
     cliLogger.info(`👥 Supporting Agents: ${taskAnalysis.supportingAgents.join(', ')}`);
@@ -402,26 +409,32 @@ program
         if (options.autoDeploy !== false) { // Default is true from swarm command
           cliLogger.info('\n🚀 Auto-Deploy enabled - importing XML to ServiceNow...');
           
-          // Automatically deploy the XML file
-          const deploySuccess = await deployXMLToServiceNow(result.filePath, {
-            preview: true,
-            commit: true
-          });
-          
-          if (deploySuccess) {
-            cliLogger.info('\n✅ Flow automatically deployed to ServiceNow!');
-            cliLogger.info('🎯 The flow is now available in Flow Designer');
-            
-            // Store deployment success in memory
-            memorySystem.storeLearning(`deployment_${sessionId}`, {
-              success: true,
-              xml_file: result.filePath,
-              deployed_at: new Date().toISOString(),
-              flow_name: flowDef.name
+          try {
+            // Automatically deploy the XML file
+            const deploySuccess = await deployXMLToServiceNow(result.filePath, {
+              preview: true,
+              commit: true
             });
-          } else {
-            cliLogger.warn('\n⚠️  Automatic deployment encountered issues');
-            cliLogger.info('💡 You can manually deploy later with:');
+            
+            if (deploySuccess) {
+              cliLogger.info('\n✅ Flow automatically deployed to ServiceNow!');
+              cliLogger.info('🎯 The flow is now available in Flow Designer');
+              
+              // Store deployment success in memory
+              memorySystem.storeLearning(`deployment_${sessionId}`, {
+                success: true,
+                xml_file: result.filePath,
+                deployed_at: new Date().toISOString(),
+                flow_name: flowDef.name
+              });
+            } else {
+              cliLogger.warn('\n⚠️  Automatic deployment encountered issues');
+              cliLogger.info('💡 You can manually deploy later with:');
+              cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
+            }
+          } catch (deployError) {
+            cliLogger.error('❌ Automatic deployment failed:', deployError instanceof Error ? deployError.message : String(deployError));
+            cliLogger.info('💡 The XML has been generated successfully. You can manually deploy later with:');
             cliLogger.info(`   snow-flow deploy-xml "${result.filePath}"`);
           }
         } else {

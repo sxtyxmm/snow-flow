@@ -454,8 +454,9 @@ export class AgentDetector {
 
   private static determineTaskType(objective: string, artifacts: string[]): string {
     // Determine based on detected artifacts and keywords
-    if (artifacts.includes('widget')) return 'widget_development';
+    // Check flow FIRST as it's often confused with widget when both are present
     if (artifacts.includes('flow') || artifacts.includes('workflow')) return 'flow_development';
+    if (artifacts.includes('widget')) return 'widget_development';
     if (artifacts.includes('application')) return 'application_development';
     if (artifacts.includes('script') || artifacts.includes('business_rule')) return 'script_development';
     if (artifacts.includes('integration') || artifacts.includes('api')) return 'integration_development';
