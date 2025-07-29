@@ -5645,8 +5645,166 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
         return await this.deployFlow(scopedConfig);
       case 'application':
         return await this.deployApplication(scopedConfig);
+      case 'xml_update_set':
+        return await this.deployXMLUpdateSet(scopedConfig);
       default:
         throw new Error(`Unsupported artifact type for unified deployment: ${type}`);
+    }
+  }
+
+  /**
+   * Deploy XML Update Set to ServiceNow
+   */
+  private async deployXMLUpdateSet(config: any): Promise<any> {
+    const { xml_file_path, auto_preview = true, auto_commit = true } = config;
+    
+    if (!xml_file_path) {
+      throw new Error('XML file path is required for xml_update_set deployment');
+    }
+
+    this.logger.info('🚀 Deploying XML Update Set', { 
+      file: xml_file_path,
+      auto_preview,
+      auto_commit
+    });
+
+    try {
+      // Read XML file
+      const fs = require('fs').promises;
+      const xmlContent = await fs.readFile(xml_file_path, 'utf-8');
+
+      // Import XML as remote update set
+      const importResponse = await this.client.makeRequest({
+        method: 'POST',
+        url: '/api/now/table/sys_remote_update_set',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Accept': 'application/json'
+        },
+        data: xmlContent
+      });
+
+      if (!importResponse.result || !importResponse.result.sys_id) {
+        throw new Error('Failed to import XML update set');
+      }
+
+      const remoteUpdateSetId = importResponse.result.sys_id;
+      this.logger.info('✅ XML imported successfully', { sys_id: remoteUpdateSetId });
+
+      // Load the update set
+      await this.client.makeRequest({
+        method: 'PUT',
+        url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+        data: {
+          state: 'loaded'
+        }
+      });
+
+      // Find the loaded update set
+      const loadedResponse = await this.client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_update_set',
+        params: {
+          sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+          sysparm_limit: 1
+        }
+      });
+
+      if (!loadedResponse.result || loadedResponse.result.length === 0) {
+        throw new Error('Failed to find loaded update set');
+      }
+
+      const updateSetId = loadedResponse.result[0].sys_id;
+      const updateSetName = loadedResponse.result[0].name;
+
+      // Preview if requested
+      if (auto_preview) {
+        const previewResponse = await this.client.makeRequest({
+          method: 'POST',
+          url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+        });
+
+        // Check preview results
+        const previewProblems = await this.client.makeRequest({
+          method: 'GET',
+          url: '/api/now/table/sys_update_preview_problem',
+          params: {
+            sysparm_query: `update_set=${updateSetId}`,
+            sysparm_limit: 100
+          }
+        });
+
+        if (previewProblems.result && previewProblems.result.length > 0) {
+          const problems = previewProblems.result.map((p: any) => 
+            `- ${p.type}: ${p.description}`
+          ).join('\n');
+
+          if (auto_commit) {
+            this.logger.warn('Preview found problems, skipping auto-commit', { problems });
+          }
+
+          return {
+            success: true,
+            message: 'XML imported and previewed with problems',
+            update_set_id: updateSetId,
+            update_set_name: updateSetName,
+            preview_status: 'problems_found',
+            problems: previewProblems.result,
+            next_steps: [
+              '1. Review preview problems in ServiceNow',
+              '2. Resolve any issues',
+              '3. Commit manually when ready'
+            ]
+          };
+        }
+
+        // Commit if clean and requested
+        if (auto_commit) {
+          await this.client.makeRequest({
+            method: 'POST',
+            url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+          });
+
+          return {
+            success: true,
+            message: '✅ XML Update Set imported, previewed, and committed successfully!',
+            update_set_id: updateSetId,
+            update_set_name: updateSetName,
+            status: 'committed',
+            flow_location: 'Flow Designer > Designer',
+            next_steps: [
+              '1. Navigate to Flow Designer',
+              '2. Your flow should be visible in the list',
+              '3. Open the flow to verify all components'
+            ]
+          };
+        }
+      }
+
+      // Return success without preview/commit
+      return {
+        success: true,
+        message: 'XML Update Set imported successfully',
+        update_set_id: updateSetId,
+        update_set_name: updateSetName,
+        status: 'imported',
+        next_steps: [
+          '1. Navigate to System Update Sets > Local Update Sets',
+          '2. Find your update set: ' + updateSetName,
+          '3. Click Preview Update Set',
+          '4. Review and commit when ready'
+        ]
+      };
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.logger.error('XML deployment failed', { error: errorMsg, file: xml_file_path });
+      
+      if (errorMsg.includes('ENOENT') || errorMsg.includes('no such file')) {
+        throw new Error(`XML file not found: ${xml_file_path}`);
+      }
+      
+      throw new Error(`XML deployment failed: ${errorMsg}`);
     }
   }
 

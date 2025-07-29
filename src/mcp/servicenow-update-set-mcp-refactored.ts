@@ -214,6 +214,11 @@ export class ServiceNowUpdateSetMCP extends BaseMCPServer {
         data: updateSetData
       });
 
+      // Validate response structure
+      if (!response || !response.result) {
+        throw new Error(`Invalid API response: ${JSON.stringify(response)}`);
+      }
+
       const updateSet = response.result;
 
       // Create session

@@ -371,6 +371,26 @@ class ServiceNowPlatformDevelopmentMCP {
     try {
       this.logger.debug(`Looking up table info for: ${tableName}`);
       
+      // First, check if this is a known standard table that may not appear in sys_db_object
+      const standardTables: Record<string, {label: string}> = {
+        'incident': { label: 'Incident' },
+        'problem': { label: 'Problem' },
+        'change_request': { label: 'Change Request' },
+        'sc_request': { label: 'Request' },
+        'sc_req_item': { label: 'Requested Item' },
+        'sc_task': { label: 'Catalog Task' },
+        'task': { label: 'Task' }
+      };
+
+      if (standardTables[tableName]) {
+        this.logger.debug(`Using known standard table: ${tableName}`);
+        return {
+          name: tableName,
+          label: standardTables[tableName].label,
+          sys_id: `standard_table_${tableName}` // Placeholder sys_id for standard tables
+        };
+      }
+      
       // Try direct lookup first
       const tableResponse = await this.client.searchRecords(
         'sys_db_object',
@@ -386,6 +406,9 @@ class ServiceNowPlatformDevelopmentMCP {
           sys_id: table.sys_id
         };
       }
+
+      // Log the actual response for debugging
+      this.logger.debug(`Table lookup response for ${tableName}: ${JSON.stringify(tableResponse)}`);
 
       // Try by sys_id
       const tableByIdResponse = await this.client.searchRecords(
@@ -710,12 +733,19 @@ class ServiceNowPlatformDevelopmentMCP {
 
       // Get detailed table metadata
       this.logger.debug(`Attempting to fetch table details for sys_id: ${tableInfo.sys_id}`);
-      const tableDetailsResponse = await this.client.getRecord('sys_db_object', tableInfo.sys_id);
+      
+      // Check if this is a standard table with placeholder sys_id
+      const isStandardTable = tableInfo.sys_id.startsWith('standard_table_');
+      let tableDetailsResponse: any = { success: false };
+      
+      if (!isStandardTable) {
+        tableDetailsResponse = await this.client.getRecord('sys_db_object', tableInfo.sys_id);
+      }
       
       // Declare the variable once with proper type
       let tableDetails: any;
       
-      if (!tableDetailsResponse.success) {
+      if (!tableDetailsResponse.success || isStandardTable) {
         const errorMessage = tableDetailsResponse.error || 
                            JSON.stringify(tableDetailsResponse) || 
                            'Unknown error occurred while fetching table details';

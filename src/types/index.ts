@@ -71,7 +71,14 @@ export type AgentType =
   | 'workflow-designer'
   | 'script-generator'
   | 'security-agent'
-  | 'update-set-manager';
+  | 'update-set-manager'
+  | 'ui-ux-specialist'
+  | 'approval-specialist'
+  | 'security-specialist'
+  | 'css-specialist'
+  | 'backend-specialist'
+  | 'frontend-specialist'
+  | 'performance-specialist';
 
 export interface Task {
   id: string;
@@ -174,4 +181,3 @@ export interface ServiceNowUpdateSet {
 
 // Re-export coordination framework types
 export * from './snow-flow.types';
-export * from '../coordination/types';

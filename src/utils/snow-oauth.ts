@@ -13,6 +13,7 @@ import axios from 'axios';
 import net from 'net';
 import crypto from 'crypto';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
+import { unifiedAuthStore } from './unified-auth-store.js';
 
 export interface ServiceNowAuthResult {
   success: boolean;
@@ -411,9 +412,6 @@ export class ServiceNowOAuth {
    */
   private async saveTokens(tokenData: any): Promise<void> {
     try {
-      const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow');
-      await fs.mkdir(configDir, { recursive: true });
-      
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expiresIn);
       
@@ -422,7 +420,11 @@ export class ServiceNowOAuth {
         expiresAt: expiresAt.toISOString()
       };
       
-      await fs.writeFile(this.tokenPath, JSON.stringify(authData, null, 2), 'utf8');
+      // Use unified auth store
+      await unifiedAuthStore.saveTokens(authData);
+      
+      // Bridge to MCP servers immediately
+      await unifiedAuthStore.bridgeToMCP();
     } catch (error) {
       console.error('Failed to save tokens:', error);
       throw error;
@@ -434,8 +436,7 @@ export class ServiceNowOAuth {
    */
   async loadTokens(): Promise<any> {
     try {
-      const data = await fs.readFile(this.tokenPath, 'utf8');
-      return JSON.parse(data);
+      return await unifiedAuthStore.getTokens();
     } catch (error) {
       return null;
     }
@@ -567,6 +568,13 @@ export class ServiceNowOAuth {
     } catch (error) {
       console.log('No active session to logout from');
     }
+  }
+
+  /**
+   * Get stored OAuth tokens for use in other contexts (MCP servers)
+   */
+  async getStoredTokens(): Promise<any> {
+    return await this.loadTokens();
   }
 
   /**

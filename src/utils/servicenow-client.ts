@@ -10,6 +10,7 @@ import { ActionTypeCache } from './action-type-cache';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
 import { widgetTemplateGenerator } from './widget-template-generator.js';
 import { Logger } from './logger';
+import { unifiedAuthStore } from './unified-auth-store.js';
 import { 
   generateFlowComponents, 
   createActionInstances, 
@@ -191,7 +192,21 @@ export class ServiceNowClient {
    */
   private async ensureAuthenticated(): Promise<void> {
     if (!this.credentials) {
-      this.credentials = await this.oauth.loadCredentials();
+      // Try unified auth store first (most reliable)
+      const tokens = await unifiedAuthStore.getTokens();
+      if (tokens) {
+        this.credentials = {
+          instance: tokens.instance,
+          clientId: tokens.clientId,
+          clientSecret: tokens.clientSecret,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresAt: tokens.expiresAt
+        };
+      } else {
+        // Fallback to OAuth loadCredentials
+        this.credentials = await this.oauth.loadCredentials();
+      }
     }
     
     if (!this.credentials) {

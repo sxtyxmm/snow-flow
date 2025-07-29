@@ -413,6 +413,9 @@ export class ServiceNowDeploymentMCP extends BaseMCPServer {
       case 'business_rule':
         result = await this.deployScript(type, config, context, finalUpdateSetId);
         break;
+      case 'xml_update_set':
+        result = await this.deployXMLUpdateSet(config, context);
+        break;
       default:
         throw new Error(`Unsupported deployment type: ${type}`);
     }

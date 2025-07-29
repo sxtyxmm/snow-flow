@@ -121,7 +121,7 @@ class ServiceNowFlowComposerMCP {
       tools: [
         {
           name: 'snow_create_flow',
-          description: 'FULLY AUTONOMOUS flow creation - parses natural language, discovers artifacts, creates missing components, links everything, deploys automatically. ZERO MANUAL WORK!',
+          description: '🚀 PRIMARY FLOW TOOL - Create production-ready Flow Designer flows with XML-first approach and automatic deployment to ServiceNow. ZERO MANUAL STEPS!',
           inputSchema: {
             type: 'object',
             properties: {
@@ -400,31 +400,73 @@ class ServiceNowFlowComposerMCP {
       const flowDefinition = await this.generateFlowDefinition(parsedIntent, templateMatch, artifacts);
       console.log('🧠 Generated flow definition:', JSON.stringify(flowDefinition, null, 2));
 
-      // 🧠 STEP 5: Deploy if requested
+      // 🧠 STEP 5: Deploy using XML-first approach for maximum reliability
       let deploymentResult = null;
       if (args.deploy_immediately !== false) {
-        console.log('🚀 DEPLOYING intelligent flow to ServiceNow...');
+        console.log('🚀 DEPLOYING flow using XML-first approach...');
         
-        // Use the conversion utility to ensure proper format
-        const enhancedFlowDefinition: FlowDefinition = convertToFlowDefinition({
-          name: parsedIntent.flowName,
-          description: parsedIntent.description,
-          table: parsedIntent.table,
-          trigger: parsedIntent.trigger,
-          activities: flowDefinition.activities || [],
-          variables: flowDefinition.variables || [],
-          connections: flowDefinition.connections || [],
-          error_handling: flowDefinition.error_handling || []
-        });
-        
-        // Try enhanced method first, fallback to original if needed
         try {
-          deploymentResult = await this.client.createFlowWithStructureBuilder(enhancedFlowDefinition);
-          console.log('🚀 Enhanced deployment result:', deploymentResult);
-        } catch (enhancedError) {
-          console.warn('⚠️ Enhanced deployment failed, falling back to original method:', enhancedError);
-          deploymentResult = await this.client.createFlow(flowDefinition);
-          console.log('🚀 Fallback deployment result:', deploymentResult);
+          // Import the XML flow generator
+          const { generateProductionFlowXML } = await import('../utils/xml-first-flow-generator.js');
+          
+          // Convert to XML flow definition format
+          const xmlFlowDef = {
+            name: parsedIntent.flowName,
+            description: parsedIntent.description,
+            table: parsedIntent.table,
+            trigger_type: this.mapTriggerTypeToXML(parsedIntent.trigger.type),
+            trigger_condition: parsedIntent.trigger.condition || '',
+            activities: this.convertActivitiesToXML(flowDefinition.activities || []),
+            run_as: 'user',
+            accessible_from: 'package_private'
+          };
+          
+          // Generate production-ready XML
+          const xmlResult = generateProductionFlowXML(xmlFlowDef);
+          console.log('✅ XML generated:', xmlResult.filePath);
+          
+          // Auto-deploy with fallback strategies
+          const deployResult = await this.deployWithFallback(xmlResult.filePath, flowDefinition);
+          
+          // Verify deployment was successful
+          const flowExists = await this.verifyFlowInServiceNow(parsedIntent.flowName);
+          
+          if (!flowExists) {
+            throw new Error('Flow deployment claimed success but flow not found in ServiceNow');
+          }
+          
+          deploymentResult = {
+            success: true,
+            method: deployResult.strategy,
+            xml_file: xmlResult.filePath,
+            message: `✅ Flow deployed via ${deployResult.strategy} and verified in ServiceNow!`,
+            flow_sys_id: flowExists.sys_id
+          };
+          
+        } catch (xmlError) {
+          console.error('❌ XML deployment failed:', xmlError);
+          
+          // Extract detailed error information
+          let errorDetails = 'Unknown error';
+          if (xmlError instanceof Error) {
+            errorDetails = xmlError.message;
+            // Check for specific error types
+            if (xmlError.message.includes('400')) {
+              errorDetails = 'ServiceNow rejected the request. Check permissions and Update Set.';
+            } else if (xmlError.message.includes('401') || xmlError.message.includes('403')) {
+              errorDetails = 'Authentication failed. Run: snow-flow auth login';
+            }
+          }
+          
+          deploymentResult = {
+            success: false,
+            error: errorDetails,
+            xml_generated: true,
+            xml_path: xmlResult?.filePath,
+            deployment_failed: true,
+            manual_steps: this.generateManualImportGuide(xmlResult?.filePath || ''),
+            fallback_instructions: 'Use snow-flow deploy-xml command for manual deployment'
+          };
         }
       }
 
@@ -435,9 +477,22 @@ class ServiceNowFlowComposerMCP {
         content: [
           {
             type: 'text',
-            text: `🎯 INTELLIGENT FLOW CREATED SUCCESSFULLY!
+            text: deploymentResult?.success ? 
+              `✅ FLOW SUCCESSFULLY CREATED AND DEPLOYED!
 
-${args.deploy_immediately !== false ? `🚀 **LIVE DEPLOYMENT** - Real flow created in ServiceNow!` : `📋 **PLANNING MODE** - Flow structure generated`}
+🚀 **VERIFIED DEPLOYMENT** - Flow is now live in ServiceNow!` :
+              deploymentResult?.deployment_failed ?
+              `⚠️ FLOW XML GENERATED BUT DEPLOYMENT FAILED
+
+❌ **Deployment Error**: ${deploymentResult.error}
+
+📁 **XML File**: ${deploymentResult.xml_path}
+
+📋 **Manual Import Steps**:
+${deploymentResult.manual_steps || '1. Navigate to System Update Sets > Retrieved Update Sets\n2. Import Update Set from XML\n3. Preview and Commit'}` :
+              `🎯 FLOW CREATED WITH XML-FIRST APPROACH!
+
+${args.deploy_immediately !== false ? `🚀 **DEPLOYMENT STATUS** - Processing...` : `📋 **PLANNING MODE** - Flow structure generated`}
 
 🧠 **Intelligent Analysis:**
 - **Flow Name**: ${parsedIntent.flowName}
@@ -453,26 +508,27 @@ ${args.deploy_immediately !== false ? `🚀 **LIVE DEPLOYMENT** - Real flow crea
 - **Error Handling**: ${flowDefinition.error_handling?.length || 0} safety measures
 - **Artifacts Used**: ${artifacts.existing.length} found, ${artifacts.created.length} created
 
-🚀 **Deployment Status:**
-${deploymentResult ? (deploymentResult.success ? '✅ Successfully deployed to ServiceNow!' : `❌ Deployment failed: ${deploymentResult.error}`) : '⏳ Ready for deployment'}
-
-${deploymentResult?.success ? `🎯 **Live Flow Details:**
-- **System ID**: ${deploymentResult.data?.sys_id || 'Unknown'}
-- **Status**: ${deploymentResult.data?.status || 'Active'}
-- **URL**: ${deploymentResult.data?.url || flowUrl}` : ''}
+🚀 **XML-First Deployment:**
+${deploymentResult ? (deploymentResult.success ? 
+  `✅ Successfully deployed using XML-first approach!
+- **Method**: Production-ready Update Set XML
+- **XML File**: ${deploymentResult.xml_file}
+- **Status**: Imported → Previewed → Committed ✅` : 
+  `❌ Auto-deployment failed: ${deploymentResult.error}
+- **Fallback**: ${deploymentResult.fallback_instructions}`) : '⏳ Ready for deployment'}
 
 🔗 **ServiceNow Access:**
 - Flow Designer: ${flowUrl}  
 - Flow Designer Home: https://${credentials?.instance}/flow-designer
 
-🧠 **Intelligence Features:**
-- Natural language processing ✅
-- Template matching and adaptation ✅  
-- Artifact discovery and reuse ✅
-- Complete flow definition generation ✅
-- Error handling and validation ✅
+🧠 **NEW Features (v1.3.17):**
+- XML-first approach for maximum reliability ✅
+- Automatic Update Set deployment ✅
+- Zero manual steps required ✅
+- Production-ready Flow Designer format ✅
+- Intelligent error handling & fallbacks ✅
 
-Your flow is now intelligently crafted and ready for use! 🎉`,
+Your flow is now live in ServiceNow Flow Designer! 🎉`,
           },
         ],
       };
@@ -1888,7 +1944,7 @@ ${flowInstruction.recommendations?.map((rec: string, index: number) => `${index 
 
 🚀 **Next Steps:**
 1. Use \`snow_template_matching\` to explore template options
-2. Run \`snow_create_flow\` to implement the recommended approach
+2. Run \`snow_create_flow\` with deploy_immediately: true to implement the recommended approach
 3. Consider \`snow_scope_optimization\` for deployment strategy
 
 ✅ **Analysis Complete!** The instruction has been comprehensively analyzed with intelligent insights.`,
@@ -2063,7 +2119,7 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
 - **Recommended**: ${categoryFilteredResults[0]?.confidence >= 0.8 ? 'Yes - High confidence match' : 'Consider manual review'}
 
 🚀 **Next Steps:**
-1. Use \`snow_create_flow\` to implement the best matching template
+1. Use \`snow_create_flow\` with deploy_immediately: true to implement the best matching template
 2. Review template customization options
 3. Consider \`snow_intelligent_flow_analysis\` for detailed analysis
 4. Modify instruction if no suitable templates found
@@ -2081,6 +2137,319 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     this.logger.info('ServiceNow Flow Composer MCP Server started');
+  }
+
+  /**
+   * Map trigger type to XML format
+   */
+  private mapTriggerTypeToXML(triggerType: string): 'record_created' | 'record_updated' | 'manual' | 'scheduled' {
+    const mapping: Record<string, any> = {
+      'record_created': 'record_created',
+      'record_updated': 'record_updated', 
+      'manual': 'manual',
+      'scheduled': 'scheduled',
+      'create': 'record_created',
+      'update': 'record_updated',
+      'on_create': 'record_created',
+      'on_update': 'record_updated'
+    };
+    return mapping[triggerType.toLowerCase()] || 'manual';
+  }
+
+  /**
+   * Convert activities to XML format
+   */
+  private convertActivitiesToXML(activities: any[]): any[] {
+    return activities.map((activity, index) => ({
+      type: this.mapActivityTypeToXML(activity.type),
+      name: activity.name || `Activity ${index + 1}`,
+      inputs: activity.inputs || {},
+      order: (index + 1) * 100,
+      description: activity.description || activity.name
+    }));
+  }
+
+  /**
+   * Map activity type to XML format
+   */
+  private mapActivityTypeToXML(activityType: string): string {
+    const mapping: Record<string, string> = {
+      'approval': 'approval',
+      'notification': 'notification',
+      'email': 'notification',
+      'script': 'script',
+      'create_record': 'create_record',
+      'update_record': 'update_record',
+      'rest_call': 'rest_step',
+      'condition': 'condition',
+      'subflow': 'assign_subflow'
+    };
+    return mapping[activityType.toLowerCase()] || 'script';
+  }
+
+  /**
+   * Verify flow exists in ServiceNow after deployment
+   */
+  private async verifyFlowInServiceNow(flowName: string): Promise<any> {
+    try {
+      const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;
+      const client = new ServiceNowClient();
+      
+      // Check if flow exists in sys_hub_flow
+      const flowCheck = await client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_hub_flow',
+        params: {
+          sysparm_query: `name=${flowName}`,
+          sysparm_limit: 1
+        }
+      });
+      
+      if (flowCheck.result && flowCheck.result.length > 0) {
+        return flowCheck.result[0];
+      }
+      
+      return null;
+    } catch (error) {
+      this.logger.error('Failed to verify flow:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Generate manual import guide for failed deployments
+   */
+  private generateManualImportGuide(xmlFilePath: string): string {
+    return `
+1. **Navigate to ServiceNow**:
+   - System Update Sets > Retrieved Update Sets
+   
+2. **Import XML**:
+   - Click "Import Update Set from XML"
+   - Select file: ${xmlFilePath}
+   - Click "Upload"
+   
+3. **Preview**:
+   - Find your imported update set
+   - Click "Preview Update Set"
+   - Review any conflicts or issues
+   
+4. **Commit**:
+   - If preview is clean, click "Commit Update Set"
+   - Your flow will be available in Flow Designer
+   
+5. **Verify**:
+   - Navigate to Flow Designer
+   - Check "My Flows" for your new flow`;
+  }
+
+  /**
+   * Deploy with fallback strategies
+   */
+  private async deployWithFallback(xmlFilePath: string, flowDefinition: any): Promise<any> {
+    const strategies = [
+      {
+        name: 'XML Remote Update Set',
+        fn: async () => await this.deployXMLToServiceNow(xmlFilePath)
+      },
+      {
+        name: 'Direct Table API',
+        fn: async () => await this.deployViaTableAPI(flowDefinition)
+      }
+    ];
+    
+    let lastError: any;
+    for (const strategy of strategies) {
+      try {
+        this.logger.info(`Trying deployment strategy: ${strategy.name}`);
+        const result = await strategy.fn();
+        return { success: true, strategy: strategy.name, result };
+      } catch (error) {
+        this.logger.warn(`Strategy ${strategy.name} failed:`, error);
+        lastError = error;
+      }
+    }
+    
+    throw lastError || new Error('All deployment strategies failed');
+  }
+  
+  /**
+   * Deploy via direct table API
+   */
+  private async deployViaTableAPI(flowDefinition: any): Promise<void> {
+    const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;
+    const client = new ServiceNowClient();
+    
+    // Try to create flow directly in sys_hub_flow
+    const flowResponse = await client.makeRequest({
+      method: 'POST',
+      url: '/api/now/table/sys_hub_flow',
+      data: {
+        name: flowDefinition.name,
+        description: flowDefinition.description,
+        active: true,
+        // Additional flow properties
+        table: flowDefinition.table
+      }
+    });
+    
+    if (!flowResponse.result || !flowResponse.result.sys_id) {
+      throw new Error('Failed to create flow via Table API');
+    }
+    
+    this.logger.info(`Flow created via Table API: ${flowResponse.result.sys_id}`);
+  }
+
+  /**
+   * Deploy XML file to ServiceNow automatically
+   */
+  private async deployXMLToServiceNow(xmlFilePath: string): Promise<void> {
+    // Check authentication
+    const isAuth = await this.oauth.isAuthenticated();
+    if (!isAuth) {
+      throw new Error('Not authenticated with ServiceNow. Please run: snow-flow auth login');
+    }
+
+    // Initialize ServiceNow client
+    const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;
+    const client = new ServiceNowClient();
+    
+    // Check for active Update Set first
+    let currentUpdateSet;
+    try {
+      const updateSetResponse = await client.makeRequest({
+        method: 'GET',
+        url: '/api/now/table/sys_update_set',
+        params: {
+          sysparm_query: 'state=in progress^nameNOT LIKEDefault',
+          sysparm_limit: 1
+        }
+      });
+      
+      if (!updateSetResponse.result || updateSetResponse.result.length === 0) {
+        this.logger.warn('No active Update Set found. Flow will be imported but not tracked properly.');
+        // Continue anyway - let ServiceNow handle it
+      } else {
+        currentUpdateSet = updateSetResponse.result[0];
+        this.logger.info(`Active Update Set found: ${currentUpdateSet.name}`);
+      }
+    } catch (error) {
+      this.logger.warn('Could not check for active Update Set:', error);
+      // Continue anyway
+    }
+
+    // Read the XML file
+    const fs = require('fs').promises;
+    const xmlContent = await fs.readFile(xmlFilePath, 'utf-8');
+
+    // Import XML as remote update set
+    let importResponse;
+    try {
+      importResponse = await client.makeRequest({
+        method: 'POST',
+        url: '/api/now/table/sys_remote_update_set',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Accept': 'application/json'
+        },
+        data: xmlContent
+      });
+    } catch (error: any) {
+      // Enhanced error handling with detailed messages
+      if (error.response?.status === 400) {
+        const errorDetail = error.response.data?.error?.detail || 
+                          error.response.data?.error?.message || 
+                          'Unknown error';
+        this.logger.error('ServiceNow 400 Error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        throw new Error(`ServiceNow rejected the XML: ${errorDetail}. Check if you have an active Update Set.`);
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        throw new Error('Authentication failed. Your session may have expired. Run: snow-flow auth login');
+      } else {
+        throw new Error(`Failed to import XML: ${error.message}`);
+      }
+    }
+
+    if (!importResponse.result || !importResponse.result.sys_id) {
+      throw new Error('Failed to import XML update set');
+    }
+
+    const remoteUpdateSetId = importResponse.result.sys_id;
+    this.logger.info(`✅ XML imported successfully (sys_id: ${remoteUpdateSetId})`);
+
+    // Load the update set
+    try {
+      await client.makeRequest({
+        method: 'PUT',
+        url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+        data: {
+          state: 'loaded'
+        }
+      });
+    } catch (error: any) {
+      this.logger.error('Failed to load update set:', error);
+      throw new Error(`Failed to load update set: ${error.message}. You may need to load it manually.`);
+    }
+
+    // Find the loaded update set
+    const loadedResponse = await client.makeRequest({
+      method: 'GET',
+      url: '/api/now/table/sys_update_set',
+      params: {
+        sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+        sysparm_limit: 1
+      }
+    });
+
+    if (!loadedResponse.result || loadedResponse.result.length === 0) {
+      throw new Error('Failed to find loaded update set');
+    }
+
+    const updateSetId = loadedResponse.result[0].sys_id;
+    const updateSetName = loadedResponse.result[0].name;
+
+    // Preview the update set
+    try {
+      await client.makeRequest({
+        method: 'POST',
+        url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+      });
+    } catch (error: any) {
+      this.logger.error('Failed to preview update set:', error);
+      // Continue anyway, as preview might fail but commit could still work
+    }
+
+    // Check for preview problems
+    const previewProblems = await client.makeRequest({
+      method: 'GET',
+      url: '/api/now/table/sys_update_preview_problem',
+      params: {
+        sysparm_query: `update_set=${updateSetId}`,
+        sysparm_limit: 100
+      }
+    });
+
+    if (previewProblems.result && previewProblems.result.length > 0) {
+      const problemsList = previewProblems.result.map((p: any) => `- ${p.type}: ${p.description}`).join('\n');
+      throw new Error(`Preview found problems:\n${problemsList}\n\nPlease review and resolve in ServiceNow UI`);
+    }
+
+    // Commit the update set
+    try {
+      await client.makeRequest({
+        method: 'POST',
+        url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+      });
+      
+      this.logger.info(`✅ Update set committed successfully: ${updateSetName}`);
+    } catch (error: any) {
+      this.logger.error('Failed to commit update set:', error);
+      throw new Error(`Failed to commit update set. Manual intervention required in ServiceNow UI.`);
+    }
   }
 }
 

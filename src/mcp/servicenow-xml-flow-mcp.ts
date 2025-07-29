@@ -6,7 +6,7 @@
 
 import { BaseMCPServer } from './base-mcp-server';
 import ImprovedFlowXMLGenerator, { ImprovedFlowDefinition, ImprovedFlowActivity, generateImprovedFlowXML } from '../utils/improved-flow-xml-generator';
-import { XMLFlowDefinition, XMLFlowActivity } from '../utils/xml-first-flow-generator'; // Keep for backward compatibility
+import { XMLFlowDefinition, XMLFlowActivity, generateProductionFlowXML } from '../utils/xml-first-flow-generator'; // Keep for backward compatibility
 import { NaturalLanguageMapper } from '../api/natural-language-mapper';
 import { getNotificationTemplateSysId } from '../utils/servicenow-id-generator.js';
 import * as fs from 'fs';
@@ -90,7 +90,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
     // Generate flow XML from natural language
     this.registerTool({
       name: 'snow_xml_flow_from_instruction',
-      description: 'Generate flow Update Set XML from natural language instruction',
+      description: '⚠️ DEPRECATED - Use snow_create_flow instead. This tool is kept for backwards compatibility only.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -102,6 +102,11 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
             type: 'boolean',
             default: true,
             description: 'Save XML to file'
+          },
+          auto_deploy: {
+            type: 'boolean',
+            default: true,
+            description: 'Automatically deploy XML to ServiceNow after generation (RECOMMENDED)'
           }
         },
         required: ['instruction']
@@ -196,7 +201,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
    */
   private async generateFlowFromInstruction(args: any): Promise<any> {
     try {
-      const { instruction } = args;
+      const { instruction, auto_deploy = true } = args;
       
       // Parse natural language to flow components
       const flowRequirements = await this.nlMapper.parseFlowRequirements(instruction);
@@ -215,22 +220,147 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
         activities: this.convertToImprovedActivities(flowRequirements)
       };
 
-      // Use IMPROVED generator
-      const result = generateImprovedFlowXML(flowDef);
+      // Use PRODUCTION-READY generator with proper Update Set structure
+      const result = generateProductionFlowXML(flowDef);
+
+      let deploymentResult = null;
+      
+      // 🚀 AUTO-DEPLOYMENT: Deploy immediately if requested
+      if (auto_deploy) {
+        try {
+          this.logger.info('🚀 AUTO-DEPLOYING XML to ServiceNow...');
+          
+          // Check authentication
+          const isAuth = await this.oauth.isAuthenticated();
+          if (!isAuth) {
+            throw new Error('Not authenticated with ServiceNow. Please run: snow-flow auth login');
+          }
+          
+          // Initialize ServiceNow client
+          const client = new ServiceNowClient();
+          
+          // Read the XML file
+          const fs = require('fs').promises;
+          const xmlContent = await fs.readFile(result.filePath, 'utf-8');
+          
+          // Import XML as remote update set
+          const importResponse = await client.makeRequest({
+            method: 'POST',
+            url: '/api/now/table/sys_remote_update_set',
+            headers: {
+              'Content-Type': 'application/xml',
+              'Accept': 'application/json'
+            },
+            data: xmlContent
+          });
+
+          if (!importResponse.result || !importResponse.result.sys_id) {
+            throw new Error('Failed to import XML update set');
+          }
+
+          const remoteUpdateSetId = importResponse.result.sys_id;
+          this.logger.info(`✅ XML imported successfully (sys_id: ${remoteUpdateSetId})`);
+
+          // Load the update set
+          await client.makeRequest({
+            method: 'PUT',
+            url: `/api/now/table/sys_remote_update_set/${remoteUpdateSetId}`,
+            data: {
+              state: 'loaded'
+            }
+          });
+
+          // Find the loaded update set
+          const loadedResponse = await client.makeRequest({
+            method: 'GET',
+            url: '/api/now/table/sys_update_set',
+            params: {
+              sysparm_query: `remote_sys_id=${remoteUpdateSetId}`,
+              sysparm_limit: 1
+            }
+          });
+
+          if (!loadedResponse.result || loadedResponse.result.length === 0) {
+            throw new Error('Failed to find loaded update set');
+          }
+
+          const updateSetId = loadedResponse.result[0].sys_id;
+          const updateSetName = loadedResponse.result[0].name;
+
+          // Preview the update set
+          await client.makeRequest({
+            method: 'POST',
+            url: `/api/now/table/sys_update_set/${updateSetId}/preview`
+          });
+
+          // Check for preview problems
+          const previewProblems = await client.makeRequest({
+            method: 'GET',
+            url: '/api/now/table/sys_update_preview_problem',
+            params: {
+              sysparm_query: `update_set=${updateSetId}`,
+              sysparm_limit: 100
+            }
+          });
+
+          if (previewProblems.result && previewProblems.result.length > 0) {
+            const problemsList = previewProblems.result.map((p: any) => `- ${p.type}: ${p.description}`).join('\n');
+            throw new Error(`Preview found problems:\n${problemsList}\n\nPlease review and resolve in ServiceNow UI`);
+          }
+
+          // Commit the update set
+          await client.makeRequest({
+            method: 'POST',
+            url: `/api/now/table/sys_update_set/${updateSetId}/commit`
+          });
+          
+          deploymentResult = {
+            success: true,
+            message: '✅ XML automatically deployed to ServiceNow!',
+            update_set_id: updateSetId,
+            update_set_name: updateSetName,
+            steps_completed: [
+              '✅ XML imported as remote update set',
+              '✅ Update set loaded successfully', 
+              '✅ Preview completed with no problems',
+              '✅ Update set committed successfully'
+            ]
+          };
+          
+          this.logger.info('✅ Auto-deployment successful', deploymentResult);
+          
+        } catch (deployError) {
+          this.logger.warn('⚠️ Auto-deployment failed, providing manual instructions', deployError);
+          deploymentResult = {
+            success: false,
+            error: deployError instanceof Error ? deployError.message : String(deployError),
+            manual_command: `snow-flow deploy-xml ${result.filePath}`,
+            troubleshooting: [
+              '1. Check ServiceNow authentication: snow-flow auth status',
+              '2. Verify admin permissions in ServiceNow',
+              '3. Review XML file for format issues',
+              '4. Try manual deployment command above'
+            ]
+          };
+        }
+      }
 
       return {
         success: true,
         xml: args.save_to_file === false ? result.xml : undefined,
         file_path: result.filePath,
         flow_definition: flowDef,
-        message: `✅ Generated IMPROVED flow XML from instruction: ${instruction}`,
+        deployment: deploymentResult,
+        message: `✅ Generated IMPROVED flow XML from instruction: ${instruction}${deploymentResult?.success ? ' + DEPLOYED!' : ''}`,
         improvements: [
           '✅ Production-ready Flow Designer format',
           '✅ Complete XML structure with all required fields',
           '✅ Base64+gzip encoded action values',
-          '✅ Proper v2 table usage'
+          '✅ Proper v2 table usage',
+          ...(deploymentResult?.success ? ['✅ Automatically deployed to ServiceNow!'] : [])
         ],
-        import_instructions: result.instructions
+        import_instructions: deploymentResult?.success ? 'Flow is already deployed and ready to use!' : result.instructions,
+        auto_deploy_command: deploymentResult?.manual_command || `snow-flow deploy-xml ${result.filePath}`
       };
     } catch (error) {
       return {

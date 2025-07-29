@@ -38,21 +38,15 @@ const gapAnalysis = await analyzeGaps("your objective", mcpTools, logger, {
 console.log('🧠 Queen Agent spawning 6+ parallel agents for 2.8x faster development...');
 
 // 5. MANDATORY: Real ServiceNow deployment
-// For flows: Use XML-first approach (automatic detection)
+// For flows: Use XML-first approach with full automation (NEW v1.3.17!)
 if (isFlowDesignerTask) {
-  // XML generation and deployment
-  const xmlResult = generateProductionFlowXML(flowDefinition);
-  
-  // Option 1: Auto-deploy XML (recommended)
-  const deployment = await snow_deploy({
-    type: "xml_update_set",
-    xml_file_path: xmlResult.filePath,
-    auto_preview: true,
-    auto_commit: true
+  // ✅ SINGLE COMMAND: XML generation + automatic deployment
+  const deployment = await snow_create_flow({
+    instruction: "your natural language flow description",
+    deploy_immediately: true  // 🚀 Fully automated: Generate → Import → Preview → Commit
   });
   
-  // Option 2: Manual deployment command
-  console.log(`Deploy with: snow-flow deploy-xml "${xmlResult.filePath}"`);
+  // That's it! Flow is now live in ServiceNow Flow Designer
 } else {
   // For widgets, applications, scripts: Use standard MCP deployment
   const deployment = await snow_deploy({
@@ -226,52 +220,42 @@ When you run any flow-related swarm command, Snow-flow automatically:
    - `sys_hub_action_instance` - All flow activities (approval, notification, etc.)
    - `sys_hub_flow_logic` - Activity connections and flow paths
 
-4. **🚀 Provides Auto-Deploy Command**:
+4. **🚀 Fully Automated Deployment** (NEW v1.3.17!):
    ```bash
-   🚀 Auto-Deploy enabled - importing XML to ServiceNow...
-   💡 To deploy, use the following command:
-      snow-flow deploy-xml "flow-update-sets/your_flow.xml"
+   🚀 Auto-Deploy enabled - deploying directly to ServiceNow...
+   ✅ XML imported successfully (sys_id: abc123...)
+   ✅ Update set loaded: Flow_Import_2025
+   🔍 Preview completed with no problems
+   ✅ Update set committed successfully!
+   🎉 Flow is ready in Flow Designer!
    ```
 
-### 🚀 One-Command Deployment
+### 🚀 Zero-Manual-Steps Deployment
 
-```bash
-# Deploy any generated XML flow directly to ServiceNow
-snow-flow deploy-xml flow-update-sets/my_flow.xml
+**No commands needed!** Everything happens automatically in one swarm call:
 
-# With options:
-snow-flow deploy-xml my_flow.xml --no-preview    # Skip preview step
-snow-flow deploy-xml my_flow.xml --no-commit     # Preview only, manual commit
-```
-
-**What the deploy-xml command does:**
-1. ✅ **Import**: Uploads XML to ServiceNow as remote update set
-2. ✅ **Load**: Loads the update set into local update sets
-3. ✅ **Preview**: Checks for problems and conflicts  
-4. ✅ **Commit**: Auto-commits if preview is clean
-5. ✅ **Verify**: Confirms flow is available in Flow Designer
+**What happens automatically:**
+1. ✅ **Generate**: Creates production-ready Update Set XML
+2. ✅ **Import**: Uploads XML to ServiceNow as remote update set
+3. ✅ **Load**: Loads the update set into local update sets
+4. ✅ **Preview**: Checks for problems and conflicts  
+5. ✅ **Commit**: Auto-commits if preview is clean
+6. ✅ **Verify**: Confirms flow is available in Flow Designer
 
 ### 🎯 Complete Flow Development Workflow
 
-**End-to-End Flow Creation (Zero Manual Steps):**
+**End-to-End Flow Creation (Truly Zero Manual Steps):**
 
 ```bash
-# 1. Create flow with automatic XML generation
+# Single command creates AND deploys flow automatically!
 snow-flow swarm "create incident escalation flow with email notifications"
 
-# Output:
+# Complete Output:
 # 🔧 Flow Designer Detected - Using XML-First Approach!
+# 📋 Creating production-ready ServiceNow flow XML...
 # ✅ XML Generated Successfully!
 # 📁 File saved to: flow-update-sets/incident_escalation_flow.xml
-# 🚀 Auto-Deploy enabled - importing XML to ServiceNow...
-# 💡 To deploy, use the following command:
-#    snow-flow deploy-xml "flow-update-sets/incident_escalation_flow.xml"
-
-# 2. Deploy to ServiceNow (one command!)
-snow-flow deploy-xml flow-update-sets/incident_escalation_flow.xml
-
-# Output:
-# 📦 Deploying XML Update Set: flow-update-sets/incident_escalation_flow.xml
+# 🚀 Auto-Deploy enabled - deploying directly to ServiceNow...
 # ✅ XML imported successfully (sys_id: abc123...)
 # ✅ Update set loaded: Incident_Escalation_Flow_Import
 # 🔍 Previewing update set...
@@ -279,37 +263,41 @@ snow-flow deploy-xml flow-update-sets/incident_escalation_flow.xml
 # 🚀 Committing update set...
 # ✅ Update Set committed successfully!
 # 📍 Navigate to Flow Designer > Designer to see your flow
-# 🎉 Deployment complete!
+# 🎉 Flow deployed and ready to use!
 ```
 
-### 🔧 Advanced XML Deployment Features
+**That's it! One command, zero manual steps.** 🚀
 
-**Error Handling & Safety**:
+### 🔧 Advanced Auto-Deployment Features
+
+**Built-in Safety & Intelligence**:
 - **Preview Problems Detection**: Automatically detects and reports conflicts
-- **Safe Auto-Commit**: Only commits if preview is completely clean
-- **Graceful Fallbacks**: Provides manual steps if auto-deployment fails
+- **Safe Auto-Commit**: Only commits if preview is completely clean  
+- **Graceful Fallbacks**: Provides manual instructions if auto-deployment fails
 - **Authentication Validation**: Ensures valid ServiceNow connection before deployment
+- **Error Recovery**: Intelligent retry and fallback strategies
 
-**Manual Control Options**:
-```bash
-# Preview only (no commit) - for review and testing
-snow-flow deploy-xml my_flow.xml --no-commit
+**What Happens Behind the Scenes**:
+```javascript
+// When you run: snow-flow swarm "create approval flow"
+await snow_create_flow({
+  instruction: "create approval flow", 
+  deploy_immediately: true  // This triggers all safety checks:
+});
 
-# Direct commit (skip preview) - for trusted environments  
-snow-flow deploy-xml my_flow.xml --no-preview
-
-# Check authentication first
-snow-flow auth status
+// 1. ✅ Authentication check
+// 2. ✅ XML generation with validation
+// 3. ✅ Import to ServiceNow as remote update set
+// 4. ✅ Preview for conflicts
+// 5. ✅ Auto-commit only if clean
+// 6. ✅ Error handling with manual fallback instructions
 ```
 
-**Troubleshooting**:
-```bash
-# If deployment fails, check:
-1. snow-flow auth status              # Verify authentication
-2. Check XML file exists and is valid
-3. Ensure admin permissions in ServiceNow
-4. Review any preview problems reported
-```
+**Troubleshooting (if auto-deployment fails)**:
+- Error messages include specific troubleshooting steps
+- Authentication issues: `snow-flow auth status` 
+- Manual fallback: `snow-flow deploy-xml filename.xml`
+- Permission issues: Check admin roles in ServiceNow
 
 ## 🔒 MANDATORY ServiceNow Development Workflow
 
@@ -711,7 +699,7 @@ snow-flow swarm "create incident dashboard widget"
 # Swarm handles all MCP orchestration with multiple agents
 snow-flow swarm "create approval workflow for equipment requests"
 
-# What happens: snow_create_flow() → snow_test_flow_with_mock() → multi-agent validation → auto tracking
+# What happens: snow_create_flow({ deploy_immediately: true }) → live deployment → flow ready in ServiceNow
 ```
 
 ### 🎯 Smart Discovery Before Creation
@@ -783,9 +771,9 @@ snow-flow swarm "deploy mobile-responsive widget with accessibility features"
 ### 🚀 Complete Commands Reference
 
 ```bash
-# Flow Designer workflows (auto-XML generation + deployment)
+# Flow Designer workflows (fully automated generation + deployment)
 snow-flow swarm "create approval flow for equipment requests"
-snow-flow deploy-xml flow-update-sets/approval_flow.xml
+# ✅ Above command automatically deploys! No manual steps needed.
 
 # Widget development (standard MCP deployment)  
 snow-flow swarm "create incident dashboard widget"

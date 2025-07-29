@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
+import * as os from 'os';
 import { existsSync } from 'fs';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
@@ -34,9 +35,17 @@ program
 // Helper function to deploy XML to ServiceNow
 async function deployXMLToServiceNow(xmlFile: string, options: { preview?: boolean, commit?: boolean } = {}): Promise<boolean> {
   const oauth = new ServiceNowOAuth();
-  const isAuthenticated = await oauth.getStoredTokens() !== null;
+  let tokens;
   
-  if (!isAuthenticated) {
+  try {
+    tokens = await oauth.getStoredTokens();
+  } catch (error) {
+    cliLogger.error('❌ Failed to get authentication tokens:', error);
+    cliLogger.error('Please run: snow-flow auth login');
+    return false;
+  }
+  
+  if (!tokens || !tokens.accessToken) {
     cliLogger.error('❌ Not authenticated. Please run: snow-flow auth login');
     return false;
   }
@@ -152,12 +161,46 @@ async function deployXMLToServiceNow(xmlFile: string, options: { preview?: boole
     }
 
     return true;
-  } catch (error) {
-    cliLogger.error('\n❌ Deployment failed:', error instanceof Error ? error.message : String(error));
+  } catch (error: any) {
+    cliLogger.error('\n❌ Deployment failed:');
+    
+    // Detailed error handling for 400 errors
+    if (error.response?.status === 400) {
+      cliLogger.error(`   Status: ${error.response.status} Bad Request`);
+      
+      if (error.response.data) {
+        cliLogger.error(`   Message: ${error.response.data.error?.message || error.response.data.message || 'Unknown error'}`);
+        
+        if (error.response.data.error?.detail) {
+          cliLogger.error(`   Detail: ${error.response.data.error.detail}`);
+        }
+        
+        if (error.response.data.error?.fields) {
+          cliLogger.error('   Missing or invalid fields:');
+          Object.entries(error.response.data.error.fields).forEach(([field, msg]) => {
+            cliLogger.error(`     - ${field}: ${msg}`);
+          });
+        }
+      }
+    } else if (error.response?.status === 401) {
+      cliLogger.error('   Status: 401 Unauthorized - Authentication failed');
+      cliLogger.error('   Your OAuth token may be expired. Please run: snow-flow auth login');
+    } else if (error.response?.status === 403) {
+      cliLogger.error('   Status: 403 Forbidden - Insufficient permissions');
+      cliLogger.error('   You need admin or update_set_admin role to import update sets');
+    } else if (error.response) {
+      cliLogger.error(`   Status: ${error.response.status}`);
+      cliLogger.error(`   Message: ${error.response.data?.error?.message || error.response.statusText}`);
+    } else {
+      cliLogger.error(`   ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     cliLogger.info('\n💡 Troubleshooting tips:');
     cliLogger.info('   1. Check your authentication: snow-flow auth status');
     cliLogger.info('   2. Verify XML file format is correct');
     cliLogger.info('   3. Ensure you have required permissions in ServiceNow');
+    cliLogger.info('   4. Check ServiceNow system logs for more details');
+    
     return false;
   }
 }
@@ -664,26 +707,39 @@ You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mis
 - **Estimated Total Agents**: ${taskAnalysis.estimatedAgentCount}
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
 
-${isFlowDesignerTask ? `## 🔧 Flow Designer Task Detected
-You need to create a ServiceNow Flow Designer flow. Follow these steps:
+${isFlowDesignerTask ? `## 🔧 Flow Designer Task Detected - Using XML-First Approach!
+🚀 **FULLY AUTOMATED FLOW DEPLOYMENT** - Zero manual steps required!
 
-1. **Analyze Requirements**: Parse the objective to understand all required activities
-2. **Design Flow Structure**: Plan the flow with triggers, activities, and logic
-3. **Generate XML**: Use the improved flow XML generator to create production-ready XML
-4. **Deploy to ServiceNow**: Use snow-flow deploy-xml or MCP tools to deploy
+**MANDATORY: Use this exact approach for Flow Designer tasks:**
 
-**Important Flow Development Instructions**:
-- Use \`generateImprovedFlowXML\` from './utils/improved-flow-xml-generator.js'
-- This generator follows EXACT patterns extracted from real ServiceNow Flow Designer XML examples
-- CRITICAL: Use v2 tables (sys_hub_action_instance_v2), Base64+gzip encoding, complete label_cache
-- The generator creates production-ready XML that ServiceNow can actually import (not "too small to work")
-- Include appropriate activities based on the objective:
-  - Approval activities for approval workflows
-  - Notification activities for email/messaging
-  - Create record activities for task creation
-  - Script activities for custom logic
-- Save generated XML to flow-update-sets directory
-- Deploy using: \`snow-flow deploy-xml "path/to/flow.xml"\`
+\`\`\`javascript
+// ✅ CORRECT: Fully automated XML generation + deployment
+await snow_create_flow({
+  instruction: "your natural language flow description", 
+  deploy_immediately: true  // 🔥 Automatically deploys to ServiceNow!
+});
+\`\`\`
+
+🎯 **What this does automatically:**
+- ✅ Parses natural language to complete flow structure
+- ✅ Generates production-ready Update Set XML (v2 format)
+- ✅ Imports XML to ServiceNow as remote update set
+- ✅ Previews for conflicts and validates structure
+- ✅ Commits update set if preview is clean
+- ✅ Reports deployment status and provides flow URL
+- ✅ Handles all errors gracefully with fallback instructions
+
+🚫 **FORBIDDEN APPROACHES:**
+- ❌ DO NOT use old API-only approach without XML generation
+- ❌ DO NOT use manual \`snow-flow deploy-xml\` commands 
+- ❌ DO NOT generate XML without auto-deployment
+
+💡 **Why XML-First?**
+- Works with complex flows that break API methods
+- Production-ready Flow Designer format with all required fields
+- Complete automation from instruction to live ServiceNow flow
+- Zero chance of "too small to work" or import failures
+
 ` : ''}
 - **Recommended Team**: ${getTeamRecommendation(taskAnalysis.taskType)}
 
@@ -1108,7 +1164,7 @@ Your agents MUST use these MCP tools IN THIS ORDER:
    - \`snow_get_by_sysid\` - Direct sys_id lookup
 
 3. **Flow Tools** (servicenow-flow-composer-mcp)
-   - \`snow_create_flow\` - Create flows from natural language
+   - \`snow_create_flow\` - Create flows using XML-first approach with auto-deployment (RECOMMENDED)
    - \`snow_test_flow_with_mock\` - Test flows with mock data
    - \`snow_link_catalog_to_flow\` - Link catalog items to flows
 
@@ -1363,11 +1419,14 @@ if (flows.error?.includes("OAuth")) {
     trigger: "When record created on [table]",
     steps: ["Step 1: Validate data", "Step 2: Process", "Step 3: Notify"],
     natural_language: "Complete flow instruction for snow_create_flow",
-    deployment_command: "snow_create_flow with instruction from Memory"
+    deployment_command: "snow_create_flow with deploy_immediately: true"
   });
 } else {
-  // Create flow directly
-  await snow_create_flow({ instruction: "natural language description" });
+  // Create flow directly using XML-first approach
+  await snow_create_flow({ 
+    instruction: "natural language description",
+    deploy_immediately: true 
+  });
 }
 \`\`\`
 
@@ -3002,7 +3061,7 @@ await snow_update_set_add_artifact({
         steps: [
           "snow_validate_live_connection",
           "snow_discover_existing_flows",
-          "snow_create_flow",
+          "snow_create_flow (with deploy_immediately: true)",
           "snow_test_flow_with_mock",
           "snow_link_catalog_to_flow (if needed)",
           "snow_comprehensive_flow_test (if authenticated)"
@@ -3015,7 +3074,7 @@ await snow_update_set_add_artifact({
           "snow_analyze_requirements",
           "snow_update_set_create",
           "snow_deploy (multiple artifacts)",
-          "snow_create_flow (for workflows)",
+          "snow_create_flow (for flows)",
           "snow_deploy (for widgets)",
           "snow_update_set_complete"
         ]
@@ -3320,8 +3379,7 @@ snow_get_by_sysid({
 // Create flows from natural language
 snow_create_flow({
   instruction: "create a flow that sends email when incident priority is high",
-  deploy_immediately: true,
-  enable_intelligent_analysis: true
+  deploy_immediately: true  // Automatically deploys XML to ServiceNow
 });
 
 // Test flows with mock data
@@ -3698,11 +3756,15 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
   // Check if .env already exists
   try {
     await fs.access(envFilePath);
-    console.log('⚠️  .env file already exists, creating .env.example instead...');
+    console.log('⚠️  .env file already exists, creating .env.example template instead');
+    console.log('📝 To recreate .env: delete existing .env file and run init again');
     await fs.writeFile(join(targetDir, '.env.example'), envContent);
+    console.log('✅ .env.example template created');
   } catch {
     // .env doesn't exist, create it
+    console.log('📄 Creating new .env file...');
     await fs.writeFile(envFilePath, envContent);
+    console.log('✅ .env file created successfully');
   }
 }
 
@@ -5377,7 +5439,7 @@ program
     console.log('🐝 Elegant orchestration replacing complex team coordination\n');
     
     try {
-      const { QueenIntegration } = await import('../examples/queen/integration-example.js');
+      const { QueenIntegration } = await import('./examples/queen/integration-example.js');
       
       const queenIntegration = new QueenIntegration({
         debugMode: options.debug || false

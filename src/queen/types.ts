@@ -16,10 +16,13 @@ export interface ServiceNowTask {
 export interface Agent {
   id: string;
   type: AgentType;
-  status: 'idle' | 'working' | 'completed' | 'failed';
+  status: 'idle' | 'working' | 'completed' | 'failed' | 'active';
   task?: string;
   capabilities: string[];
   mcpTools: string[];
+  objectiveId?: string;
+  specialization?: string;
+  startTime?: number;
 }
 
 export type AgentType = 
@@ -30,7 +33,14 @@ export type AgentType =
   | 'integration-specialist'
   | 'catalog-manager'
   | 'researcher'
-  | 'tester';
+  | 'tester'
+  | 'ui-ux-specialist'
+  | 'approval-specialist'
+  | 'security-specialist'
+  | 'css-specialist'
+  | 'backend-specialist'
+  | 'frontend-specialist'
+  | 'performance-specialist';
 
 export interface DeploymentPattern {
   taskType: string;
@@ -39,6 +49,8 @@ export interface DeploymentPattern {
   mcpSequence: string[];
   avgDuration: number;
   lastUsed: Date;
+  decision?: string;
+  outcome?: string;
 }
 
 export interface QueenMemory {
@@ -52,6 +64,7 @@ export interface TaskAnalysis {
   type: ServiceNowTask['type'];
   requiredAgents: AgentType[];
   estimatedComplexity: number;
+  complexity?: string;
   suggestedPattern?: DeploymentPattern;
   dependencies: string[];
 }
@@ -59,7 +72,7 @@ export interface TaskAnalysis {
 export interface AgentMessage {
   from: string;
   to: string;
-  type: 'task' | 'result' | 'error' | 'query' | 'coordination';
+  type: 'task' | 'result' | 'error' | 'query' | 'coordination' | 'task_assignment';
   content: any;
   timestamp: Date;
 }

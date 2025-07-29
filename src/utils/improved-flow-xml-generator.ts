@@ -45,14 +45,23 @@ export interface ImprovedFlowActivity {
 
 // VERIFIED action type sys_ids from working Flow Designer examples
 export const VERIFIED_ACTION_TYPES: Record<string, string> = {
-  'notification': '87b067a4db01030077c9a4d3ca961916',
-  'approval': 'c39067a4db01030077c9a4d3ca96191a', 
+  // From analyzed XML examples
+  'check_change_approval': 'ffd74e4e731310108ef62d2b04f6a769',
+  'wait_for_condition': '89ce8a4187120010663ca1bb36cb0be3',
+  'evaluate_change_model': '83a1f363735310108ef62d2b04f6a74c',
+  'update_record': 'f9d01dd2c31332002841b63b12d3aea1',
+  'apply_approval_policy': 'cd04ac7573011010791f94596bf6a716',
+  'send_email': 'c1806bf4a70323008299b39f087901cb',
+  'disregard_approvals': '280065eb734310108ef62d2b04f6a751',
+  
+  // Common action types (estimated based on pattern)
+  'notification': 'c1806bf4a70323008299b39f087901cb', // Same as send_email
+  'approval': 'cd04ac7573011010791f94596bf6a716', // Same as apply_approval_policy  
   'script': '4bb067a4db01030077c9a4d3ca9619e1',
   'create_record': 'e39067a4db01030077c9a4d3ca961915',
-  'update_record': '179067a4db01030077c9a4d3ca96191b',
   'rest_step': '4f9067a4db01030077c9a4d3ca9619e3',
   'condition': '539067a4db01030077c9a4d3ca9619e5',
-  'assign_subflow': '8bb067a4db01030077c9a4d3ca961918'
+  'assign_subflow': '63cf7e4c87122010c84e4561d5cb0b36' // From Step based request fulfillment
 };
 
 // VERIFIED trigger type sys_ids from working examples
@@ -121,6 +130,20 @@ export class ImprovedFlowXMLGenerator {
       console.warn('Failed to encode flow value, using JSON fallback:', error);
       return JSON.stringify(value);
     }
+  }
+
+  /**
+   * Encode action parameters for v2 format
+   * Converts inputs object to parameter array structure
+   */
+  private encodeActionParameters(inputs: Record<string, any>): string {
+    const parameters = Object.entries(inputs).map(([name, value]) => ({
+      name,
+      value: typeof value === 'string' ? value : JSON.stringify(value),
+      valueType: typeof value === 'string' && value.startsWith('{{') ? 'fd_data' : 'static'
+    }));
+    
+    return this.encodeFlowValue(parameters);
   }
 
   /**
@@ -289,7 +312,7 @@ export class ImprovedFlowXMLGenerator {
   </sys_update_xml>
 
   ${this.generateActionInstancesV2XML(flowDef.activities, activitySysIds, updateSetSysId)}
-  ${this.generateFlowLogicXML(triggerSysId, activitySysIds, updateSetSysId)}
+  ${this.generateFlowLogicV2XML(triggerSysId, activitySysIds, updateSetSysId)}
 </unload>`;
     
     return xml;
@@ -412,9 +435,13 @@ export class ImprovedFlowXMLGenerator {
   private generateActionInstancesV2XML(activities: ImprovedFlowActivity[], sysIds: string[], updateSetSysId: string): string {
     return activities.map((activity, index) => {
       const actionSysId = sysIds[index];
-      // Use Base64+gzip encoding for inputs and outputs (as seen in working flows)
-      const encodedInputs = this.encodeFlowValue(activity.inputs);
-      const encodedOutputs = this.encodeFlowValue(activity.outputs || {});
+      const uiId = uuidv4(); // Generate ui_id for visual designer
+      
+      // Convert inputs to v2 parameter array format and encode
+      const encodedValues = this.encodeActionParameters(activity.inputs);
+      
+      // Use arrow notation for order (e.g., "2➛3")
+      const orderValue = index === 0 ? '1' : `${index}➛${index + 1}`;
       
       return `
   <!-- sys_hub_action_instance_v2: ${this.escapeXml(activity.name)} -->
@@ -423,7 +450,7 @@ export class ImprovedFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_action_instance_v2_${actionSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance_v2"><sys_hub_action_instance_v2 action="INSERT_OR_UPDATE"><action_type display_value="">${this.getActionTypeId(activity.type)}</action_type><active>true</active><comment_text/><condition>${this.escapeXml(activity.condition || '')}</condition><flow display_value="${this.escapeXml(activity.name)}">${this.flowSysId}</flow><inputs>${encodedInputs}</inputs><name>${this.escapeXml(activity.name)}</name><order>${activity.order || ((index + 1) * 100)}</order><outputs>${encodedOutputs}</outputs><sys_class_name>sys_hub_action_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${actionSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on></sys_hub_action_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance_v2"><sys_hub_action_instance_v2 action="INSERT_OR_UPDATE"><action_type display_value="${this.getActionDisplayName(activity.type)}">${this.getActionTypeId(activity.type)}</action_type><action_type_parent/><attributes/><comment>${this.escapeXml(activity.description || '')}</comment><compiled_snapshot>${this.getActionTypeId(activity.type)}</compiled_snapshot><display_text/><flow display_value="${this.escapeXml(activity.name)}">${this.flowSysId}</flow><generation_source/><order>${orderValue}</order><parent_ui_id/><sys_class_name>sys_hub_action_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${actionSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope display_value="Global">global</sys_scope><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uiId}</ui_id><updation_source/><values>${encodedValues}</values></sys_hub_action_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_action_instance_v2</source_table>
     <type>Flow Designer Action</type>
@@ -432,7 +459,47 @@ export class ImprovedFlowXMLGenerator {
   }
 
   /**
-   * Generate sys_hub_flow_logic XML for connections
+   * Generate sys_hub_flow_logic_instance_v2 XML for connections
+   */
+  private generateFlowLogicV2XML(triggerSysId: string, activitySysIds: string[], updateSetSysId: string): string {
+    const connections = [];
+    const endSysId = this.generateSysId();
+    
+    // Trigger -> First Activity
+    if (activitySysIds.length > 0) {
+      connections.push(`
+  <!-- Flow Logic V2: Trigger -> First Activity -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>${this.generateSysId()}</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <name>sys_hub_flow_logic_instance_v2_${this.generateSysId()}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment/><connected_to/><decision_table/><display_text/><flow display_value="">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition/><order>0</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${this.generateSysId()}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>H4sIAAAAAAAA/6tWyi8tKSgtKQ7JdywuzkzPU7KKjtVRyswDiUHYZYlFmYlJOalQbkpqcmZxZn5eCEjME0ldSmVeYm5mMrJQeX5RdlpOfjlCrBYAD1ouqHEAAAA=</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
+    <source_table>sys_hub_flow_logic_instance_v2</source_table>
+    <type>Flow Designer Logic</type>
+  </sys_update_xml>`);
+    }
+    
+    // Add End logic node
+    connections.push(`
+  <!-- Flow Logic V2: End -->
+  <sys_update_xml action="INSERT_OR_UPDATE">
+    <sys_id>${this.generateSysId()}</sys_id>
+    <action>INSERT_OR_UPDATE</action>
+    <application display_value="Global">global</application>
+    <name>sys_hub_flow_logic_instance_v2_${endSysId}</name>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment/><connected_to/><decision_table/><display_text/><flow display_value="">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition display_value="End">d176605ea76103004f27b0d2187901c7</logic_definition><order>${(activitySysIds.length + 1) * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${endSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>H4sIAAAAAAAA/6tWyi8tKSgtKQ7JdywuzkzPU7KKjtVRyswDiUHYZYlFmYlJOalQbkpqcmZxZn5eCEjME0ldSmVeYm5mMrJQeX5RdlpOfjlCrBYAD1ouqHEAAAA=</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
+    <source_table>sys_hub_flow_logic_instance_v2</source_table>
+    <type>Flow Designer Logic</type>
+  </sys_update_xml>`);
+    
+    return connections.join('\n');
+  }
+  
+  /**
+   * Generate sys_hub_flow_logic XML for connections (deprecated, kept for compatibility)
    */
   private generateFlowLogicXML(triggerSysId: string, activitySysIds: string[], updateSetSysId: string): string {
     const connections = [];

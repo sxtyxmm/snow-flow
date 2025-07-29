@@ -28,25 +28,38 @@ export type RequirementType =
   | 'widget' | 'flow' | 'business_rule' | 'script_include' | 'table' | 'application'
   // Authentication & Security
   | 'user_role' | 'acl_rule' | 'oauth_provider' | 'sso_config' | 'data_policy'
-  | 'security_policy' | 'audit_rule' | 'encryption_context'
+  | 'security_policy' | 'audit_rule' | 'encryption_context' | 'saml_config' | 'mfa_config'
   // Data & Integration  
   | 'import_set' | 'transform_map' | 'field_map' | 'web_service' | 'rest_message'
   | 'email_config' | 'ldap_config' | 'database_view' | 'database_index'
+  | 'soap_message' | 'import_set_transformer' | 'coremeta_data' | 'ldap_server'
   // User Interface
   | 'ui_action' | 'ui_policy' | 'ui_page' | 'ui_macro' | 'ui_script'
   | 'client_script' | 'css_include' | 'navigator_module' | 'homepage'
+  | 'form_layout' | 'form_section' | 'list_layout' | 'related_list' | 'formatter'
+  | 'application_menu' | 'module_navigation'
   // Workflow & Process
   | 'workflow' | 'scheduled_job' | 'event_rule' | 'notification' | 'email_template'
   | 'sla_definition' | 'escalation_rule' | 'approval_rule' | 'state_flow'
+  | 'workflow_activity' | 'workflow_transition' | 'approval_definition' | 'approval_workflow'
+  | 'notification_rule' | 'scheduled_task' | 'event_registration'
   // Configuration & Setup
   | 'dictionary_entry' | 'choice_list' | 'ui_formatter' | 'display_value'
   | 'reference_qualifier' | 'data_lookup' | 'sys_property' | 'system_setting'
+  | 'system_property' | 'system_definition' | 'theme_configuration' | 'branding_config'
+  | 'table_rotation' | 'partitioning_config' | 'cache_configuration'
   // Reporting & Analytics
   | 'report' | 'dashboard' | 'metric' | 'kpi' | 'scheduled_report'
-  | 'data_source' | 'gauge' | 'chart_configuration'
+  | 'data_source' | 'gauge' | 'chart_configuration' | 'dashboard_tab'
+  | 'performance_analytics' | 'metric_definition' | 'job_queue' | 'transaction_quota'
+  // Operations & Service Management
+  | 'incident_table' | 'incident_analysis' | 'query_rule' | 'catalog_item' | 'catalog_category'
+  | 'catalog_variable' | 'workflow_integration' | 'user_account' | 'user_group'
+  | 'group_membership' | 'integration_endpoint' | 'update_set'
   // Automation & Monitoring
   | 'probe' | 'sensor' | 'discovery_rule' | 'cmdb_identification'
   | 'orchestration_workflow' | 'runbook' | 'knowledge_article'
+  | 'inbound_email_action' | 'processor' | 'pdf_generator' | 'sys_script_validator'
   // Mobile & Portal
   | 'mobile_app_config' | 'service_portal_config' | 'portal_widget'
   | 'portal_page' | 'portal_theme' | 'mobile_ui_policy';

@@ -325,6 +325,11 @@ class ServiceNowUpdateSetMCP {
         throw new Error(response.error || 'Failed to create Update Set');
       }
 
+      // Validate response structure
+      if (!response.data || !response.data.sys_id) {
+        throw new Error(`Invalid Update Set response: missing data or sys_id. Response: ${JSON.stringify(response)}`);
+      }
+
       // Auto-switch to Update Set if requested (default: true)
       const autoSwitch = args.auto_switch !== false;
       let switchedToUpdateSet = false;

@@ -334,7 +334,9 @@ export class QueenAgent extends EventEmitter {
       status: 'active',
       objectiveId,
       specialization,
-      startTime: Date.now()
+      startTime: Date.now(),
+      capabilities: [],
+      mcpTools: []
     };
 
     this.activeAgents.set(agentId, agent);

@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { EventEmitter } from 'events';
 import os from 'os';
+import { unifiedAuthStore } from './unified-auth-store.js';
 
 export interface MCPServer {
   name: string;
@@ -206,15 +207,37 @@ export class MCPServerManager extends EventEmitter {
       // Check if script exists
       await fs.access(scriptPath);
 
-      // Start the process
+      // Bridge OAuth tokens to MCP servers
+      await unifiedAuthStore.bridgeToMCP();
+      
+      // Get current tokens for the MCP server
+      const tokens = await unifiedAuthStore.getTokens();
+      const authEnv: Record<string, string> = {};
+      
+      if (tokens) {
+        authEnv.SNOW_OAUTH_TOKENS = JSON.stringify(tokens);
+        authEnv.SNOW_INSTANCE = tokens.instance;
+        authEnv.SNOW_CLIENT_ID = tokens.clientId;
+        authEnv.SNOW_CLIENT_SECRET = tokens.clientSecret;
+        
+        if (tokens.accessToken) {
+          authEnv.SNOW_ACCESS_TOKEN = tokens.accessToken;
+        }
+        if (tokens.refreshToken) {
+          authEnv.SNOW_REFRESH_TOKEN = tokens.refreshToken;
+        }
+        if (tokens.expiresAt) {
+          authEnv.SNOW_TOKEN_EXPIRES_AT = tokens.expiresAt;
+        }
+      }
+
+      // Start the process with OAuth tokens
       const childProcess = spawn('node', [scriptPath], {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: true,
         env: {
           ...process.env,
-          SNOW_INSTANCE: process.env.SNOW_INSTANCE,
-          SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID,
-          SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET
+          ...authEnv
         }
       });
 

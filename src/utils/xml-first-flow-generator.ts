@@ -443,49 +443,40 @@ export class XMLFirstFlowGenerator {
 }
 
 /**
- * Generate PRODUCTION-READY flow XML (NO placeholders!)
+ * Generate PRODUCTION-READY flow XML with BOTH formats
  */
 export function generateProductionFlowXML(flowDef: XMLFlowDefinition): { xml: string; filePath: string; instructions: string } {
   const generator = new XMLFirstFlowGenerator(flowDef.name.replace(/[^a-zA-Z0-9]+/g, '_') + '_Import');
   
+  // Generate Update Set XML (better for automatic deployment)
   const xml = generator.generateFlowUpdateSetXML(flowDef);
   const filePath = generator.saveToFile(xml, flowDef.name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_flow.xml');
   
   const instructions = `
-=== ServiceNow Flow Import Instructions ===
+=== ServiceNow Flow Deployment Options ===
 
-1. Log into your ServiceNow instance as an admin user
+🚀 OPTION 1: Automatic Deployment (RECOMMENDED)
+   Use the snow-flow deploy-xml command for complete automation:
+   
+   snow-flow deploy-xml ${filePath}
+   
+   This automatically:
+   ✅ Imports the Update Set
+   ✅ Previews for conflicts 
+   ✅ Commits if clean
+   ✅ Reports any issues
 
-2. Navigate to:
-   System Update Sets > Retrieved Update Sets
+🔧 OPTION 2: Manual Import (if automatic fails)
+   
+   1. Log into ServiceNow as admin
+   2. Navigate to: System Update Sets > Local Update Sets
+   3. Click "Import Update Set from XML"
+   4. Choose file: ${filePath}
+   5. Click "Upload" and follow prompts
+   6. Preview and commit the Update Set
+   7. Find your flow in Flow Designer
 
-3. Click the "Import Update Set from XML" link at the bottom of the list
-   (NOT the "Import from XML" in the context menu!)
-
-4. Choose file: ${filePath}
-
-5. Click "Upload"
-
-6. Find your imported Update Set in the list
-
-7. Click on the Update Set name to open it
-
-8. Click "Preview Update Set"
-   - Review any errors or warnings
-   - Resolve any missing dependencies
-
-9. Once preview is clean, click "Commit Update Set"
-
-10. Navigate to Flow Designer:
-    - All > Flow Designer > Designer
-    - Your flow "${flowDef.name}" should appear in the list
-
-11. Open the flow to verify all components are present
-
-TROUBLESHOOTING:
-- If flow appears empty: Check that all sys_update_xml records were imported
-- If import fails: Verify you're using "Import Update Set from XML" link
-- For dependency errors: Import required plugins/applications first
+The flow "${flowDef.name}" will appear in Flow Designer > Designer
 `.trim();
   
   return { xml, filePath, instructions };
