@@ -98,17 +98,29 @@ export class ServiceNowClient {
       const url = config.url || config.endpoint;
       const data = config.data || config.body;
       
+      // CRITICAL FIX: Properly merge headers to allow content-type overrides for XML requests
+      const requestConfig = {
+        ...config,
+        headers: {
+          ...this.client.defaults.headers.common,
+          ...this.client.defaults.headers[method as keyof typeof this.client.defaults.headers],
+          ...config.headers // This ensures custom headers (like Content-Type: application/xml) override defaults
+        }
+      };
+      
+      this.logger.debug('🔧 Final request config headers:', requestConfig.headers);
+      
       switch (method) {
         case 'get':
-          return this.client.get(url, { params: config.params, ...config });
+          return this.client.get(url, { params: config.params, ...requestConfig });
         case 'post':
-          return this.client.post(url, data, config);
+          return this.client.post(url, data, requestConfig);
         case 'put':
-          return this.client.put(url, data, config);
+          return this.client.put(url, data, requestConfig);
         case 'patch':
-          return this.client.patch(url, data, config);
+          return this.client.patch(url, data, requestConfig);
         case 'delete':
-          return this.client.delete(url, config);
+          return this.client.delete(url, requestConfig);
         default:
           throw new Error(`Unsupported HTTP method: ${method}`);
       }
@@ -378,10 +390,21 @@ export class ServiceNowClient {
           
           try {
             const createResponse = await this.client.post(`${this.getBaseUrl()}/api/now/table/sp_widget`, testWidget);
+            
+            // CRITICAL FIX: Add null safety for response processing
+            if (!createResponse || !createResponse.data || !createResponse.data.result || !createResponse.data.result.sys_id) {
+              throw new Error('Widget creation succeeded but response structure is unexpected - unable to verify sys_id');
+            }
+            
             const sys_id = createResponse.data.result.sys_id;
             
-            // Immediately delete the test widget
-            await this.client.delete(`${this.getBaseUrl()}/api/now/table/sp_widget/${sys_id}`);
+            // Immediately delete the test widget with error handling
+            try {
+              await this.client.delete(`${this.getBaseUrl()}/api/now/table/sp_widget/${sys_id}`);
+            } catch (deleteError) {
+              this.logger.warn(`Test widget created but cleanup failed: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`);
+              // Don't fail the test just because cleanup failed
+            }
             
             return { success: true, data: { message: 'Widget write permissions confirmed' } };
           } catch (error) {
@@ -394,7 +417,21 @@ export class ServiceNowClient {
         description: 'Check user roles and permissions',
         test: async () => {
           const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/sys_user_role?sysparm_query=user=javascript:gs.getUserID()`);
-          return { success: true, data: { roles: response.data.result.map((r: any) => r.role?.display_value || r.role) } };
+          
+          // CRITICAL FIX: Add null safety for response processing
+          if (!response || !response.data || !response.data.result) {
+            return { success: true, data: { roles: [], warning: 'Unable to retrieve user roles - response structure unexpected' } };
+          }
+          
+          // Safely process roles with null checks
+          const roles = Array.isArray(response.data.result) 
+            ? response.data.result.map((r: any) => {
+                if (!r || typeof r !== 'object') return 'Unknown Role';
+                return r.role?.display_value || r.role || 'Unknown Role';
+              }).filter(role => role && role !== 'Unknown Role')
+            : [];
+            
+          return { success: true, data: { roles } };
         }
       }
     ];
@@ -421,19 +458,28 @@ export class ServiceNowClient {
       }
     }
 
-    // Analyze results
-    const failedTests = Object.values(diagnostics.tests).filter((test: any) => test.status.includes('FAIL'));
-    const passedTests = Object.values(diagnostics.tests).filter((test: any) => test.status.includes('PASS'));
+    // Analyze results with null safety
+    const failedTests = diagnostics.tests && typeof diagnostics.tests === 'object' 
+      ? Object.values(diagnostics.tests).filter((test: any) => test && test.status && test.status.includes('FAIL'))
+      : [];
+    const passedTests = diagnostics.tests && typeof diagnostics.tests === 'object'
+      ? Object.values(diagnostics.tests).filter((test: any) => test && test.status && test.status.includes('PASS'))
+      : [];
 
     diagnostics.summary = {
-      total_tests: tests.length,
-      passed: passedTests.length,
-      failed: failedTests.length,
-      overall_status: failedTests.length === 0 ? '✅ ALL SYSTEMS GO' : '⚠️ ISSUES DETECTED'
+      total_tests: tests.length || 0,
+      passed: passedTests.length || 0,
+      failed: failedTests.length || 0,
+      overall_status: failedTests.length === 0 && passedTests.length > 0 ? '✅ ALL SYSTEMS GO' : '⚠️ ISSUES DETECTED'
     };
 
-    // Generate recommendations
-    diagnostics.recommendations = this.generateAuthRecommendations(diagnostics.tests);
+    // Generate recommendations with null safety
+    try {
+      diagnostics.recommendations = this.generateAuthRecommendations(diagnostics.tests);
+    } catch (recError) {
+      this.logger.error('Error generating recommendations:', recError);
+      diagnostics.recommendations = ['⚠️ Unable to generate recommendations due to error'];
+    }
 
     return {
       success: failedTests.length === 0,
@@ -456,26 +502,53 @@ export class ServiceNowClient {
   private generateAuthRecommendations(tests: any): string[] {
     const recommendations = [];
     
-    if (tests['Widget Write Test']?.status.includes('FAIL')) {
-      const error = tests['Widget Write Test'].error;
-      if (error.includes('403')) {
-        recommendations.push('🔐 Widget deployment failed with 403 Forbidden. Check OAuth scopes: ensure \'useraccount\' and \'glide_system_administration\' scopes are enabled');
-        recommendations.push('👤 Verify user has sp_portal_manager or admin role in ServiceNow');
-        recommendations.push('🛡️ Check if instance has deployment restrictions for external applications');
-      }
-      if (error.includes('401')) {
-        recommendations.push('🔑 Authentication failed. Re-run: snow-flow auth login');
+    // CRITICAL FIX: Add comprehensive null safety checks
+    if (!tests || typeof tests !== 'object') {
+      recommendations.push('⚠️ Unable to analyze test results due to missing test data');
+      return recommendations;
+    }
+    
+    // Safe check for Widget Write Test
+    const widgetTest = tests['Widget Write Test'];
+    if (widgetTest?.status && typeof widgetTest.status === 'string' && widgetTest.status.includes('FAIL')) {
+      const error = widgetTest.error;
+      if (error && typeof error === 'string') {
+        if (error.includes('403')) {
+          recommendations.push('🔐 Widget deployment failed with 403 Forbidden. Check OAuth scopes: ensure \'useraccount\' and \'glide_system_administration\' scopes are enabled');
+          recommendations.push('👤 Verify user has sp_portal_manager or admin role in ServiceNow');
+          recommendations.push('🛡️ Check if instance has deployment restrictions for external applications');
+        }
+        if (error.includes('401')) {
+          recommendations.push('🔑 Authentication failed. Re-run: snow-flow auth login');
+        }
+      } else {
+        recommendations.push('🔐 Widget write test failed with unknown error. Check ServiceNow permissions');
       }
     }
 
-    if (tests['User Role Check']?.status.includes('PASS')) {
-      const roles = tests['User Role Check'].result?.roles || [];
-      if (!roles.some((role: string) => role.includes('admin') || role.includes('sp_portal'))) {
-        recommendations.push('⚠️ User lacks admin or portal management roles. Contact ServiceNow admin to assign appropriate roles');
+    // Safe check for User Role Check
+    const roleTest = tests['User Role Check'];
+    if (roleTest?.status && typeof roleTest.status === 'string' && roleTest.status.includes('PASS')) {
+      const roles = roleTest.result?.roles;
+      if (Array.isArray(roles)) {
+        const hasRequiredRole = roles.some((role: any) => {
+          if (typeof role === 'string') {
+            return role.includes('admin') || role.includes('sp_portal');
+          }
+          return false;
+        });
+        
+        if (!hasRequiredRole) {
+          recommendations.push('⚠️ User lacks admin or portal management roles. Contact ServiceNow admin to assign appropriate roles');
+        }
+      } else {
+        recommendations.push('⚠️ Unable to verify user roles. Check if user has admin or portal management permissions');
       }
     }
 
-    if (tests['Update Set Access']?.status.includes('FAIL')) {
+    // Safe check for Update Set Access
+    const updateSetTest = tests['Update Set Access'];
+    if (updateSetTest?.status && typeof updateSetTest.status === 'string' && updateSetTest.status.includes('FAIL')) {
       recommendations.push('📦 Update Set access failed. Ensure user has update_set_manager or admin role');
     }
 

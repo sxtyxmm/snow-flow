@@ -99,6 +99,31 @@ export class XMLFirstFlowGenerator {
   }
 
   /**
+   * Escape JSON content for XML serialization (no CDATA needed)
+   * CRITICAL FIX: Properly handle JSON content in XML to avoid parsing errors
+   */
+  private escapeForXml(jsonContent: string): string {
+    if (!jsonContent) return '';
+    
+    // First escape XML special characters
+    let escaped = jsonContent
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+    
+    // Additional escaping for problematic sequences that could break XML parsing
+    escaped = escaped
+      .replace(/]]>/g, ']]&gt;') // Escape CDATA end sequences
+      .replace(/\r?\n/g, '&#10;') // Preserve line breaks as XML entities
+      .replace(/\r/g, '&#13;') // Preserve carriage returns
+      .replace(/\t/g, '&#9;'); // Preserve tabs
+    
+    return escaped;
+  }
+
+  /**
    * Generate complete Update Set XML for a flow
    * Based on REAL ServiceNow XML structure research
    */
@@ -157,7 +182,7 @@ export class XMLFirstFlowGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application>global</application>
     <name>sys_hub_flow_snapshot_${snapshotSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><sys_id>${snapshotSysId}</sys_id><name>${this.escapeXml(flowDef.name)}</name><flow>${this.flowSysId}</flow><note>Initial version</note><snapshot><![CDATA[${JSON.stringify(flowDefinitionJson, null, 2)}]]]]><![CDATA[></snapshot><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on></sys_hub_flow_snapshot></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><sys_id>${snapshotSysId}</sys_id><name>${this.escapeXml(flowDef.name)}</name><flow>${this.flowSysId}</flow><note>Initial version</note><snapshot>${this.escapeForXml(JSON.stringify(flowDefinitionJson, null, 2))}</snapshot><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on></sys_hub_flow_snapshot></record_update>]]></payload>
     <remote_update_set>${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_snapshot</source_table>
     <type>Flow Designer Snapshot</type>
@@ -347,7 +372,7 @@ export class XMLFirstFlowGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application>global</application>
     <name>sys_hub_action_instance_${sysIds[index]}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance"><sys_hub_action_instance action="INSERT_OR_UPDATE"><sys_id>${sysIds[index]}</sys_id><flow>${this.flowSysId}</flow><action_type display_value="">${this.getActionTypeId(activity.type)}</action_type><name>${this.escapeXml(activity.name)}</name><order>${activity.order || (index + 1) * 100}</order><active>true</active><inputs><![CDATA[${JSON.stringify(activity.inputs)}]]]]><![CDATA[></inputs><outputs><![CDATA[${JSON.stringify(activity.outputs || {})}]]]]><![CDATA[></outputs><condition>${this.escapeXml(activity.condition || '')}</condition><comment_text/><sys_class_name>sys_hub_action_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_action_instance></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance"><sys_hub_action_instance action="INSERT_OR_UPDATE"><sys_id>${sysIds[index]}</sys_id><flow>${this.flowSysId}</flow><action_type display_value="">${this.getActionTypeId(activity.type)}</action_type><name>${this.escapeXml(activity.name)}</name><order>${activity.order || (index + 1) * 100}</order><active>true</active><inputs>${this.escapeForXml(JSON.stringify(activity.inputs))}</inputs><outputs>${this.escapeForXml(JSON.stringify(activity.outputs || {}))}</outputs><condition>${this.escapeXml(activity.condition || '')}</condition><comment_text/><sys_class_name>sys_hub_action_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_action_instance></record_update>]]></payload>
     <remote_update_set>${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_action_instance</source_table>
     <type>Flow Designer Action</type>

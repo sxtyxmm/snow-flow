@@ -843,6 +843,62 @@ class ServiceNowDeploymentMCP {
           let troubleshootingSteps = '';
           
           if (is403Error(directError) || is403Error(tableError)) {
+            // CRITICAL FIX: Check if widget was actually created despite 403 error
+            this.logger.info('403 error detected, verifying if widget was actually created...');
+            
+            const verificationResult = await this.verifyWidgetInServiceNow(args.name);
+            
+            if (verificationResult.exists) {
+              // Widget was created successfully despite 403 error!
+              this.logger.info('🎉 Widget verification SUCCESS: Widget exists despite 403 error', {
+                widgetName: args.name,
+                sys_id: verificationResult.sys_id,
+                completenessScore: verificationResult.completenessScore
+              });
+
+              // Format successful response similar to normal deployment
+              const credentials = await this.oauth.loadCredentials();
+              const widgetUrl = credentials?.instance ? 
+                `https://${credentials.instance}/sp_config?id=widget_editor&sys_id=${verificationResult.sys_id}` : 
+                'ServiceNow instance URL not available';
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `✅ Widget deployed successfully! (Despite 403 error)
+              
+🎯 Widget Details:
+- Name: ${args.name}
+- Title: ${verificationResult.title || args.title}
+- Sys ID: ${verificationResult.sys_id}
+- Deployment Method: ${deploymentMethod} (with error recovery)
+- Verification: ✅ Confirmed (${verificationResult.completenessScore}/100 complete)
+
+📦 Update Set:
+- Name: ${updateSetName}
+- ID: ${updateSetId || 'None'}
+- Status: ${updateSetId ? '✅ Tracked' : '⚠️ Not tracked'}
+
+🔗 Direct Links:
+- Widget Editor: ${widgetUrl}
+- Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
+
+🔧 Note: Widget was created successfully despite receiving a 403 error. This is a known issue with ServiceNow permissions that has been automatically resolved.
+
+⚡ **Ready for Testing**
+Your widget has been deployed and is ready for testing in Service Portal.`
+                  }
+                ]
+              };
+            }
+
+            // Widget was NOT created, continue with error handling
+            this.logger.warn('Widget verification failed: Widget does not exist after deployment attempts', {
+              widgetName: args.name,
+              verificationDetails: verificationResult.debugInfo
+            });
+            
             // Run authentication diagnostics automatically on 403 errors
             this.logger.info('403 error detected, running automatic authentication diagnostics...');
             
@@ -2259,18 +2315,44 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
         throw new Error('Invalid diagnostics data received from ServiceNow');
       }
 
-      // Format test results
-      const testResults = Object.entries(tests).map(([name, result]: [string, any]) => 
-        `**${name}:** ${result?.status || 'Unknown'}
-  - ${result?.description || 'No description'}
-  ${result?.error ? `- Error: ${result.error}` : ''}
-  ${result?.http_status ? `- HTTP Status: ${result.http_status}` : ''}`
-      ).join('\n\n');
+      // Format test results with enhanced null safety
+      let testResults = 'No test results available';
+      if (tests && typeof tests === 'object') {
+        try {
+          const entries = Object.entries(tests);
+          if (entries.length > 0) {
+            testResults = entries.map(([name, result]: [string, any]) => {
+              // CRITICAL: Extra null checks for each property
+              const status = result?.status || 'Unknown';
+              const description = result?.description || 'No description';
+              const error = result?.error && typeof result.error === 'string' ? `- Error: ${result.error}` : '';
+              const httpStatus = result?.http_status && typeof result.http_status === 'number' ? `- HTTP Status: ${result.http_status}` : '';
+              
+              return `**${name}:** ${status}
+  - ${description}
+  ${error}
+  ${httpStatus}`;
+            }).join('\n\n');
+          }
+        } catch (testFormatError) {
+          this.logger.error('Error formatting test results:', testFormatError);
+          testResults = '❌ Error formatting test results - check ServiceNow connection';
+        }
+      }
 
-      // Format recommendations
-      const recommendationText = args.include_recommendations !== false && recommendations.length > 0
-        ? `\n\n**🔧 Troubleshooting Recommendations:**\n${recommendations.map((rec: string) => `- ${rec}`).join('\n')}`
-        : '';
+      // Format recommendations with null safety
+      let recommendationText = '';
+      if (args.include_recommendations !== false && Array.isArray(recommendations) && recommendations.length > 0) {
+        try {
+          const validRecommendations = recommendations.filter(rec => rec && typeof rec === 'string');
+          if (validRecommendations.length > 0) {
+            recommendationText = `\n\n**🔧 Troubleshooting Recommendations:**\n${validRecommendations.map((rec: string) => `- ${rec}`).join('\n')}`;
+          }
+        } catch (recFormatError) {
+          this.logger.error('Error formatting recommendations:', recFormatError);
+          recommendationText = '\n\n**🔧 Troubleshooting Recommendations:**\n- Unable to format recommendations due to error';
+        }
+      }
 
       // Generate URL fix recommendation if we detect the trailing slash issue
       const urlFixRecommendation = data.instance_url && typeof data.instance_url === 'string' && data.instance_url.includes('//')
@@ -5952,6 +6034,189 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
 3. Preview and commit the Update Set
 
 **Error Details**: ${error.message || error}`;
+  }
+
+  /**
+   * Verify widget exists in ServiceNow with comprehensive retry logic
+   * Addresses the critical false negative bug where widgets show 403 errors but are actually created
+   */
+  private async verifyWidgetInServiceNow(widgetName: string): Promise<any> {
+    const maxRetries = 5;
+    const baseDelay = 2000; // Start with 2 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Progressive delay - ServiceNow needs time to process
+        if (attempt > 1) {
+          const delay = baseDelay * attempt; // 2s, 4s, 6s, 8s, 10s
+          this.logger.info(`Waiting ${delay}ms before widget verification attempt ${attempt}/${maxRetries}`);
+          await this.sleep(delay);
+        }
+        
+        this.logger.info(`Widget verification attempt ${attempt}/${maxRetries}`, { widgetName });
+        
+        // Multi-table verification approach (similar to flow verification)
+        const [mainWidgetCheck, widgetSearchCheck] = await Promise.allSettled([
+          // Check 1: Direct sp_widget table search by name
+          this.client.searchRecords('sp_widget', `name=${widgetName}`, 1),
+          
+          // Check 2: Broader search with ID field
+          this.client.searchRecords('sp_widget', `name=${widgetName}^ORid=${widgetName}`, 5)
+        ]);
+        
+        let mainWidget = null;
+        let searchResults = null;
+        let verificationDetails = {
+          attempt,
+          mainWidgetCheck: 'pending',
+          widgetSearchCheck: 'pending',
+          totalFound: 0
+        };
+        
+        // Process main widget check
+        if (mainWidgetCheck.status === 'fulfilled' && mainWidgetCheck.value.success) {
+          mainWidget = mainWidgetCheck.value.data?.[0];
+          verificationDetails.mainWidgetCheck = mainWidget ? 'found' : 'not_found';
+          verificationDetails.totalFound = mainWidgetCheck.value.data?.length || 0;
+        } else {
+          verificationDetails.mainWidgetCheck = `failed: ${mainWidgetCheck.status === 'rejected' ? mainWidgetCheck.reason : 'unknown error'}`;
+        }
+        
+        // Process widget search check
+        if (widgetSearchCheck.status === 'fulfilled' && widgetSearchCheck.value.success) {
+          searchResults = widgetSearchCheck.value.data || [];
+          verificationDetails.widgetSearchCheck = `found_${searchResults.length}`;
+          
+          // Use search results if main check didn't find anything
+          if (!mainWidget && searchResults.length > 0) {
+            mainWidget = searchResults[0];
+            verificationDetails.totalFound = searchResults.length;
+          }
+        } else {
+          verificationDetails.widgetSearchCheck = `failed: ${widgetSearchCheck.status === 'rejected' ? widgetSearchCheck.reason : 'unknown error'}`;
+        }
+        
+        // Calculate completeness score
+        let completenessScore = 0;
+        if (mainWidget) {
+          completenessScore += mainWidget.sys_id ? 25 : 0;
+          completenessScore += mainWidget.name ? 25 : 0;
+          completenessScore += mainWidget.title ? 25 : 0;
+          completenessScore += mainWidget.template ? 25 : 0;
+        }
+        
+        if (mainWidget && completenessScore >= 75) {
+          // Widget found and appears complete
+          this.logger.info(`✅ Widget verification SUCCESS on attempt ${attempt}`, {
+            widgetName,
+            sys_id: mainWidget.sys_id,
+            completenessScore,
+            totalRetries: attempt
+          });
+          
+          return {
+            exists: true,
+            sys_id: mainWidget.sys_id,
+            name: mainWidget.name,
+            title: mainWidget.title,
+            completenessScore,
+            attempt,
+            verificationDetails,
+            debugInfo: {
+              foundVia: verificationDetails.mainWidgetCheck === 'found' ? 'main_check' : 'search_check',
+              totalFound: verificationDetails.totalFound,
+              retriesNeeded: attempt
+            }
+          };
+        } else if (mainWidget && completenessScore < 75) {
+          // Widget found but incomplete - might still be processing
+          this.logger.warn(`⚠️ Widget found but incomplete on attempt ${attempt}`, {
+            widgetName,
+            sys_id: mainWidget.sys_id,
+            completenessScore,
+            remainingRetries: maxRetries - attempt
+          });
+          
+          if (attempt === maxRetries) {
+            // Last attempt - return what we have
+            return {
+              exists: true,
+              sys_id: mainWidget.sys_id,
+              name: mainWidget.name,
+              title: mainWidget.title,
+              completenessScore,
+              attempt,
+              verificationDetails,
+              debugInfo: {
+                warning: 'Widget exists but appears incomplete',
+                foundVia: verificationDetails.mainWidgetCheck === 'found' ? 'main_check' : 'search_check',
+                totalFound: verificationDetails.totalFound,
+                retriesNeeded: attempt
+              }
+            };
+          }
+        } else {
+          // Widget not found
+          this.logger.warn(`❌ Widget not found on attempt ${attempt}`, {
+            widgetName,
+            verificationDetails,
+            remainingRetries: maxRetries - attempt
+          });
+          
+          if (attempt === maxRetries) {
+            // Final attempt failed
+            return {
+              exists: false,
+              attempt,
+              verificationDetails,
+              debugInfo: {
+                finalAttempt: true,
+                allChecks: {
+                  mainWidgetCheck: verificationDetails.mainWidgetCheck,
+                  widgetSearchCheck: verificationDetails.widgetSearchCheck
+                },
+                totalRetries: maxRetries
+              }
+            };
+          }
+        }
+        
+      } catch (verificationError) {
+        this.logger.error(`Widget verification attempt ${attempt} failed`, {
+          widgetName,
+          error: verificationError instanceof Error ? verificationError.message : String(verificationError),
+          remainingRetries: maxRetries - attempt
+        });
+        
+        if (attempt === maxRetries) {
+          // Final attempt - return failure with error details
+          return {
+            exists: false,
+            attempt,
+            error: verificationError instanceof Error ? verificationError.message : String(verificationError),
+            debugInfo: {
+              finalAttempt: true,
+              verificationError: true,
+              totalRetries: maxRetries
+            }
+          };
+        }
+      }
+    }
+    
+    // Should not reach here, but safety fallback
+    return {
+      exists: false,
+      attempt: maxRetries,
+      debugInfo: { unexpectedFallback: true }
+    };
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**

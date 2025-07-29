@@ -2,7 +2,7 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.22';
+export const VERSION = '1.3.23';
 
 export const VERSION_INFO = {
   version: VERSION,

@@ -428,19 +428,40 @@ class ServiceNowFlowComposerMCP {
           // Auto-deploy with fallback strategies
           const deployResult = await this.deployWithFallback(xmlResult.filePath, flowDefinition);
           
-          // Verify deployment was successful
-          const flowExists = await this.verifyFlowInServiceNow(parsedIntent.flowName);
+          // Comprehensive deployment verification
+          const verification = await this.verifyFlowInServiceNow(parsedIntent.flowName);
           
-          if (!flowExists) {
-            throw new Error('Flow deployment claimed success but flow not found in ServiceNow');
+          if (!verification.verified) {
+            // Deployment claimed success but flow not found - this is the critical bug!
+            const errorMsg = `Flow deployment reported success but verification failed: ${verification.reason}`;
+            
+            // Log detailed verification results for debugging
+            this.logger.error('CRITICAL: False positive deployment detected', {
+              flowName: parsedIntent.flowName,
+              verificationAttempts: verification.attempts,
+              partialResults: verification.partial_results,
+              searchQuery: verification.search_query,
+              error: verification.error
+            });
+            
+            throw new Error(errorMsg);
           }
           
+          // Success with comprehensive verification
           deploymentResult = {
             success: true,
             method: deployResult.strategy,
             xml_file: xmlResult.filePath,
             message: `✅ Flow deployed via ${deployResult.strategy} and verified in ServiceNow!`,
-            flow_sys_id: flowExists.sys_id
+            flow_sys_id: verification.sys_id,
+            flow_url: verification.url,
+            verification_score: verification.completeness_score,
+            verification_details: {
+              has_flow: true,
+              has_snapshot: verification.has_snapshot,
+              has_trigger: verification.has_trigger,
+              attempts_needed: verification.verification_attempt
+            }
           };
           
         } catch (xmlError) {
@@ -2188,32 +2209,150 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
   }
 
   /**
-   * Verify flow exists in ServiceNow after deployment
+   * Comprehensive flow verification with retry logic
    */
   private async verifyFlowInServiceNow(flowName: string): Promise<any> {
-    try {
-      const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;
-      const client = new ServiceNowClient();
-      
-      // Check if flow exists in sys_hub_flow
-      const flowCheck = await client.makeRequest({
-        method: 'GET',
-        url: '/api/now/table/sys_hub_flow',
-        params: {
-          sysparm_query: `name=${flowName}`,
-          sysparm_limit: 1
+    const maxRetries = 5;
+    const baseDelay = 2000; // Start with 2 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Progressive delay - ServiceNow needs time to process
+        if (attempt > 1) {
+          const delay = baseDelay * attempt; // 2s, 4s, 6s, 8s, 10s
+          this.logger.info(`Waiting ${delay}ms before verification attempt ${attempt}/${maxRetries}`);
+          await this.sleep(delay);
         }
-      });
-      
-      if (flowCheck.result && flowCheck.result.length > 0) {
-        return flowCheck.result[0];
+        
+        const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;
+        const client = new ServiceNowClient();
+        
+        // Multi-table verification for comprehensive check
+        const verificationPromises = [
+          // Check main flow table
+          client.makeRequest({
+            method: 'GET',
+            url: '/api/now/table/sys_hub_flow',
+            params: {
+              sysparm_query: `name=${flowName}^ORsys_name=${flowName}`,
+              sysparm_fields: 'sys_id,name,sys_name,active,table,description',
+              sysparm_limit: 5
+            }
+          }),
+          // Check flow snapshots
+          client.makeRequest({
+            method: 'GET',
+            url: '/api/now/table/sys_hub_flow_snapshot',
+            params: {
+              sysparm_query: `flow.name=${flowName}^ORflow.sys_name=${flowName}`,
+              sysparm_fields: 'sys_id,flow,name,active',
+              sysparm_limit: 5
+            }
+          }),
+          // Check trigger instances
+          client.makeRequest({
+            method: 'GET',
+            url: '/api/now/table/sys_hub_trigger_instance',
+            params: {
+              sysparm_query: `flow.name=${flowName}^ORflow.sys_name=${flowName}`,
+              sysparm_fields: 'sys_id,flow,trigger_type',
+              sysparm_limit: 5
+            }
+          })
+        ];
+        
+        const [flowCheck, snapshotCheck, triggerCheck] = await Promise.allSettled(verificationPromises);
+        
+        // Analyze results
+        const flowExists = flowCheck.status === 'fulfilled' && 
+                          flowCheck.value.result && 
+                          flowCheck.value.result.length > 0;
+        
+        const snapshotExists = snapshotCheck.status === 'fulfilled' && 
+                              snapshotCheck.value.result && 
+                              snapshotCheck.value.result.length > 0;
+        
+        const triggerExists = triggerCheck.status === 'fulfilled' && 
+                             triggerCheck.value.result && 
+                             triggerCheck.value.result.length > 0;
+        
+        // Comprehensive verification result
+        if (flowExists) {
+          const flowData = flowCheck.value.result[0];
+          
+          return {
+            verified: true,
+            sys_id: flowData.sys_id,
+            name: flowData.name || flowData.sys_name,
+            active: flowData.active,
+            table: flowData.table,
+            has_snapshot: snapshotExists,
+            has_trigger: triggerExists,
+            verification_attempt: attempt,
+            verification_method: 'multi_table_comprehensive',
+            completeness_score: (flowExists ? 1 : 0) + (snapshotExists ? 1 : 0) + (triggerExists ? 1 : 0),
+            url: `https://${await this.getInstanceUrl()}/flow-designer/flow/${flowData.sys_id}`
+          };
+        }
+        
+        // Log partial results for debugging
+        this.logger.warn(`Verification attempt ${attempt}: Flow=${flowExists}, Snapshot=${snapshotExists}, Trigger=${triggerExists}`);
+        
+        // If this is the last attempt, return detailed failure info
+        if (attempt === maxRetries) {
+          return {
+            verified: false,
+            reason: 'Flow not found after comprehensive verification',
+            attempts: maxRetries,
+            partial_results: {
+              flow_found: flowExists,
+              snapshot_found: snapshotExists,
+              trigger_found: triggerExists
+            },
+            search_query: `name=${flowName}`,
+            recommendation: 'Check ServiceNow Flow Designer manually or verify deployment was successful'
+          };
+        }
+        
+      } catch (error) {
+        this.logger.warn(`Verification attempt ${attempt} failed:`, error);
+        
+        // If this is the last attempt, include error details
+        if (attempt === maxRetries) {
+          return {
+            verified: false,
+            reason: 'Verification failed due to error',
+            error: error instanceof Error ? error.message : String(error),
+            attempts: maxRetries
+          };
+        }
       }
-      
-      return null;
-    } catch (error) {
-      this.logger.error('Failed to verify flow:', error);
-      return null;
     }
+    
+    return {
+      verified: false,
+      reason: 'Max verification attempts exceeded',
+      attempts: maxRetries
+    };
+  }
+  
+  /**
+   * Helper to get instance URL for flow links
+   */
+  private async getInstanceUrl(): Promise<string> {
+    try {
+      const credentials = await this.oauth.loadCredentials();
+      return credentials?.instance || 'your-instance.service-now.com';
+    } catch {
+      return 'your-instance.service-now.com';
+    }
+  }
+  
+  /**
+   * Sleep utility
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
   
   /**
