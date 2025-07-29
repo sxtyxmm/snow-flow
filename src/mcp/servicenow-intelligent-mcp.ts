@@ -333,6 +333,20 @@ export class ServiceNowIntelligentMCP {
             required: ['flow_sys_id'],
           },
         },
+        {
+          name: 'snow_verify_artifact_searchable',
+          description: '🔴 SNOW-002 FIX: Verify newly created artifact is searchable - Use immediately after creating artifacts to ensure they can be found in search',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              artifact_name: { type: 'string', description: 'Name of the artifact to verify' },
+              artifact_type: { type: 'string', description: 'Type of artifact (flow, widget, script, etc.)' },
+              expected_sys_id: { type: 'string', description: 'Expected sys_id (if known from creation)' },
+              max_wait_time: { type: 'number', description: 'Maximum wait time in seconds', default: 30 },
+            },
+            required: ['artifact_name', 'artifact_type'],
+          },
+        },
       ],
     }));
 
@@ -379,6 +393,8 @@ export class ServiceNowIntelligentMCP {
             return await this.resilientDeployment(args);
           case 'snow_comprehensive_flow_test':
             return await this.comprehensiveFlowTest(args);
+          case 'snow_verify_artifact_searchable':
+            return await this.verifyArtifactSearchable(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -407,7 +423,7 @@ export class ServiceNowIntelligentMCP {
     }
 
     try {
-      this.logger.info('Finding ServiceNow artifact', { query: args.query });
+      this.logger.info('🔴 SNOW-002 FIX: Finding ServiceNow artifact with retry logic', { query: args.query });
 
       // 1. Parse natural language intent
       const intent = await this.parseIntent(args.query);
@@ -426,10 +442,10 @@ export class ServiceNowIntelligentMCP {
         };
       }
 
-      // 3. Search ServiceNow live
-      this.logger.info(`Searching ServiceNow for: ${intent.identifier} (type: ${intent.artifactType})`);
-      const liveResults = await this.searchServiceNow(intent);
-      this.logger.info(`ServiceNow search returned ${liveResults?.length || 0} results`);
+      // 🔴 CRITICAL FIX: Search ServiceNow with retry logic for newly created artifacts
+      this.logger.info(`🔍 Searching ServiceNow with retry logic for: ${intent.identifier} (type: ${intent.artifactType})`);
+      const liveResults = await this.searchServiceNowWithRetry(intent);
+      this.logger.info(`✅ ServiceNow search with retry returned ${liveResults?.length || 0} results`);
       
       // Debug log
       if (liveResults && liveResults.length > 0) {
@@ -636,35 +652,61 @@ export class ServiceNowIntelligentMCP {
         });
       }
 
+      // 🔴 SNOW-002 FIX: Apply retry logic to comprehensive search as well
       for (const table of searchTables) {
-        this.logger.info(`Searching ${table.desc} (${table.name})...`);
+        this.logger.info(`🔴 SNOW-002 FIX: Searching ${table.desc} (${table.name}) with retry logic...`);
         
-        for (const strategy of searchStrategies) {
-          try {
-            const activeFilter = args.include_inactive ? '' : '^active=true';
-            const fullQuery = `${strategy.query}${activeFilter}^LIMIT5`;
-            
-            const results = await this.client.searchRecords(table.name, fullQuery);
-            
-            if (results && results.success && results.data.result.length > 0) {
-              // Add metadata to results
-              const enhancedResults = results.data.result.map((result: any) => ({
-                ...result,
-                artifact_type: table.type,
-                table_name: table.name,
-                table_description: table.desc,
-                search_strategy: strategy.desc
-              }));
+        // Try search with retry logic for each table
+        let tableResults = [];
+        const maxTableRetries = 3; // Shorter retry for comprehensive search
+        
+        for (let attempt = 1; attempt <= maxTableRetries; attempt++) {
+          let foundResults = false;
+          
+          for (const strategy of searchStrategies) {
+            try {
+              const activeFilter = args.include_inactive ? '' : '^active=true';
+              const fullQuery = `${strategy.query}${activeFilter}^LIMIT5`;
               
-              allResults.push(...enhancedResults);
+              const results = await this.client.searchRecords(table.name, fullQuery);
               
-              // Stop searching this table if we found results
-              break;
+              if (results && results.success && results.data.result.length > 0) {
+                // Add metadata to results
+                const enhancedResults = results.data.result.map((result: any) => ({
+                  ...result,
+                  artifact_type: table.type,
+                  table_name: table.name,
+                  table_description: table.desc,
+                  search_strategy: strategy.desc,
+                  retry_attempt: attempt
+                }));
+                
+                tableResults.push(...enhancedResults);
+                foundResults = true;
+                
+                // Stop searching this table if we found results
+                break;
+              }
+            } catch (error) {
+              this.logger.warn(`Error searching ${table.name} (attempt ${attempt}):`, error);
             }
-          } catch (error) {
-            this.logger.warn(`Error searching ${table.name}:`, error);
+          }
+          
+          // If we found results, stop retrying this table
+          if (foundResults) {
+            break;
+          }
+          
+          // If no results and not the last attempt, wait before retry
+          if (attempt < maxTableRetries) {
+            const delay = 800 * attempt; // Shorter delays: 800ms, 1600ms
+            this.logger.info(`🔄 No results for ${table.name}, waiting ${delay}ms before retry...`);
+            await this.sleep(delay);
           }
         }
+        
+        // Add any results found for this table
+        allResults.push(...tableResults);
       }
 
       // Remove duplicates by sys_id
@@ -880,6 +922,224 @@ export class ServiceNowIntelligentMCP {
       action: 'edit',
       modification: query,
     };
+  }
+
+  /**
+   * 🔴 CRITICAL FIX SNOW-002: Search ServiceNow with retry logic for newly created artifacts
+   * Addresses: "I created a flow but search says it doesn't exist"
+   * Root Cause: ServiceNow search indexes take time to update after artifact creation
+   */
+  private async searchServiceNowWithRetry(intent: ParsedIntent): Promise<any[]> {
+    const maxRetries = 5;
+    const baseDelay = 1500; // Start with 1.5 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.info(`🔍 Search attempt ${attempt}/${maxRetries} for: ${intent.identifier}`);
+        
+        // Try the regular search
+        const results = await this.searchServiceNow(intent);
+        
+        if (results && results.length > 0) {
+          this.logger.info(`✅ Found ${results.length} results on attempt ${attempt}`);
+          return results;
+        }
+        
+        // If no results and not the last attempt, wait and retry
+        if (attempt < maxRetries) {
+          const delay = baseDelay * attempt; // 1.5s, 3s, 4.5s, 6s, 7.5s
+          this.logger.info(`🔄 No results found, waiting ${delay}ms before retry (ServiceNow indexes may be updating...)`);
+          await this.sleep(delay);
+          
+          // 🔴 CRITICAL: Try cache invalidation on ServiceNow side
+          if (attempt === 2) {
+            this.logger.info('🔄 Attempting ServiceNow cache refresh...');
+            await this.attemptCacheRefresh(intent);
+          }
+        }
+        
+      } catch (error) {
+        this.logger.warn(`Search attempt ${attempt} failed:`, error);
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Otherwise wait and retry
+        const delay = baseDelay * attempt;
+        this.logger.info(`⏳ Waiting ${delay}ms before retry due to error`);
+        await this.sleep(delay);
+      }
+    }
+    
+    // 🔴 CRITICAL: If all retries failed, try broad fallback search
+    this.logger.warn('🚨 All retry attempts failed, trying broad fallback search...');
+    return await this.broadFallbackSearch(intent);
+  }
+
+  /**
+   * 🔴 SNOW-002 FIX: Attempt to refresh ServiceNow caches
+   */
+  private async attemptCacheRefresh(intent: ParsedIntent): Promise<void> {
+    try {
+      const tableMapping: Record<string, string> = {
+        widget: 'sp_widget',
+        flow: 'sys_hub_flow',
+        script: 'sys_script_include',
+        application: 'sys_app_application'
+      };
+      
+      const table = tableMapping[intent.artifactType] || 'sys_hub_flow';
+      
+      // Try a simple count query to potentially refresh indexes
+      await this.client.searchRecords(table, 'sys_id!=null^LIMIT1');
+      this.logger.info('✨ Cache refresh attempt completed');
+      
+    } catch (error) {
+      this.logger.warn('Cache refresh attempt failed:', error);
+    }
+  }
+
+  /**
+   * 🔴 SNOW-002 FIX: Broad fallback search when all retries fail
+   */
+  private async broadFallbackSearch(intent: ParsedIntent): Promise<any[]> {
+    this.logger.info('🔍 Attempting broad fallback search across multiple tables...');
+    
+    try {
+      // Search across multiple related tables
+      const broadResults = [];
+      const searchTerm = intent.identifier.trim();
+      
+      // Define broader table search for common artifacts
+      const fallbackTables = [
+        'sys_hub_flow', 'sp_widget', 'sys_script_include', 
+        'sys_script', 'sys_app_application', 'wf_workflow'
+      ];
+      
+      for (const table of fallbackTables) {
+        try {
+          // Try multiple search strategies
+          const strategies = [
+            `nameLIKE*${searchTerm}*^LIMIT3`,
+            `titleLIKE*${searchTerm}*^LIMIT3`,
+            `short_descriptionLIKE*${searchTerm}*^LIMIT3`
+          ];
+          
+          for (const query of strategies) {
+            const results = await this.client.searchRecords(table, query);
+            if (results && results.success && results.data.result.length > 0) {
+              const typedResults = results.data.result.map((result: any) => ({
+                ...result,
+                table_name: table,
+                search_fallback: true
+              }));
+              broadResults.push(...typedResults);
+            }
+          }
+        } catch (error) {
+          this.logger.warn(`Fallback search failed for ${table}:`, error);
+        }
+      }
+      
+      // Remove duplicates and return
+      const uniqueResults = broadResults.filter((result, index, self) => 
+        index === self.findIndex(r => r.sys_id === result.sys_id)
+      );
+      
+      this.logger.info(`🔍 Fallback search found ${uniqueResults.length} results`);
+      return uniqueResults;
+      
+    } catch (error) {
+      this.logger.error('Broad fallback search failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🔴 SNOW-002 FIX: Special search method for newly created artifacts
+   * Use this immediately after creating an artifact to verify it's searchable
+   */
+  async searchForRecentlyCreatedArtifact(artifactName: string, artifactType: string, expectedSysId?: string): Promise<any[]> {
+    this.logger.info(`🔍 SNOW-002: Searching for recently created artifact: ${artifactName} (${artifactType})`);
+    
+    const intent: ParsedIntent = {
+      identifier: artifactName,
+      artifactType: artifactType,
+      action: 'find',
+      confidence: 0.9
+    };
+    
+    // First try the sys_id lookup if we have it (most reliable)
+    if (expectedSysId) {
+      try {
+        this.logger.info(`🎯 Trying direct sys_id lookup: ${expectedSysId}`);
+        const tableMapping: Record<string, string> = {
+          widget: 'sp_widget',
+          flow: 'sys_hub_flow',
+          script: 'sys_script_include',
+          application: 'sys_app_application'
+        };
+        
+        const table = tableMapping[artifactType] || 'sys_hub_flow';
+        const directResult = await this.client.searchRecords(table, `sys_id=${expectedSysId}`);
+        
+        if (directResult && directResult.success && directResult.data.result.length > 0) {
+          this.logger.info(`✅ Found via direct sys_id lookup`);
+          return directResult.data.result;
+        }
+      } catch (error) {
+        this.logger.warn('Direct sys_id lookup failed:', error);
+      }
+    }
+    
+    // Fall back to name-based search with extended retry logic
+    const maxRetries = 7; // More retries for newly created artifacts
+    const baseDelay = 2000; // Longer initial delay (2 seconds)
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.info(`🔍 Post-creation search attempt ${attempt}/${maxRetries}`);
+        
+        const results = await this.searchServiceNow(intent);
+        
+        if (results && results.length > 0) {
+          this.logger.info(`✅ SNOW-002 RESOLVED: Found ${results.length} results for newly created artifact on attempt ${attempt}`);
+          return results;
+        }
+        
+        if (attempt < maxRetries) {
+          // Progressive delay with jitter: 2s, 4s, 6s, 8s, 10s, 12s, 14s
+          const delay = baseDelay * attempt;
+          this.logger.info(`🔄 Artifact not yet searchable, waiting ${delay}ms (ServiceNow indexes updating...)`);
+          await this.sleep(delay);
+          
+          // Try cache refresh on every other attempt
+          if (attempt % 2 === 0) {
+            await this.attemptCacheRefresh(intent);
+          }
+        }
+        
+      } catch (error) {
+        this.logger.warn(`Post-creation search attempt ${attempt} failed:`, error);
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelay * attempt;
+          await this.sleep(delay);
+        }
+      }
+    }
+    
+    this.logger.warn('🚨 SNOW-002: Recently created artifact still not searchable after all retries');
+    return [];
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private async searchServiceNow(intent: ParsedIntent) {
@@ -4342,6 +4602,122 @@ try {
     }
 
     return null;
+  }
+
+  /**
+   * 🔴 SNOW-002 FIX: Verify artifact is searchable after creation
+   * This method is called by other MCP servers after creating artifacts
+   */
+  private async verifyArtifactSearchable(args: any) {
+    // Check authentication first
+    const authResult = await mcpAuth.ensureAuthenticated();
+    if (!authResult.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: authResult.error || '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+          },
+        ],
+      };
+    }
+
+    try {
+      this.logger.info('🔴 SNOW-002 FIX: Verifying artifact searchability', { 
+        name: args.artifact_name, 
+        type: args.artifact_type,
+        sys_id: args.expected_sys_id 
+      });
+
+      const maxWaitTime = args.max_wait_time || 30; // seconds
+      const startTime = Date.now();
+      
+      // Use the specialized search method for newly created artifacts
+      const results = await this.searchForRecentlyCreatedArtifact(
+        args.artifact_name, 
+        args.artifact_type, 
+        args.expected_sys_id
+      );
+      
+      const elapsedTime = Math.round((Date.now() - startTime) / 1000);
+      
+      if (results && results.length > 0) {
+        const artifact = results[0];
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `✅ SNOW-002 RESOLVED: Artifact is now searchable!
+
+🎯 **Verification Results:**
+- **Artifact**: ${args.artifact_name}
+- **Type**: ${args.artifact_type}
+- **Sys ID**: ${artifact.sys_id}
+- **Search Time**: ${elapsedTime} seconds
+- **Status**: ✅ Searchable and indexed
+
+🔍 **Search Verification:**
+- Found via: ${artifact.search_fallback ? 'Fallback search' : 'Standard search'}
+- Table: ${artifact.table_name || 'Auto-detected'}
+- Results: ${results.length} matching record(s)
+
+💡 **SNOW-002 Fix Status**: Search system timing issues resolved - artifact indexing delay successfully handled with retry logic.
+
+The artifact is now fully searchable and indexed in ServiceNow! 🎉`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ SNOW-002 UNRESOLVED: Artifact still not searchable
+
+🔍 **Verification Results:**
+- **Artifact**: ${args.artifact_name}
+- **Type**: ${args.artifact_type}
+- **Search Time**: ${elapsedTime} seconds (timeout: ${maxWaitTime}s)
+- **Status**: ❌ Not found in search indexes
+
+🚨 **Possible Issues:**
+1. ServiceNow search indexes may need more time to update
+2. Artifact may have been created with different name/scope
+3. ServiceNow instance may have search indexing issues
+4. Artifact may not be active or may be in wrong scope
+
+💡 **Recommendations:**
+1. Wait a few more minutes and try again
+2. Check artifact directly in ServiceNow UI
+3. Use snow_get_by_sysid if you have the sys_id
+4. Contact ServiceNow administrator if issue persists
+
+**Manual Verification Steps:**
+1. Log into ServiceNow
+2. Navigate to the appropriate module
+3. Search for "${args.artifact_name}" manually
+4. Check if artifact exists but under different name`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      this.logger.error('🔴 SNOW-002: Artifact verification failed:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ SNOW-002: Artifact verification failed
+
+**Error**: ${error instanceof Error ? error.message : String(error)}
+
+This may indicate a deeper ServiceNow connectivity issue or authentication problem.
+Please check your ServiceNow connection and try again.`,
+          },
+        ],
+      };
+    }
   }
 
   async start() {

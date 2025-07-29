@@ -154,30 +154,12 @@ export class ServiceNowClient {
       async (error) => {
         const originalRequest = error.config;
         
-        // Check if this is a 401 error and we haven't already tried to refresh
+        // 🔴 SNOW-003 FIX: Prevent token refresh race conditions
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           
-          this.logger.info('🔄 Received 401 error, attempting token refresh...');
-          const refreshResult = await this.oauth.refreshAccessToken();
-          
-          if (refreshResult.success && refreshResult.accessToken) {
-            this.logger.info('✅ Token refreshed successfully, retrying request...');
-            
-            // Update local credentials
-            if (this.credentials) {
-              this.credentials.accessToken = refreshResult.accessToken;
-            }
-            
-            // Update the authorization header with new token
-            originalRequest.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`;
-            
-            // Retry the original request
-            return this.client.request(originalRequest);
-          } else {
-            console.error('❌ Token refresh failed:', refreshResult.error);
-            this.logger.warn('💡 Please run "snow-flow auth login" to re-authenticate');
-          }
+          // 🔴 CRITICAL: Use singleton token refresh to prevent multiple concurrent refreshes
+          return this.handleTokenRefreshWithLock(originalRequest);
         }
         
         // Log other errors for debugging
@@ -197,6 +179,97 @@ export class ServiceNowClient {
    */
   public get credentialsInstance(): ServiceNowCredentials | null {
     return this.credentials;
+  }
+
+  // 🔴 SNOW-003 FIX: Token refresh synchronization to prevent race conditions
+  private tokenRefreshPromise: Promise<any> | null = null;
+  private lastTokenRefresh: number = 0;
+
+  /**
+   * 🔴 SNOW-003 FIX: Handle token refresh with locking to prevent concurrent refreshes
+   * This prevents cascade failures caused by multiple simultaneous token refresh attempts
+   */
+  private async handleTokenRefreshWithLock(originalRequest: any): Promise<any> {
+    const now = Date.now();
+    
+    // 🔴 CRITICAL: If another refresh is in progress, wait for it
+    if (this.tokenRefreshPromise) {
+      this.logger.info('🔄 Token refresh already in progress, waiting...');
+      try {
+        await this.tokenRefreshPromise;
+        
+        // After waiting, check if we have valid credentials now
+        if (this.credentials?.accessToken) {
+          this.logger.info('✅ Using refreshed token from concurrent refresh');
+          originalRequest.headers['Authorization'] = `Bearer ${this.credentials.accessToken}`;
+          return this.client.request(originalRequest);
+        }
+      } catch (error) {
+        this.logger.warn('Concurrent token refresh failed:', error);
+      }
+    }
+    
+    // 🔴 CRITICAL: Rate limit token refresh to prevent excessive API calls
+    if (now - this.lastTokenRefresh < 5000) { // 5 second rate limit
+      this.logger.warn('⚠️ Token refresh rate limited - too many attempts');
+      throw new Error('Token refresh rate limited. Please wait before retrying.');
+    }
+    
+    // 🔴 CRITICAL: Create new refresh promise with timeout and error handling
+    this.tokenRefreshPromise = this.performTokenRefreshWithTimeout();
+    this.lastTokenRefresh = now;
+    
+    try {
+      this.logger.info('🔄 Starting token refresh process...');
+      const refreshResult = await this.tokenRefreshPromise;
+      
+      if (refreshResult.success && refreshResult.accessToken) {
+        this.logger.info('✅ Token refreshed successfully, retrying original request...');
+        
+        // Update local credentials
+        if (this.credentials) {
+          this.credentials.accessToken = refreshResult.accessToken;
+          this.credentials.expiresAt = refreshResult.expiresAt;
+        }
+        
+        // Update the authorization header with new token
+        originalRequest.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`;
+        
+        // Clear the promise since we're done
+        this.tokenRefreshPromise = null;
+        
+        // Retry the original request
+        return this.client.request(originalRequest);
+      } else {
+        // Clear the promise on failure
+        this.tokenRefreshPromise = null;
+        
+        const errorMsg = `Token refresh failed: ${refreshResult.error || 'Unknown error'}`;
+        this.logger.error('❌ ' + errorMsg);
+        console.error('💡 Please run "snow-flow auth login" to re-authenticate');
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      // Clear the promise on any error
+      this.tokenRefreshPromise = null;
+      
+      this.logger.error('🔴 Token refresh process failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔴 SNOW-003 FIX: Token refresh with timeout to prevent hanging requests
+   */
+  private async performTokenRefreshWithTimeout(): Promise<any> {
+    const timeout = 15000; // 15 second timeout for token refresh
+    
+    return Promise.race([
+      this.oauth.refreshAccessToken(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token refresh timeout')), timeout)
+      ),
+    ]);
   }
 
   /**

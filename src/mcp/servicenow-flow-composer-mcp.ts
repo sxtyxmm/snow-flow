@@ -402,6 +402,8 @@ class ServiceNowFlowComposerMCP {
 
       // 🧠 STEP 5: Deploy using XML-first approach for maximum reliability
       let deploymentResult = null;
+      let xmlResult: any = null;  // 🔴 FIX: Declare outside try block to avoid scope issues
+      
       if (args.deploy_immediately !== false) {
         console.log('🚀 DEPLOYING flow using XML-first approach...');
         
@@ -417,51 +419,38 @@ class ServiceNowFlowComposerMCP {
             trigger_type: this.mapTriggerTypeToXML(parsedIntent.trigger.type),
             trigger_condition: parsedIntent.trigger.condition || '',
             activities: this.convertActivitiesToXML(flowDefinition.activities || []),
-            run_as: 'user',
-            accessible_from: 'package_private'
+            run_as: 'user' as 'user',
+            accessible_from: 'package_private' as 'package_private'
           };
           
           // Generate production-ready XML
-          const xmlResult = generateProductionFlowXML(xmlFlowDef);
+          xmlResult = generateProductionFlowXML(xmlFlowDef);
           console.log('✅ XML generated:', xmlResult.filePath);
           
-          // Auto-deploy with fallback strategies
+          // 🔴 CRITICAL FIX: Auto-deploy with INTEGRATED verification
+          // SNOW-001: Verification is now MANDATORY within each deployment strategy
           const deployResult = await this.deployWithFallback(xmlResult.filePath, flowDefinition);
           
-          // Comprehensive deployment verification
-          const verification = await this.verifyFlowInServiceNow(parsedIntent.flowName);
+          // 🔴 FIXED: No duplicate verification needed - it's integrated into deployment strategies
+          // deployResult.verification contains the comprehensive verification results
           
-          if (!verification.verified) {
-            // Deployment claimed success but flow not found - this is the critical bug!
-            const errorMsg = `Flow deployment reported success but verification failed: ${verification.reason}`;
-            
-            // Log detailed verification results for debugging
-            this.logger.error('CRITICAL: False positive deployment detected', {
-              flowName: parsedIntent.flowName,
-              verificationAttempts: verification.attempts,
-              partialResults: verification.partial_results,
-              searchQuery: verification.search_query,
-              error: verification.error
-            });
-            
-            throw new Error(errorMsg);
-          }
-          
-          // Success with comprehensive verification
+          // Success with integrated verification
           deploymentResult = {
             success: true,
             method: deployResult.strategy,
             xml_file: xmlResult.filePath,
             message: `✅ Flow deployed via ${deployResult.strategy} and verified in ServiceNow!`,
-            flow_sys_id: verification.sys_id,
-            flow_url: verification.url,
-            verification_score: verification.completeness_score,
+            flow_sys_id: deployResult.verification.sys_id,
+            flow_url: deployResult.verification.url,
+            verification_score: deployResult.verification.completeness_score,
             verification_details: {
               has_flow: true,
-              has_snapshot: verification.has_snapshot,
-              has_trigger: verification.has_trigger,
-              attempts_needed: verification.verification_attempt
-            }
+              has_snapshot: deployResult.verification.has_snapshot,
+              has_trigger: deployResult.verification.has_trigger,
+              attempts_needed: deployResult.verification.verification_attempt,
+              deployment_verified: deployResult.deployment_verified
+            },
+            snow_001_fix: 'Deployment includes mandatory verification - no false positives possible'
           };
           
         } catch (xmlError) {
@@ -482,7 +471,7 @@ class ServiceNowFlowComposerMCP {
           deploymentResult = {
             success: false,
             error: errorDetails,
-            xml_generated: true,
+            xml_generated: xmlResult !== null,  // 🔴 FIX: Check if XML was actually generated
             xml_path: xmlResult?.filePath,
             deployment_failed: true,
             manual_steps: this.generateManualImportGuide(xmlResult?.filePath || ''),
@@ -2383,17 +2372,19 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
   }
 
   /**
-   * Deploy with fallback strategies
+   * Deploy with fallback strategies + MANDATORY VERIFICATION
+   * 🔴 CRITICAL FIX: SNOW-001 Silent Deployment Failures
+   * Each strategy now MUST verify that the flow actually exists before claiming success
    */
   private async deployWithFallback(xmlFilePath: string, flowDefinition: any): Promise<any> {
     const strategies = [
       {
         name: 'XML Remote Update Set',
-        fn: async () => await this.deployXMLToServiceNow(xmlFilePath)
+        fn: async () => await this.deployXMLToServiceNowWithVerification(xmlFilePath, flowDefinition.name)
       },
       {
         name: 'Direct Table API',
-        fn: async () => await this.deployViaTableAPI(flowDefinition)
+        fn: async () => await this.deployViaTableAPIWithVerification(flowDefinition)
       }
     ];
     
@@ -2402,7 +2393,19 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
       try {
         this.logger.info(`Trying deployment strategy: ${strategy.name}`);
         const result = await strategy.fn();
-        return { success: true, strategy: strategy.name, result };
+        
+        // 🔴 CRITICAL: Strategy can only return if it includes verification proof
+        if (!result.verification || !result.verification.verified) {
+          throw new Error(`${strategy.name} completed but verification failed: ${result.verification?.reason || 'Unknown verification failure'}`);
+        }
+        
+        return { 
+          success: true, 
+          strategy: strategy.name, 
+          result,
+          verification: result.verification,
+          deployment_verified: true
+        };
       } catch (error) {
         this.logger.warn(`Strategy ${strategy.name} failed:`, error);
         lastError = error;
@@ -2413,7 +2416,75 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
   }
   
   /**
-   * Deploy via direct table API
+   * 🔴 CRITICAL FIX: Deploy XML with MANDATORY verification
+   * SNOW-001: Prevents false positive where XML import succeeds but flow doesn't exist
+   */
+  private async deployXMLToServiceNowWithVerification(xmlFilePath: string, flowName: string): Promise<any> {
+    this.logger.info(`🔴 CRITICAL FIX: XML deployment with mandatory verification for: ${flowName}`);
+    
+    // Step 1: Deploy the XML (existing logic)
+    await this.deployXMLToServiceNow(xmlFilePath);
+    
+    // Step 2: MANDATORY verification - wait for ServiceNow to process
+    this.logger.info('🔍 Starting mandatory post-deployment verification...');
+    const verification = await this.verifyFlowInServiceNow(flowName);
+    
+    if (!verification.verified) {
+      // 🔴 CRITICAL: XML deployment succeeded but flow doesn't exist
+      const errorMsg = `🔴 CRITICAL: XML deployment appeared to succeed but flow verification failed: ${verification.reason}`;
+      this.logger.error('SNOW-001 detected: Silent deployment failure', {
+        xmlFilePath,
+        flowName,
+        verificationResult: verification,
+        issue: 'XML import/commit succeeded but no flow created'
+      });
+      throw new Error(errorMsg);
+    }
+    
+    this.logger.info(`✅ XML deployment verified successfully: ${flowName} found with sys_id ${verification.sys_id}`);
+    return {
+      deployment_method: 'XML Remote Update Set',
+      xml_file: xmlFilePath,
+      verification: verification,
+      success_message: `XML deployment completed and verified: Flow ${flowName} is live in ServiceNow`
+    };
+  }
+
+  /**
+   * 🔴 CRITICAL FIX: Deploy via Table API with MANDATORY verification
+   * SNOW-001: Prevents false positive where API call succeeds but flow doesn't exist
+   */
+  private async deployViaTableAPIWithVerification(flowDefinition: any): Promise<any> {
+    this.logger.info(`🔴 CRITICAL FIX: Table API deployment with mandatory verification for: ${flowDefinition.name}`);
+    
+    // Step 1: Deploy via Table API (existing logic)
+    await this.deployViaTableAPI(flowDefinition);
+    
+    // Step 2: MANDATORY verification
+    this.logger.info('🔍 Starting mandatory post-deployment verification...');
+    const verification = await this.verifyFlowInServiceNow(flowDefinition.name);
+    
+    if (!verification.verified) {
+      // 🔴 CRITICAL: Table API deployment succeeded but flow doesn't exist
+      const errorMsg = `🔴 CRITICAL: Table API deployment appeared to succeed but flow verification failed: ${verification.reason}`;
+      this.logger.error('SNOW-001 detected: Silent deployment failure', {
+        flowName: flowDefinition.name,
+        verificationResult: verification,
+        issue: 'Table API call succeeded but no flow created'
+      });
+      throw new Error(errorMsg);
+    }
+    
+    this.logger.info(`✅ Table API deployment verified successfully: ${flowDefinition.name} found with sys_id ${verification.sys_id}`);
+    return {
+      deployment_method: 'Direct Table API',
+      verification: verification,
+      success_message: `Table API deployment completed and verified: Flow ${flowDefinition.name} is live in ServiceNow`
+    };
+  }
+
+  /**
+   * Deploy via direct table API (LEGACY METHOD - used by new verified method)
    */
   private async deployViaTableAPI(flowDefinition: any): Promise<void> {
     const ServiceNowClient = (await import('../utils/servicenow-client.js')).ServiceNowClient;

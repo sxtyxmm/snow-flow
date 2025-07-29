@@ -540,7 +540,7 @@ export class ServiceNowSecurityComplianceMCP extends BaseMCPServer {
   }
 
   private async handleSnowAuditTrailAnalysis(args: any): Promise<ToolResult> {
-    const startTime = Date.now();
+    const executionStartTime = Date.now(); // 🔴 SNOW-004 FIX: Rename to avoid variable shadowing
     try {
       // Build query for audit records
       let query = '';
@@ -548,22 +548,22 @@ export class ServiceNowSecurityComplianceMCP extends BaseMCPServer {
       
       // Convert timeframe to datetime
       const now = new Date();
-      let startTime: Date;
+      let queryStartTime: Date; // 🔴 SNOW-004 FIX: Rename to avoid confusion
       switch (timeframe) {
         case '24h':
-          startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          queryStartTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
           break;
         case '7d':
-          startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          queryStartTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           break;
         case '30d':
-          startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          queryStartTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           break;
         default:
-          startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          queryStartTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
 
-      query = `sys_created_on>=${startTime.toISOString()}`;
+      query = `sys_created_on>=${queryStartTime.toISOString()}`;
       
       if (args.table) {
         query += `^tablename=${args.table}`;
@@ -586,13 +586,13 @@ export class ServiceNowSecurityComplianceMCP extends BaseMCPServer {
       return {
         success: true,
         result: analysisResult,
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - executionStartTime
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to analyze audit trail',
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - executionStartTime
       };
     }
   }
