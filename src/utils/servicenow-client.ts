@@ -115,7 +115,7 @@ export class ServiceNowClient {
         
         return new Error(`Certificate hostname mismatch: ${hostname} not allowed`);
       },
-      secureProtocol: 'TLSv1_2_method', // Enforce TLS 1.2 minimum
+      // secureProtocol removed to avoid conflict with minVersion/maxVersion
       ciphers: [
         'ECDHE-RSA-AES128-GCM-SHA256',
         'ECDHE-RSA-AES256-GCM-SHA384',

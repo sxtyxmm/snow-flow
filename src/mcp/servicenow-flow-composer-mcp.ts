@@ -16,6 +16,7 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
 import { FlowDefinition, convertToFlowDefinition } from '../utils/flow-structure-builder.js';
+import { EnhancedFlowComposer } from '../orchestrator/flow-composer.js';
 
 // Define FlowInstruction interface to match EnhancedFlowComposer output
 interface FlowInstruction {
@@ -95,6 +96,7 @@ class ServiceNowFlowComposerMCP {
   private client: ServiceNowClient;
   private oauth: ServiceNowOAuth;
   private logger: Logger;
+  private composer: EnhancedFlowComposer;
 
   constructor() {
     this.server = new Server(
@@ -112,6 +114,7 @@ class ServiceNowFlowComposerMCP {
     this.client = new ServiceNowClient();
     this.oauth = new ServiceNowOAuth();
     this.logger = new Logger('ServiceNowFlowComposerMCP');
+    this.composer = new EnhancedFlowComposer();
 
     this.setupHandlers();
   }

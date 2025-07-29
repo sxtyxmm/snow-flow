@@ -22,6 +22,7 @@ import { join } from 'path';
 import { SelfDocumentingSystem } from '../documentation/self-documenting-system.js';
 import { CostOptimizationEngine } from '../optimization/cost-optimization-engine.js';
 import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system.js';
+import { SelfHealingSystem } from '../healing/self-healing-system.js';
 import { MemorySystem } from '../memory/memory-system.js';
 
 interface ParsedIntent {
