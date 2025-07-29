@@ -98,7 +98,7 @@ export function generateFlowComponents(
     type: 'flow',
     status: 'published',
     active: true,
-    run_as: 'system',
+    run_as: 'user',    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
     sys_class_name: 'sys_hub_flow',
     table: flowDefinition.table,
     category: 'custom',

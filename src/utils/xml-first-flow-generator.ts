@@ -477,6 +477,13 @@ export class XMLFirstFlowGenerator {
   }
 
   /**
+   * Generate complete Flow XML - alias for backward compatibility
+   */
+  generateCompleteFlowXML(flowDef: XMLFlowDefinition): string {
+    return this.generateFlowUpdateSetXML(flowDef);
+  }
+
+  /**
    * Save XML to file
    */
   saveToFile(xml: string, filename?: string): string {

@@ -19,6 +19,10 @@ import { Logger } from '../utils/logger.js';
 import { widgetTemplateGenerator } from '../utils/widget-template-generator.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { SelfDocumentingSystem } from '../documentation/self-documenting-system.js';
+import { CostOptimizationEngine } from '../optimization/cost-optimization-engine.js';
+import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system.js';
+import { MemorySystem } from '../memory/memory-system.js';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';
@@ -49,6 +53,11 @@ export class ServiceNowIntelligentMCP {
   private logger: Logger;
   private memoryPath: string;
   private config: ReturnType<typeof mcpConfig.getMemoryConfig>;
+  private documentationSystem: SelfDocumentingSystem;
+  private costOptimizationEngine: CostOptimizationEngine;
+  private complianceSystem: AdvancedComplianceSystem;
+  private selfHealingSystem: SelfHealingSystem;
+  private memorySystem: MemorySystem;
 
   constructor() {
     this.server = new Server(
@@ -67,6 +76,13 @@ export class ServiceNowIntelligentMCP {
     this.logger = new Logger('ServiceNowIntelligentMCP');
     this.config = mcpConfig.getMemoryConfig();
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
+    
+    // Initialize autonomous systems
+    this.memorySystem = new MemorySystem();
+    this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
+    this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
+    this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
+    this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
 
     this.setupHandlers();
   }
@@ -347,6 +363,185 @@ export class ServiceNowIntelligentMCP {
             required: ['artifact_name', 'artifact_type'],
           },
         },
+        {
+          name: 'snow_generate_documentation',
+          description: '📚 SELF-DOCUMENTING SYSTEM - Automatically generate comprehensive documentation from code, flows, and system behavior without manual intervention.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              scope: { type: 'string', enum: ['full', 'partial', 'incremental'], default: 'full', description: 'Documentation scope' },
+              components: { type: 'array', items: { type: 'string' }, description: 'Specific components to document' },
+              format: { type: 'string', enum: ['markdown', 'html', 'pdf'], default: 'markdown', description: 'Output format' },
+              include_diagrams: { type: 'boolean', default: true, description: 'Include system diagrams' },
+              include_examples: { type: 'boolean', default: true, description: 'Include code examples' },
+            },
+          },
+        },
+        {
+          name: 'snow_documentation_suggestions',
+          description: '💡 Get intelligent documentation improvement suggestions based on current system state and best practices.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              profile_id: { type: 'string', description: 'Documentation profile ID (optional - uses latest if not provided)' },
+            },
+          },
+        },
+        {
+          name: 'snow_start_continuous_documentation',
+          description: '🔄 Start autonomous continuous documentation that monitors changes and updates documentation automatically.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              interval: { type: 'number', description: 'Update interval in milliseconds (default: 1 hour)' },
+              scope: { type: 'array', items: { type: 'string' }, description: 'Components to monitor' },
+              auto_commit: { type: 'boolean', default: false, description: 'Automatically commit documentation changes' },
+            },
+          },
+        },
+        {
+          name: 'snow_analyze_costs',
+          description: '💰 COST OPTIMIZATION ENGINE - Analyze AI usage costs and generate autonomous optimization recommendations.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              scope: { type: 'string', enum: ['all', 'service', 'agent', 'operation'], default: 'all', description: 'Analysis scope' },
+              target_reduction: { type: 'number', description: 'Target cost reduction percentage' },
+              auto_implement: { type: 'boolean', default: false, description: 'Automatically implement optimizations' },
+              testing_enabled: { type: 'boolean', default: true, description: 'Test optimizations before implementing' },
+            },
+          },
+        },
+        {
+          name: 'snow_cost_dashboard',
+          description: '📊 Get real-time cost optimization dashboard with current spending, savings, and recommendations.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'snow_start_autonomous_cost_optimization',
+          description: '🤖 Start autonomous cost monitoring and optimization that automatically implements cost-saving strategies.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              target_savings: { type: 'number', description: 'Target savings percentage' },
+              check_interval: { type: 'number', description: 'Check interval in milliseconds' },
+              auto_implement_threshold: { type: 'number', description: 'Minimum savings to auto-implement ($)' },
+            },
+          },
+        },
+        {
+          name: 'snow_implement_cost_optimization',
+          description: '🔧 Manually implement a specific cost optimization recommendation.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              optimization_id: { type: 'string', description: 'Optimization ID to implement' },
+              test_first: { type: 'boolean', default: true, description: 'Test before implementing' },
+              rollback_on_failure: { type: 'boolean', default: true, description: 'Auto-rollback on failure' },
+            },
+            required: ['optimization_id'],
+          },
+        },
+        {
+          name: 'snow_assess_compliance',
+          description: '🔐 ADVANCED COMPLIANCE SYSTEM - Perform comprehensive compliance assessment across multiple frameworks.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              frameworks: { type: 'array', items: { type: 'string' }, description: 'Compliance frameworks to assess (SOX, GDPR, HIPAA, etc.)' },
+              scope: { type: 'string', enum: ['full', 'incremental', 'specific-controls'], default: 'full', description: 'Assessment scope' },
+              include_evidence: { type: 'boolean', default: true, description: 'Include compliance evidence' },
+              auto_remediate: { type: 'boolean', default: false, description: 'Automatically remediate violations' },
+              generate_report: { type: 'boolean', default: false, description: 'Generate compliance report' },
+            },
+          },
+        },
+        {
+          name: 'snow_compliance_dashboard',
+          description: '📊 Get real-time compliance dashboard with status, violations, and certifications.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'snow_start_compliance_monitoring',
+          description: '🔄 Start continuous compliance monitoring with automatic violation detection and remediation.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              frameworks: { type: 'array', items: { type: 'string' }, description: 'Frameworks to monitor' },
+              check_interval: { type: 'number', description: 'Check interval in milliseconds' },
+              auto_remediate: { type: 'boolean', default: false, description: 'Enable auto-remediation' },
+              alert_threshold: { type: 'string', description: 'Alert threshold level' },
+            },
+          },
+        },
+        {
+          name: 'snow_execute_corrective_action',
+          description: '🔧 Execute a specific corrective action for compliance violations.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              action_id: { type: 'string', description: 'Corrective action ID' },
+              verify_first: { type: 'boolean', default: true, description: 'Verify safety before execution' },
+              generate_evidence: { type: 'boolean', default: true, description: 'Generate compliance evidence' },
+            },
+            required: ['action_id'],
+          },
+        },
+        {
+          name: 'snow_health_check',
+          description: '🏥 SELF-HEALING SYSTEM - Perform comprehensive system health check with autonomous error detection and healing.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              scope: { type: 'string', enum: ['full', 'incremental', 'specific-services'], default: 'full', description: 'Health check scope' },
+              services: { type: 'array', items: { type: 'string' }, description: 'Specific services to check' },
+              auto_heal: { type: 'boolean', default: false, description: 'Automatically heal detected issues' },
+              predictive: { type: 'boolean', default: true, description: 'Generate health predictions' },
+              learning: { type: 'boolean', default: true, description: 'Enable learning from patterns' },
+            },
+          },
+        },
+        {
+          name: 'snow_health_dashboard',
+          description: '📊 Get real-time system health dashboard with incidents, metrics, and predictions.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'snow_start_autonomous_healing',
+          description: '🤖 Start autonomous self-healing that continuously monitors and repairs system issues automatically.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              check_interval: { type: 'number', description: 'Health check interval in milliseconds' },
+              healing_threshold: { type: 'number', description: 'Confidence threshold for auto-healing (0-1)' },
+              max_retries: { type: 'number', description: 'Maximum healing retry attempts' },
+              preventive: { type: 'boolean', default: true, description: 'Enable preventive healing' },
+            },
+          },
+        },
+        {
+          name: 'snow_execute_healing_action',
+          description: '💊 Manually execute a specific healing action for system recovery.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              action_id: { type: 'string', description: 'Healing action ID' },
+              verify: { type: 'boolean', default: true, description: 'Verify safety before execution' },
+              monitor: { type: 'boolean', default: true, description: 'Monitor healing progress' },
+              rollback_on_failure: { type: 'boolean', default: true, description: 'Auto-rollback on failure' },
+            },
+            required: ['action_id'],
+          },
+        },
       ],
     }));
 
@@ -395,6 +590,12 @@ export class ServiceNowIntelligentMCP {
             return await this.comprehensiveFlowTest(args);
           case 'snow_verify_artifact_searchable':
             return await this.verifyArtifactSearchable(args);
+          case 'snow_generate_documentation':
+            return await this.generateDocumentation(args);
+          case 'snow_documentation_suggestions':
+            return await this.getDocumentationSuggestions(args);
+          case 'snow_start_continuous_documentation':
+            return await this.startContinuousDocumentation(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -3885,6 +4086,21 @@ export class ServiceNowIntelligentMCP {
     } = args;
 
     try {
+      // 🔧 TEST-001 FIX: Validate sys_id before proceeding
+      if (!flow_sys_id || flow_sys_id === 'id' || flow_sys_id === 'flow_id' || flow_sys_id.length < 32) {
+        return { 
+          content: [{ 
+            type: 'text', 
+            text: `❌ TEST-001 FIX: Invalid flow_sys_id provided: "${flow_sys_id}"\n\n` +
+                  `🔧 Valid ServiceNow sys_ids are 32-character hex strings.\n` + 
+                  `💡 To test a flow:\n` +
+                  `   1. First create a flow using snow_create_flow\n` +
+                  `   2. Use the returned sys_id for testing\n` +
+                  `   3. Example: snow_comprehensive_flow_test({ flow_sys_id: "actual_32_char_sys_id" })\n\n` +
+                  `🎯 Alternative: Use snow_test_flow_with_mock for mock testing without requiring a real sys_id.`
+          }] 
+        };
+      }
       const testResults: any = {
         flow_sys_id,
         test_session_id: `test_${Date.now()}`,
@@ -4608,6 +4824,153 @@ try {
    * 🔴 SNOW-002 FIX: Verify artifact is searchable after creation
    * This method is called by other MCP servers after creating artifacts
    */
+  private async generateDocumentation(args: any) {
+    try {
+      this.logger.info('📚 Generating autonomous documentation', args);
+      
+      const result = await this.documentationSystem.generateDocumentation({
+        scope: args.scope || 'full',
+        components: args.components,
+        format: args.format || 'markdown',
+        includePrivate: false,
+        includeDiagrams: args.include_diagrams !== false,
+        includeExamples: args.include_examples !== false,
+      });
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Documentation generated successfully!
+
+📊 Summary:
+- Quality Score: ${result.profile.analytics.qualityScore}/100
+- Completeness: ${result.profile.analytics.completeness}%
+- Sections: ${result.profile.sections.length}
+- Diagrams: ${result.profile.diagrams.length}
+- APIs Documented: ${result.profile.apiDocumentation.length}
+
+📁 Output: ${result.outputPath || 'Generated in memory'}
+
+⚠️ Warnings: ${result.warnings.length > 0 ? result.warnings.join('\n') : 'None'}
+
+💡 Suggestions:
+${result.suggestions.map(s => `- ${s}`).join('\n')}`,
+          },
+        ],
+      };
+    } catch (error) {
+      this.logger.error('❌ Documentation generation failed', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Documentation generation failed: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+
+  private async getDocumentationSuggestions(args: any) {
+    try {
+      this.logger.info('💡 Getting documentation suggestions', args);
+      
+      // Get latest profile if not specified
+      let profileId = args.profile_id;
+      if (!profileId) {
+        const profiles = this.documentationSystem.getDocumentationProfiles();
+        if (profiles.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: '⚠️ No documentation profiles found. Please generate documentation first using snow_generate_documentation.',
+              },
+            ],
+          };
+        }
+        profileId = profiles[0].id;
+      }
+      
+      const suggestions = await this.documentationSystem.suggestDocumentationImprovements(profileId);
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `📊 Documentation Improvement Suggestions
+
+Priority: ${suggestions.priority.toUpperCase()}
+Estimated Time: ${suggestions.estimatedTime} minutes
+
+📋 Suggestions:
+${suggestions.suggestions.map((s, i) => `
+${i + 1}. ${s.title} (${s.impact} impact, ${s.effort} effort)
+   ${s.description}
+   Components: ${s.components.join(', ')}
+   ${s.automated ? '✅ Can be automated' : '⚠️ Manual intervention required'}`).join('\n')}`,
+          },
+        ],
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to get documentation suggestions', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Failed to get suggestions: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+
+  private async startContinuousDocumentation(args: any) {
+    try {
+      this.logger.info('🔄 Starting continuous documentation', args);
+      
+      await this.documentationSystem.startContinuousDocumentation({
+        interval: args.interval,
+        scope: args.scope,
+        autoCommit: args.auto_commit || false,
+      });
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Continuous documentation started!
+
+🔄 Configuration:
+- Update Interval: ${args.interval ? `${args.interval / 1000 / 60} minutes` : '60 minutes (default)'}
+- Monitored Components: ${args.scope ? args.scope.join(', ') : 'All components'}
+- Auto-commit: ${args.auto_commit ? 'Enabled' : 'Disabled'}
+
+📝 The system will now automatically:
+- Monitor for changes
+- Update documentation incrementally
+- Generate diagrams for new components
+- Track API changes
+- Maintain change logs
+
+Use snow_generate_documentation to manually trigger a full update at any time.`,
+          },
+        ],
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to start continuous documentation', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Failed to start continuous documentation: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+
   private async verifyArtifactSearchable(args: any) {
     // Check authentication first
     const authResult = await mcpAuth.ensureAuthenticated();

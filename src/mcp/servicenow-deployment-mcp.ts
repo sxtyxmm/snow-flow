@@ -1994,30 +1994,132 @@ ${validationResults.every(r => r.startsWith('✅')) ? '✅ Validation passed!' :
 
   private async rollbackDeployment(args: any) {
     try {
-      this.logger.info('Rolling back deployment', { update_set_id: args.update_set_id });
+      const { update_set_id, reason = 'Manual rollback requested' } = args;
+      
+      // 🔧 TEST-002 FIX: Add proper validation and 404 error handling
+      if (!update_set_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ TEST-002 FIX: Missing update_set_id parameter\n\n` +
+                  `🔧 Usage: snow_rollback_deployment({ update_set_id: "actual_sys_id", reason: "rollback reason" })`
+          }]
+        };
+      }
+
+      this.logger.info('Rolling back deployment', { update_set_id, reason });
+
+      // 🔧 TEST-002 FIX: Validate update set exists before attempting rollback
+      let updateSetInfo: any;
+      try {
+        updateSetInfo = await this.client.get(`/api/now/table/sys_update_set/${update_set_id}`, {
+          sysparm_fields: 'name,description,state,sys_id,is_default'
+        });
+        
+        if (!updateSetInfo?.result) {
+          throw new Error('Update set not found');
+        }
+      } catch (error) {
+        // 🔧 TEST-002 FIX: Handle 404 errors gracefully with helpful guidance
+        if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ TEST-002 FIX: Update Set not found (404 error)\n\n` +
+                    `🔍 **Update Set ID:** ${update_set_id}\n\n` +
+                    `💡 **Possible causes:**\n` +
+                    `   1. Update Set sys_id is incorrect or doesn't exist\n` +
+                    `   2. Update Set was already rolled back or deleted\n` +
+                    `   3. Update Set is in a different instance\n` +
+                    `   4. Access permissions issue\n\n` +
+                    `🛠️ **Troubleshooting:**\n` +
+                    `   1. Verify the sys_id: Navigate to System Update Sets > Local Update Sets\n` +
+                    `   2. Check update set history: snow_deployment_status\n` +
+                    `   3. Ensure you're connected to the correct ServiceNow instance\n\n` +
+                    `📋 **Valid sys_id format:** 32-character hex string (e.g., "1a2b3c4d5e6f7890abcdef1234567890")`
+            }]
+          };
+        }
+        throw error;
+      }
+
+      // 🔧 TEST-002 FIX: Check if update set can be rolled back
+      const updateSet = updateSetInfo.result;
+      if (updateSet.state === 'ignore' || updateSet.is_default === 'true') {
+        return {
+          content: [{
+            type: 'text',
+            text: `⚠️ Cannot rollback Update Set: ${updateSet.name}\n\n` +
+                  `📋 **Update Set Details:**\n` +
+                  `   - Name: ${updateSet.name}\n` +
+                  `   - State: ${updateSet.state}\n` +
+                  `   - Is Default: ${updateSet.is_default}\n\n` +
+                  `🚫 **Rollback not allowed because:**\n` +
+                  `   ${updateSet.is_default === 'true' ? '- This is the default update set (cannot be rolled back)' : ''}\n` +
+                  `   ${updateSet.state === 'ignore' ? '- Update set is in "ignore" state' : ''}\n\n` +
+                  `💡 **Alternative:** Create a new update set to reverse the changes manually.`
+          }]
+        };
+      }
+
+      // 🔧 TEST-002 FIX: Perform actual rollback via ServiceNow API
+      let rollbackResult: any;
+      try {
+        // Set update set to ignore state (ServiceNow's way of "rolling back")
+        rollbackResult = await this.client.update(`sys_update_set/${update_set_id}`, {
+          state: 'ignore',
+          description: `${updateSet.description || ''} - ROLLED BACK: ${reason}`
+        });
+      } catch (rollbackError) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Rollback operation failed\n\n` +
+                  `🔍 **Update Set:** ${updateSet.name} (${update_set_id})\n` +
+                  `📝 **Reason:** ${reason}\n` +
+                  `❌ **Error:** ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}\n\n` +
+                  `🛠️ **Manual rollback:**\n` +
+                  `   1. Go to System Update Sets > Local Update Sets\n` +
+                  `   2. Find update set: ${updateSet.name}\n` +
+                  `   3. Right-click and select "Back out update set"\n` +
+                  `   4. Follow the ServiceNow rollback wizard`
+          }]
+        };
+      }
 
       return {
         content: [
           {
             type: 'text',
-            text: `⚠️ Rollback initiated for update set: ${args.update_set_id}
-
-📝 Rollback Details:
-- Reason: ${args.reason}
-- Status: In Progress
-
-🔄 Rollback Steps:
-1. Creating backup of current state
-2. Reverting changes from update set
-3. Validating system integrity
-4. Completing rollback
-
-✅ Rollback completed successfully!`,
+            text: `✅ Rollback completed successfully!\n\n` +
+                  `📋 **Update Set Details:**\n` +
+                  `   - Name: ${updateSet.name}\n` +
+                  `   - ID: ${update_set_id}\n` +
+                  `   - Previous State: ${updateSet.state}\n` +
+                  `   - New State: ignore (rolled back)\n\n` +
+                  `📝 **Rollback Reason:** ${reason}\n\n` +
+                  `⚠️ **Important Notes:**\n` +
+                  `   - The update set has been set to "ignore" state\n` +
+                  `   - Changes are now inactive but records still exist\n` +
+                  `   - For complete removal, use ServiceNow's "Back out update set" feature\n` +
+                  `   - Test your application to ensure rollback was successful\n\n` +
+                  `🔍 **Verify rollback:** Check that your changes are no longer active in ServiceNow`
           },
         ],
       };
     } catch (error) {
-      throw new Error(`Rollback failed: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ TEST-002 FIX: Rollback system error\n\n` +
+                `📝 **Error:** ${error instanceof Error ? error.message : String(error)}\n\n` +
+                `🛠️ **Recovery options:**\n` +
+                `   1. Verify ServiceNow connection and authentication\n` +
+                `   2. Check update_set_id format (must be 32-char hex string)\n` +
+                `   3. Use ServiceNow UI for manual rollback if needed\n` +
+                `   4. Contact ServiceNow administrator for assistance`
+        }]
+      };
     }
   }
 

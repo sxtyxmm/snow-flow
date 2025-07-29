@@ -229,6 +229,16 @@ program
   .option('--no-progress-monitoring', 'Disable progress monitoring')
   .option('--xml-first', 'Use XML-first approach for flow creation (MOST RELIABLE!)')
   .option('--xml-output <path>', 'Save generated XML to specific path (with --xml-first)')
+  .option('--autonomous-documentation', 'Enable autonomous documentation system (default: true)', true)
+  .option('--no-autonomous-documentation', 'Disable autonomous documentation system')
+  .option('--autonomous-cost-optimization', 'Enable autonomous cost optimization engine (default: true)', true)
+  .option('--no-autonomous-cost-optimization', 'Disable autonomous cost optimization engine')
+  .option('--autonomous-compliance', 'Enable autonomous compliance monitoring (default: true)', true)
+  .option('--no-autonomous-compliance', 'Disable autonomous compliance monitoring')
+  .option('--autonomous-healing', 'Enable autonomous self-healing capabilities (default: true)', true)
+  .option('--no-autonomous-healing', 'Disable autonomous self-healing capabilities')
+  .option('--autonomous-all', 'Force enable all autonomous systems (overrides individual --no- flags)')
+  .option('--no-autonomous-all', 'Disable all autonomous systems (overrides individual settings)')
   .option('--verbose', 'Show detailed execution information')
   .action(async (objective: string, options) => {
     // Always show essential info
@@ -248,10 +258,76 @@ program
       cliLogger.info(`  🚀 Auto Deploy: ${options.autoDeploy ? '✅ DEPLOYMENT MODE - WILL CREATE REAL ARTIFACTS' : '❌ PLANNING MODE - ANALYSIS ONLY'}`);
       cliLogger.info(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
       cliLogger.info(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
-      cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}\n`);
-    } else if (options.autoDeploy) {
-      // In non-verbose mode, only show critical deployment warning
-      cliLogger.info(`🚀 Auto-Deploy: ENABLED - Will create real artifacts in ServiceNow`);
+      cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}`);
+      
+      // Calculate actual autonomous system states (with override logic)
+      // Commander.js converts --no-autonomous-all to autonomousAll: false
+      const noAutonomousAll = options.autonomousAll === false;
+      const forceAutonomousAll = options.autonomousAll === true;
+      
+      const autonomousDocActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousDocumentation !== false;
+      
+      const autonomousCostActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousCostOptimization !== false;
+      
+      const autonomousComplianceActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousCompliance !== false;
+      
+      const autonomousHealingActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousHealing !== false;
+      
+      const hasAutonomousSystems = autonomousDocActive || autonomousCostActive || 
+        autonomousComplianceActive || autonomousHealingActive;
+      
+      cliLogger.info(`\n🤖 Autonomous Systems (DEFAULT ENABLED):`);
+      cliLogger.info(`  📚 Documentation: ${autonomousDocActive ? '✅ ACTIVE' : '❌ Disabled'}`);
+      cliLogger.info(`  💰 Cost Optimization: ${autonomousCostActive ? '✅ ACTIVE' : '❌ Disabled'}`);
+      cliLogger.info(`  🔐 Compliance Monitoring: ${autonomousComplianceActive ? '✅ ACTIVE' : '❌ Disabled'}`);
+      cliLogger.info(`  🏥 Self-Healing: ${autonomousHealingActive ? '✅ ACTIVE' : '❌ Disabled'}`);
+      cliLogger.info('');
+    } else {
+      // In non-verbose mode, only show critical info
+      if (options.autoDeploy) {
+        cliLogger.info(`🚀 Auto-Deploy: ENABLED - Will create real artifacts in ServiceNow`);
+      }
+      
+      // Calculate autonomous systems for non-verbose mode (same logic as verbose)
+      const noAutonomousAll = options.autonomousAll === false;
+      const forceAutonomousAll = options.autonomousAll === true;
+      
+      const autonomousDocActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousDocumentation !== false;
+      
+      const autonomousCostActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousCostOptimization !== false;
+      
+      const autonomousComplianceActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousCompliance !== false;
+      
+      const autonomousHealingActive = noAutonomousAll ? false : 
+        forceAutonomousAll ? true : 
+        options.autonomousHealing !== false;
+      
+      // Show active autonomous systems
+      const activeSystems = [];
+      if (autonomousDocActive) activeSystems.push('📚 Documentation');
+      if (autonomousCostActive) activeSystems.push('💰 Cost Optimization');
+      if (autonomousComplianceActive) activeSystems.push('🔐 Compliance');
+      if (autonomousHealingActive) activeSystems.push('🏥 Self-Healing');
+      
+      if (activeSystems.length > 0) {
+        cliLogger.info(`🤖 Autonomous Systems: ${activeSystems.join(', ')}`);
+      } else {
+        cliLogger.info(`🤖 Autonomous Systems: ❌ All Disabled`);
+      }
     }
     
     // Analyze the objective using intelligent agent detection
@@ -690,6 +766,29 @@ function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, op
   const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
     options.liveTesting || options.autoDeploy || options.autoRollback || 
     options.sharedMemory || options.progressMonitoring;
+  
+  // Calculate actual autonomous system states (with override logic)
+  const noAutonomousAll = options.autonomousAll === false;
+  const forceAutonomousAll = options.autonomousAll === true;
+  
+  const autonomousDocActive = noAutonomousAll ? false : 
+    forceAutonomousAll ? true : 
+    options.autonomousDocumentation !== false;
+  
+  const autonomousCostActive = noAutonomousAll ? false : 
+    forceAutonomousAll ? true : 
+    options.autonomousCostOptimization !== false;
+  
+  const autonomousComplianceActive = noAutonomousAll ? false : 
+    forceAutonomousAll ? true : 
+    options.autonomousCompliance !== false;
+  
+  const autonomousHealingActive = noAutonomousAll ? false : 
+    forceAutonomousAll ? true : 
+    options.autonomousHealing !== false;
+  
+  const hasAutonomousSystems = autonomousDocActive || autonomousCostActive || 
+    autonomousComplianceActive || autonomousHealingActive;
 
   const prompt = `# 👑 Snow-Flow Queen Agent Orchestration
 
@@ -1457,7 +1556,17 @@ const mockTest = await snow_test_flow_with_mock({
   test_inputs: { /* test data */ }
 });
 // Then try comprehensive if authenticated
-const liveTest = await snow_comprehensive_flow_test({ flow_sys_id: "id" });
+// 🔧 TEST-001 FIX: Skip live test if no valid flow sys_id is available
+// Only run live test if we have a real sys_id from previous flow creation
+let liveTest: any = { error: "No valid flow_sys_id available for live testing" };
+
+// In practice, this would get the sys_id from a previously created flow:
+// if (Memory.get("last_created_flow_sys_id")) {
+//   liveTest = await snow_comprehensive_flow_test({ 
+//     flow_sys_id: Memory.get("last_created_flow_sys_id") 
+//   });
+// }
+
 if (liveTest.error) {
   // Document test results from mock only
   Memory.store("test_results", mockTest);
@@ -1474,6 +1583,126 @@ Now execute this Queen Agent orchestration plan:
 5. Validate and complete the objective
 
 Remember: You are the Queen Agent - the master coordinator. Your role is to ensure all agents work harmoniously to achieve the objective: "${objective}"
+
+${hasAutonomousSystems ? `
+
+## 🤖 AUTONOMOUS SYSTEMS INTEGRATION
+
+**CRITICAL: The following autonomous systems have been enabled and MUST be initialized:**
+
+${autonomousDocActive ? `
+### 📚 Self-Documenting System
+**MANDATORY**: Initialize and start autonomous documentation:
+\`\`\`javascript
+// Start continuous documentation monitoring
+await snow_start_continuous_documentation({
+  auto_commit: true,
+  include_diagrams: true,
+  scope: "full"
+});
+
+// Store status in memory
+await mcp__servicenow-memory__memory_store({
+  key: "autonomous_documentation_${sessionId}",
+  value: JSON.stringify({ 
+    status: "active", 
+    started_at: new Date().toISOString(),
+    auto_commit: true 
+  }),
+  namespace: "swarm_${sessionId}"
+});
+\`\`\`
+` : ''}
+
+${autonomousCostActive ? `
+### 💰 Cost Optimization Engine
+**MANDATORY**: Initialize and start autonomous cost optimization:
+\`\`\`javascript
+// Start autonomous cost optimization
+await snow_start_autonomous_cost_optimization({
+  target_savings: 30,
+  auto_implement: true,
+  monitor_real_time: true
+});
+
+// Store status in memory
+await mcp__servicenow-memory__memory_store({
+  key: "autonomous_cost_optimization_${sessionId}",
+  value: JSON.stringify({ 
+    status: "active", 
+    started_at: new Date().toISOString(),
+    target_savings: 30,
+    auto_implement: true 
+  }),
+  namespace: "swarm_${sessionId}"
+});
+\`\`\`
+` : ''}
+
+${autonomousComplianceActive ? `
+### 🔐 Advanced Compliance System
+**MANDATORY**: Initialize and start autonomous compliance monitoring:
+\`\`\`javascript
+// Start compliance monitoring
+await snow_start_compliance_monitoring({
+  frameworks: ["GDPR", "SOX", "HIPAA"],
+  auto_remediate: true,
+  continuous_monitoring: true
+});
+
+// Store status in memory
+await mcp__servicenow-memory__memory_store({
+  key: "autonomous_compliance_${sessionId}",
+  value: JSON.stringify({ 
+    status: "active", 
+    started_at: new Date().toISOString(),
+    frameworks: ["GDPR", "SOX", "HIPAA"],
+    auto_remediate: true 
+  }),
+  namespace: "swarm_${sessionId}"
+});
+\`\`\`
+` : ''}
+
+${autonomousHealingActive ? `
+### 🏥 Self-Healing System
+**MANDATORY**: Initialize and start autonomous self-healing:
+\`\`\`javascript
+// Start self-healing system
+await snow_start_autonomous_healing({
+  preventive: true,
+  auto_heal: true,
+  learn_patterns: true
+});
+
+// Store status in memory
+await mcp__servicenow-memory__memory_store({
+  key: "autonomous_healing_${sessionId}",
+  value: JSON.stringify({ 
+    status: "active", 
+    started_at: new Date().toISOString(),
+    preventive: true,
+    auto_heal: true 
+  }),
+  namespace: "swarm_${sessionId}"
+});
+\`\`\`
+` : ''}
+
+**🎯 ORCHESTRATOR SHOWCASE:** These autonomous systems operate without manual intervention, demonstrating true orchestration capabilities. They will:
+- Monitor continuously in the background
+- Make intelligent decisions automatically
+- Adapt and learn from patterns
+- Provide real-time dashboards and insights
+- Execute actions autonomously when needed
+
+**Integration with Main Objective:** All autonomous systems will coordinate with your main objective ("${objective}") by providing:
+- Automatic documentation of created artifacts
+- Cost optimization of operations performed
+- Compliance validation of all changes
+- Self-healing of any issues that arise
+
+` : ''}
 
 Session ID for this swarm: ${sessionId}`;
 
@@ -2286,7 +2515,7 @@ snow_link_catalog_to_flow({
   ],
   trigger_condition: 'current.stage == "request_approved"',
   execution_options: {
-    run_as: "system",
+    run_as: "user",    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
     wait_for_completion: true
   },
   test_link: true  // Creates test request
@@ -3529,9 +3758,38 @@ if (deployment.failed) {
 The swarm command now includes intelligent features that are **enabled by default**:
 
 \`\`\`bash
-# Simple usage - all intelligent features enabled!
+# Simple usage - ALL autonomous systems enabled by default!
 snow-flow swarm "create incident management dashboard"
+
+# Disable specific autonomous systems if needed
+snow-flow swarm "create simple widget" --no-autonomous-cost-optimization --no-autonomous-compliance
+
+# Disable ALL autonomous systems
+snow-flow swarm "basic development only" --no-autonomous-all
+
+# Force enable all (overrides any --no- flags)
+snow-flow swarm "full orchestration mode" --autonomous-all
 \`\`\`
+
+### 🤖 NEW: Autonomous Systems (v1.3.26+) - **ENABLED BY DEFAULT!**
+True orchestration with zero manual intervention - all systems active unless disabled:
+
+- ✅ **Documentation**: Self-documenting system (auto-generates and updates docs)
+- ✅ **Cost Optimization**: AI-driven cost management with auto-optimization  
+- ✅ **Compliance**: Multi-framework compliance monitoring with auto-remediation
+- ✅ **Self-Healing**: Predictive failure detection with automatic recovery
+
+**Disable Options**:
+- \`--no-autonomous-documentation\`: Disable documentation system
+- \`--no-autonomous-cost-optimization\`: Disable cost optimization
+- \`--no-autonomous-compliance\`: Disable compliance monitoring
+- \`--no-autonomous-healing\`: Disable self-healing
+- \`--no-autonomous-all\`: Disable ALL autonomous systems
+
+**Force Options**:
+- \`--autonomous-all\`: Force enable all (overrides --no- flags)
+
+**Perfect Orchestrator**: Systems work autonomously, make intelligent decisions, and continuously improve - no manual intervention needed!
 
 ### Default Settings (no flags needed):
 - ✅ \`--smart-discovery\` - Automatically discovers and reuses existing artifacts

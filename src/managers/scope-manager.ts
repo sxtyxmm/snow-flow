@@ -513,9 +513,13 @@ export class ScopeManager {
       const newArtifactData = {
         ...artifact,
         sys_scope: decision.selectedScope === ScopeType.GLOBAL ? 'global' : decision.selectedScope,
-        name: `${artifact.name}_migrated`,
-        sys_id: undefined // Let ServiceNow generate new ID
+        name: `${artifact.name}_migrated`
+        // 🔧 TEST-001 FIX: Remove sys_id property instead of setting to undefined
+        // This prevents "sys_id undefined" errors in testing tools
       };
+
+      // 🔧 TEST-001 FIX: Explicitly delete sys_id so ServiceNow generates a new one
+      delete newArtifactData.sys_id;
 
       const deploymentResult = await this.strategy.deployWithGlobalScope(
         artifact.sys_class_name || artifact.type,

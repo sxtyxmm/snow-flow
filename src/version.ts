@@ -2,13 +2,25 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.23';
+export const VERSION = '1.3.27';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.27': [
+      '🤖 AUTONOMOUS SYSTEMS: All 4 autonomous systems now ENABLED BY DEFAULT in swarm command!',
+      '✅ SELF-DOCUMENTING: Automatic documentation generation and updates (default: enabled)',
+      '💰 COST OPTIMIZATION: AI-driven cost management with auto-optimization (default: enabled)',
+      '🔐 COMPLIANCE MONITORING: Multi-framework compliance with auto-remediation (default: enabled)',
+      '🏥 SELF-HEALING: Predictive failure detection with automatic recovery (default: enabled)',
+      '⚙️ FLEXIBLE CONTROL: Use --no-autonomous-* flags to disable specific systems',
+      '🚫 GLOBAL DISABLE: Use --no-autonomous-all to disable all autonomous systems',
+      '💪 FORCE OVERRIDE: Use --autonomous-all to force enable all (overrides --no- flags)',
+      '🎯 PERFECT ORCHESTRATOR: True "één command voor alles" - zero manual intervention needed!',
+      'Based on user request: "oke maar kunnen we het niet als standaard aanzetten dat al deze dingen beschikbaar zijn?"'
+    ],
     '1.3.16': [
       '🔄 VERSION BUMP: Clean version update for npm publish',
       '✨ INCLUDES: All improvements from v1.3.15',

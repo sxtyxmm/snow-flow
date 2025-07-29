@@ -45,11 +45,39 @@ export class ServiceNowOAuth {
   private stateParameter?: string;
   private codeVerifier?: string;
   private codeChallenge?: string;
+  
+  // 🔒 SEC-002 FIX: Add rate limiting to prevent authentication bypass attacks
+  private lastTokenRequest: number = 0;
+  private tokenRequestCount: number = 0;
+  private readonly TOKEN_REQUEST_WINDOW_MS = 60000; // 1 minute window
+  private readonly MAX_TOKEN_REQUESTS_PER_WINDOW = 10; // Max 10 token requests per minute
 
   constructor() {
     // Store tokens in user's home directory
     const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow');
     this.tokenPath = join(configDir, 'auth.json');
+  }
+
+  /**
+   * 🔒 SEC-002 FIX: Check rate limiting for token requests to prevent brute force attacks
+   */
+  private checkTokenRequestRateLimit(): boolean {
+    const now = Date.now();
+    
+    // Reset counter if window has passed
+    if (now - this.lastTokenRequest > this.TOKEN_REQUEST_WINDOW_MS) {
+      this.tokenRequestCount = 0;
+      this.lastTokenRequest = now;
+    }
+    
+    // Check if within rate limit
+    if (this.tokenRequestCount >= this.MAX_TOKEN_REQUESTS_PER_WINDOW) {
+      console.warn('🔒 Rate limit exceeded: Too many token requests. Please wait before retrying.');
+      return false;
+    }
+    
+    this.tokenRequestCount++;
+    return true;
   }
 
   /**
@@ -96,8 +124,31 @@ export class ServiceNowOAuth {
   /**
    * Initialize OAuth flow - opens browser and handles callback
    */
+  /**
+   * 🔧 CRIT-002 FIX: Normalize instance URL to prevent trailing slash 400 errors
+   */
+  private normalizeInstanceUrl(instance: string): string {
+    // Remove any trailing slashes that cause 400 errors
+    let normalized = instance.replace(/\/+$/, '');
+    
+    // Add https:// if missing
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = `https://${normalized}`;
+    }
+    
+    // Ensure .service-now.com suffix if it's just the instance name
+    if (!normalized.includes('.service-now.com') && !normalized.includes('localhost') && !normalized.includes('127.0.0.1')) {
+      const instanceName = normalized.replace('https://', '').replace('http://', '');
+      normalized = `https://${instanceName}.service-now.com`;
+    }
+    
+    return normalized;
+  }
+
   async authenticate(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult> {
     try {
+      // 🔧 CRIT-002 FIX: Apply URL normalization
+      const normalizedInstance = this.normalizeInstanceUrl(instance);
       // Validate client secret format
       const secretValidation = this.validateClientSecret(clientSecret);
       if (!secretValidation.valid) {
@@ -131,16 +182,16 @@ export class ServiceNowOAuth {
         };
       }
       
-      // Store credentials temporarily (remove trailing slash from instance)
+      // Store credentials temporarily with normalized instance
       this.credentials = {
-        instance: instance.replace(/\/$/, ''),
+        instance: normalizedInstance.replace('https://', '').replace('http://', ''),
         clientId,
         clientSecret,
         redirectUri
       };
 
       console.log('🚀 Starting ServiceNow OAuth flow...');
-      console.log(`📋 Instance: ${instance}`);
+      console.log(`📋 Instance: ${normalizedInstance}`);
       console.log(`🔐 Client ID: ${clientId}`);
       console.log(`🔗 Redirect URI: ${redirectUri}`);
 
@@ -151,7 +202,7 @@ export class ServiceNowOAuth {
       this.generatePKCE();
 
       // Generate authorization URL
-      const authUrl = this.generateAuthUrl(instance, clientId, redirectUri);
+      const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri);
       
       console.log('\n🌐 Authorization URL generated:');
       console.log(`${authUrl}\n`);
@@ -160,12 +211,12 @@ export class ServiceNowOAuth {
       const authResult = await this.startCallbackServer(redirectUri, port);
       
       if (authResult.success && authResult.accessToken) {
-        // Save tokens
+        // Save tokens with normalized instance
         await this.saveTokens({
           accessToken: authResult.accessToken,
           refreshToken: authResult.refreshToken || '',
           expiresIn: authResult.expiresIn || 3600,
-          instance: instance.replace(/\/$/, ''),
+          instance: this.credentials.instance,
           clientId,
           clientSecret
         });
@@ -364,6 +415,14 @@ export class ServiceNowOAuth {
    */
   private async exchangeCodeForTokens(code: string): Promise<ServiceNowAuthResult> {
     try {
+      // 🔒 SEC-002 FIX: Apply rate limiting to prevent authentication bypass attacks
+      if (!this.checkTokenRequestRateLimit()) {
+        return {
+          success: false,
+          error: 'Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.'
+        };
+      }
+      
       const tokenUrl = `https://${this.credentials!.instance}/oauth_token.do`;
       
       const response = await axios.post(tokenUrl, new URLSearchParams({
@@ -376,7 +435,8 @@ export class ServiceNowOAuth {
       }), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        timeout: 15000  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
       });
       
       const data = response.data;
@@ -504,6 +564,14 @@ export class ServiceNowOAuth {
    */
   public async refreshAccessToken(tokens?: any): Promise<ServiceNowAuthResult> {
     try {
+      // 🔒 SEC-002 FIX: Apply rate limiting to prevent authentication bypass attacks
+      if (!this.checkTokenRequestRateLimit()) {
+        return {
+          success: false,
+          error: 'Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.'
+        };
+      }
+      
       // If no tokens provided, load from file
       if (!tokens) {
         tokens = await this.loadTokens();
@@ -525,7 +593,8 @@ export class ServiceNowOAuth {
       }), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        timeout: 15000  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
       });
       
       const data = response.data;

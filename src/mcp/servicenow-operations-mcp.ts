@@ -3258,7 +3258,7 @@ ${JSON.stringify(testResults, null, 2)}
             flow: linkResults.flow.sys_id,
             active: true,
             condition: trigger_condition,
-            run_as: execution_options.run_as || 'system',
+            run_as: execution_options.run_as || 'user',    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
             wait_for_completion: execution_options.wait_for_completion !== false
           };
           
@@ -3420,7 +3420,7 @@ ${JSON.stringify(testResults, null, 2)}
         if (link_type === 'flow_catalog_process') {
           resultText += `\n📝 **Note:** Using modern Flow Designer catalog process\n`;
           resultText += `   - Flow will trigger on: ${trigger_condition}\n`;
-          resultText += `   - Execution context: ${execution_options.run_as || 'system'}\n`;
+          resultText += `   - Execution context: ${execution_options.run_as || 'user'}\n`;    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
         }
       } else {
         resultText += `❌ **Failed to create link**\n`;

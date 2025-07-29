@@ -5,6 +5,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
+import https from 'https';
 import { ServiceNowOAuth, ServiceNowCredentials } from './snow-oauth';
 import { ActionTypeCache } from './action-type-cache';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
@@ -79,12 +80,63 @@ export class ServiceNowClient {
   constructor() {
     this.logger = new Logger('ServiceNowClient');
     this.oauth = new ServiceNowOAuth();
+    // 🔒 SSL/TLS Certificate Validation Fix: Add proper HTTPS agent with certificate validation
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: true,  // Enforce certificate validation
+      checkServerIdentity: (hostname, cert) => {
+        // Custom certificate validation for ServiceNow instances
+        // Allow *.service-now.com and user-configured instances
+        const validHosts = [
+          /.*\.service-now\.com$/,
+          /.*\.servicenow\.com$/
+        ];
+        
+        // Get configured instance hostname
+        const instanceUrl = process.env.SNOW_INSTANCE;
+        if (instanceUrl) {
+          try {
+            const instanceHostname = new URL(instanceUrl.startsWith('http') ? instanceUrl : `https://${instanceUrl}`).hostname;
+            validHosts.push(new RegExp(`^${instanceHostname.replace(/\./g, '\\.')}$`));
+          } catch (error) {
+            // Invalid URL format, rely on default validation
+          }
+        }
+        
+        // Check if hostname matches allowed patterns
+        if (validHosts.some(pattern => pattern.test(hostname))) {
+          return undefined; // Valid hostname
+        }
+        
+        // For development/testing environments, allow localhost/127.0.0.1
+        if (process.env.NODE_ENV === 'development' && 
+            (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.'))) {
+          return undefined;
+        }
+        
+        return new Error(`Certificate hostname mismatch: ${hostname} not allowed`);
+      },
+      secureProtocol: 'TLSv1_2_method', // Enforce TLS 1.2 minimum
+      ciphers: [
+        'ECDHE-RSA-AES128-GCM-SHA256',
+        'ECDHE-RSA-AES256-GCM-SHA384',
+        'ECDHE-RSA-AES128-SHA256',
+        'ECDHE-RSA-AES256-SHA384'
+      ].join(':'), // Only allow secure ciphers
+      honorCipherOrder: true,
+      maxVersion: 'TLSv1.3',
+      minVersion: 'TLSv1.2'
+    });
+
     this.client = axios.create({
       timeout: snowFlowConfig.servicenow.timeout,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      }
+      },
+      httpsAgent, // Use secure HTTPS agent with certificate validation
+      // Additional security headers
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400 // Reject 4xx and 5xx by default
     });
     
     // 🔧 CRITICAL FIX: Add makeRequest method to Axios instance to fix phantom calls
@@ -1617,7 +1669,7 @@ snow_create_flow({
         active: true,                      // Always create as active
         internal_name: this.sanitizeInternalName(flow.name),
         category: flow.category || 'custom',
-        run_as: flow.run_as || 'system',  // 🔧 FIX: Default to 'system' for proper execution
+        run_as: flow.run_as || 'user',    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
         status: 'published',               // 🔧 FIX: Ensure flow is published, not draft
         validated: true,                   // 🔧 FIX: Mark as validated to allow activation
         // Include complete flow definition to prevent corruption
