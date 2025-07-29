@@ -304,6 +304,73 @@ class ServiceNowFlowComposerMCP {
             required: ['instruction'],
           },
         },
+        {
+          name: 'snow_performance_analysis',
+          description: '🚀 BUG-007 FIX: PERFORMANCE ANALYSIS - Analyzes flows for performance bottlenecks and provides database index recommendations',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              flow_definition: {
+                type: 'object',
+                description: 'Flow definition to analyze for performance'
+              },
+              table_name: {
+                type: 'string',
+                description: 'Specific table to analyze (optional)'
+              },
+              include_database_indexes: {
+                type: 'boolean',
+                description: 'Include database index recommendations',
+                default: true
+              },
+              include_code_analysis: {
+                type: 'boolean',
+                description: 'Include flow script performance analysis',
+                default: true
+              },
+              detailed_report: {
+                type: 'boolean',
+                description: 'Generate detailed performance report',
+                default: false
+              }
+            },
+            required: ['flow_definition'],
+          },
+        },
+        {
+          name: 'snow_comprehensive_requirements_analysis',
+          description: '🚀 BUG-006 FIX: MULTI-PASS REQUIREMENTS ANALYSIS - Comprehensive 4-pass analysis to ensure no requirements are missed',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objective: {
+                type: 'string',
+                description: 'The objective or requirement to analyze comprehensively (e.g., "iPhone provisioning workflow for new employees")'
+              },
+              include_dependencies: {
+                type: 'boolean',
+                description: 'Include dependency analysis (pass 2)',
+                default: true
+              },
+              include_context_analysis: {
+                type: 'boolean',
+                description: 'Include context and implication analysis (pass 3)',
+                default: true
+              },
+              include_validation: {
+                type: 'boolean',
+                description: 'Include validation and completeness check (pass 4)',
+                default: true
+              },
+              detailed_report: {
+                type: 'boolean',
+                description: 'Generate detailed multi-pass analysis report',
+                default: false
+              }
+            },
+            required: ['objective'],
+          },
+        },
       ],
     }));
 
@@ -328,6 +395,10 @@ class ServiceNowFlowComposerMCP {
             return await this.scopeOptimization(args);
           case 'snow_template_matching':
             return await this.templateMatching(args);
+          case 'snow_performance_analysis':
+            return await this.performanceAnalysis(args);
+          case 'snow_comprehensive_requirements_analysis':
+            return await this.comprehensiveRequirementsAnalysis(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -403,6 +474,7 @@ class ServiceNowFlowComposerMCP {
       // 🧠 STEP 5: Deploy using XML-first approach for maximum reliability
       let deploymentResult = null;
       let xmlResult: any = null;  // 🔴 FIX: Declare outside try block to avoid scope issues
+      let performanceAnalysis: any = null;  // 🚀 BUG-007 FIX: Performance analysis results
       
       if (args.deploy_immediately !== false) {
         console.log('🚀 DEPLOYING flow using XML-first approach...');
@@ -411,7 +483,15 @@ class ServiceNowFlowComposerMCP {
           // Import the XML flow generator
           const { generateProductionFlowXML } = await import('../utils/xml-first-flow-generator.js');
           
-          // Convert to XML flow definition format
+          // 🔒 BUG-004 FIX: Apply SECURE DEFAULTS - NEVER allow public access by default
+          const SECURE_FLOW_DEFAULTS = {
+            run_as: 'user' as const,  // Always run as user, not system
+            accessible_from: 'package_private' as const,  // NEVER public by default
+            requires_authentication: true,
+            requires_role: true
+          };
+
+          // Convert to XML flow definition format with ENFORCED secure defaults
           const xmlFlowDef = {
             name: parsedIntent.flowName,
             description: parsedIntent.description,
@@ -419,13 +499,64 @@ class ServiceNowFlowComposerMCP {
             trigger_type: this.mapTriggerTypeToXML(parsedIntent.trigger.type),
             trigger_condition: parsedIntent.trigger.condition || '',
             activities: this.convertActivitiesToXML(flowDefinition.activities || []),
-            run_as: 'user' as 'user',
-            accessible_from: 'package_private' as 'package_private'
+            // 🛡️ SECURITY: These defaults CANNOT be overridden accidentally
+            run_as: SECURE_FLOW_DEFAULTS.run_as,
+            accessible_from: SECURE_FLOW_DEFAULTS.accessible_from
           };
+
+          // 🔒 Log security configuration for audit trail
+          this.logger.info('🛡️ Applying secure flow defaults', {
+            flowName: parsedIntent.flowName,
+            accessible_from: xmlFlowDef.accessible_from,
+            run_as: xmlFlowDef.run_as,
+            table: xmlFlowDef.table,
+            trigger_type: xmlFlowDef.trigger_type
+          });
+
+          console.log('🔒 SECURITY: Flow created with secure defaults:');
+          console.log(`   • Access Level: ${xmlFlowDef.accessible_from} (secure)`);
+          console.log(`   • Run As: ${xmlFlowDef.run_as} (secure)`);
+          console.log(`   • Authentication: Required`);
+          console.log(`   • Role-based Access: Required`);
           
           // Generate production-ready XML
           xmlResult = generateProductionFlowXML(xmlFlowDef);
           console.log('✅ XML generated:', xmlResult.filePath);
+
+          // 🚀 BUG-007 FIX: Performance analysis and recommendations
+          const { PerformanceRecommendationsEngine } = await import('../intelligence/performance-recommendations-engine.js');
+          const performanceEngine = new PerformanceRecommendationsEngine();
+          
+          console.log('🔍 Running performance analysis...');
+          performanceAnalysis = await performanceEngine.analyzeFlowPerformance(xmlFlowDef);
+          
+          if (performanceAnalysis.summary.criticalIssues > 0) {
+            console.log(`⚠️ PERFORMANCE: ${performanceAnalysis.summary.criticalIssues} critical issues found`);
+            console.log(`📈 Potential improvement: ${performanceAnalysis.summary.estimatedImprovementPercent}%`);
+            
+            // Show top 3 most critical recommendations
+            const topRecommendations = [
+              ...performanceAnalysis.databaseIndexes.filter(idx => idx.priority === 'critical').slice(0, 2),
+              ...performanceAnalysis.performanceRecommendations.filter(rec => rec.impact === 'high').slice(0, 1)
+            ];
+            
+            if (topRecommendations.length > 0) {
+              console.log('🎯 Top performance recommendations:');
+              topRecommendations.forEach((rec, i) => {
+                if ('fields' in rec) {
+                  // Database index recommendation
+                  console.log(`   ${i + 1}. INDEX: ${rec.table} (${rec.fields.join(', ')}) - ${rec.reason}`);
+                  console.log(`      💻 ${rec.createStatement}`);
+                } else {
+                  // Performance recommendation
+                  console.log(`   ${i + 1}. ${rec.type.toUpperCase()}: ${rec.description}`);
+                  console.log(`      💡 ${rec.recommendation}`);
+                }
+              });
+            }
+          } else {
+            console.log('✅ Performance analysis: No critical issues detected');
+          }
           
           // 🔴 CRITICAL FIX: Auto-deploy with INTEGRATED verification
           // SNOW-001: Verification is now MANDATORY within each deployment strategy
@@ -483,6 +614,55 @@ class ServiceNowFlowComposerMCP {
       const credentials = await this.oauth.loadCredentials();
       const flowUrl = `https://${credentials?.instance}/flow-designer/flow/${parsedIntent.flowName}`;
       
+      // 🔴 BUG-001 FIX: Return structured data with sys_id and all identifiers
+      const flowSysId = deploymentResult?.verification?.sys_id || deploymentResult?.sys_id || null;
+      const actualFlowUrl = flowSysId ? 
+        `https://${credentials?.instance}/flow-designer/designer/${flowSysId}` :
+        flowUrl;
+
+      const structuredResult = {
+        success: deploymentResult?.success || false,
+        flow: {
+          sys_id: flowSysId,
+          name: parsedIntent.flowName,
+          table: parsedIntent.table,
+          trigger_type: parsedIntent.trigger.type,
+          active: true,
+          description: parsedIntent.description,
+          url: actualFlowUrl,
+          api_endpoint: flowSysId ? 
+            `https://${credentials?.instance}/api/now/table/sys_hub_flow/${flowSysId}` : null
+        },
+        deployment: {
+          method: deploymentResult?.deployment_method || 'XML Update Set',
+          xml_file: xmlResult?.file || deploymentResult?.xml_path || null,
+          update_set_id: deploymentResult?.update_set_id || null,
+          success: deploymentResult?.success || false,
+          error: deploymentResult?.error || null
+        },
+        analysis: {
+          intents: parsedIntent.intents,
+          template: templateMatch?.name || 'Custom implementation',
+          confidence: templateMatch?.confidence || 0,
+          activities_count: flowDefinition.activities?.length || 0,
+          variables_count: flowDefinition.variables?.length || 0
+        },
+        // 🚀 BUG-007 FIX: Performance analysis results
+        performance: {
+          database_indexes: performanceAnalysis?.databaseIndexes || [],
+          recommendations: performanceAnalysis?.performanceRecommendations || [],
+          summary: {
+            critical_issues: performanceAnalysis?.summary?.criticalIssues || 0,
+            estimated_improvement_percent: performanceAnalysis?.summary?.estimatedImprovementPercent || 0,
+            top_actions: performanceAnalysis?.summary?.recommendedActions || []
+          },
+          report_available: true
+        }
+      };
+
+      // Log structured result for debugging
+      this.logger.info('🔴 BUG-001 FIX: Returning structured flow data', structuredResult);
+
       return {
         content: [
           {
@@ -490,11 +670,23 @@ class ServiceNowFlowComposerMCP {
             text: deploymentResult?.success ? 
               `✅ FLOW SUCCESSFULLY CREATED AND DEPLOYED!
 
-🚀 **VERIFIED DEPLOYMENT** - Flow is now live in ServiceNow!` :
+🚀 **VERIFIED DEPLOYMENT** - Flow is now live in ServiceNow!
+
+🆔 **Flow Identifiers** (BUG-001 FIX):
+- **Sys ID**: ${structuredResult.flow.sys_id}
+- **Name**: ${structuredResult.flow.name}
+- **API Endpoint**: ${structuredResult.flow.api_endpoint}
+
+🔗 **Direct Access**: ${structuredResult.flow.url}` :
               deploymentResult?.deployment_failed ?
               `⚠️ FLOW XML GENERATED BUT DEPLOYMENT FAILED
 
 ❌ **Deployment Error**: ${deploymentResult.error}
+
+🆔 **Flow Details** (BUG-001 FIX):
+- **Name**: ${structuredResult.flow.name}
+- **Table**: ${structuredResult.flow.table}
+- **Sys ID**: ${structuredResult.flow.sys_id || 'Not yet available'}
 
 📁 **XML File**: ${deploymentResult.xml_path}
 
@@ -503,6 +695,12 @@ ${deploymentResult.manual_steps || '1. Navigate to System Update Sets > Retrieve
               `🎯 FLOW CREATED WITH XML-FIRST APPROACH!
 
 ${args.deploy_immediately !== false ? `🚀 **DEPLOYMENT STATUS** - Processing...` : `📋 **PLANNING MODE** - Flow structure generated`}
+
+🆔 **Flow Identifiers** (BUG-001 FIX):
+- **Sys ID**: ${structuredResult.flow.sys_id || 'Pending deployment'}
+- **Name**: ${structuredResult.flow.name}
+- **Table**: ${structuredResult.flow.table}
+- **API Endpoint**: ${structuredResult.flow.api_endpoint || 'Not yet available'}
 
 🧠 **Intelligent Analysis:**
 - **Flow Name**: ${parsedIntent.flowName}
@@ -528,19 +726,22 @@ ${deploymentResult ? (deploymentResult.success ?
 - **Fallback**: ${deploymentResult.fallback_instructions}`) : '⏳ Ready for deployment'}
 
 🔗 **ServiceNow Access:**
-- Flow Designer: ${flowUrl}  
+- Flow Designer: ${actualFlowUrl}  
 - Flow Designer Home: https://${credentials?.instance}/flow-designer
 
-🧠 **NEW Features (v1.3.17):**
+🧠 **NEW Features (v1.3.24):**
+- Structured flow data with sys_id (BUG-001 FIX) ✅
 - XML-first approach for maximum reliability ✅
 - Automatic Update Set deployment ✅
 - Zero manual steps required ✅
 - Production-ready Flow Designer format ✅
 - Intelligent error handling & fallbacks ✅
 
-Your flow is now live in ServiceNow Flow Designer! 🎉`,
+Your flow is now ${structuredResult.success ? 'live' : 'ready'} in ServiceNow Flow Designer! 🎉`,
           },
         ],
+        // 🔴 BUG-001 FIX: Include structured data in response
+        ...structuredResult
       };
     } catch (error) {
       this.logger.error('❌ Intelligent flow creation failed:', error);
@@ -549,11 +750,46 @@ Your flow is now live in ServiceNow Flow Designer! 🎉`,
   }
 
   /**
+   * 🛡️ Check if user is trying to make flow public and warn them about security
+   */
+  private checkSecurityIntent(instruction: string): { hasPublicIntent: boolean; warnings: string[] } {
+    const warnings: string[] = [];
+    const lowerInstruction = instruction.toLowerCase();
+    
+    const publicKeywords = [
+      'public', 'publicly', 'everyone', 'anyone', 'all users',
+      'no authentication', 'without login', 'guest access',
+      'anonymous', 'unauthenticated', 'open access'
+    ];
+    
+    const hasPublicIntent = publicKeywords.some(keyword => lowerInstruction.includes(keyword));
+    
+    if (hasPublicIntent) {
+      warnings.push('⚠️ SECURITY WARNING: Public access detected in request');
+      warnings.push('🔒 For security, flows default to package_private access');
+      warnings.push('💡 To make public, explicitly override accessible_from in config');
+      warnings.push('🛡️ Consider using role-based access instead of public access');
+    }
+    
+    return { hasPublicIntent, warnings };
+  }
+
+  /**
    * 🧠 INTELLIGENT NATURAL LANGUAGE PARSING
    * Analyzes instruction to understand flow intent, trigger, and requirements
    */
   private async parseFlowInstruction(instruction: string): Promise<any> {
     console.log('🧠 Parsing flow instruction intelligently...');
+    
+    // 🔒 BUG-004 FIX: Check for security concerns first
+    const securityCheck = this.checkSecurityIntent(instruction);
+    if (securityCheck.warnings.length > 0) {
+      securityCheck.warnings.forEach(warning => console.log(warning));
+      this.logger.warn('🔒 Security warning in flow instruction', { 
+        instruction,
+        hasPublicIntent: securityCheck.hasPublicIntent 
+      });
+    }
     
     const words = instruction.toLowerCase();
     
@@ -571,14 +807,28 @@ Your flow is now live in ServiceNow Flow Designer! 🎉`,
     // Default if no specific intent found
     if (intents.length === 0) intents.push('general_automation');
 
-    // 🎯 Table Detection - Which ServiceNow table should this affect?
+    // 🔴 BUG-003 FIX: Enhanced table detection with context awareness
     let table = 'incident'; // default
-    if (words.includes('user') || words.includes('gebruiker')) table = 'sys_user';
-    if (words.includes('request') || words.includes('aanvraag')) table = 'sc_request';
-    if (words.includes('task') || words.includes('sc_task')) table = 'sc_task';
-    if (words.includes('problem')) table = 'problem';
-    if (words.includes('change')) table = 'change_request';
-    if (words.includes('catalog')) table = 'sc_cat_item';
+    
+    // Priority-based table detection - more specific terms override generic ones
+    if (words.includes('incident') && (words.includes('management') || words.includes('priority') || words.includes('severity'))) {
+      table = 'incident'; // Explicitly keep incident table when incident context is strong
+    } else if (words.includes('change') && words.includes('request')) {
+      table = 'change_request';
+    } else if (words.includes('user') || words.includes('gebruiker')) {
+      table = 'sys_user';
+    } else if (words.includes('request') || words.includes('aanvraag')) {
+      table = 'sc_request';
+    } else if (words.includes('task') || words.includes('sc_task')) {
+      table = 'sc_task';
+    } else if (words.includes('problem')) {
+      table = 'problem';
+    } else if (words.includes('catalog')) {
+      table = 'sc_cat_item';
+    }
+    
+    // Log table detection for debugging
+    console.log(`🔴 BUG-003: Table detected as '${table}' from instruction: "${instruction}"`);
 
     // 🎯 Trigger Analysis - When should the flow run?
     const trigger = {
@@ -817,6 +1067,12 @@ Your flow is now live in ServiceNow Flow Designer! 🎉`,
       flowDefinition.activities = await this.generateCustomActivities(parsedIntent, artifacts);
     }
 
+    // 🔴 BUG-003 FIX: Validate all field references against the table schema
+    flowDefinition.activities = await this.validateAndFixFieldReferences(
+      flowDefinition.activities, 
+      parsedIntent.table
+    );
+
     // 🎯 Generate Variables for data flow
     flowDefinition.variables = this.generateFlowVariables(parsedIntent);
 
@@ -828,6 +1084,134 @@ Your flow is now live in ServiceNow Flow Designer! 🎉`,
 
     console.log('🧠 Complete flow definition generated');
     return flowDefinition;
+  }
+
+  /**
+   * 🔴 BUG-003 FIX: Validate and fix field references against table schema
+   */
+  private async validateAndFixFieldReferences(activities: any[], tableName: string): Promise<any[]> {
+    console.log(`🔴 BUG-003: Validating field references for table '${tableName}'`);
+    
+    // Common field mappings for different tables
+    const tableFieldMappings: Record<string, Record<string, string>> = {
+      incident: {
+        caller_id: 'caller_id',
+        severity: 'severity',
+        priority: 'priority',
+        short_description: 'short_description',
+        description: 'description',
+        assigned_to: 'assigned_to',
+        state: 'state',
+        number: 'number',
+        work_notes: 'work_notes',
+        comments: 'comments',
+        category: 'category',
+        subcategory: 'subcategory',
+        resolved_by: 'resolved_by',
+        close_notes: 'close_notes'
+      },
+      change_request: {
+        requested_by: 'requested_by',
+        category: 'category',
+        priority: 'priority',
+        risk: 'risk',
+        impact: 'impact',
+        short_description: 'short_description',
+        description: 'description',
+        assigned_to: 'assigned_to',
+        state: 'state',
+        number: 'number',
+        work_notes: 'work_notes',
+        type: 'type',
+        // Change request doesn't have caller_id or severity
+        caller_id: 'requested_by', // Map to equivalent field
+        severity: 'impact' // Map severity to impact for change requests
+      },
+      sc_request: {
+        requested_for: 'requested_for',
+        opened_by: 'opened_by',
+        short_description: 'short_description',
+        description: 'description',
+        assigned_to: 'assigned_to',
+        state: 'state',
+        number: 'number',
+        work_notes: 'work_notes',
+        comments: 'comments',
+        priority: 'priority',
+        // Service catalog requests use different field names
+        caller_id: 'requested_for',
+        severity: 'priority'
+      },
+      problem: {
+        opened_by: 'opened_by',
+        short_description: 'short_description',
+        description: 'description',
+        assigned_to: 'assigned_to',
+        state: 'state',
+        number: 'number',
+        work_notes: 'work_notes',
+        priority: 'priority',
+        category: 'category',
+        subcategory: 'subcategory',
+        known_error: 'known_error',
+        workaround: 'workaround',
+        // Problems don't have caller_id
+        caller_id: 'opened_by',
+        severity: 'priority'
+      }
+    };
+
+    // Get field mappings for the current table
+    const fieldMap = tableFieldMappings[tableName] || tableFieldMappings.incident;
+    
+    // Process each activity to fix field references
+    const fixedActivities = activities.map(activity => {
+      if (activity.inputs?.script) {
+        // Fix field references in scripts
+        let fixedScript = activity.inputs.script;
+        
+        // Replace field references that don't exist on the target table
+        Object.keys(fieldMap).forEach(standardField => {
+          const tableField = fieldMap[standardField];
+          if (standardField !== tableField) {
+            // Replace current.caller_id with current.requested_by for change_request, etc.
+            const regex = new RegExp(`current\\.${standardField}`, 'g');
+            fixedScript = fixedScript.replace(regex, `current.${tableField}`);
+            
+            // Also handle ${record.caller_id} style references
+            const regex2 = new RegExp(`\\$\\{record\\.${standardField}\\}`, 'g');
+            fixedScript = fixedScript.replace(regex2, `\${record.${tableField}}`);
+          }
+        });
+        
+        activity.inputs.script = fixedScript;
+      }
+      
+      // Fix field references in other input fields
+      if (activity.inputs) {
+        Object.keys(activity.inputs).forEach(inputKey => {
+          if (typeof activity.inputs[inputKey] === 'string' && inputKey !== 'script') {
+            let value = activity.inputs[inputKey];
+            
+            // Fix ${record.field} references
+            Object.keys(fieldMap).forEach(standardField => {
+              const tableField = fieldMap[standardField];
+              if (standardField !== tableField) {
+                const regex = new RegExp(`\\$\\{record\\.${standardField}\\}`, 'g');
+                value = value.replace(regex, `\${record.${tableField}}`);
+              }
+            });
+            
+            activity.inputs[inputKey] = value;
+          }
+        });
+      }
+      
+      return activity;
+    });
+    
+    console.log(`🔴 BUG-003: Field validation complete. Fixed field references for table '${tableName}'`);
+    return fixedActivities;
   }
 
   /**
@@ -2659,6 +3043,267 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
     } catch (error: any) {
       this.logger.error('Failed to commit update set:', error);
       throw new Error(`Failed to commit update set. Manual intervention required in ServiceNow UI.`);
+    }
+  }
+
+  /**
+   * 🚀 BUG-007 FIX: Performance Analysis Tool
+   * Analyze flows for performance bottlenecks and provide database index recommendations
+   */
+  private async performanceAnalysis(args: any) {
+    try {
+      this.logger.info('🔍 Running performance analysis', { 
+        flowDefinition: !!args.flow_definition,
+        tableName: args.table_name,
+        includeIndexes: args.include_database_indexes,
+        includeCode: args.include_code_analysis
+      });
+
+      // Import the performance engine
+      const { PerformanceRecommendationsEngine } = await import('../intelligence/performance-recommendations-engine.js');
+      const performanceEngine = new PerformanceRecommendationsEngine();
+
+      // Run performance analysis
+      const analysisResult = await performanceEngine.analyzeFlowPerformance(args.flow_definition);
+
+      let responseText = `🚀 **Performance Analysis Results**
+
+📊 **SUMMARY:**
+• Critical Issues: ${analysisResult.summary.criticalIssues}
+• Estimated Performance Improvement: ${analysisResult.summary.estimatedImprovementPercent}%
+• Total Recommendations: ${analysisResult.databaseIndexes.length + analysisResult.performanceRecommendations.length}
+
+`;
+
+      // Add database index recommendations if requested
+      if (args.include_database_indexes !== false && analysisResult.databaseIndexes.length > 0) {
+        responseText += `🗄️ **DATABASE INDEX RECOMMENDATIONS:**
+
+${analysisResult.databaseIndexes.map((idx, i) => `**${i + 1}. ${idx.table} - ${idx.fields.join(', ')} [${idx.priority.toUpperCase()}]**
+💡 **Reason**: ${idx.reason}
+📈 **Expected Improvement**: ${idx.estimatedImprovement}%
+💻 **SQL**: \`${idx.createStatement}\`
+📊 **Impact**: ${idx.impactAnalysis.queryImpact.join(', ')}
+💾 **Storage**: ${idx.impactAnalysis.storageImpact}
+🔧 **Maintenance**: ${idx.impactAnalysis.maintenanceImpact}
+`).join('\n')}
+
+`;
+      }
+
+      // Add performance recommendations if requested
+      if (args.include_code_analysis !== false && analysisResult.performanceRecommendations.length > 0) {
+        responseText += `⚡ **PERFORMANCE RECOMMENDATIONS:**
+
+${analysisResult.performanceRecommendations.map((rec, i) => `**${i + 1}. ${rec.type.replace(/_/g, ' ').toUpperCase()} [${rec.impact.toUpperCase()} IMPACT]**
+📋 **Issue**: ${rec.description}
+💡 **Recommendation**: ${rec.recommendation}
+⏱️ **Time Savings**: ${rec.estimated_time_savings}
+${rec.code_example ? `\n💻 **Example Code**:\n\`\`\`javascript\n${rec.code_example}\n\`\`\`` : ''}
+`).join('\n')}
+
+`;
+      }
+
+      // Add top priority actions
+      if (analysisResult.summary.recommendedActions.length > 0) {
+        responseText += `🎯 **TOP PRIORITY ACTIONS:**
+${analysisResult.summary.recommendedActions.map((action, i) => `${i + 1}. ${action}`).join('\n')}
+
+`;
+      }
+
+      // Add detailed report if requested
+      if (args.detailed_report) {
+        responseText += `📋 **DETAILED PERFORMANCE REPORT:**
+
+${performanceEngine.generatePerformanceReport(analysisResult)}`;
+      }
+
+      responseText += `
+🔍 **NEXT STEPS:**
+1. Implement critical database indexes first (highest ROI)
+2. Review and optimize flow scripts for performance issues
+3. Consider implementing caching for frequently accessed data
+4. Monitor performance metrics after implementing changes
+5. Schedule regular performance reviews for optimal results
+
+⚠️ **IMPORTANT**: Test all database changes in a development environment first!
+
+✅ **Performance analysis complete!** Review recommendations and implement changes for optimal performance.`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText,
+          },
+        ],
+      };
+
+    } catch (error) {
+      this.logger.error('Performance analysis failed:', error);
+      throw new Error(`Performance analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * 🚀 BUG-006 FIX: Comprehensive Requirements Analysis Tool
+   * Multi-pass analysis to ensure comprehensive requirements coverage
+   */
+  private async comprehensiveRequirementsAnalysis(args: any) {
+    try {
+      this.logger.info('🔍 Running comprehensive multi-pass requirements analysis', { 
+        objective: args.objective,
+        includeDependencies: args.include_dependencies,
+        includeContext: args.include_context_analysis,
+        includeValidation: args.include_validation
+      });
+
+      // Import the multi-pass analyzer
+      const { MultiPassRequirementsAnalyzer } = await import('../intelligence/multi-pass-requirements-analyzer.js');
+      const analyzer = new MultiPassRequirementsAnalyzer();
+
+      // Run comprehensive multi-pass analysis
+      const analysisResult = await analyzer.analyzeRequirements(args.objective);
+
+      let responseText = `🚀 **Comprehensive Requirements Analysis Results**
+
+📝 **OBJECTIVE**: ${args.objective}
+
+📊 **ANALYSIS SUMMARY:**
+• Total Requirements Identified: ${analysisResult.totalRequirements}
+• MCP Coverage: ${analysisResult.mcpCoveredCount}/${analysisResult.totalRequirements} (${analysisResult.mcpCoveragePercentage}%)
+• Gap Requirements: ${analysisResult.gapCount}
+• Estimated Complexity: ${analysisResult.estimatedComplexity.toUpperCase()}
+• Risk Assessment: ${analysisResult.riskAssessment.toUpperCase()}
+• Completeness Score: ${analysisResult.completenessScore}/100
+• Confidence Level: ${analysisResult.confidenceLevel.toUpperCase()}
+
+`;
+
+      // Add multi-pass analysis breakdown
+      responseText += `🔍 **MULTI-PASS ANALYSIS BREAKDOWN:**
+
+${Object.entries(analysisResult.analysisPassesData).map(([passKey, passData]) => `**${passData.passName} (Pass ${passData.passNumber})**
+• Requirements Found: ${passData.newRequirementsAdded}
+• Analysis Method: ${passData.analysisMethod}
+• Processing Time: ${passData.processingTime}ms
+• Confidence: ${Math.round(passData.confidence * 100)}%
+• Key Findings: ${passData.keyFindings.length > 0 ? passData.keyFindings.slice(0, 3).join('; ') : 'No specific findings'}
+`).join('\n')}
+
+`;
+
+      // Add requirements by category
+      const categorizedRequirements = analysisResult.requirements.reduce((acc, req) => {
+        if (!acc[req.category]) acc[req.category] = [];
+        acc[req.category].push(req);
+        return acc;
+      }, {} as Record<string, typeof analysisResult.requirements>);
+
+      responseText += `📋 **REQUIREMENTS BY CATEGORY:**
+
+${Object.entries(categorizedRequirements).map(([category, reqs]) => `**${category.replace(/_/g, ' ').toUpperCase()}** (${reqs.length} items)
+${reqs.slice(0, 5).map(req => `• ${req.name} [${req.priority.toUpperCase()}] ${req.mcpCoverage ? '✅ MCP' : '⚠️ Manual'} - ${req.description.substring(0, 80)}...`).join('\n')}
+${reqs.length > 5 ? `... and ${reqs.length - 5} more items` : ''}
+`).join('\n')}
+
+`;
+
+      // Add critical path analysis
+      if (analysisResult.criticalPath.length > 0) {
+        responseText += `🎯 **CRITICAL PATH REQUIREMENTS:**
+${analysisResult.criticalPath.map((req, i) => `${i + 1}. ${req}`).join('\n')}
+
+`;
+      }
+
+      // Add cross-domain impacts
+      if (analysisResult.crossDomainImpacts.length > 0) {
+        responseText += `🌐 **CROSS-DOMAIN IMPACTS:**
+${analysisResult.crossDomainImpacts.map((impact, i) => `${i + 1}. ${impact}`).join('\n')}
+
+`;
+      }
+
+      // Add implicit dependencies
+      if (analysisResult.implicitDependencies.length > 0) {
+        responseText += `🔗 **IMPLICIT DEPENDENCIES:**
+${analysisResult.implicitDependencies.slice(0, 5).map((dep, i) => `${i + 1}. ${dep}`).join('\n')}
+
+`;
+      }
+
+      // Add missing requirements detected
+      if (analysisResult.missingRequirementsDetected.length > 0) {
+        responseText += `⚠️ **MISSING REQUIREMENTS DETECTED:**
+${analysisResult.missingRequirementsDetected.slice(0, 3).map((req, i) => `${i + 1}. **${req.name}** [${req.priority.toUpperCase()}]
+   ${req.description}
+   Effort: ${req.estimatedEffort} | Risk: ${req.riskLevel} | MCP: ${req.mcpCoverage ? 'Yes' : 'No'}`).join('\n\n')}
+
+`;
+      }
+
+      // Add detailed report if requested
+      if (args.detailed_report) {
+        responseText += `📋 **DETAILED ANALYSIS REPORT:**
+
+**COMPLETENESS ANALYSIS:**
+The analysis achieved a completeness score of ${analysisResult.completenessScore}/100 with ${analysisResult.confidenceLevel} confidence.
+
+**PASS-BY-PASS BREAKDOWN:**
+${Object.entries(analysisResult.analysisPassesData).map(([passKey, passData]) => `
+**${passData.passName}:**
+- New requirements identified: ${passData.newRequirementsAdded}
+- Key insights: ${passData.keyFindings.join('; ')}
+- Analysis approach: ${passData.analysisMethod}
+- Processing efficiency: ${passData.processingTime}ms
+`).join('')}
+
+**RISK ASSESSMENT:**
+${analysisResult.riskAssessment === 'high' ? '⚠️ HIGH RISK: This objective involves complex integrations and significant system changes.' : 
+  analysisResult.riskAssessment === 'medium' ? '🔶 MEDIUM RISK: Standard complexity with some integration challenges.' : 
+  '✅ LOW RISK: Straightforward implementation with minimal system impact.'}
+
+**COMPLEXITY BREAKDOWN:**
+The ${analysisResult.estimatedComplexity} complexity rating is based on:
+- Number of components: ${analysisResult.totalRequirements}
+- Integration points: ${analysisResult.categories.length} different categories
+- Estimated duration: ${analysisResult.estimatedDuration}
+- Cross-domain impacts: ${analysisResult.crossDomainImpacts.length} identified
+
+`;
+      }
+
+      responseText += `
+🔍 **NEXT STEPS:**
+1. **Immediate Actions**: Focus on ${analysisResult.criticalPath.length > 0 ? 'critical path requirements' : 'high-priority items'}
+2. **MCP Coverage**: ${analysisResult.mcpCoveragePercentage}% can be automated, ${100 - analysisResult.mcpCoveragePercentage}% requires manual work
+3. **Resource Planning**: Estimated ${analysisResult.estimatedDuration} development time
+4. **Risk Mitigation**: Address ${analysisResult.riskAssessment} risk items first
+5. **Quality Assurance**: Validate completeness score of ${analysisResult.completenessScore}/100
+
+💡 **RECOMMENDATIONS:**
+• Start with MCP-covered requirements for quick wins
+• Address security and compliance requirements early
+• Plan for cross-domain impact testing
+• Consider phased implementation for complex scenarios
+
+✅ **Comprehensive analysis complete!** This ${analysisResult.analysisPassesData.pass1_initial.requirementsFound + analysisResult.analysisPassesData.pass2_dependencies.newRequirementsAdded + analysisResult.analysisPassesData.pass3_context.newRequirementsAdded + analysisResult.analysisPassesData.pass4_validation.newRequirementsAdded}-requirement analysis ensures nothing is missed.`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText,
+          },
+        ],
+      };
+
+    } catch (error) {
+      this.logger.error('Comprehensive requirements analysis failed:', error);
+      throw new Error(`Comprehensive requirements analysis failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

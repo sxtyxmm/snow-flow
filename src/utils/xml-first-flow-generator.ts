@@ -124,19 +124,44 @@ export class XMLFirstFlowGenerator {
   }
 
   /**
+   * 🛡️ Apply security defaults to flow definition - BUG-004 FIX
+   */
+  private applySecurityDefaults(flowDef: XMLFlowDefinition): XMLFlowDefinition {
+    // 🔒 SECURITY GUARD: Never allow public access unless explicitly and safely configured
+    const secureFlowDef = {
+      ...flowDef,
+      // Override with secure defaults - these CANNOT be accidentally public
+      accessible_from: 'package_private' as const,  // FORCE secure default
+      run_as: flowDef.run_as || 'user' as const     // Default to user, not system
+    };
+
+    // 🚨 Log security override for audit trail
+    if (flowDef.accessible_from && flowDef.accessible_from !== 'package_private') {
+      console.log('🛡️ SECURITY OVERRIDE: Flow access forced to package_private for security');
+      console.log(`   • Original: ${flowDef.accessible_from}`);
+      console.log(`   • Applied: package_private (secure)`);
+    }
+
+    return secureFlowDef;
+  }
+
+  /**
    * Generate complete Update Set XML for a flow
    * Based on REAL ServiceNow XML structure research
    */
   generateFlowUpdateSetXML(flowDef: XMLFlowDefinition): string {
+    // 🔒 BUG-004 FIX: Apply security defaults FIRST
+    const secureFlowDef = this.applySecurityDefaults(flowDef);
+    
     this.flowSysId = this.generateSysId();
     const timestamp = new Date().toISOString();
-    const internalName = flowDef.internal_name || this.generateInternalName(flowDef.name);
+    const internalName = secureFlowDef.internal_name || this.generateInternalName(secureFlowDef.name);
     
     // Generate all component sys_ids upfront
     const updateSetSysId = this.generateSysId();
     const snapshotSysId = this.generateSysId();
     const triggerSysId = this.generateSysId();
-    const activitySysIds = flowDef.activities.map(() => this.generateSysId());
+    const activitySysIds = secureFlowDef.activities.map(() => this.generateSysId());
     const logicSysIds: string[] = []; // For flow logic connections
     
     // Calculate logic chain sys_ids
@@ -145,7 +170,7 @@ export class XMLFirstFlowGenerator {
     }
     
     // Build the complete flow definition JSON for snapshot
-    const flowDefinitionJson = this.buildFlowDefinitionJson(flowDef, triggerSysId, activitySysIds);
+    const flowDefinitionJson = this.buildFlowDefinitionJson(secureFlowDef, triggerSysId, activitySysIds);
     
     // Generate XML - MUST use sys_remote_update_set for imports!
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -154,7 +179,7 @@ export class XMLFirstFlowGenerator {
   <sys_remote_update_set action="INSERT_OR_UPDATE">
     <sys_id>${updateSetSysId}</sys_id>
     <name>${this.escapeXml(this.updateSetName)}</name>
-    <description>Flow import: ${this.escapeXml(flowDef.name)}</description>
+    <description>Flow import: ${this.escapeXml(secureFlowDef.name)}</description>
     <remote_sys_id>${updateSetSysId}</remote_sys_id>
     <state>loaded</state>
     <application>global</application>
@@ -168,7 +193,7 @@ export class XMLFirstFlowGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application>global</application>
     <name>sys_hub_flow_${this.flowSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow"><sys_hub_flow action="INSERT_OR_UPDATE"><sys_id>${this.flowSysId}</sys_id><name>${this.escapeXml(flowDef.name)}</name><internal_name>${this.escapeXml(internalName)}</internal_name><description>${this.escapeXml(flowDef.description)}</description><active>true</active><type>flow</type><category>custom</category><sys_scope display_value="Global">global</sys_scope><sys_app display_value="Global">global</sys_app><sys_package display_value="Global" source="global">global</sys_package><access>${flowDef.accessible_from || 'package_private'}</access><run_as>${flowDef.run_as || 'user'}</run_as><sys_class_name>sys_hub_flow</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_updated_by>admin</sys_updated_by><sys_updated_on>${timestamp}</sys_updated_on><latest_snapshot>${snapshotSysId}</latest_snapshot><master_snapshot>${snapshotSysId}</master_snapshot><natlang/><copied_from/><copied_from_name/><show_draft_actions>false</show_draft_actions><show_row_wfr_actions>false</show_row_wfr_actions><show_wf_actions>false</show_wf_actions><sys_overrides/><sys_policy/></sys_hub_flow></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow"><sys_hub_flow action="INSERT_OR_UPDATE"><sys_id>${this.flowSysId}</sys_id><name>${this.escapeXml(secureFlowDef.name)}</name><internal_name>${this.escapeXml(internalName)}</internal_name><description>${this.escapeXml(secureFlowDef.description)}</description><active>true</active><type>flow</type><category>custom</category><sys_scope display_value="Global">global</sys_scope><sys_app display_value="Global">global</sys_app><sys_package display_value="Global" source="global">global</sys_package><access>${secureFlowDef.accessible_from}</access><run_as>${secureFlowDef.run_as}</run_as><sys_class_name>sys_hub_flow</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_updated_by>admin</sys_updated_by><sys_updated_on>${timestamp}</sys_updated_on><latest_snapshot>${snapshotSysId}</latest_snapshot><master_snapshot>${snapshotSysId}</master_snapshot><natlang/><copied_from/><copied_from_name/><show_draft_actions>false</show_draft_actions><show_row_wfr_actions>false</show_row_wfr_actions><show_wf_actions>false</show_wf_actions><sys_overrides/><sys_policy/></sys_hub_flow></record_update>]]></payload>
     <remote_update_set>${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow</source_table>
     <sys_recorded_at>${timestamp}</sys_recorded_at>
@@ -182,7 +207,7 @@ export class XMLFirstFlowGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application>global</application>
     <name>sys_hub_flow_snapshot_${snapshotSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><sys_id>${snapshotSysId}</sys_id><name>${this.escapeXml(flowDef.name)}</name><flow>${this.flowSysId}</flow><note>Initial version</note><snapshot>${this.escapeForXml(JSON.stringify(flowDefinitionJson, null, 2))}</snapshot><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on></sys_hub_flow_snapshot></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><sys_id>${snapshotSysId}</sys_id><name>${this.escapeXml(secureFlowDef.name)}</name><flow>${this.flowSysId}</flow><note>Initial version</note><snapshot>${this.escapeForXml(JSON.stringify(flowDefinitionJson, null, 2))}</snapshot><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on></sys_hub_flow_snapshot></record_update>]]></payload>
     <remote_update_set>${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_snapshot</source_table>
     <type>Flow Designer Snapshot</type>
@@ -194,13 +219,13 @@ export class XMLFirstFlowGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application>global</application>
     <name>sys_hub_trigger_instance_${triggerSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_trigger_instance"><sys_hub_trigger_instance action="INSERT_OR_UPDATE"><sys_id>${triggerSysId}</sys_id><flow>${this.flowSysId}</flow><trigger_type>${this.getTriggerTypeId(flowDef.trigger_type)}</trigger_type><table>${flowDef.table || ''}</table><condition>${this.escapeXml(flowDef.trigger_condition || '')}</condition><order>100</order><active>true</active><sys_class_name>sys_hub_trigger_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_trigger_instance></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_trigger_instance"><sys_hub_trigger_instance action="INSERT_OR_UPDATE"><sys_id>${triggerSysId}</sys_id><flow>${this.flowSysId}</flow><trigger_type>${this.getTriggerTypeId(secureFlowDef.trigger_type)}</trigger_type><table>${secureFlowDef.table || ''}</table><condition>${this.escapeXml(secureFlowDef.trigger_condition || '')}</condition><order>100</order><active>true</active><sys_class_name>sys_hub_trigger_instance</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path></sys_hub_trigger_instance></record_update>]]></payload>
     <remote_update_set>${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_trigger_instance</source_table>
     <type>Flow Designer Trigger</type>
   </sys_update_xml>
 
-  ${this.generateActionInstancesXML(flowDef.activities, activitySysIds, timestamp, updateSetSysId)}
+  ${this.generateActionInstancesXML(secureFlowDef.activities, activitySysIds, timestamp, updateSetSysId)}
   ${this.generateFlowLogicXML(triggerSysId, activitySysIds, logicSysIds, timestamp, updateSetSysId)}
 </unload>`;
     
