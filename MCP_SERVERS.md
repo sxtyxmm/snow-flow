@@ -1,5 +1,9 @@
 # ServiceNow MCP Servers Documentation
 
+## ⚠️ IMPORTANT: Flow Creation Removed in v1.4.0 ⚠️
+
+**Note**: The Flow Composer MCP Server and all flow-related tools have been removed in v1.4.0 due to critical bugs. Please use ServiceNow's native Flow Designer interface directly for flow creation. All other MCP servers and tools continue to function normally.
+
 ## Overview
 
 The ServiceNow Multi-Agent system includes **11 specialized MCP servers** that provide comprehensive coverage for ServiceNow development, operations, and management. Each server focuses on specific aspects of ServiceNow automation and integrates seamlessly with the snow-flow CLI and Claude Code.

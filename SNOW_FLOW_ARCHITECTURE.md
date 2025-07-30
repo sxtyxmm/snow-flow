@@ -1,5 +1,9 @@
 # Snow-Flow Architecture: ServiceNow Hive-Mind Intelligence
 
+## ⚠️ IMPORTANT: Flow Creation Removed in v1.4.0 ⚠️
+
+**Note**: The Flow Builder agent and all flow-related functionality have been removed in v1.4.0 due to critical bugs. Please use ServiceNow's native Flow Designer interface directly for flow creation. All other agents and functionality continue to work normally.
+
 ## 🎯 Vision: Claude-Flow for ServiceNow Development
 
 Snow-Flow implements the **claude-flow philosophy** specifically for ServiceNow development, creating an intelligent swarm of AI agents that collaborate through Claude Code to build, deploy, and maintain ServiceNow solutions.

@@ -5,6 +5,38 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-07-31
+
+### 🚨 BREAKING CHANGES - Flow Creation Removed
+
+**Major Change**: All flow creation functionality has been permanently removed due to critical issues discovered during beta testing.
+
+### ❌ Removed
+- All flow creation MCP tools (`snow_create_flow`, `snow_deploy_flow`, etc.)
+- Flow templates and XML generators
+- Flow performance analysis tools
+- CLI commands: `create-flow`, `xml-flow`
+- 38 critical bugs in flow functionality (0% success rate in beta)
+
+### ✅ Fixed
+- **TypeScript Compliance**: Complete resolution of 270+ TypeScript errors
+- **MCPExecutionResult**: Fixed interface and method signatures
+- **ServiceNowQueen**: Corrected method signatures and parameter compliance
+- **Memory System**: Fixed metadata requirements (created, updated, version)
+- **Agent Factory**: Resolved AgentType Record completeness
+- **Integration Tests**: Fixed return type compatibility
+- **Configuration**: Corrected property access with proper type casting
+
+### 🎯 Still Working
+- Widget development and deployment
+- Update Set management
+- ServiceNow authentication
+- Table/field discovery
+- Multi-agent coordination
+- General ServiceNow operations
+
+For migration guide and details, see [CHANGELOG-1.4.0.md](./CHANGELOG-1.4.0.md)
+
 ## [1.3.23] - 2025-07-29
 
 ### 🔴 CRITICAL BUG FIXES - All Beta Test Issues Resolved

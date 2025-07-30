@@ -4,6 +4,10 @@
 > 
 > A single coordination point that spawns specialized agents dynamically, learns from deployments, and orchestrates complex ServiceNow tasks with elegance through simplicity.
 
+## ⚠️ IMPORTANT: Flow Creation Removed in v1.4.0 ⚠️
+
+**Note**: The flow-builder agent and all flow-related functionality have been removed in v1.4.0 due to critical bugs. Flow creation examples in this documentation are no longer functional. Please use ServiceNow's native Flow Designer interface directly for flow creation. All other agent types and functionality continue to work normally.
+
 ## Philosophy: Claude-Flow Principles
 
 The ServiceNow Queen Agent follows claude-flow philosophy:

@@ -2,6 +2,10 @@
 
 This directory contains the implementation of ServiceNow specialist agents that work together through Claude Code to build, deploy, and maintain ServiceNow solutions.
 
+## ⚠️ IMPORTANT: Flow Builder Agent Removed in v1.4.0 ⚠️
+
+**Note**: The Flow Builder Agent and all flow-related functionality have been removed in v1.4.0 due to critical bugs. The agent file may still exist but is no longer functional. Please use ServiceNow's native Flow Designer interface directly for flow creation.
+
 ## 🤖 Available Agents
 
 ### 1. Widget Creator Agent (`widget-creator-agent.ts`)
