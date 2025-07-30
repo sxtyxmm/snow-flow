@@ -1,5 +1,7 @@
 # Snow-Flow: ServiceNow Hive-Mind Intelligence 🧠
 
+> **🔥 HOT FIX v1.3.30 Released**: Critical production blocker fixed! Update immediately with `npm update -g snow-flow`
+
 **Snow-Flow** revolutionizes ServiceNow development through **claude-flow inspired hive-mind architecture**. One elegant command spawns intelligent AI agents that collaborate to build, test, and deploy professional ServiceNow solutions automatically.
 
 ## 🧠 The Hive-Mind Revolution
@@ -11,6 +13,25 @@
 - 💾 **Shared Memory**: SQLite-based persistent coordination system
 - 🎯 **Claude Code Integration**: All coordination happens through Claude Code interface
 - 🚀 **One Command**: `snow-flow swarm "objective"` - everything else is automatic
+
+## 🚨 CRITICAL HOT FIX: v1.3.30 - BUG-001 Production Blocker RESOLVED! 🔥
+
+### 🔥 Emergency Fix Released
+
+**BUG-001: "flowDef is not defined" Error - FIXED ✅**
+- **Critical Issue**: Flow deployments were completely blocked with runtime error
+- **Impact**: 100% deployment failure rate - no flows could be created
+- **Root Cause**: Missing `this.` prefix in CompleteFlowXMLGenerator class
+- **Fix**: All references to `flowDef` now properly use `this.flowDef`
+- **Result**: Flow deployments now work correctly!
+
+```bash
+# Update immediately to fix deployment issues
+npm update -g snow-flow
+
+# Verify you have v1.3.30
+snow-flow --version
+```
 
 ## 🚨 CRITICAL FIXES: v1.3.28 - All Beta Testing Issues RESOLVED! ✅
 
