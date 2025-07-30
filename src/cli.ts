@@ -2215,26 +2215,9 @@ program
         console.log('   ✓ README.md - Project documentation');
         
         if (!options.skipMcp) {
-          console.log(chalk.yellow.bold('\n🚀 Ready to activate MCP servers in Claude Code!'));
-          console.log('\nWould you like to start Claude Code with MCP servers automatically? (Y/n)');
-          
-          const readline = await import('readline');
-          const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-          });
-          
-          const answer = await new Promise<string>(resolve => {
-            rl.question('> ', resolve);
-          });
-          rl.close();
-          
-          if (!answer || answer.toLowerCase() === 'y') {
-            await activateMCPServers();
-          } else {
-            console.log('\n📝 To activate MCP servers manually later, run:');
-            console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
-          }
+          console.log(chalk.yellow.bold('\n📝 MCP servers are configured for Claude Code'));
+          console.log('\nTo activate MCP servers in Claude Code, run:');
+          console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
         }
       }
       
@@ -5439,45 +5422,6 @@ program
 // 🎯 INTEGRATE SNOW-FLOW HIVE-MIND SYSTEM
 // ===================================================
 
-async function activateMCPServers() {
-  console.log(chalk.blue.bold('\n🚀 Activating MCP servers in Claude Code...'));
-  
-  try {
-    const { spawn } = await import('child_process');
-    const platform = process.platform;
-    
-    // Check if claude command exists
-    const claudeCommand = platform === 'win32' ? 'claude.exe' : 'claude';
-    
-    console.log('📡 Starting Claude Code with MCP configuration...');
-    
-    // Launch Claude with MCP config
-    const claudeProcess = spawn(claudeCommand, ['--mcp-config', '.mcp.json', '.'], {
-      stdio: 'inherit',
-      shell: true
-    });
-    
-    claudeProcess.on('error', (error) => {
-      if (error.message.includes('ENOENT')) {
-        console.error(chalk.red('\n❌ Claude Code not found. Please install it first:'));
-        console.log('   Visit: https://claude.ai/download');
-      } else {
-        console.error(chalk.red('\n❌ Failed to start Claude Code:'), error.message);
-      }
-    });
-    
-    claudeProcess.on('spawn', () => {
-      console.log(chalk.green('✅ Claude Code started with MCP servers!'));
-      console.log('\n📋 All 11 ServiceNow MCP servers are now available in Claude Code');
-      console.log('🎯 You can start using Snow-Flow commands immediately!');
-    });
-    
-  } catch (error) {
-    console.error(chalk.red('\n❌ Failed to activate MCP servers:'), error);
-    console.log('\n📝 To activate manually, run:');
-    console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
-  }
-}
 
 // Note: The new integrated commands enhance the existing CLI with:
 // - Advanced system status monitoring
