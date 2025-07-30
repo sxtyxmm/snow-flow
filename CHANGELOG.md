@@ -5,6 +5,25 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2025-07-30
+
+### 🚀 MCP Server Auto-Start
+
+**Essential Fix**: MCP servers now start automatically during init, ensuring they're ready for swarm commands.
+
+### Added
+- Automatic MCP server startup during init command
+- Background process management for all 11 MCP servers
+- Absolute path resolution for global npm installations
+- Server status verification and feedback
+
+### Fixed
+- MCP servers not running when swarm command executed
+- Path resolution issues for globally installed snow-flow
+- Manual MCP start requirement after init
+
+For full details, see [CHANGELOG-1.4.4.md](./CHANGELOG-1.4.4.md)
+
 ## [1.4.3] - 2025-07-30
 
 ### 🔧 Behavior Correction

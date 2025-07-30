@@ -2215,9 +2215,29 @@ program
         console.log('   ✓ README.md - Project documentation');
         
         if (!options.skipMcp) {
-          console.log(chalk.yellow.bold('\n📝 MCP servers are configured for Claude Code'));
-          console.log('\nTo activate MCP servers in Claude Code, run:');
-          console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
+          // Start MCP servers automatically
+          console.log(chalk.yellow.bold('\n🚀 Starting MCP servers in the background...'));
+          
+          try {
+            const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
+            const manager = new MCPServerManager();
+            await manager.initialize();
+            
+            console.log('📡 Starting all ServiceNow MCP servers...');
+            await manager.startAllServers();
+            
+            const status = manager.getServerStatus();
+            const running = status.filter((s: any) => s.status === 'running').length;
+            const total = status.length;
+            
+            console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
+            console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
+            console.log('🎯 They will be available when you run swarm commands');
+            
+          } catch (error) {
+            console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
+            console.log('📝 You can start them manually with: ' + chalk.cyan('snow-flow mcp start'));
+          }
         }
       }
       
@@ -4602,12 +4622,32 @@ async function checkNeo4jAvailability(): Promise<boolean> {
 }
 
 async function createMCPConfig(targetDir: string) {
+  // Determine the snow-flow installation directory
+  let snowFlowRoot: string;
+  
+  // Check if we're in a global npm installation
+  const isGlobalInstall = __dirname.includes('node_modules/snow-flow') || 
+                         __dirname.includes('node_modules/.pnpm') ||
+                         __dirname.includes('npm/snow-flow');
+  
+  if (isGlobalInstall) {
+    // For global installs, find the snow-flow package root
+    const parts = __dirname.split(/node_modules[\/\\]/);
+    snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+  } else {
+    // For local development or local install
+    snowFlowRoot = process.cwd();
+  }
+  
+  // Ensure we have the correct path to dist directory
+  const distPath = join(snowFlowRoot, 'dist');
+  
   // Create the correct .mcp.json file for Claude Code discovery
   const mcpConfig = {
     "mcpServers": {
       "servicenow-deployment": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-deployment-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-deployment-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4616,7 +4656,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-flow-composer": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-flow-composer-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-flow-composer-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4625,7 +4665,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-update-set": {
         "command": "node", 
-        "args": ["dist/mcp/servicenow-update-set-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-update-set-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4634,7 +4674,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-intelligent": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-intelligent-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-intelligent-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4643,7 +4683,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-graph-memory": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-graph-memory-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-graph-memory-mcp.js")],
         "env": {
           "NEO4J_URI": "${NEO4J_URI}",
           "NEO4J_USER": "${NEO4J_USER}",
@@ -4655,7 +4695,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-operations": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-operations-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-operations-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4664,7 +4704,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-platform-development": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-platform-development-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-platform-development-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4673,7 +4713,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-integration": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-integration-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-integration-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4682,7 +4722,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-automation": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-automation-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-automation-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4691,7 +4731,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-security-compliance": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-security-compliance-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-security-compliance-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -4700,7 +4740,7 @@ async function createMCPConfig(targetDir: string) {
       },
       "servicenow-reporting-analytics": {
         "command": "node",
-        "args": ["dist/mcp/servicenow-reporting-analytics-mcp.js"],
+        "args": [join(distPath, "mcp/servicenow-reporting-analytics-mcp.js")],
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
