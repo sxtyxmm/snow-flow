@@ -2,13 +2,17 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.30';
+export const VERSION = '1.3.31';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.3.31': [
+      '🔧 VERSION FIX: Correct version now displayed with snow-flow --version',
+      '✅ All v1.3.30 fixes included plus proper version constant update'
+    ],
     '1.3.30': [
       '🔥 CRITICAL FIX: BUG-001 Production Blocker Resolved - flowDef is not defined error fixed',
       '✅ Flow deployments now work correctly - all this.flowDef references fixed',
