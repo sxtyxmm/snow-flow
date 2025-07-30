@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development inspired by claude-flow. Transform complex workflows into elegant one-command orchestration.",
   "main": "dist/index.js",
   "type": "commonjs",

@@ -5,6 +5,30 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2025-07-31
+
+### 🚀 Production Release
+
+**Key Improvements:**
+- **TypeScript Compliance**: Achieved 100% TypeScript compliance (270+ errors → 0)
+- **Production Ready**: All compilation errors resolved, ready for npm publish
+- **Documentation**: Comprehensive updates reflecting v1.4.0 breaking changes
+
+### ✅ Fixed
+- MCPExecutionResult interface and method signatures
+- ServiceNowQueen executeAgentRecommendation method calls
+- Memory system metadata compliance
+- Agent factory type completeness
+- Integration test return types
+- Configuration property access
+
+### 📚 Updated
+- All documentation files with flow removal warnings
+- Migration guides for affected users
+- Clear indication of working features
+
+For full details, see [CHANGELOG-1.4.1.md](./CHANGELOG-1.4.1.md)
+
 ## [1.4.0] - 2025-07-31
 
 ### 🚨 BREAKING CHANGES - Flow Creation Removed
