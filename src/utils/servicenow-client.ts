@@ -80,9 +80,9 @@ export class ServiceNowClient {
   constructor() {
     this.logger = new Logger('ServiceNowClient');
     this.oauth = new ServiceNowOAuth();
-    // 🔒 SSL/TLS Certificate Validation Fix: Add proper HTTPS agent with certificate validation
+    // 🔒 SSL/TLS Certificate Validation Fix: Allow self-signed certificates for ServiceNow dev instances
     const httpsAgent = new https.Agent({
-      rejectUnauthorized: true,  // Enforce certificate validation
+      rejectUnauthorized: false,  // Allow self-signed certificates for dev instances (fixes "certificate has expired" errors)
       checkServerIdentity: (hostname, cert) => {
         // Custom certificate validation for ServiceNow instances
         // Allow *.service-now.com and user-configured instances

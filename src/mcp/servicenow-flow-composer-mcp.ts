@@ -2758,6 +2758,27 @@ ${categoryFilteredResults.length === 0 ? `🔍 **No templates found matching you
    * Generate manual import guide for failed deployments
    */
   private generateManualImportGuide(xmlFilePath: string): string {
+    // BUG-004 FIX: Handle undefined or empty file paths properly
+    if (!xmlFilePath || xmlFilePath.trim() === '') {
+      return `
+**⚠️ No XML file was generated**
+
+Since the flow XML generation failed, you'll need to:
+
+1. **Create the flow manually in ServiceNow**:
+   - Navigate to Flow Designer
+   - Click "New" > "Flow"
+   - Build the flow based on your requirements
+   
+2. **Alternative: Use the deployment tool**:
+   - Run: snow-flow deploy --retry
+   - This will attempt to regenerate and deploy the flow
+   
+3. **Check error logs**:
+   - Review the error details above to understand why XML generation failed
+   - Common causes: missing artifacts, permission issues, or invalid flow structure`;
+    }
+    
     return `
 1. **Navigate to ServiceNow**:
    - System Update Sets > Retrieved Update Sets

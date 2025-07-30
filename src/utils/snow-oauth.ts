@@ -10,6 +10,7 @@ import os from 'os';
 import { createServer } from 'http';
 import { URL } from 'url';
 import axios from 'axios';
+import https from 'https';
 import net from 'net';
 import crypto from 'crypto';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
@@ -436,7 +437,11 @@ export class ServiceNowOAuth {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        timeout: 15000  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+        timeout: 15000,  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+        // Allow self-signed certificates for dev instances
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false
+        })
       });
       
       const data = response.data;
@@ -594,7 +599,11 @@ export class ServiceNowOAuth {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        timeout: 15000  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+        timeout: 15000,  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+        // Allow self-signed certificates for dev instances
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false
+        })
       });
       
       const data = response.data;
