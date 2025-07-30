@@ -12,16 +12,8 @@ import { snowFlowConfig } from '../config/snow-flow-config.js';
 import { widgetTemplateGenerator } from './widget-template-generator.js';
 import { Logger } from './logger';
 import { unifiedAuthStore } from './unified-auth-store.js';
-import { 
-  generateFlowComponents, 
-  createActionInstances, 
-  buildLogicChain, 
-  validateFlowComponents, 
-  generateFlowXML,
-  FlowDefinition,
-  ServiceNowFlowComponents,
-  ACTION_TYPE_IDS
-} from './flow-structure-builder';
+// Flow structure builder removed in v1.4.0
+// import { generateFlowComponents, createActionInstances, buildLogicChain, validateFlowComponents, generateFlowXML, FlowDefinition, ServiceNowFlowComponents, ACTION_TYPE_IDS } from './flow-structure-builder';
 
 export interface ServiceNowWidget {
   sys_id?: string;

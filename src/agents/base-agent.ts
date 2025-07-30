@@ -200,15 +200,14 @@ export abstract class BaseAgent implements Agent {
    */
   protected shouldCoordinate(otherAgentType: AgentType): boolean {
     // Define coordination rules
-    const coordinationRules: Record<AgentType, AgentType[]> = {
-      'widget-creator': ['tester', 'researcher', 'app-architect'],
-      'flow-builder': ['catalog-manager', 'tester', 'integration-specialist'],
-      'script-writer': ['tester', 'app-architect'],
-      'app-architect': ['widget-creator', 'script-writer', 'flow-builder'],
-      'integration-specialist': ['flow-builder', 'script-writer'],
-      'catalog-manager': ['flow-builder'],
-      'researcher': ['widget-creator', 'flow-builder', 'script-writer'],
-      'tester': ['widget-creator', 'flow-builder', 'script-writer']
+    // Simplified coordination rules after flow-builder removal  
+    const coordinationRules: Partial<Record<AgentType, AgentType[]>> = {
+      'researcher': ['coder', 'analyst'],
+      'coder': ['tester', 'architect'], 
+      'analyst': ['researcher', 'documenter'],
+      'architect': ['coder', 'specialist'],
+      'tester': ['coder', 'reviewer'],
+      'specialist': ['architect', 'coder']
     };
     
     return coordinationRules[this.type]?.includes(otherAgentType) || false;

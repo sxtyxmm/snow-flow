@@ -3,15 +3,16 @@
  * Intelligent mapping from natural language descriptions to ServiceNow action types
  */
 
-import { FlowAPIDiscovery, FlowActionType, ActionTypeSearchResult } from '../utils/flow-api-discovery.js';
+// Flow API Discovery removed in v1.4.0
 import { Logger } from '../utils/logger.js';
 
+// Flow types removed in v1.4.0
 export interface NLPMappingResult {
-  action_type: FlowActionType;
+  action_type: string; // was FlowActionType  
   confidence: number;
   reasoning: string;
   suggested_inputs: Record<string, any>;
-  alternative_actions: FlowActionType[];
+  alternative_actions: string[]; // was FlowActionType[]
 }
 
 export interface ActionIntent {
@@ -30,14 +31,14 @@ export interface MappingContext {
 }
 
 export class NaturalLanguageMapper {
-  private discovery: FlowAPIDiscovery;
+  // private discovery: FlowAPIDiscovery; // removed in v1.4.0
   private logger: Logger;
   private verbMappings: Map<string, string[]> = new Map();
   private objectMappings: Map<string, string[]> = new Map();
   private contextMappings: Map<string, string[]> = new Map();
 
-  constructor(discovery: FlowAPIDiscovery) {
-    this.discovery = discovery;
+  constructor() { // discovery: FlowAPIDiscovery removed in v1.4.0
+    // this.discovery = discovery; // removed in v1.4.0
     this.logger = new Logger('NaturalLanguageMapper');
     this.initializeMappings();
   }

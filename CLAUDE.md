@@ -1,5 +1,17 @@
 # Claude Code Configuration - SPARC Development Environment (Batchtools Optimized)
 
+⚠️ **WARNING: FLOW CREATION REMOVED (v1.4.0+)** ⚠️
+
+Flow Designer functionality has been removed due to critical issues.
+Please use ServiceNow's native Flow Designer interface directly.
+
+Snow-flow now focuses on:
+- Widget development and deployment
+- Update Set management
+- ServiceNow authentication
+- Table/field discovery  
+- Multi-agent coordination
+
 ## 🚨 CRITICAL: CONCURRENT EXECUTION FOR ALL ACTIONS
 
 **ABSOLUTE RULE**: ALL operations MUST be concurrent/parallel in a single message:
