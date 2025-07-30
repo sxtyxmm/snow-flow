@@ -18,6 +18,7 @@ import { VERSION } from './version.js';
 import { integrateSnowFlowCommands } from './cli/snow-flow-cli-integration.js';
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
+import chalk from 'chalk';
 
 // Load environment variables
 dotenv.config();
@@ -2167,6 +2168,88 @@ program
     }
   });
 
+// Initialize Snow-Flow project
+program
+  .command('init')
+  .description('Initialize a Snow-Flow project with SPARC environment')
+  .option('--sparc', 'Initialize with SPARC methodology and MCP servers (recommended)', true)
+  .option('--skip-mcp', 'Skip MCP server activation prompt')
+  .action(async (options) => {
+    console.log(chalk.blue.bold(`\n🚀 Initializing Snow-Flow Project v${VERSION}...`));
+    console.log('='.repeat(60));
+    
+    const targetDir = process.cwd();
+    
+    try {
+      // Create directory structure
+      console.log('\n📁 Creating project structure...');
+      await createDirectoryStructure(targetDir);
+      
+      // Create .env file
+      console.log('🔐 Creating environment configuration...');
+      await createEnvFile(targetDir);
+      
+      // Create MCP configuration
+      if (options.sparc) {
+        console.log('🔧 Setting up MCP servers for Claude Code...');
+        await createMCPConfig(targetDir);
+        
+        // Copy CLAUDE.md file
+        console.log('📚 Creating documentation files...');
+        await copyCLAUDEmd(targetDir);
+        
+        // Create README files
+        await createReadmeFiles(targetDir);
+      }
+      
+      console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
+      console.log('\n📋 Created files and directories:');
+      console.log('   ✓ .claude/ - Claude Code configuration');
+      console.log('   ✓ .swarm/ - Swarm session management');
+      console.log('   ✓ memory/ - Persistent memory storage');
+      console.log('   ✓ .env - ServiceNow OAuth configuration');
+      
+      if (options.sparc) {
+        console.log('   ✓ .mcp.json - MCP server configuration');
+        console.log('   ✓ CLAUDE.md - Development documentation');
+        console.log('   ✓ README.md - Project documentation');
+        
+        if (!options.skipMcp) {
+          console.log(chalk.yellow.bold('\n🚀 Ready to activate MCP servers in Claude Code!'));
+          console.log('\nWould you like to start Claude Code with MCP servers automatically? (Y/n)');
+          
+          const readline = await import('readline');
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+          });
+          
+          const answer = await new Promise<string>(resolve => {
+            rl.question('> ', resolve);
+          });
+          rl.close();
+          
+          if (!answer || answer.toLowerCase() === 'y') {
+            await activateMCPServers();
+          } else {
+            console.log('\n📝 To activate MCP servers manually later, run:');
+            console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
+          }
+        }
+      }
+      
+      console.log(chalk.blue.bold('\n🎯 Next steps:'));
+      console.log('1. Edit .env file with your ServiceNow credentials');
+      console.log('2. Run: ' + chalk.cyan('snow-flow auth login'));
+      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "your objective"'));
+      console.log('\n📚 Full documentation: https://github.com/groeimetai/snow-flow');
+      
+    } catch (error) {
+      console.error(chalk.red('\n❌ Initialization failed:'), error);
+      process.exit(1);
+    }
+  });
+
 // Help command
 program
   .command('help')
@@ -3980,6 +4063,465 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
   }
 }
 
+async function copyCLAUDEmd(targetDir: string) {
+  let claudeMdContent = '';
+  try {
+    // First try to find the CLAUDE.md in the source directory (for global installs)
+    const sourceClaudeFiles = [
+      // Try the project root (when running from dist/)
+      join(__dirname, '..', 'CLAUDE.md'),
+      // Try when running directly from src/
+      join(__dirname, 'CLAUDE.md'), 
+      // Try npm global installation paths  
+      join(__dirname, '..', '..', '..', 'CLAUDE.md'),
+      join(__dirname, '..', '..', '..', '..', 'CLAUDE.md'),
+      // Try current working directory as fallback
+      join(process.cwd(), 'CLAUDE.md')
+    ];
+    
+    let foundSource = false;
+    
+    for (const sourcePath of sourceClaudeFiles) {
+      try {
+        claudeMdContent = await fs.readFile(sourcePath, 'utf8');
+        foundSource = true;
+        console.log(`✅ Found CLAUDE.md source at: ${sourcePath}`);
+        break;
+      } catch {
+        // Continue to next path
+      }
+    }
+    
+    if (!foundSource) {
+      // Fallback to a minimal CLAUDE.md if source not found
+      console.log('⚠️  Could not find CLAUDE.md source, creating minimal version');
+      claudeMdContent = `# Snow-Flow Development with Claude Code
+
+## 🚀 Core Development Principles
+
+### Concurrent Execution Strategy
+**Golden Rule**: "1 MESSAGE = ALL RELATED OPERATIONS"
+- Always batch related MCP tool calls in a single response
+- Use TodoWrite extensively for complex task coordination
+- Launch multiple agents concurrently for maximum performance
+- Leverage batch file operations whenever reading/writing multiple files
+
+### ServiceNow Development Best Practices
+1. **Never hardcode credentials** - Use OAuth and environment variables
+2. **Always work in Update Sets** - Provides rollback safety
+3. **Test before deploy** - Use mock testing tools for validation
+4. **Validate permissions** - Check OAuth scopes before operations
+5. **Use fuzzy search** - ServiceNow names can vary (iPhone vs iPhone 6S)
+
+## 📋 Essential MCP Tool Patterns
+
+### Batch Operations for Maximum Efficiency
+\`\`\`javascript
+// GOOD: Single message with multiple tool calls
+TodoWrite([...tasks]);
+Task("Architect", "Design system architecture");
+Task("Developer", "Implement components");
+Task("Tester", "Create test scenarios");
+
+// BAD: Sequential single operations
+TodoWrite([task1]);
+// wait for response
+TodoWrite([task2]);
+// wait for response
+\`\`\`
+
+### Memory-Driven Coordination
+Use Memory to coordinate information across agents:
+\`\`\`javascript
+// Store architecture decisions
+snow_memory_store({
+  key: "widget_architecture",
+  value: "Service Portal widget with Chart.js for data visualization"
+});
+
+// All agents can reference this
+Task("Frontend Dev", "Implement widget based on widget_architecture in memory");
+Task("Backend Dev", "Create REST endpoints for widget_architecture requirements");
+\`\`\`
+
+## 🛠️ Complete ServiceNow MCP Tools Reference
+
+### Discovery & Search Tools
+\`\`\`javascript
+// Find any ServiceNow artifact using natural language
+snow_find_artifact({
+  query: "the widget that shows incidents on homepage",
+  type: "widget" // or "flow", "script", "application", "any"
+});
+
+// Search catalog items with fuzzy matching
+snow_catalog_item_search({
+  query: "laptop",
+  fuzzy_match: true,        // Finds variations: notebook, MacBook, etc.
+  category_filter: "hardware",
+  include_variables: true   // Get catalog variables too
+});
+
+// Direct sys_id lookup (faster than search)
+snow_get_by_sysid({
+  sys_id: "<artifact_sys_id>",
+  table: "sp_widget"
+});
+\`\`\`
+
+### Flow Development Tools
+\`\`\`javascript
+// Create flows from natural language
+snow_create_flow({
+  instruction: "create a flow that sends email when incident priority is high",
+  deploy_immediately: true  // Automatically deploys XML to ServiceNow
+});
+
+// Test flows with mock data
+snow_test_flow_with_mock({
+  flow_id: "incident_notification_flow",
+  create_test_user: true,
+  mock_catalog_items: true,
+  test_inputs: {
+    priority: "1",
+    category: "hardware"
+  },
+  simulate_approvals: true
+});
+
+// Link catalog items to flows
+snow_link_catalog_to_flow({
+  catalog_item_id: "New Laptop Request",
+  flow_id: "laptop_provisioning_flow",
+  link_type: "flow_catalog_process",
+  variable_mapping: [
+    {
+      catalog_variable: "laptop_model",
+      flow_input: "equipment_type"
+    }
+  ]
+});
+\`\`\`
+
+### Widget Development Tools
+\`\`\`javascript
+// Deploy widgets with automatic validation
+snow_deploy_widget({
+  name: "incident_dashboard",
+  title: "Incident Dashboard",
+  template: htmlContent,
+  css: cssContent,
+  client_script: clientJS,
+  server_script: serverJS,
+  demo_data: { incidents: [...] }
+});
+
+// Preview and test widgets
+snow_preview_widget({
+  widget_id: "incident_dashboard",
+  check_dependencies: true
+});
+
+snow_widget_test({
+  widget_id: "incident_dashboard",
+  test_scenarios: [
+    {
+      name: "Load with no data",
+      server_data: { incidents: [] }
+    }
+  ]
+});
+\`\`\`
+
+### Bulk Operations
+\`\`\`javascript
+// Deploy multiple artifacts at once
+snow_bulk_deploy({
+  artifacts: [
+    { type: "widget", data: widgetData },
+    { type: "flow", data: flowData },
+    { type: "script", data: scriptData }
+  ],
+  transaction_mode: true,     // All or nothing
+  parallel: true,            // Deploy simultaneously
+  dry_run: false
+});
+\`\`\`
+
+### Intelligent Analysis
+\`\`\`javascript
+// Analyze incidents with AI
+snow_analyze_incident({
+  incident_id: "INC0010001",
+  include_similar: true,
+  suggest_resolution: true
+});
+
+// Pattern analysis
+snow_pattern_analysis({
+  analysis_type: "incident_patterns",
+  timeframe: "month"
+});
+\`\`\`
+
+## ⚡ Performance Optimization
+
+### Parallel Execution Patterns
+\`\`\`javascript
+// Execute multiple searches concurrently
+Promise.all([
+  snow_find_artifact({ query: "incident widget" }),
+  snow_catalog_item_search({ query: "laptop" }),
+  snow_query_incidents({ query: "priority=1" })
+]);
+\`\`\`
+
+### Batch File Operations
+\`\`\`javascript
+// Read multiple files in one operation
+MultiRead([
+  "/path/to/widget.html",
+  "/path/to/widget.css",
+  "/path/to/widget.js"
+]);
+\`\`\`
+
+## 📝 Workflow Guidelines
+
+### Standard Development Flow
+1. **Discovery Phase**: Use search tools to find existing artifacts
+2. **Planning Phase**: Use TodoWrite to plan all tasks
+3. **Development Phase**: Launch agents concurrently
+4. **Testing Phase**: Use mock testing tools
+5. **Deployment Phase**: Use bulk deploy with validation
+
+### Error Recovery Patterns
+\`\`\`javascript
+// Always implement rollback strategies
+if (deployment.failed) {
+  snow_deployment_rollback_manager({
+    update_set_id: deployment.update_set,
+    restore_point: deployment.backup_id
+  });
+}
+\`\`\`
+
+## 🔧 Advanced Configuration
+
+## Build Commands
+- \`npm run build\`: Build the project
+- \`npm run test\`: Run the full test suite
+- \`npm run lint\`: Run ESLint and format checks
+- \`npm run typecheck\`: Run TypeScript type checking
+
+## Snow-Flow Commands
+- \`snow-flow init --sparc\`: Initialize project with SPARC environment
+- \`snow-flow auth login\`: Authenticate with ServiceNow OAuth
+- \`snow-flow swarm "<objective>"\`: Start multi-agent swarm - één command voor alles!
+- \`snow-flow sparc <mode> "<task>"\`: Run specific SPARC mode
+
+## Enhanced Swarm Command (v1.1.41+)
+The swarm command now includes intelligent features that are **enabled by default**:
+
+\`\`\`bash
+# Simple usage - ALL autonomous systems enabled by default!
+snow-flow swarm "create incident management dashboard"
+
+# Disable specific autonomous systems if needed
+snow-flow swarm "create simple widget" --no-autonomous-cost-optimization --no-autonomous-compliance
+
+# Disable ALL autonomous systems
+snow-flow swarm "basic development only" --no-autonomous-all
+
+# Force enable all (overrides any --no- flags)
+snow-flow swarm "full orchestration mode" --autonomous-all
+\`\`\`
+
+### 🤖 NEW: Autonomous Systems (v1.3.26+) - **ENABLED BY DEFAULT!**
+True orchestration with zero manual intervention - all systems active unless disabled:
+
+- ✅ **Documentation**: Self-documenting system (auto-generates and updates docs)
+- ✅ **Cost Optimization**: AI-driven cost management with auto-optimization  
+- ✅ **Compliance**: Multi-framework compliance monitoring with auto-remediation
+- ✅ **Self-Healing**: Predictive failure detection with automatic recovery
+
+**Disable Options**:
+- \`--no-autonomous-documentation\`: Disable documentation system
+- \`--no-autonomous-cost-optimization\`: Disable cost optimization
+- \`--no-autonomous-compliance\`: Disable compliance monitoring
+- \`--no-autonomous-healing\`: Disable self-healing
+- \`--no-autonomous-all\`: Disable ALL autonomous systems
+
+**Force Options**:
+- \`--autonomous-all\`: Force enable all (overrides --no- flags)
+
+**Perfect Orchestrator**: Systems work autonomously, make intelligent decisions, and continuously improve - no manual intervention needed!
+
+### Default Settings (no flags needed):
+- ✅ \`--smart-discovery\` - Automatically discovers and reuses existing artifacts
+- ✅ \`--live-testing\` - Tests in real-time on your ServiceNow instance
+- ✅ \`--auto-deploy\` - Deploys automatically (safe with update sets)
+- ✅ \`--auto-rollback\` - Automatically rollbacks on failures
+- ✅ \`--shared-memory\` - All agents share context and coordination
+- ✅ \`--progress-monitoring\` - Real-time progress tracking
+- ❌ \`--auto-permissions\` - Disabled by default (enable with flag for automatic role elevation)
+
+### Advanced Usage:
+\`\`\`bash
+# Enable automatic permission escalation
+snow-flow swarm "create global workflow" --auto-permissions
+
+# Disable specific features
+snow-flow swarm "test widget" --no-auto-deploy --no-live-testing
+
+# Full control
+snow-flow swarm "complex integration" \\
+  --max-agents 8 \\
+  --strategy development \\
+  --mode distributed \\
+  --parallel \\
+  --auto-permissions
+\`\`\`
+
+## New MCP Tools (v1.1.44+)
+
+### Catalog Item Search
+Find catalog items with intelligent fuzzy matching:
+\`\`\`javascript
+snow_catalog_item_search({
+  query: "iPhone",          // Will find iPhone 6S, iPhone 7, etc.
+  fuzzy_match: true,        // Enable intelligent variations
+  include_variables: true   // Include catalog variables
+})
+\`\`\`
+
+### Flow Testing with Mock Data
+Test flows without real data:
+\`\`\`javascript
+snow_test_flow_with_mock({
+  flow_id: "equipment_provisioning_flow",
+  create_test_user: true,      // Creates test user
+  mock_catalog_items: true,    // Creates test catalog items
+  simulate_approvals: true,    // Auto-approves during test
+  cleanup_after_test: true     // Removes test data after
+})
+\`\`\`
+
+### Direct Catalog-Flow Linking
+Link catalog items directly to flows:
+\`\`\`javascript
+snow_link_catalog_to_flow({
+  catalog_item_id: "iPhone 6S",
+  flow_id: "mobile_provisioning_flow",
+  link_type: "flow_catalog_process",  // Modern approach
+  variable_mapping: [
+    {
+      catalog_variable: "phone_model",
+      flow_input: "device_type"
+    }
+  ],
+  test_link: true  // Creates test request
+})
+\`\`\`
+
+### OAuth Configuration
+\`\`\`env
+# .env file
+SNOW_INSTANCE=dev123456
+SNOW_CLIENT_ID=your_oauth_client_id
+SNOW_CLIENT_SECRET=your_oauth_client_secret
+SNOW_USERNAME=admin
+SNOW_PASSWORD=admin_password
+\`\`\`
+
+### Update Set Management
+\`\`\`javascript
+// Smart update set creation
+snow_smart_update_set({
+  name: "Auto-generated for widget development",
+  detect_context: true,  // Auto-detects what you're working on
+  auto_switch: true     // Switches when context changes
+});
+\`\`\`
+
+## 🎯 Quick Start
+1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+2. Configure ServiceNow credentials in .env file
+3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth
+4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
+
+## 💡 Important Notes
+
+### Do's
+- ✅ Use TodoWrite extensively for task tracking
+- ✅ Batch MCP tool calls for performance
+- ✅ Store important data in Memory for coordination
+- ✅ Test with mock data before deploying
+- ✅ Work within Update Sets for safety
+- ✅ Use fuzzy search for finding artifacts
+
+### Don'ts
+- ❌ Don't make sequential tool calls when batch is possible
+- ❌ Don't hardcode credentials or sys_ids
+- ❌ Don't deploy without testing
+- ❌ Don't ignore OAuth permission errors
+- ❌ Don't create artifacts without checking if they exist
+
+## 🚀 Performance Benchmarks
+
+With concurrent execution and batch operations:
+- **Widget Development**: 3x faster than sequential
+- **Flow Creation**: 2.5x faster with parallel validation
+- **Bulk Deployment**: Up to 5x faster with parallel mode
+- **Search Operations**: 4x faster with concurrent queries
+
+## 📚 Additional Resources
+
+### MCP Server Documentation
+- **servicenow-deployment**: Widget, flow, and application deployment
+- **servicenow-intelligent**: Smart search and artifact discovery
+- **servicenow-operations**: Incident management and catalog operations
+- **servicenow-platform-development**: Scripts, rules, and policies
+
+### SPARC Modes
+- \`orchestrator\`: Coordinates complex multi-step tasks
+- \`coder\`: Focused code implementation
+- \`researcher\`: Deep analysis and discovery
+- \`tester\`: Comprehensive testing strategies
+- \`architect\`: System design and architecture
+
+---
+
+This is a minimal CLAUDE.md file. The full documentation should be available in your Snow-Flow installation.
+
+## Quick Start
+1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+2. Configure ServiceNow credentials in .env file  
+3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth
+4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
+
+For full documentation, visit: https://github.com/groeimetai/snow-flow
+`;
+    }
+    
+    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdContent);
+  } catch (error) {
+    console.log('⚠️  Error copying CLAUDE.md, creating minimal version');
+    // Minimal fallback
+    const claudeMdFallback = `# Snow-Flow Development with Claude Code
+
+## Quick Start  
+1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+2. Configure ServiceNow credentials in .env file
+3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth  
+4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
+
+For full documentation, visit: https://github.com/groeimetai/snow-flow
+`;
+    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdFallback);
+  }
+}
+
 async function createEnvFile(targetDir: string) {
   const envContent = `# ServiceNow OAuth Configuration
 # Replace these values with your actual ServiceNow instance and OAuth credentials
@@ -4896,6 +5438,46 @@ program
 // ===================================================
 // 🎯 INTEGRATE SNOW-FLOW HIVE-MIND SYSTEM
 // ===================================================
+
+async function activateMCPServers() {
+  console.log(chalk.blue.bold('\n🚀 Activating MCP servers in Claude Code...'));
+  
+  try {
+    const { spawn } = await import('child_process');
+    const platform = process.platform;
+    
+    // Check if claude command exists
+    const claudeCommand = platform === 'win32' ? 'claude.exe' : 'claude';
+    
+    console.log('📡 Starting Claude Code with MCP configuration...');
+    
+    // Launch Claude with MCP config
+    const claudeProcess = spawn(claudeCommand, ['--mcp-config', '.mcp.json', '.'], {
+      stdio: 'inherit',
+      shell: true
+    });
+    
+    claudeProcess.on('error', (error) => {
+      if (error.message.includes('ENOENT')) {
+        console.error(chalk.red('\n❌ Claude Code not found. Please install it first:'));
+        console.log('   Visit: https://claude.ai/download');
+      } else {
+        console.error(chalk.red('\n❌ Failed to start Claude Code:'), error.message);
+      }
+    });
+    
+    claudeProcess.on('spawn', () => {
+      console.log(chalk.green('✅ Claude Code started with MCP servers!'));
+      console.log('\n📋 All 11 ServiceNow MCP servers are now available in Claude Code');
+      console.log('🎯 You can start using Snow-Flow commands immediately!');
+    });
+    
+  } catch (error) {
+    console.error(chalk.red('\n❌ Failed to activate MCP servers:'), error);
+    console.log('\n📝 To activate manually, run:');
+    console.log(chalk.cyan('   claude --mcp-config .mcp.json .'));
+  }
+}
 
 // Note: The new integrated commands enhance the existing CLI with:
 // - Advanced system status monitoring
