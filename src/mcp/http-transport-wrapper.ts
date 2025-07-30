@@ -226,7 +226,7 @@ export class HttpTransportWrapper {
       switch (method) {
         case 'listTools':
           // Handle list tools request by calling the MCP server's tools handler
-          const toolsResponse = await this.mcpServer.getCapabilities();
+          const toolsResponse = await (this.mcpServer as any).getCapabilities?.() || { capabilities: { tools: [] } };
           result = {
             tools: toolsResponse.capabilities?.tools || []
           };
@@ -319,7 +319,7 @@ export class HttpTransportWrapper {
     const { name, arguments: args } = request.params;
     
     // For now, we'll at least validate that the tool exists
-    const capabilities = await this.mcpServer.getCapabilities();
+    const capabilities = await (this.mcpServer as any).getCapabilities?.() || { capabilities: { tools: [] } };
     const tools = capabilities.capabilities?.tools || [];
     
     // This is still a limitation - we can't actually execute the tool without

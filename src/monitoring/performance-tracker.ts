@@ -98,7 +98,7 @@ export class PerformanceTracker extends EventEmitter {
   private config: TrackerConfig['config'];
   private activeOperations: Map<string, PerformanceMetric> = new Map();
   private metricsBuffer: PerformanceMetric[] = [];
-  private aggregationTimer?: NodeJS.Timer;
+  private aggregationTimer?: NodeJS.Timeout;
   private initialized = false;
 
   constructor(options: TrackerConfig) {

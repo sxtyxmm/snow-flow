@@ -192,7 +192,8 @@ export function createMonitorCommand(program: Command): void {
       
       try {
         // Initialize system if needed
-        if (!snowFlowSystem.getStatus().initialized) {
+        const status = snowFlowSystem.getStatus();
+        if (!(status as any).initialized) {
           await snowFlowSystem.initialize();
         }
         

@@ -227,7 +227,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
 
     for (const metric of metrics) {
       for (const period of periods) {
-        const trend = await this.calculateTrend(metric, period as any);
+        const trend = await this.calculateTrend(metric, period as 'hour' | 'day' | 'week');
         if (trend) {
           trends.push(trend);
         }
@@ -646,7 +646,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
                 currentCpu > this.config.alertThresholds.cpuUsage * 0.8 ? 'warning' : 'healthy',
         value: currentCpu,
         threshold: this.config.alertThresholds.cpuUsage,
-        trend: this.calculateTrend('cpu', cpuHistory),
+        trend: this.calculateComponentTrend('cpu', cpuHistory),
         lastUpdated: now,
         details: `CPU usage: ${currentCpu.toFixed(1)}%`
       };
@@ -660,7 +660,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
         status: currentMem > 500 ? 'critical' : currentMem > 300 ? 'warning' : 'healthy',
         value: currentMem,
         threshold: 500,
-        trend: this.calculateTrend('memory', memHistory),
+        trend: this.calculateComponentTrend('memory', memHistory),
         lastUpdated: now,
         details: `Heap usage: ${currentMem.toFixed(1)}MB`
       };
@@ -674,7 +674,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
         status: currentDb > 1000 ? 'warning' : 'healthy',
         value: currentDb,
         threshold: 1000,
-        trend: this.calculateTrend('database', dbHistory),
+        trend: this.calculateComponentTrend('database', dbHistory),
         lastUpdated: now,
         details: `Database size: ${currentDb.toFixed(1)}MB`
       };
@@ -688,7 +688,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
         status: currentHitRate < this.config.alertThresholds.cacheHitRate ? 'warning' : 'healthy',
         value: currentHitRate,
         threshold: this.config.alertThresholds.cacheHitRate,
-        trend: this.calculateTrend('cache', cacheHitHistory),
+        trend: this.calculateComponentTrend('cache', cacheHitHistory),
         lastUpdated: now,
         details: `Cache hit rate: ${currentHitRate.toFixed(1)}%`
       };
@@ -710,7 +710,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
     this.systemHealth.alerts = await this.getActiveAlerts();
   }
 
-  private calculateTrend(component: string, history: number[]): 'improving' | 'stable' | 'degrading' {
+  private calculateComponentTrend(component: string, history: number[]): 'improving' | 'stable' | 'degrading' {
     if (history.length < 10) return 'stable';
     
     const recent = history.slice(-5);
@@ -747,7 +747,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
           // Update existing alert
           const alert = this.activeAlerts.get(alertId)!;
           alert.count++;
-          alert.lastSeen = new Date();
+          (alert as any).lastSeen = new Date();
         } else {
           // Create new alert
           await this.createAlert(severity, componentName, component.details, {
@@ -959,7 +959,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
     if (history.length < 10) return null;
     
     const currentUsage = history[history.length - 1] || 0;
-    const trend = this.calculateTrend(resource, history);
+    const trend = this.calculateComponentTrend(resource, history);
     
     // Simple prediction based on trend
     let predictedUsage = currentUsage;

@@ -256,7 +256,7 @@ export class ServiceNowIntegrationMCP extends BaseMCPServer {
       // Add headers if provided
       if (args.headers) {
         // Headers would need to be created as separate records
-        methodData.http_headers = JSON.stringify(args.headers);
+        (methodData as any).http_headers = JSON.stringify(args.headers);
       }
 
       const result = await this.client.createRecord('sys_rest_message_fn', methodData);

@@ -683,6 +683,14 @@ export class MCPExecutionBridge extends EventEmitter {
   }
 
   /**
+   * Disconnect from MCP resources
+   */
+  async disconnect(): Promise<void> {
+    this.logger.info('Disconnecting MCP resources');
+    // Clean up any active connections or resources
+  }
+
+  /**
    * Public shutdown method for cleanup
    */
   async shutdown(): Promise<void> {

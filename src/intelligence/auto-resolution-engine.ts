@@ -507,8 +507,8 @@ export class AutoResolutionEngine {
     
     // Map requirement properties to API parameters
     for (const [param, defaultValue] of Object.entries(strategy.parameters)) {
-      if (requirement.properties[param]) {
-        data[param] = requirement.properties[param];
+      if ((requirement as any).properties && (requirement as any).properties[param]) {
+        data[param] = (requirement as any).properties[param];
       } else if (param === 'name') {
         data[param] = requirement.name;
       } else if (param === 'description') {

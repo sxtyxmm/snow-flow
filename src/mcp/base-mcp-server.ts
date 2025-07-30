@@ -110,7 +110,7 @@ export abstract class BaseMCPServer {
     }));
 
     // Handle tool execution with common auth/error handling
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       const { name, arguments: args } = request.params;
       
       // Track metrics
@@ -485,7 +485,7 @@ export abstract class BaseMCPServer {
     });
 
     process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+      this.logger.error('Unhandled rejection:', { promise, reason });
     });
 
     process.on('SIGINT', () => {

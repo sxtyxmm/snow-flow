@@ -1260,8 +1260,8 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Test execution failed',
-        partial_results: testResults
+        error: error instanceof Error ? error.message : 'Test execution failed'
+        // partial_results would go here if ToolResult supported it
       };
     }
   }

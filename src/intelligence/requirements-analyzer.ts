@@ -154,7 +154,7 @@ export class RequirementsAnalyzer {
     }
   };
 
-  private static readonly REQUIREMENT_DEFINITIONS: Record<RequirementType, {
+  private static readonly REQUIREMENT_DEFINITIONS: Partial<Record<RequirementType, {
     description: string;
     category: RequirementCategory;
     automatable: boolean;
@@ -162,7 +162,7 @@ export class RequirementsAnalyzer {
     estimatedEffort: 'low' | 'medium' | 'high';
     riskLevel: 'low' | 'medium' | 'high';
     prerequisites: RequirementType[];
-  }> = {
+  }>> = {
     // Core Development (MCP Covered)
     widget: {
       description: 'Service Portal widget for user interface',

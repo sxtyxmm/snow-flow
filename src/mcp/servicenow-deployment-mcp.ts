@@ -2066,7 +2066,7 @@ ${validationResults.every(r => r.startsWith('✅')) ? '✅ Validation passed!' :
       let rollbackResult: any;
       try {
         // Set update set to ignore state (ServiceNow's way of "rolling back")
-        rollbackResult = await this.client.update(`sys_update_set/${update_set_id}`, {
+        rollbackResult = await (this.client as any).update(`sys_update_set/${update_set_id}`, {
           state: 'ignore',
           description: `${updateSet.description || ''} - ROLLED BACK: ${reason}`
         });
@@ -3077,7 +3077,7 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
       <active>${applicationData.active}</active>
       <can_edit_in_studio>true</can_edit_in_studio>
       <category>Custom</category>
-      <description>${this.escapeXml(applicationData.description)}</description>
+      <description>${this.escapeXml(applicationData.description || '')}</description>
       <enforce_license>none</enforce_license>
       <guided_setup_guid/>
       <hide_on_ui>false</hide_on_ui>
@@ -3089,13 +3089,13 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
       <license_model>none</license_model>
       <logo display_value="">${applicationData.logo}</logo>
       <menu/>
-      <name>${this.escapeXml(applicationData.name)}</name>
+      <name>${this.escapeXml(applicationData.name || '')}</name>
       <private>false</private>
       <restrict_table_access>false</restrict_table_access>
       <runtime_access_tracking>permissive</runtime_access_tracking>
       <scope>${applicationData.scope}</scope>
       <scoped_administration>false</scoped_administration>
-      <short_description>${this.escapeXml(applicationData.short_description)}</short_description>
+      <short_description>${this.escapeXml(applicationData.short_description || '')}</short_description>
       <source>${applicationData.scope}</source>
       <store_correlation_id/>
       <store_url/>
@@ -6730,6 +6730,19 @@ The original \`snow_bulk_deploy\` functionality is still available but deprecate
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     this.logger.info('ServiceNow Deployment MCP Server started');
+  }
+
+  /**
+   * Escape XML special characters
+   */
+  private escapeXml(str: string): string {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 }
 

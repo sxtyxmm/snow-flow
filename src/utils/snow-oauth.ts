@@ -826,4 +826,11 @@ export class ServiceNowOAuth {
     
     return { valid: true };
   }
+
+  /**
+   * Get credentials (compatibility method for MCP servers)
+   */
+  async getCredentials(): Promise<ServiceNowCredentials | null> {
+    return await this.loadCredentials();
+  }
 }

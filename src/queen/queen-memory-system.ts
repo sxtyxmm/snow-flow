@@ -68,6 +68,8 @@ export class QueenMemorySystem extends EventEmitter {
       metadata: {
         tags: ['objective', 'requirement', objective.priority || 'medium'],
         created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1
       },
       ttl: 86400000 * 30, // 30 days
     });
@@ -96,6 +98,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: analysis,
       metadata: {
         tags: ['analysis', analysis.taskType, 'complexity-' + analysis.estimatedComplexity],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1,
         relationships: {
           requires: analysis.dependencies || [],
           similar: analysis.similarPatterns || [],
@@ -134,6 +139,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: profile,
       metadata: {
         tags: ['agent', profile.type, profile.status, ...profile.capabilities],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1
       },
     });
 
@@ -163,6 +171,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: task,
       metadata: {
         tags: ['task', 'agent-task', `priority-${task.priority}`],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1,
         relationships: {
           assignedTo: [agentId],
           dependsOn: task.dependencies || [],
@@ -209,6 +220,9 @@ export class QueenMemorySystem extends EventEmitter {
       },
       metadata: {
         tags: ['artifact', artifact.type, 'servicenow'],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1,
         relationships: {
           dependsOn: artifact.dependencies || [],
           deployedTo: artifact.deployment ? [artifact.deployment.instance] : [],
@@ -218,7 +232,7 @@ export class QueenMemorySystem extends EventEmitter {
 
     // Store deployment info separately if exists
     if (artifact.deployment) {
-      await this.storeDeployment(artifact.name, artifact.deployment);
+      await this.storeDeployment(artifact.name, { ...artifact.deployment, status: 'success' as const });
     }
   }
 
@@ -242,6 +256,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: deployment,
       metadata: {
         tags: ['deployment', deployment.status, deployment.instance],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1
       },
     });
   }
@@ -266,6 +283,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: pattern,
       metadata: {
         tags: ['pattern', 'success', pattern.type],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1
       },
       ttl: 86400000 * 90, // 90 days
     });
@@ -292,6 +312,9 @@ export class QueenMemorySystem extends EventEmitter {
       value: pattern,
       metadata: {
         tags: ['pattern', 'failure', pattern.type],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1
       },
       ttl: 86400000 * 90, // 90 days
     });
@@ -401,6 +424,9 @@ export class QueenMemorySystem extends EventEmitter {
       },
       metadata: {
         tags: ['communication', 'agent-message'],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        version: 1,
         relationships: {
           from: [fromAgent],
           to: [toAgent],

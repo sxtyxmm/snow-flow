@@ -381,7 +381,14 @@ export class AgentFactory {
       
       // Default plans for other agent types
       'app-architect': (instr) => ['Analyze architecture requirements', 'Design system structure', 'Create deployment plan'],
-      'integration-specialist': (instr) => ['Analyze integration requirements', 'Design data flow', 'Implement integration']
+      'integration-specialist': (instr) => ['Analyze integration requirements', 'Design data flow', 'Implement integration'],
+      'ui-ux-specialist': (instr) => ['Analyze user experience requirements', 'Design interface mockups', 'Implement responsive design'],
+      'approval-specialist': (instr) => ['Design approval workflow', 'Configure approval rules', 'Test approval process'],
+      'security-specialist': (instr) => ['Analyze security requirements', 'Implement security controls', 'Perform security audit'],
+      'css-specialist': (instr) => ['Analyze styling requirements', 'Develop responsive CSS', 'Optimize visual design'],
+      'backend-specialist': (instr) => ['Analyze backend requirements', 'Implement server logic', 'Optimize performance'],
+      'frontend-specialist': (instr) => ['Analyze frontend requirements', 'Implement user interface', 'Ensure cross-browser compatibility'],
+      'performance-specialist': (instr) => ['Analyze performance requirements', 'Identify bottlenecks', 'Implement optimizations']
     };
 
     return plans[agentType]?.(instruction) || ['Execute general task based on instruction'];

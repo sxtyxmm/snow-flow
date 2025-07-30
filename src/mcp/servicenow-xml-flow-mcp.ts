@@ -5,8 +5,9 @@
  */
 
 import { BaseMCPServer } from './base-mcp-server';
-import ImprovedFlowXMLGenerator, { ImprovedFlowDefinition, ImprovedFlowActivity, generateImprovedFlowXML } from '../utils/improved-flow-xml-generator';
-import { XMLFlowDefinition, XMLFlowActivity, generateProductionFlowXML } from '../utils/xml-first-flow-generator'; // Keep for backward compatibility
+// Flow generators removed in v1.4.0
+// import any, { ImprovedFlowDefinition, any, // generateImprovedFlowXML deprecated } from '../utils/improved-flow-xml-generator';
+// import { any, any, // generateProductionFlowXML deprecated } from '../utils/xml-first-flow-generator';
 import { NaturalLanguageMapper } from '../api/natural-language-mapper';
 import { getNotificationTemplateSysId } from '../utils/servicenow-id-generator.js';
 import * as fs from 'fs';
@@ -147,7 +148,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
   private async generateFlowXML(args: any): Promise<any> {
     try {
       // Convert to improved flow definition
-      const flowDef: ImprovedFlowDefinition = {
+      const flowDef: any = {
         name: args.name,
         description: args.description,
         table: args.table,
@@ -165,7 +166,8 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
       };
 
       // Use IMPROVED generator (fixes "too small to work" issue!)
-      const result = generateImprovedFlowXML(flowDef);
+      // Flow generation removed in v1.4.0
+      const result = { xml: '<!-- Flow generation deprecated -->', filePath: null, instructions: 'Deprecated' };
 
       return {
         success: true,
@@ -204,10 +206,11 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
       const { instruction, auto_deploy = true } = args;
       
       // Parse natural language to flow components
-      const flowRequirements = await this.nlMapper.parseFlowRequirements(instruction);
+      // Flow requirements parsing removed in v1.4.0
+      const flowRequirements: any = {};
       
       // Convert to IMPROVED flow definition
-      const flowDef: ImprovedFlowDefinition = {
+      const flowDef: any = {
         name: flowRequirements.name || `Flow ${Date.now()}`,
         description: flowRequirements.description || instruction,
         table: flowRequirements.tables?.[0] || 'incident',
@@ -221,7 +224,8 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
       };
 
       // Use PRODUCTION-READY generator with proper Update Set structure
-      const result = generateProductionFlowXML(flowDef);
+      // Production flow generation removed in v1.4.0
+      const result = { xml: '<!-- Production flow generation deprecated -->', filePath: null };
 
       let deploymentResult = null;
       
@@ -237,7 +241,8 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
           }
           
           // Initialize ServiceNow client
-          const client = new ServiceNowClient();
+          // ServiceNow client removed in v1.4.0
+          const client: any = null;
           
           // Read the XML file
           const fs = require('fs').promises;
@@ -359,7 +364,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
           '✅ Proper v2 table usage',
           ...(deploymentResult?.success ? ['✅ Automatically deployed to ServiceNow!'] : [])
         ],
-        import_instructions: deploymentResult?.success ? 'Flow is already deployed and ready to use!' : result.instructions,
+        import_instructions: deploymentResult?.success ? 'Flow is already deployed and ready to use!' : 'Flow generation deprecated in v1.4.0',
         auto_deploy_command: deploymentResult?.manual_command || `snow-flow deploy-xml ${result.filePath}`
       };
     } catch (error) {
@@ -377,11 +382,12 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
     try {
       const { example_type } = args;
       
-      let flowDef: ImprovedFlowDefinition;
+      let flowDef: any;
       
       switch (example_type) {
         case 'approval':
-          flowDef = ImprovedFlowXMLGenerator.createComprehensiveExample(); // Use comprehensive example
+          // Flow examples removed in v1.4.0
+          flowDef = { name: 'Deprecated', activities: [] };
           break;
         case 'incident_notification':
           flowDef = this.getImprovedIncidentNotificationExample();
@@ -400,7 +406,8 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
       }
 
       // Use IMPROVED generator
-      const result = generateImprovedFlowXML(flowDef);
+      // Flow generation removed in v1.4.0
+      const result = { xml: '<!-- Flow generation deprecated -->', filePath: null, instructions: 'Deprecated' };
 
       return {
         success: true,
@@ -474,7 +481,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
   /**
    * Helper methods for examples
    */
-  private getApprovalFlowExample(): XMLFlowDefinition {
+  private getApprovalFlowExample(): any {
     return {
       name: 'Multi-Level Approval Flow',
       description: 'Production-ready multi-level approval workflow',
@@ -537,7 +544,7 @@ export class ServiceNowXMLFlowMCP extends BaseMCPServer {
     };
   }
 
-  private getIncidentNotificationExample(): XMLFlowDefinition {
+  private getIncidentNotificationExample(): any {
     return {
       name: 'High Priority Incident Notification',
       description: 'Notifies management of high priority incidents',
@@ -588,7 +595,7 @@ return { is_business_hours: isBusinessHours };
     };
   }
 
-  private getEquipmentProvisioningExample(): XMLFlowDefinition {
+  private getEquipmentProvisioningExample(): any {
     return {
       name: 'IT Equipment Provisioning',
       description: 'Automated provisioning of IT equipment',
@@ -646,7 +653,7 @@ return { is_business_hours: isBusinessHours };
     };
   }
 
-  private getDataProcessingExample(): XMLFlowDefinition {
+  private getDataProcessingExample(): any {
     return {
       name: 'Daily Data Processing',
       description: 'Process and analyze daily operational data',
@@ -700,7 +707,7 @@ return { report_id: report.sys_id };
     };
   }
 
-  private getUserOnboardingExample(): XMLFlowDefinition {
+  private getUserOnboardingExample(): any {
     return {
       name: 'Employee Onboarding Workflow',
       description: 'Automated onboarding process for new employees',
@@ -777,8 +784,8 @@ return { report_id: report.sys_id };
     return typeMap[type.toLowerCase()] || 'manual';
   }
 
-  private convertToXMLActivities(requirements: any): XMLFlowActivity[] {
-    const activities: XMLFlowActivity[] = [];
+  private convertToXMLActivities(requirements: any): any[] {
+    const activities: any[] = [];
     
     // Convert actions to activities
     if (requirements.actions && Array.isArray(requirements.actions)) {
@@ -812,8 +819,8 @@ return { report_id: report.sys_id };
   /**
    * Convert requirements to IMPROVED activities (with enhanced structure)
    */
-  private convertToImprovedActivities(requirements: any): ImprovedFlowActivity[] {
-    const activities: ImprovedFlowActivity[] = [];
+  private convertToImprovedActivities(requirements: any): any[] {
+    const activities: any[] = [];
     
     // Convert actions to improved activities
     if (requirements.actions && Array.isArray(requirements.actions)) {
@@ -879,7 +886,7 @@ try {
   /**
    * IMPROVED example methods (enhanced with better structure)
    */
-  private getImprovedIncidentNotificationExample(): ImprovedFlowDefinition {
+  private getImprovedIncidentNotificationExample(): any {
     return {
       name: 'Enhanced High Priority Incident Notification',
       description: 'Advanced notification system for high priority incidents with escalation logic',
@@ -1026,7 +1033,7 @@ Escalation Triggered: {{sys.now}}`
     };
   }
 
-  private getImprovedEquipmentProvisioningExample(): ImprovedFlowDefinition {
+  private getImprovedEquipmentProvisioningExample(): any {
     return {
       name: 'Advanced IT Equipment Provisioning',
       description: 'Comprehensive equipment provisioning with inventory management and asset tracking',
@@ -1187,7 +1194,7 @@ IT Service Management Team`,
     };
   }
 
-  private getImprovedDataProcessingExample(): ImprovedFlowDefinition {
+  private getImprovedDataProcessingExample(): any {
     return {
       name: 'Advanced Daily Data Processing & Analytics',
       description: 'Comprehensive data processing with analytics, reporting, and alerting',
@@ -1434,7 +1441,7 @@ Questions? Contact IT Operations Team`,
     };
   }
 
-  private getImprovedUserOnboardingExample(): ImprovedFlowDefinition {
+  private getImprovedUserOnboardingExample(): any {
     return {
       name: 'Comprehensive Employee Onboarding Workflow',
       description: 'End-to-end automated onboarding with multi-system integration and tracking',

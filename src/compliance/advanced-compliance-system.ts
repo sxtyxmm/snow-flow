@@ -332,7 +332,7 @@ export class AdvancedComplianceSystem {
       // Generate report if requested
       let reportPath;
       if (request.generateReport) {
-        reportPath = await this.generateComplianceReport(profile);
+        reportPath = await this.generateComplianceReport(profile.toString());
       }
 
       this.logger.info('✅ Compliance assessment completed', {
@@ -655,7 +655,7 @@ export class AdvancedComplianceSystem {
       
       for (const control of framework.controls) {
         const testResult = await this.testControl(control, framework);
-        control.status = testResult.status;
+        control.status = testResult.status as 'failed' | 'partial' | 'passed' | 'not-applicable';
         control.testResults.push(testResult);
         control.lastTested = new Date().toISOString();
         control.nextTest = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();

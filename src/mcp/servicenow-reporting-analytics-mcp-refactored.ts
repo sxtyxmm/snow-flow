@@ -290,7 +290,9 @@ export class ServiceNowReportingAnalyticsMCP extends BaseMCPServer {
       
       if (dashboardResult.success && args.widgets) {
         // Create widgets for the dashboard
-        const dashboardId = dashboardResult.result.sys_id;
+        const dashboardId = Array.isArray(dashboardResult.result) 
+          ? dashboardResult.result[0]?.sys_id 
+          : (dashboardResult.result as any)?.sys_id || 'unknown';
         for (const widget of args.widgets) {
           await this.createDashboardWidget(dashboardId, widget);
         }

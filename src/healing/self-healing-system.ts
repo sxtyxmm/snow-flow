@@ -759,7 +759,7 @@ export class SelfHealingSystem {
 
     // Failure predictions based on patterns
     for (const pattern of patterns) {
-      if (pattern.frequency === 'recurring' || pattern.frequency === 'persistent') {
+      if ((pattern as any).frequency === 'recurring' || (pattern as any).frequency === 'persistent') {
         const nextOccurrence = this.predictNextOccurrence(pattern);
         if (nextOccurrence.probability > 0.6) {
           predictions.push({
@@ -1321,10 +1321,10 @@ export class SelfHealingSystem {
 
   private predictNextOccurrence(pattern: ErrorPattern): { probability: number; timeframe: string } {
     // Simple prediction based on frequency
-    if (pattern.frequency === 'persistent') {
+    if ((pattern as any).frequency === 'persistent') {
       return { probability: 0.9, timeframe: '1 hour' };
     }
-    if (pattern.frequency === 'recurring') {
+    if ((pattern as any).frequency === 'recurring') {
       return { probability: 0.7, timeframe: '24 hours' };
     }
     return { probability: 0.3, timeframe: '7 days' };

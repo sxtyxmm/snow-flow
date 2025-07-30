@@ -9,11 +9,12 @@
 import { Logger } from '../utils/logger.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { MemorySystem } from '../memory/memory-system.js';
-import { FlowTemplateSystem } from '../templates/flow-template-system.js';
-import { FlowUpdateOrchestrator } from '../orchestration/flow-update-orchestrator.js';
-import { FlowTestingAutomation } from './flow-testing-automation.js';
-import { SmartRollbackSystem } from '../rollback/smart-rollback-system.js';
-import { FlowPerformanceOptimizer } from '../optimization/flow-performance-optimizer.js';
+// Flow-related imports removed in v1.4.0
+// import { FlowTemplateSystem } from '../templates/flow-template-system.js';
+// import { FlowUpdateOrchestrator } from '../orchestration/flow-update-orchestrator.js';
+// import { FlowTestingAutomation } from './flow-testing-automation.js';
+// import { SmartRollbackSystem } from '../rollback/smart-rollback-system.js';
+// import { FlowPerformanceOptimizer } from '../optimization/flow-performance-optimizer.js';
 
 export interface IntegrationTestSuite {
   id: string;
@@ -275,11 +276,12 @@ export class IntegrationTestSuite {
   private logger: Logger;
   private client: ServiceNowClient;
   private memory: MemorySystem;
-  private templateSystem: FlowTemplateSystem;
-  private updateOrchestrator: FlowUpdateOrchestrator;
-  private testingAutomation: FlowTestingAutomation;
-  private rollbackSystem: SmartRollbackSystem;
-  private performanceOptimizer: FlowPerformanceOptimizer;
+  // Flow-related systems removed in v1.4.0
+  // private templateSystem: FlowTemplateSystem;
+  // private updateOrchestrator: FlowUpdateOrchestrator;
+  // private testingAutomation: FlowTestingAutomation;
+  // private rollbackSystem: SmartRollbackSystem;
+  // private performanceOptimizer: FlowPerformanceOptimizer;
   
   private testSuites: Map<string, IntegrationTestSuite> = new Map();
   private executions: Map<string, TestExecution> = new Map();
@@ -288,12 +290,13 @@ export class IntegrationTestSuite {
   constructor() {
     this.logger = new Logger('IntegrationTestSuite');
     this.client = new ServiceNowClient();
-    this.memory = new MemorySystem();
-    this.templateSystem = new FlowTemplateSystem(this.client);
-    this.updateOrchestrator = new FlowUpdateOrchestrator(this.client, this.memory);
-    this.testingAutomation = new FlowTestingAutomation(this.client, this.memory);
-    this.rollbackSystem = new SmartRollbackSystem(this.client, this.memory);
-    this.performanceOptimizer = new FlowPerformanceOptimizer(this.client, this.memory);
+    this.memory = new MemorySystem({ dbPath: ':memory:' });
+    // Flow-related system initialization removed in v1.4.0
+    // this.templateSystem = new FlowTemplateSystem(this.client);
+    // this.updateOrchestrator = new FlowUpdateOrchestrator(this.client, this.memory);
+    // this.testingAutomation = new FlowTestingAutomation(this.client, this.memory);
+    // this.rollbackSystem = new SmartRollbackSystem(this.client, this.memory);
+    // this.performanceOptimizer = new FlowPerformanceOptimizer(this.client, this.memory);
   }
 
   /**
@@ -318,34 +321,33 @@ export class IntegrationTestSuite {
       // Create test categories
       const testCategories = await this.createTestCategories(options);
 
-      const testSuite: IntegrationTestSuite = {
-        id: suiteId,
-        name,
-        description,
-        version: '1.0.0',
-        testCategories,
-        configuration: this.createDefaultConfiguration(options.environment || 'testing'),
-        metadata: {
-          createdAt: new Date().toISOString(),
-          author: 'IntegrationTestSuite',
-          environment: options.environment || 'testing',
-          totalTests: testCategories.reduce((sum, cat) => sum + cat.tests.length, 0),
-          estimatedDuration: this.estimateSuiteDuration(testCategories)
-        }
+      // Configure the current instance with the test suite
+      (this as any).id = suiteId;
+      (this as any).name = name;
+      (this as any).description = description;
+      (this as any).version = '1.0.0';
+      (this as any).testCategories = testCategories;
+      (this as any).configuration = this.createDefaultConfiguration(options.environment || 'testing');
+      (this as any).metadata = {
+        createdAt: new Date().toISOString(),
+        author: 'IntegrationTestSuite',
+        environment: options.environment || 'testing',
+        totalTests: testCategories.reduce((sum, cat) => sum + cat.tests.length, 0),
+        estimatedDuration: this.estimateSuiteDuration(testCategories)
       };
 
       // Store test suite
-      this.testSuites.set(suiteId, testSuite);
-      await this.memory.store(`integration_suite_${suiteId}`, testSuite, 2592000000); // 30 days
+      this.testSuites.set(suiteId, this);
+      await this.memory.store(`integration_suite_${suiteId}`, this, 2592000000); // 30 days
 
       this.logger.info('✅ Integration test suite created', {
         suiteId,
         categories: testCategories.length,
-        totalTests: testSuite.metadata.totalTests,
-        estimatedDuration: testSuite.metadata.estimatedDuration
+        totalTests: (this as any).metadata.totalTests,
+        estimatedDuration: (this as any).metadata.estimatedDuration
       });
 
-      return testSuite;
+      return this;
 
     } catch (error) {
       this.logger.error('❌ Failed to create integration test suite', error);

@@ -364,10 +364,17 @@ export class QueenAgent extends EventEmitter {
     const description = objective.description.toLowerCase();
     
     // Determine task type
-    let type: ServiceNowTask['type'] = 'generic';
+    let type: ServiceNowTask['type'] = 'unknown';
     let requiredAgents: AgentType[] = [];
     let estimatedComplexity = 5;
-    let suggestedPattern: DeploymentPattern = 'standard';
+    let suggestedPattern: DeploymentPattern = {
+      taskType: 'standard',
+      successRate: 0.8,
+      agentSequence: [],
+      mcpSequence: [],
+      avgDuration: 300,
+      lastUsed: new Date()
+    };
     let dependencies: string[] = [];
 
     // Widget development detection
@@ -395,7 +402,14 @@ export class QueenAgent extends EventEmitter {
       type = 'application';
       requiredAgents = ['app-architect', 'widget-creator', 'flow-builder', 'script-writer', 'tester'];
       estimatedComplexity = 10;
-      suggestedPattern = 'modular';
+      suggestedPattern = {
+        taskType: 'modular',
+        successRate: 0.8,
+        agentSequence: requiredAgents,
+        mcpSequence: [],
+        avgDuration: 900,
+        lastUsed: new Date()
+      };
     }
     
     // Script development
@@ -421,7 +435,7 @@ export class QueenAgent extends EventEmitter {
 
     return {
       type,
-      complexity: estimatedComplexity,
+      complexity: estimatedComplexity.toString(),
       requiredAgents: [...new Set(requiredAgents)], // Remove duplicates
       estimatedComplexity: Math.min(10, Math.max(1, estimatedComplexity)),
       suggestedPattern,
@@ -1090,7 +1104,7 @@ export class QueenAgent extends EventEmitter {
     };
 
     // Store decision for future learning
-    await this.memory.storeDecision({
+    await this.memory.storeDecision('decision', {
       context,
       decision: decision.decision,
       confidence: decision.confidence,
@@ -1169,8 +1183,8 @@ export class QueenAgent extends EventEmitter {
   private async handleCoordinationError(error: any, context: any): Promise<void> {
     console.error('❌ Coordination error:', error);
     
-    // Store error in memory for learning
-    await this.memory.storeError({
+    // Store error in memory for learning - using store method
+    await this.memory.store('error', {
       error: error.message || error,
       context,
       timestamp: new Date().toISOString(),

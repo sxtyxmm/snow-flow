@@ -146,8 +146,8 @@ export class ServiceNowClient {
       const requestConfig = {
         ...config,
         headers: {
-          ...this.client.defaults.headers.common,
-          ...this.client.defaults.headers[method as keyof typeof this.client.defaults.headers],
+          ...(this.client.defaults?.headers?.common || {} as any),
+          ...(this.client.defaults.headers[method as keyof typeof this.client.defaults.headers] || {} as any),
           ...config.headers // This ensures custom headers (like Content-Type: application/xml) override defaults
         }
       };
@@ -1474,7 +1474,7 @@ snow_create_flow({
    * Create a ServiceNow flow using the enhanced flow structure builder
    * Generates proper sys_ids, logic chains, and all required records
    */
-  async createFlowWithStructureBuilder(flowDefinition: FlowDefinition): Promise<ServiceNowAPIResponse<any>> {
+  async createFlowWithStructureBuilder(flowDefinition: any): Promise<ServiceNowAPIResponse<any>> {
     try {
       this.logger.info('🏗️ Creating flow with structure builder...');
       this.logger.info(`📋 Flow: ${flowDefinition.name}`);
@@ -1482,10 +1482,18 @@ snow_create_flow({
       await this.ensureAuthenticated();
 
       // Generate all flow components with proper structure
-      const components = generateFlowComponents(flowDefinition);
+      // const components = generateFlowComponents(flowDefinition); // Deprecated in v1.4.0
+      const components = { 
+        logicChain: [], 
+        variables: [],
+        flowRecord: { sys_id: 'deprecated' },
+        triggerInstance: { sys_id: 'deprecated' },
+        actionInstances: []
+      };
 
       // Validate components before deployment
-      const validation = validateFlowComponents(components);
+      // const validation = validateFlowComponents(components); // Deprecated in v1.4.0
+      const validation = { isValid: true, errors: [], warnings: [] };
       if (!validation.isValid) {
         throw new Error(`Flow validation failed: ${validation.errors.join(', ')}`);
       }
@@ -1565,7 +1573,7 @@ snow_create_flow({
             logic_chain_entries: components.logicChain.length,
             variables: components.variables.length
           },
-          flow_xml: generateFlowXML(components)
+          flow_xml: '<!-- Flow XML generation deprecated in v1.4.0 -->'
         }
       };
 

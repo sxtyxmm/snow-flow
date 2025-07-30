@@ -9,7 +9,8 @@
 import { Logger } from '../utils/logger.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { MemorySystem } from '../memory/memory-system.js';
-import { XMLFlowDefinition } from '../utils/xml-first-flow-generator.js';
+// Flow generator removed in v1.4.0
+// import { XMLFlowDefinition } from '../utils/xml-first-flow-generator.js';
 
 export interface RollbackPoint {
   id: string;

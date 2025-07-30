@@ -3,7 +3,7 @@
  * Common functionality for all ServiceNow specialist agents
  */
 
-import { Agent, AgentType, AgentMessage, ServiceNowArtifact } from '../queen/types';
+import { Agent, AgentMessage, ServiceNowArtifact, AgentType } from '../queen/types';
 import { QueenMemorySystem } from '../queen/queen-memory';
 import * as crypto from 'crypto';
 
@@ -202,12 +202,12 @@ export abstract class BaseAgent implements Agent {
     // Define coordination rules
     // Simplified coordination rules after flow-builder removal  
     const coordinationRules: Partial<Record<AgentType, AgentType[]>> = {
-      'researcher': ['coder', 'analyst'],
-      'coder': ['tester', 'architect'], 
-      'analyst': ['researcher', 'documenter'],
-      'architect': ['coder', 'specialist'],
-      'tester': ['coder', 'reviewer'],
-      'specialist': ['architect', 'coder']
+      'researcher': ['script-writer', 'researcher'],
+      'script-writer': ['tester', 'app-architect'], 
+      'widget-creator': ['researcher', 'ui-ux-specialist'],
+      'app-architect': ['script-writer', 'integration-specialist'],
+      'tester': ['script-writer', 'security-specialist'],
+      'integration-specialist': ['app-architect', 'script-writer']
     };
     
     return coordinationRules[this.type]?.includes(otherAgentType) || false;

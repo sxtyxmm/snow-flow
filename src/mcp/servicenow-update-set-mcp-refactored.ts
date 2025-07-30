@@ -454,7 +454,7 @@ export class ServiceNowUpdateSetMCP extends BaseMCPServer {
         description: notes ? `${this.currentSession?.description}\n\nCompletion Notes: ${notes}` : undefined
       };
 
-      await this.makeAuthenticatedRequest({
+      await (this as any).makeAuthenticatedRequest({
         method: 'PATCH',
         url: `/api/now/table/sys_update_set/${targetId}`,
         data: updateData

@@ -74,12 +74,19 @@ export class ServiceNowQueen {
 
       // 🚨 PHASE 1: MANDATORY MCP PRE-FLIGHT AUTHENTICATION CHECK
       this.logger.info('🔐 Step 1: Validating ServiceNow connection...');
-      const authCheck = await this.mcpBridge.executeAgentRecommendation({
-        type: 'mcp_call',
-        tool: 'snow_validate_live_connection',
-        args: { test_level: 'permissions' },
-        reasoning: 'MANDATORY: Pre-flight authentication check before any ServiceNow operations'
-      });
+      const authCheck = await this.mcpBridge.executeAgentRecommendation(
+        { id: 'queen-agent', type: 'queen' },
+        {
+          agentId: 'queen-agent',
+          agentType: 'queen',
+          action: 'validate-connection',
+          tool: 'snow_validate_live_connection',
+          server: 'operations',
+          params: { test_level: 'permissions' },
+          reasoning: 'MANDATORY: Pre-flight authentication check before any ServiceNow operations',
+          confidence: 0.95
+        }
+      );
 
       if (!authCheck.success) {
         const authError = `
@@ -100,25 +107,32 @@ export class ServiceNowQueen {
 
       // 🚨 PHASE 2: MANDATORY SMART DISCOVERY (Prevent Duplication)
       this.logger.info('🔍 Step 2: Discovering existing artifacts...');
-      const discovery = await this.mcpBridge.executeAgentRecommendation({
-        type: 'mcp_call',
-        tool: 'snow_comprehensive_search',
-        args: { 
-          query: objective,
-          include_inactive: false 
-        },
-        reasoning: 'MANDATORY: Check for existing artifacts before creating new ones'
-      });
+      const discovery = await this.mcpBridge.executeAgentRecommendation(
+        { id: 'queen-agent', type: 'queen' },
+        {
+          agentId: 'queen-agent',
+          agentType: 'queen',
+          action: 'discover-artifacts',
+          tool: 'snow_comprehensive_search',
+          server: 'intelligent',
+          params: { 
+            query: objective,
+            include_inactive: false 
+          },
+          reasoning: 'MANDATORY: Check for existing artifacts before creating new ones',
+          confidence: 0.90
+        }
+      );
 
-      if (discovery.success && discovery.result?.found?.length > 0) {
-        this.logger.info(`🔍 Found ${discovery.result.found.length} existing artifacts that might be relevant:`);
-        discovery.result.found.forEach((artifact: any) => {
+      if (discovery.success && discovery.toolResult?.found?.length > 0) {
+        this.logger.info(`🔍 Found ${discovery.toolResult.found.length} existing artifacts that might be relevant:`);
+        discovery.toolResult.found.forEach((artifact: any) => {
           this.logger.info(`💡 Consider reusing: ${artifact.name} (${artifact.sys_id})`);
         });
       }
 
       // Phase 3: Initial Neural Analysis (informed by MCP discovery)
-      const analysis = this.neuralLearning.analyzeTask(objective, discovery.result);
+      const analysis = this.neuralLearning.analyzeTask(objective);
       
       // Phase 4: Create and register task
       const task: ServiceNowTask = {
@@ -693,7 +707,10 @@ function($scope) {
     };
 
     // Execute through MCP bridge
-    const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+    const result = await this.mcpBridge.executeAgentRecommendation(
+      { id: 'queen-agent', type: 'queen' },
+      recommendation
+    );
 
     if (result.success && result.toolResult) {
       const deploymentResult = {
@@ -759,7 +776,10 @@ function($scope) {
             reasoning: 'Finding Service Portal theme for dependency injection',
             confidence: 0.95
           };
-          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          const result = await this.mcpBridge.executeAgentRecommendation(
+            { id: 'queen-agent', type: 'queen' },
+            recommendation
+          );
           return result.toolResult;
         },
         snow_comprehensive_search: async (params: any) => {
@@ -773,7 +793,10 @@ function($scope) {
             reasoning: 'Searching for Service Portal themes',
             confidence: 0.95
           };
-          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          const result = await this.mcpBridge.executeAgentRecommendation(
+            { id: 'queen-agent', type: 'queen' },
+            recommendation
+          );
           return result.toolResult;
         },
         snow_get_by_sysid: async (params: any) => {
@@ -787,7 +810,10 @@ function($scope) {
             reasoning: 'Getting Service Portal theme details',
             confidence: 0.95
           };
-          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          const result = await this.mcpBridge.executeAgentRecommendation(
+            { id: 'queen-agent', type: 'queen' },
+            recommendation
+          );
           return result.toolResult;
         },
         snow_edit_by_sysid: async (params: any) => {
@@ -801,7 +827,10 @@ function($scope) {
             reasoning: 'Updating Service Portal theme with dependencies',
             confidence: 0.95
           };
-          const result = await this.mcpBridge.executeAgentRecommendation(recommendation);
+          const result = await this.mcpBridge.executeAgentRecommendation(
+            { id: 'queen-agent', type: 'queen' },
+            recommendation
+          );
           return result.toolResult;
         }
       };

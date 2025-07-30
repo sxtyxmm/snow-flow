@@ -59,6 +59,7 @@ export class ServiceNowIntelligentMCP {
   private complianceSystem: AdvancedComplianceSystem;
   private selfHealingSystem: SelfHealingSystem;
   private memorySystem: MemorySystem;
+  private memoryIndex: Map<string, any> = new Map();
 
   constructor() {
     this.server = new Server(
@@ -79,7 +80,11 @@ export class ServiceNowIntelligentMCP {
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
     
     // Initialize autonomous systems
-    this.memorySystem = new MemorySystem();
+    this.memorySystem = new MemorySystem({
+      dbPath: './intelligent-mcp.db',
+      cache: { enabled: true, maxSize: 100, ttl: 3600 },
+      ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
+    });
     this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
     this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
     this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
@@ -2316,7 +2321,9 @@ export class ServiceNowIntelligentMCP {
 
         // Get instance info for URL generation
         const instanceInfo = await this.client.getInstanceInfo();
-        const baseUrl = instanceInfo.result?.instance_url || 
+        const baseUrl = (instanceInfo.result && typeof instanceInfo.result === 'object' && 'instance_url' in instanceInfo.result 
+                         ? instanceInfo.result.instance_url 
+                         : null) || 
                        `https://${process.env.SNOW_INSTANCE?.replace(/\/$/, '') || 'instance'}.service-now.com`;
 
         return {
@@ -2966,10 +2973,11 @@ export class ServiceNowIntelligentMCP {
 
       // For flows that can be triggered programmatically
       const startTime = Date.now();
+      const artifactSysId = flowDetails.result?.sys_id || 'unknown';
       
       try {
         // Attempt to analyze and test the flow based on its type and trigger conditions
-        const testResult = await this.performFlowAnalysis(sys_id, flowType, flowDetails.result);
+        const testResult = await this.performFlowAnalysis(artifactSysId, flowType, flowDetails.result);
         
         let flowActivities: any;
         

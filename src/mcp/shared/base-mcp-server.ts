@@ -12,6 +12,7 @@ import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
 import { MCPResourceManager } from './mcp-resource-manager.js';
 
 export interface MCPToolResult {
+  [key: string]: unknown;
   content: Array<{
     type: string;
     text?: string;
@@ -23,6 +24,7 @@ export interface MCPToolResult {
     duration_ms?: number;
     artifacts_created?: string[];
   };
+  _meta?: { [key: string]: unknown };
 }
 
 export abstract class BaseMCPServer {
@@ -78,7 +80,7 @@ export abstract class BaseMCPServer {
       {
         ...agentContext,
         operation_name: toolName,
-        mcp_server: this.server.serverInfo.name
+        mcp_server: (this.server as any).serverInfo?.name || 'unknown'
       },
       async () => operation(agentContext)
     );
@@ -2456,6 +2458,6 @@ ${errorText}
   async start(): Promise<void> {
     const transport = new (await import('@modelcontextprotocol/sdk/server/stdio.js')).StdioServerTransport();
     await this.server.connect(transport);
-    this.logger.info(`${this.server.serverInfo.name} MCP server started`);
+    this.logger.info(`${(this.server as any).serverInfo?.name || 'Unknown'} MCP server started`);
   }
 }

@@ -183,7 +183,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
       ]
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       const { name, arguments: args } = request.params;
 
       try {
@@ -971,7 +971,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
 }
 
 // Start the server
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = new ServiceNowIntelligentMCP();
-  server.start().catch(console.error);
-}
+// if (import.meta.url === `file://${process.argv[1]}`) {
+  // const server = new ServiceNowIntelligentMCP();
+  // server.start().catch(console.error);
+// }

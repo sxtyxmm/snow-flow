@@ -62,7 +62,7 @@ export interface BulkManualGuide {
 /**
  * Manual instruction templates for ServiceNow configurations
  */
-export const MANUAL_INSTRUCTION_TEMPLATES: Record<RequirementType, Partial<ManualGuide>> = {
+export const MANUAL_INSTRUCTION_TEMPLATES: Partial<Record<RequirementType, Partial<ManualGuide>>> = {
   // System Configuration
   system_property: {
     title: 'Create System Property',

@@ -259,12 +259,13 @@ export class NaturalLanguageMapper {
   /**
    * Search for action types using multiple search terms
    */
-  private async searchActionTypes(searchTerms: string[]): Promise<ActionTypeSearchResult[]> {
-    const allResults: ActionTypeSearchResult[] = [];
+  private async searchActionTypes(searchTerms: string[]): Promise<any[]> {
+    const allResults: any[] = [];
     
     for (const term of searchTerms) {
       try {
-        const result = await this.discovery.discoverActionTypes(term);
+        // Flow discovery removed in v1.4.0 - using fallback logic
+        const result = { exact_matches: [], partial_matches: [], suggested_matches: [] };
         allResults.push(result);
       } catch (error) {
         this.logger.warn(`Search failed for term: ${term}`, error);
@@ -278,18 +279,18 @@ export class NaturalLanguageMapper {
    * Rank and score search results
    */
   private rankResults(
-    searchResults: ActionTypeSearchResult[],
+    searchResults: any[],
     intent: ActionIntent,
     context?: MappingContext
   ): {
-    best_match: FlowActionType;
+    best_match: string;
     confidence: number;
     reasoning: string;
-    alternatives: FlowActionType[];
+    alternatives: string[];
   } {
     const actionScores = new Map<string, number>();
     const actionReasons = new Map<string, string[]>();
-    const allActions = new Set<FlowActionType>();
+    const allActions = new Set<string>();
     
     // Score actions from all search results
     for (const result of searchResults) {
@@ -319,23 +320,24 @@ export class NaturalLanguageMapper {
     if (context) {
       for (const action of allActions) {
         const contextScore = this.scoreByContext(action, context);
-        this.addScore(actionScores, action.sys_id, contextScore);
+        this.addScore(actionScores, action, contextScore);
         if (contextScore > 0) {
-          this.addReason(actionReasons, action.sys_id, 'Context match');
+          this.addReason(actionReasons, action, 'Context match');
         }
       }
     }
     
     // Find best match
     const sortedActions = Array.from(allActions).sort((a, b) => {
-      const scoreA = actionScores.get(a.sys_id) || 0;
-      const scoreB = actionScores.get(b.sys_id) || 0;
+      const scoreA = actionScores.get(a) || 0;
+      const scoreB = actionScores.get(b) || 0;
       return scoreB - scoreA;
     });
     
     const bestMatch = sortedActions[0];
-    const confidence = actionScores.get(bestMatch.sys_id) || 0;
-    const reasoning = actionReasons.get(bestMatch.sys_id)?.join(', ') || 'No specific reasoning';
+    const bestMatchId = typeof bestMatch === 'string' ? bestMatch : (bestMatch as any)?.sys_id || bestMatch;
+    const confidence = actionScores.get(bestMatchId) || 0;
+    const reasoning = actionReasons.get(bestMatchId)?.join(', ') || 'No specific reasoning';
     const alternatives = sortedActions.slice(1, 4); // Top 3 alternatives
     
     return {
@@ -350,14 +352,15 @@ export class NaturalLanguageMapper {
    * Generate suggested inputs for an action type
    */
   private async generateSuggestedInputs(
-    actionType: FlowActionType,
+    actionType: string,
     intent: ActionIntent,
     context?: MappingContext
   ): Promise<Record<string, any>> {
     const suggestedInputs: Record<string, any> = {};
     
     // Get action type details to understand inputs
-    const actionDetails = await this.discovery.getActionTypeDetails(actionType.sys_id);
+    // Flow discovery removed in v1.4.0 - using fallback
+    const actionDetails = null;
     if (!actionDetails) {
       return suggestedInputs;
     }
@@ -570,24 +573,25 @@ export class NaturalLanguageMapper {
   /**
    * Score action by context
    */
-  private scoreByContext(action: FlowActionType, context: MappingContext): number {
+  private scoreByContext(action: string, context: MappingContext): number {
     let score = 0;
     
-    // Score based on category relevance
-    if (action.category && context.flow_purpose.toLowerCase().includes(action.category.toLowerCase())) {
-      score += 0.2;
-    }
-    
-    // Score based on previous actions
-    for (const prevAction of context.previous_actions) {
-      if (action.name.toLowerCase().includes(prevAction.toLowerCase())) {
-        score += 0.1;
+    // Score based on action name matching context
+    if (action && context.flow_purpose) {
+      const actionLower = action.toLowerCase();
+      const purposeLower = context.flow_purpose.toLowerCase();
+      
+      if (actionLower.includes(purposeLower) || purposeLower.includes(actionLower)) {
+        score += 0.3;
       }
     }
     
-    // Score based on target table
-    if (action.description && action.description.toLowerCase().includes(context.target_table.toLowerCase())) {
-      score += 0.1;
+    // Score based on action requirements (if available)
+    if (action && (context as any).action_requirements) {
+      const matches = (context as any).action_requirements.filter((req: string) => 
+        action.toLowerCase().includes(req.toLowerCase())
+      );
+      score += matches.length * 0.1;
     }
     
     return score;

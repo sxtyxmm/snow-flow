@@ -23,7 +23,7 @@ interface TodoItem {
 export class ServiceNowMemoryMCP extends BaseMCPServer {
   private memorySystem!: MemorySystem;
   private memoryPath: string;
-  private config: any;
+  protected config: any;
 
   constructor() {
     const config = {
