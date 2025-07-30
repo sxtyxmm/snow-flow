@@ -305,7 +305,7 @@ export class CompleteFlowXMLGenerator {
     this.flowSysId = this.generateSysId();
     this.snapshotSysId = this.generateSysId();
     
-    const internalName = this.flowDef.internal_name || this.generateInternalName(this.this.flowDef.name);
+    const internalName = this.flowDef.internal_name || this.generateInternalName(this.flowDef.name);
     
     // Generate all component sys_ids
     const updateSetSysId = this.generateSysId();
@@ -335,7 +335,7 @@ export class CompleteFlowXMLGenerator {
   <sys_remote_update_set action="INSERT_OR_UPDATE">
     <sys_id>${updateSetSysId}</sys_id>
     <name>${this.escapeXml(this.updateSetName)}</name>
-    <description>Complete flow import: ${this.escapeXml(this.this.flowDef.name)}</description>
+    <description>Complete flow import: ${this.escapeXml(this.flowDef.name)}</description>
     <origin_sys_id>${updateSetSysId}</origin_sys_id>
     <parent/>
     <release_date/>
@@ -365,7 +365,7 @@ export class CompleteFlowXMLGenerator {
     <category>customer</category>
     <comments/>
     <name>sys_hub_flow_${this.flowSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow"><sys_hub_flow action="INSERT_OR_UPDATE"><access>${this.flowDef.accessible_from || 'package_private'}</access><acls/><active>true</active><annotation>${this.escapeXml(this.flowDef.annotation || '')}</annotation><callable_by_client_api>${this.flowDef.callable_by_client_api || false}</callable_by_client_api><category>${this.flowDef.category || 'custom'}</category><compiler_build/><copied_from/><copied_from_name/><description>${this.escapeXml(this.flowDef.description)}</description><internal_name>${this.escapeXml(internalName)}</internal_name><label_cache>${encodedLabelCache}</label_cache><latest_snapshot display_value="${this.escapeXml(this.this.flowDef.name)}">${this.snapshotSysId}</latest_snapshot><master_snapshot display_value="${this.escapeXml(this.this.flowDef.name)}">${this.snapshotSysId}</master_snapshot><name>${this.escapeXml(this.this.flowDef.name)}</name><natlang>false</natlang><outputs/><remote_trigger_id/><run_as>${this.flowDef.run_as || 'user'}</run_as><runtime_value>${this.encodeFlowValue(this.flowDef.runtime_value || {})}</runtime_value><sc_callable>false</sc_callable><show_action_header>false</show_action_header><show_draft_actions>false</show_draft_actions><show_flow_tile>false</show_flow_tile><show_prompted>false</show_prompted><show_triggered>false</show_triggered><status>published</status><sys_class_name>sys_hub_flow</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${this.flowSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_name>${this.escapeXml(this.this.flowDef.name)}</sys_name><sys_overrides/><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_hub_flow_${this.flowSysId}</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><tags>${(this.flowDef.tags || []).join(',')}</tags><type>flow</type></sys_hub_flow></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow"><sys_hub_flow action="INSERT_OR_UPDATE"><access>${this.flowDef.accessible_from || 'package_private'}</access><acls/><active>true</active><annotation>${this.escapeXml(this.flowDef.annotation || '')}</annotation><callable_by_client_api>${this.flowDef.callable_by_client_api || false}</callable_by_client_api><category>${this.flowDef.category || 'custom'}</category><compiler_build/><copied_from/><copied_from_name/><description>${this.escapeXml(this.flowDef.description)}</description><internal_name>${this.escapeXml(internalName)}</internal_name><label_cache>${encodedLabelCache}</label_cache><latest_snapshot display_value="${this.escapeXml(this.flowDef.name)}">${this.snapshotSysId}</latest_snapshot><master_snapshot display_value="${this.escapeXml(this.flowDef.name)}">${this.snapshotSysId}</master_snapshot><name>${this.escapeXml(this.flowDef.name)}</name><natlang>false</natlang><outputs/><remote_trigger_id/><run_as>${this.flowDef.run_as || 'user'}</run_as><runtime_value>${this.encodeFlowValue(this.flowDef.runtime_value || {})}</runtime_value><sc_callable>false</sc_callable><show_action_header>false</show_action_header><show_draft_actions>false</show_draft_actions><show_flow_tile>false</show_flow_tile><show_prompted>false</show_prompted><show_triggered>false</show_triggered><status>published</status><sys_class_name>sys_hub_flow</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${this.flowSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_name>${this.escapeXml(this.flowDef.name)}</sys_name><sys_overrides/><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_hub_flow_${this.flowSysId}</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><tags>${(this.flowDef.tags || []).join(',')}</tags><type>flow</type></sys_hub_flow></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <replace_on_upgrade>false</replace_on_upgrade>
     <source_table>sys_hub_flow</source_table>
@@ -390,7 +390,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_flow_snapshot_${this.snapshotSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><name>${this.escapeXml(this.this.flowDef.name)}</name><note>Complete flow created by CompleteFlowXMLGenerator</note><snapshot>${encodedSnapshot}</snapshot><sys_class_name>sys_hub_flow_snapshot</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${this.snapshotSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on></sys_hub_flow_snapshot></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_snapshot"><sys_hub_flow_snapshot action="INSERT_OR_UPDATE"><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><name>${this.escapeXml(this.flowDef.name)}</name><note>Complete flow created by CompleteFlowXMLGenerator</note><snapshot>${encodedSnapshot}</snapshot><sys_class_name>sys_hub_flow_snapshot</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${this.snapshotSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on></sys_hub_flow_snapshot></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_snapshot</source_table>
     <type>Flow Designer Snapshot</type>
@@ -411,10 +411,10 @@ export class CompleteFlowXMLGenerator {
   private buildCompleteLabelCache(flowDef: CompleteFlowDefinition, triggerSysId: string, activitySysIds: string[]): any {
     const labelCache: any = {
       "flow_data": {
-        "name": this.this.flowDef.name,
+        "name": this.flowDef.name,
         "description": this.flowDef.description,
         "sys_id": this.flowSysId,
-        "internal_name": this.flowDef.internal_name || this.generateInternalName(this.this.flowDef.name),
+        "internal_name": this.flowDef.internal_name || this.generateInternalName(this.flowDef.name),
         "category": this.flowDef.category || 'custom',
         "run_as": this.flowDef.run_as || 'user',
         "accessible_from": this.flowDef.accessible_from || 'package_private'
@@ -584,10 +584,10 @@ export class CompleteFlowXMLGenerator {
     return {
       "schemaVersion": "2.0",
       "id": this.flowSysId,
-      "name": this.this.flowDef.name,
+      "name": this.flowDef.name,
       "description": this.flowDef.description,
       "type": "flow",
-      "internal_name": this.flowDef.internal_name || this.generateInternalName(this.this.flowDef.name),
+      "internal_name": this.flowDef.internal_name || this.generateInternalName(this.flowDef.name),
       "category": this.flowDef.category || 'custom',
       "tags": this.flowDef.tags || [],
       "metadata": {
@@ -672,7 +672,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_trigger_instance_v2_${triggerSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_trigger_instance_v2"><sys_hub_trigger_instance_v2 action="INSERT_OR_UPDATE"><active>true</active><condition>${this.escapeXml(this.flowDef.trigger_condition || '')}</condition><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><flow_trigger display_value="${triggerType.display_name}">${triggerType.sys_id}</flow_trigger><name>Trigger</name><order>0</order><parent_ui_id/><sys_class_name>sys_hub_trigger_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${triggerSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><table>${this.flowDef.table || ''}</table><trigger_definition display_value="${triggerType.display_name}">${triggerType.sys_id}</trigger_definition><trigger_inputs/><trigger_outputs/><trigger_type display_value="${triggerType.display_name}">${triggerType.sys_id}</trigger_type><ui_id>${uuidv4()}</ui_id><values>${encodedValues}</values></sys_hub_trigger_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_trigger_instance_v2"><sys_hub_trigger_instance_v2 action="INSERT_OR_UPDATE"><active>true</active><condition>${this.escapeXml(this.flowDef.trigger_condition || '')}</condition><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><flow_trigger display_value="${triggerType.display_name}">${triggerType.sys_id}</flow_trigger><name>Trigger</name><order>0</order><parent_ui_id/><sys_class_name>sys_hub_trigger_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>${triggerSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><table>${this.flowDef.table || ''}</table><trigger_definition display_value="${triggerType.display_name}">${triggerType.sys_id}</trigger_definition><trigger_inputs/><trigger_outputs/><trigger_type display_value="${triggerType.display_name}">${triggerType.sys_id}</trigger_type><ui_id>${uuidv4()}</ui_id><values>${encodedValues}</values></sys_hub_trigger_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_trigger_instance_v2</source_table>
     <type>Flow Designer Trigger</type>
@@ -705,7 +705,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_action_instance_v2_${actionSysId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance_v2"><sys_hub_action_instance_v2 action="INSERT_OR_UPDATE"><action_type display_value="${actionType.display_name}">${actionType.sys_id}</action_type><action_type_parent/><attributes/><comment>${this.escapeXml(activity.description || '')}</comment><compiled_snapshot>${actionType.sys_id}</compiled_snapshot><display_text/><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><generation_source/><name>${this.escapeXml(activity.name)}</name><order>${orderValue}</order><parent_ui_id/><sys_class_name>sys_hub_action_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${actionSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope display_value="Global">global</sys_scope><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uiId}</ui_id><updation_source/><values>${encodedValues}</values></sys_hub_action_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_action_instance_v2"><sys_hub_action_instance_v2 action="INSERT_OR_UPDATE"><action_type display_value="${actionType.display_name}">${actionType.sys_id}</action_type><action_type_parent/><attributes/><comment>${this.escapeXml(activity.description || '')}</comment><compiled_snapshot>${actionType.sys_id}</compiled_snapshot><display_text/><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><generation_source/><name>${this.escapeXml(activity.name)}</name><order>${orderValue}</order><parent_ui_id/><sys_class_name>sys_hub_action_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${actionSysId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope display_value="Global">global</sys_scope><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uiId}</ui_id><updation_source/><values>${encodedValues}</values></sys_hub_action_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_action_instance_v2</source_table>
     <type>Flow Designer Action</type>
@@ -740,7 +740,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_flow_logic_instance_v2_${startLogicId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Flow Start</comment><connected_to/><decision_table/><display_text>Start</display_text><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition display_value="Start">1176605ea76103004f27b0d2187901c5</logic_definition><order>0</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${startLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${startLogicValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Flow Start</comment><connected_to/><decision_table/><display_text>Start</display_text><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition display_value="Start">1176605ea76103004f27b0d2187901c5</logic_definition><order>0</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${startLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${startLogicValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_logic_instance_v2</source_table>
     <type>Flow Designer Logic</type>
@@ -763,7 +763,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_flow_logic_instance_v2_${connectionLogicId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Connection</comment><connected_to/><decision_table/><display_text/><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition/><order>${logicIndex * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${connectionLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${connectionValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Connection</comment><connected_to/><decision_table/><display_text/><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition/><order>${logicIndex * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${connectionLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${connectionValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_logic_instance_v2</source_table>
     <type>Flow Designer Logic</type>
@@ -787,7 +787,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_flow_logic_instance_v2_${connectionLogicId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Connection</comment><connected_to/><decision_table/><display_text/><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition/><order>${logicIndex * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${connectionLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${connectionValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Connection</comment><connected_to/><decision_table/><display_text/><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition/><order>${logicIndex * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${connectionLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${connectionValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_logic_instance_v2</source_table>
     <type>Flow Designer Logic</type>
@@ -808,7 +808,7 @@ export class CompleteFlowXMLGenerator {
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <name>sys_hub_flow_logic_instance_v2_${endLogicId}</name>
-    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Flow End</comment><connected_to/><decision_table/><display_text>End</display_text><flow display_value="${this.escapeXml(this.this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition display_value="End">d176605ea76103004f27b0d2187901c7</logic_definition><order>${(logicIndex + 1) * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${endLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${endLogicValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
+    <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_hub_flow_logic_instance_v2"><sys_hub_flow_logic_instance_v2 action="INSERT_OR_UPDATE"><attributes/><block display_value="">${this.generateSysId()}</block><comment>Flow End</comment><connected_to/><decision_table/><display_text>End</display_text><flow display_value="${this.escapeXml(this.flowDef.name)}">${this.flowSysId}</flow><flow_variables_assigned/><generation_source/><logic_definition display_value="End">d176605ea76103004f27b0d2187901c7</logic_definition><order>${(logicIndex + 1) * 100}</order><outputs_assigned/><parent_ui_id/><sys_class_name>sys_hub_flow_logic_instance_v2</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>${this.timestamp}</sys_created_on><sys_id>${endLogicId}</sys_id><sys_mod_count>0</sys_mod_count><sys_scope/><sys_updated_by>admin</sys_updated_by><sys_updated_on>${this.timestamp}</sys_updated_on><ui_id>${uuidv4()}</ui_id><updation_source/><values>${endLogicValues}</values><workflow_reference/></sys_hub_flow_logic_instance_v2></record_update>]]></payload>
     <remote_update_set display_value="${this.escapeXml(this.updateSetName)}">${updateSetSysId}</remote_update_set>
     <source_table>sys_hub_flow_logic_instance_v2</source_table>
     <type>Flow Designer Logic</type>
@@ -1342,11 +1342,11 @@ export function generateCompleteFlowXML(flowDef: CompleteFlowDefinition): {
   instructions: string 
 } {
   const generator = new CompleteFlowXMLGenerator(
-    this.this.flowDef.name.replace(/[^a-zA-Z0-9]+/g, '_') + '_Complete_Import'
+    this.flowDef.name.replace(/[^a-zA-Z0-9]+/g, '_') + '_Complete_Import'
   );
   
   const xml = generator.generateCompleteFlowXML(flowDef);
-  const filename = this.this.flowDef.name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_complete_flow.xml';
+  const filename = this.flowDef.name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_complete_flow.xml';
   const filePath = generator.saveToFile(xml, filename);
   
   const instructions = `
@@ -1378,7 +1378,7 @@ export function generateCompleteFlowXML(flowDef: CompleteFlowDefinition): {
 
 6. Review and "Commit Update Set"
 
-7. Open Flow Designer and find: "${this.this.flowDef.name}"
+7. Open Flow Designer and find: "${this.flowDef.name}"
 
 💡 The flow includes ALL requested features:
    ✅ Automated assignment based on analysis
