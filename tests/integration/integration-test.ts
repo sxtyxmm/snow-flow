@@ -30,7 +30,7 @@ import * as path from 'path';
 // Test configuration
 const TEST_CONFIG = {
   debugMode: true,
-  memoryPath: './.claude-flow/queen-test/test-memory.db',
+  memoryPath: './.snow-flow/queen-test/test-memory.db',
   maxConcurrentAgents: 3,
   testTimeout: 30000
 };

@@ -80,7 +80,7 @@ export class MCPMemoryManager {
     this.logger = new Logger('MCPMemoryManager');
     
     // Create memory directory if it doesn't exist
-    const memoryDir = path.join(process.cwd(), '.claude-flow', 'memory');
+    const memoryDir = path.join(process.cwd(), '.snow-flow', 'memory');
     if (!fs.existsSync(memoryDir)) {
       fs.mkdirSync(memoryDir, { recursive: true });
     }

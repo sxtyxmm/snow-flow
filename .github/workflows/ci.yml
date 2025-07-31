@@ -81,7 +81,7 @@ jobs:
     name: Release
     needs: [test, security]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')
     
     steps:
     - name: Checkout code

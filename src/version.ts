@@ -2,13 +2,47 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.3.31';
+export const VERSION = '1.4.9';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.9': [
+      '🔄 DIRECTORY MIGRATION: Migrated all .claude-flow directories to .snow-flow for brand consistency',
+      '📁 PROJECT STRUCTURE: Updated Queen memory, MCP memory, and test paths to use .snow-flow',
+      '🚀 AUTOMATIC MIGRATION: Init command now auto-migrates existing .claude-flow data to .snow-flow',
+      '✨ ENHANCED INIT: Creates .snow-flow/queen, .snow-flow/memory directories during initialization',
+      '🛡️ SAFE MIGRATION: Original .claude-flow data preserved during migration for safety',
+      '🧹 CODE CLEANUP: Replaced all claude-flow references with snow-flow in project paths',
+      '📝 MIGRATION UTILITY: New migrate-claude-flow.ts handles automatic data migration'
+    ],
+    '1.4.8': [
+      '🧹 NPM CLEANUP: Removed database files and logs from npm package',
+      '📦 PACKAGE OPTIMIZATION: Reduced package from 829 to 766 files',
+      '🔒 SECURITY: Excluded sensitive files via improved .npmignore',
+      '📊 SIZE REDUCTION: Removed 77.8KB of unnecessary test databases',
+      '🎯 CLEANER DISTRIBUTION: Only essential files included in npm package'
+    ],
+    '1.4.7': [
+      '🎉 PORTAL PAGE DEPLOYMENT: Complete implementation of Service Portal page deployment',
+      '🏗️ WIDGET PLACEMENT: Automatic widget instance creation with proper container structure',
+      '🎯 QUEEN RECOGNITION: Queen Agent now identifies portal page objectives',
+      '📐 LAYOUT SUPPORT: Single column, multi-column, and sidebar layouts',
+      '🔗 DIRECT LINKS: Returns both edit and preview URLs after deployment',
+      '🚀 INTELLIGENT DETECTION: Automatic portal type detection (sp vs esc)',
+      '✨ DEPLOYMENT TYPES: Added portal_page to all deployment interfaces'
+    ],
+    '1.4.6': [
+      '🚀 OPEN SOURCE RELEASE: Complete preparation for public launch',
+      '📚 DOCUMENTATION: Added comprehensive API, Architecture, and Developer guides',
+      '🏗️ CI/CD: Complete GitHub Actions pipeline with testing and security scanning',
+      '🤝 COMMUNITY: Added CONTRIBUTING.md, issue/PR templates, and examples',
+      '🔧 CODE QUALITY: ESLint improvements, Jest configuration, and pre-commit hooks',
+      '📦 SEMANTIC RELEASE: Automated versioning and changelog generation',
+      '✨ PROFESSIONAL: Ready for enterprise adoption with MIT license'
+    ],
     '1.3.31': [
       '🔧 VERSION FIX: Correct version now displayed with snow-flow --version',
       '✅ All v1.3.30 fixes included plus proper version constant update'

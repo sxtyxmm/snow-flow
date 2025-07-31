@@ -14,7 +14,7 @@ export class QueenMemorySystem {
   private dbPath: string;
 
   constructor(dbPath?: string) {
-    const memoryDir = path.join(process.cwd(), '.claude-flow', 'queen');
+    const memoryDir = path.join(process.cwd(), '.snow-flow', 'queen');
     if (!fs.existsSync(memoryDir)) {
       fs.mkdirSync(memoryDir, { recursive: true });
     }
@@ -27,7 +27,7 @@ export class QueenMemorySystem {
   }
 
   private initializeDatabase(): void {
-    // Simple schema - claude-flow philosophy: keep it minimal
+    // Simple schema - snow-flow philosophy: keep it minimal
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS patterns (
         id INTEGER PRIMARY KEY,

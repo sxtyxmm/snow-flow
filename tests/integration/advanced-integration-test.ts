@@ -34,7 +34,7 @@ export class AdvancedQueenTester {
 
   private setupTestEnvironment(): void {
     // Ensure test directory exists
-    const testDir = './.claude-flow/queen-advanced';
+    const testDir = './.snow-flow/queen-advanced';
     if (!fs.existsSync(testDir)) {
       fs.mkdirSync(testDir, { recursive: true });
     }
@@ -57,7 +57,7 @@ export class AdvancedQueenTester {
       // Initialize Queen
       this.queen = createServiceNowQueen({
         debugMode: true,
-        memoryPath: './.claude-flow/queen-advanced/widget-test.db',
+        memoryPath: './.snow-flow/queen-advanced/widget-test.db',
         maxConcurrentAgents: 3
       });
 

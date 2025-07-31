@@ -320,7 +320,7 @@ export class PerformanceRecommendationsEngine {
   constructor(memory?: MemorySystem) {
     this.logger = new Logger('PerformanceRecommendationsEngine');
     this.memory = memory || new MemorySystem({
-      dbPath: './.claude-flow/memory/performance_engine.db',
+      dbPath: './.snow-flow/memory/performance_engine.db',
       cache: { enabled: true, maxSize: 1000, ttl: 300000 }
     });
     

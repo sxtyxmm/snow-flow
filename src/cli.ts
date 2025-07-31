@@ -2182,6 +2182,13 @@ program
     const targetDir = process.cwd();
     
     try {
+      // Check for .claude-flow migration
+      const { migrationUtil } = await import('./utils/migrate-claude-flow.js');
+      if (await migrationUtil.checkMigrationNeeded()) {
+        console.log('\n🔄 Detected .claude-flow directory, migrating to .snow-flow...');
+        await migrationUtil.migrate();
+      }
+      
       // Create directory structure
       console.log('\n📁 Creating project structure...');
       await createDirectoryStructure(targetDir, options.force);
@@ -2207,6 +2214,7 @@ program
       console.log('\n📋 Created files and directories:');
       console.log('   ✓ .claude/ - Claude Code configuration');
       console.log('   ✓ .swarm/ - Swarm session management');
+      console.log('   ✓ .snow-flow/ - Snow-Flow project data (Queen, memory, tests)');
       console.log('   ✓ memory/ - Persistent memory storage');
       console.log('   ✓ .env - ServiceNow OAuth configuration');
       
@@ -2324,6 +2332,7 @@ async function createDirectoryStructure(targetDir: string, force: boolean = fals
   const directories = [
     '.claude', '.claude/commands', '.claude/commands/sparc', '.claude/configs',
     '.swarm', '.swarm/sessions', '.swarm/agents',
+    '.snow-flow', '.snow-flow/queen', '.snow-flow/memory', '.snow-flow/queen-test', '.snow-flow/queen-advanced',
     'memory', 'memory/agents', 'memory/sessions',
     'coordination', 'coordination/memory_bank', 'coordination/subtasks',
     'servicenow', 'servicenow/widgets', 'servicenow/workflows', 'servicenow/scripts',
