@@ -5,6 +5,24 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2025-07-31
+
+### 🔧 Bugfix Release
+
+**Essential Fixes**: Init command no longer hangs, --force flag restored for overwriting files.
+
+### Fixed
+- Init command hanging after MCP server startup - now exits cleanly
+- Restored missing --force flag for overwriting existing files
+- Fixed duplicate copyCLAUDEmd function causing build errors
+- Proper process termination after successful initialization
+
+### Changed
+- Added force flag support to all file creation operations
+- Improved error messages when files already exist
+
+For full details, see [CHANGELOG-1.4.5.md](./CHANGELOG-1.4.5.md)
+
 ## [1.4.4] - 2025-07-30
 
 ### 🚀 MCP Server Auto-Start

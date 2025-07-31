@@ -2174,6 +2174,7 @@ program
   .description('Initialize a Snow-Flow project with SPARC environment')
   .option('--sparc', 'Initialize with SPARC methodology and MCP servers (recommended)', true)
   .option('--skip-mcp', 'Skip MCP server activation prompt')
+  .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
     console.log(chalk.blue.bold(`\n🚀 Initializing Snow-Flow Project v${VERSION}...`));
     console.log('='.repeat(60));
@@ -2183,23 +2184,23 @@ program
     try {
       // Create directory structure
       console.log('\n📁 Creating project structure...');
-      await createDirectoryStructure(targetDir);
+      await createDirectoryStructure(targetDir, options.force);
       
       // Create .env file
       console.log('🔐 Creating environment configuration...');
-      await createEnvFile(targetDir);
+      await createEnvFile(targetDir, options.force);
       
       // Create MCP configuration
       if (options.sparc) {
         console.log('🔧 Setting up MCP servers for Claude Code...');
-        await createMCPConfig(targetDir);
+        await createMCPConfig(targetDir, options.force);
         
         // Copy CLAUDE.md file
         console.log('📚 Creating documentation files...');
-        await copyCLAUDEmd(targetDir);
+        await copyCLAUDEmd(targetDir, options.force);
         
         // Create README files
-        await createReadmeFiles(targetDir);
+        await createReadmeFiles(targetDir, options.force);
       }
       
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
@@ -2246,6 +2247,9 @@ program
       console.log('2. Run: ' + chalk.cyan('snow-flow auth login'));
       console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "your objective"'));
       console.log('\n📚 Full documentation: https://github.com/groeimetai/snow-flow');
+      
+      // Force exit to prevent hanging
+      process.exit(0);
       
     } catch (error) {
       console.error(chalk.red('\n❌ Initialization failed:'), error);
@@ -2316,7 +2320,7 @@ program
   });
 
 // Helper functions for init command
-async function createDirectoryStructure(targetDir: string) {
+async function createDirectoryStructure(targetDir: string, force: boolean = false) {
   const directories = [
     '.claude', '.claude/commands', '.claude/commands/sparc', '.claude/configs',
     '.swarm', '.swarm/sessions', '.swarm/agents',
@@ -2360,10 +2364,10 @@ async function createBasicConfig(targetDir: string) {
   await fs.writeFile(join(targetDir, '.swarm/config.json'), JSON.stringify(swarmConfig, null, 2));
 }
 
-async function createReadmeFiles(targetDir: string) {
+async function createReadmeFiles(targetDir: string, force: boolean = false) {
   // Only create README.md if it doesn't exist already
   const readmePath = join(targetDir, 'README.md');
-  if (!existsSync(readmePath)) {
+  if (!existsSync(readmePath) || force) {
     const mainReadme = `# Snow-Flow: Multi-Agent ServiceNow Development Platform 🚀
 
 Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
@@ -4066,7 +4070,7 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
   }
 }
 
-async function copyCLAUDEmd(targetDir: string) {
+async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
   let claudeMdContent = '';
   try {
     // First try to find the CLAUDE.md in the source directory (for global installs)
@@ -4507,7 +4511,18 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
 `;
     }
     
-    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdContent);
+    const claudeMdPath = join(targetDir, 'CLAUDE.md');
+    try {
+      await fs.access(claudeMdPath);
+      if (force) {
+        console.log('⚠️  CLAUDE.md already exists, overwriting with --force flag');
+        await fs.writeFile(claudeMdPath, claudeMdContent);
+      } else {
+        console.log('⚠️  CLAUDE.md already exists, skipping (use --force to overwrite)');
+      }
+    } catch {
+      await fs.writeFile(claudeMdPath, claudeMdContent);
+    }
   } catch (error) {
     console.log('⚠️  Error copying CLAUDE.md, creating minimal version');
     // Minimal fallback
@@ -4521,11 +4536,14 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
 
 For full documentation, visit: https://github.com/groeimetai/snow-flow
 `;
-    await fs.writeFile(join(targetDir, 'CLAUDE.md'), claudeMdFallback);
+    const claudeMdPath = join(targetDir, 'CLAUDE.md');
+    if (force || !existsSync(claudeMdPath)) {
+      await fs.writeFile(claudeMdPath, claudeMdFallback);
+    }
   }
 }
 
-async function createEnvFile(targetDir: string) {
+async function createEnvFile(targetDir: string, force: boolean = false) {
   const envContent = `# ServiceNow OAuth Configuration
 # Replace these values with your actual ServiceNow instance and OAuth credentials
 
@@ -4582,10 +4600,16 @@ SNOW_FLOW_TIMEOUT_MINUTES=0
   // Check if .env already exists
   try {
     await fs.access(envFilePath);
-    console.log('⚠️  .env file already exists, creating .env.example template instead');
-    console.log('📝 To recreate .env: delete existing .env file and run init again');
-    await fs.writeFile(join(targetDir, '.env.example'), envContent);
-    console.log('✅ .env.example template created');
+    if (force) {
+      console.log('⚠️  .env file already exists, overwriting with --force flag');
+      await fs.writeFile(envFilePath, envContent);
+      console.log('✅ .env file overwritten successfully');
+    } else {
+      console.log('⚠️  .env file already exists, creating .env.example template instead');
+      console.log('📝 To overwrite: use --force flag or delete existing .env file');
+      await fs.writeFile(join(targetDir, '.env.example'), envContent);
+      console.log('✅ .env.example template created');
+    }
   } catch {
     // .env doesn't exist, create it
     console.log('📄 Creating new .env file...');
@@ -4621,7 +4645,7 @@ async function checkNeo4jAvailability(): Promise<boolean> {
   }
 }
 
-async function createMCPConfig(targetDir: string) {
+async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Determine the snow-flow installation directory
   let snowFlowRoot: string;
   
@@ -4752,7 +4776,17 @@ async function createMCPConfig(targetDir: string) {
   
   // Create .mcp.json in project root for Claude Code discovery
   const mcpConfigPath = join(targetDir, '.mcp.json');
-  await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+  try {
+    await fs.access(mcpConfigPath);
+    if (force) {
+      console.log('⚠️  .mcp.json already exists, overwriting with --force flag');
+      await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+    } else {
+      console.log('⚠️  .mcp.json already exists, skipping (use --force to overwrite)');
+    }
+  } catch {
+    await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+  }
   
   // Also create legacy config in .claude for backward compatibility
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
