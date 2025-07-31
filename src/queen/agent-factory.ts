@@ -280,6 +280,10 @@ export class AgentFactory {
       
       integration: ['researcher', 'integration-specialist', 'tester'],
       
+      portal_page: complexity > 0.7
+        ? ['researcher', 'widget-creator', 'page-designer', 'tester']
+        : ['widget-creator', 'page-designer', 'tester'],
+      
       unknown: ['researcher', 'widget-creator'] // Safe default
     };
 
@@ -388,7 +392,18 @@ export class AgentFactory {
       'css-specialist': (instr) => ['Analyze styling requirements', 'Develop responsive CSS', 'Optimize visual design'],
       'backend-specialist': (instr) => ['Analyze backend requirements', 'Implement server logic', 'Optimize performance'],
       'frontend-specialist': (instr) => ['Analyze frontend requirements', 'Implement user interface', 'Ensure cross-browser compatibility'],
-      'performance-specialist': (instr) => ['Analyze performance requirements', 'Identify bottlenecks', 'Implement optimizations']
+      'performance-specialist': (instr) => ['Analyze performance requirements', 'Identify bottlenecks', 'Implement optimizations'],
+      'page-designer': (instr) => [
+        'Analyze portal page requirements from instruction',
+        'Determine page layout (single column, multi-column, with sidebar)',
+        'Identify target portal (Service Portal or Employee Service Center)',
+        'Create portal page structure using snow_deploy',
+        'Configure containers, rows, and columns',
+        'Place widget instances on the page',
+        'Apply responsive CSS for page layout',
+        'Configure page permissions and navigation',
+        'Test page across devices and browsers'
+      ]
     };
 
     return plans[agentType]?.(instruction) || ['Execute general task based on instruction'];

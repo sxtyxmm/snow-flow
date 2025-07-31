@@ -377,8 +377,22 @@ export class QueenAgent extends EventEmitter {
     };
     const dependencies: string[] = [];
 
-    // Widget development detection
-    if (description.includes('widget') || description.includes('portal') || description.includes('ui component')) {
+    // Portal page detection - check for specific page keywords
+    if ((description.includes('portal') && description.includes('page')) || 
+        description.includes('portal page') || 
+        (description.includes('widget') && description.includes('page')) ||
+        (description.includes('widget') && description.includes('plaats')) ||
+        (description.includes('widget') && description.includes('add')) ||
+        description.includes('service portal page')) {
+      type = 'portal_page';
+      requiredAgents = ['widget-creator', 'page-designer', 'script-writer', 'tester'];
+      if (description.includes('dashboard') || description.includes('multi')) {
+        estimatedComplexity = 8;
+        requiredAgents.push('ui-ux-specialist');
+      }
+    }
+    // Widget development detection (only if not portal page)
+    else if (description.includes('widget') || description.includes('ui component')) {
       type = 'widget';
       requiredAgents = ['widget-creator', 'script-writer', 'tester'];
       if (description.includes('complex') || description.includes('interactive')) {
@@ -501,6 +515,9 @@ export class QueenAgent extends EventEmitter {
       case 'widget':
         baseTodos.push(...this.createWidgetTodos(objective, _analysis));
         break;
+      case 'portal_page':
+        baseTodos.push(...this.createPortalPageTodos(objective, _analysis));
+        break;
       case 'flow':
         baseTodos.push(...this.createFlowTodos(objective, _analysis));
         break;
@@ -589,6 +606,82 @@ export class QueenAgent extends EventEmitter {
         content: 'Ensure security best practices and vulnerability scanning',
         status: 'pending',
         priority: 'high'
+      }
+    ];
+
+    return todos;
+  }
+
+  /**
+   * Create portal page-specific todos
+   */
+  private createPortalPageTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
+    const todos: TodoItem[] = [
+      {
+        id: this.generateId('todo'),
+        content: `Analyze portal page requirements: ${objective.description}`,
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Create or identify widget to be placed on the page',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Design portal page layout (single column, multi-column, or with sidebar)',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Determine target portal (Service Portal or Employee Service Center)',
+        status: 'pending',
+        priority: 'medium'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Create portal page with proper page ID and title',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Configure page structure (containers, rows, columns)',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Place widget instance on the portal page with proper sizing',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Apply custom CSS styling for page layout and responsiveness',
+        status: 'pending',
+        priority: 'medium'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Configure page permissions and accessibility settings',
+        status: 'pending',
+        priority: 'medium'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Test portal page across different devices and browsers',
+        status: 'pending',
+        priority: 'high'
+      },
+      {
+        id: this.generateId('todo'),
+        content: 'Add page to portal navigation menu if needed',
+        status: 'pending',
+        priority: 'low'
       }
     ];
 
@@ -993,6 +1086,18 @@ export class QueenAgent extends EventEmitter {
         return todoContent.includes('user experience') || 
                todoContent.includes('design') ||
                todoContent.includes('ux');
+               
+      case 'page-designer':
+        return todoContent.includes('portal page') || 
+               todoContent.includes('page layout') ||
+               todoContent.includes('page structure') ||
+               todoContent.includes('place widget') ||
+               todoContent.includes('configure page') ||
+               todoContent.includes('containers') ||
+               todoContent.includes('rows') ||
+               todoContent.includes('columns') ||
+               todoContent.includes('page permissions') ||
+               todoContent.includes('portal navigation');
                
       default:
         // Generic agents can handle setup and coordination tasks

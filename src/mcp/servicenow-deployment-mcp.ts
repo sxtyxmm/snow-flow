@@ -401,7 +401,7 @@ class ServiceNowDeploymentMCP {
                 items: {
                   type: 'object',
                   properties: {
-                    type: { type: 'string', enum: ['widget', 'flow', 'script', 'business_rule', 'table', 'application'] },
+                    type: { type: 'string', enum: ['widget', 'portal_page', 'script', 'business_rule', 'table', 'application'] },
                     sys_id: { type: 'string', description: 'Existing artifact sys_id (for updates)' },
                     config: { type: 'object', description: 'Artifact configuration' },
                     action: { type: 'string', enum: ['create', 'update', 'deploy'], default: 'deploy' },
@@ -426,7 +426,7 @@ class ServiceNowDeploymentMCP {
             properties: {
               type: {
                 type: 'string',
-                enum: ['widget', 'flow', 'application', 'script', 'business_rule', 'table'],
+                enum: ['widget', 'portal_page', 'application', 'script', 'business_rule', 'table'],
                 description: 'Type of artifact to deploy'
               },
               instruction: {
@@ -1193,6 +1193,476 @@ Use \`snow_deployment_debug\` for more information about this session.`,
 📚 Documentation: See CLAUDE.md for Widget Deployment Guidelines`;
       throw new Error(enhancedError);
     }
+  }
+
+  /**
+   * Deploy a portal page with widget placement
+   */
+  private async deployPortalPage(args: any) {
+    try {
+      // Check authentication first
+      const isAuth = await this.oauth.isAuthenticated();
+      if (!isAuth) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+            },
+          ],
+        };
+      }
+
+      this.logger.info('Deploying portal page to ServiceNow', { name: args.page_id });
+
+      // Ensure Update Set is active
+      const { updateSetId, updateSetName } = await this.ensureUpdateSet('Portal Page', args.page_id);
+
+      // Validate portal page structure
+      if (!args.page_id || !args.title) {
+        throw new Error('Portal page must have page_id and title');
+      }
+
+      // Find widget sys_id if widget name is provided
+      let widgetSysId = args.widget_sys_id;
+      if (!widgetSysId && args.widget_name) {
+        this.logger.info('Looking up widget by name', { widgetName: args.widget_name });
+        try {
+          const widgetResult = await this.client.searchRecords('sp_widget', `name=${args.widget_name}`, 1);
+          if (widgetResult.success && widgetResult.data?.length > 0) {
+            widgetSysId = widgetResult.data[0].sys_id;
+            this.logger.info('Found widget', { widgetName: args.widget_name, sys_id: widgetSysId });
+          } else {
+            this.logger.warn('Widget not found, will create page without widget', { widgetName: args.widget_name });
+          }
+        } catch (error) {
+          this.logger.error('Failed to lookup widget', { widgetName: args.widget_name, error });
+        }
+      }
+
+      // Determine portal sys_id
+      let portalSysId = '';
+      try {
+        // Default to Employee Service Portal if available, otherwise standard Service Portal
+        const portalQuery = args.portal === 'esc' ? 'url_suffix=esc' : 'url_suffix=sp';
+        const portalResult = await this.client.searchRecords('sp_portal', portalQuery, 1);
+        if (portalResult.success && portalResult.data?.length > 0) {
+          portalSysId = portalResult.data[0].sys_id;
+          this.logger.info('Found portal', { portal: args.portal, sys_id: portalSysId });
+        }
+      } catch (error) {
+        this.logger.warn('Failed to lookup portal, using default', { portal: args.portal, error });
+      }
+
+      // Create portal page
+      let pageResult;
+      try {
+        // Create the page record
+        pageResult = await this.client.createRecord('sp_page', {
+          id: args.page_id,
+          title: args.title,
+          short_description: args.description || `Portal page created by Snow-Flow`,
+          css: args.page_css || '',
+          sp_portal: portalSysId,
+          public: true,
+          draft: false,
+          internal: false
+        });
+
+        if (!pageResult.success || !pageResult.data) {
+          throw new Error(`Failed to create portal page: ${pageResult.error || 'Unknown error'}`);
+        }
+
+        this.logger.info('Portal page created successfully', { 
+          pageId: args.page_id, 
+          sys_id: pageResult.data.sys_id 
+        });
+      } catch (pageError) {
+        this.logger.error('Failed to create portal page', { error: pageError });
+        
+        // Provide manual fallback
+        return this.generatePortalPageManualSteps(args, pageError, updateSetName, updateSetId);
+      }
+
+      const pageSysId = pageResult.data.sys_id;
+      const credentials = await this.oauth.loadCredentials();
+      
+      // Create widget instances on the page if widget is provided
+      const widgetInstances = [];
+      if (widgetSysId && args.widgets && args.widgets.length > 0) {
+        for (const widgetConfig of args.widgets) {
+          try {
+            // Create container
+            const containerResult = await this.client.createRecord('sp_container', {
+              sp_page: pageSysId,
+              width: widgetConfig.width || 'container',
+              title: widgetConfig.container_title || '',
+              bootstrap_alt: false,
+              class_name: widgetConfig.class_name || '',
+              background_color: widgetConfig.background_color || '',
+              background_image: widgetConfig.background_image || '',
+              background_style: widgetConfig.background_style || 'default',
+              subheader: false
+            });
+
+            if (containerResult.success && containerResult.data) {
+              // Create row
+              const rowResult = await this.client.createRecord('sp_row', {
+                sp_container: containerResult.data.sys_id,
+                class_name: widgetConfig.row_class || '',
+                order: 1
+              });
+
+              if (rowResult.success && rowResult.data) {
+                // Create column
+                const columnResult = await this.client.createRecord('sp_column', {
+                  sp_row: rowResult.data.sys_id,
+                  size_xs: widgetConfig.size || 12,
+                  size_sm: widgetConfig.size || 12,
+                  size_md: widgetConfig.size || 12,
+                  size_lg: widgetConfig.size || 12,
+                  order: widgetConfig.column || 1
+                });
+
+                if (columnResult.success && columnResult.data) {
+                  // Create widget instance
+                  const instanceResult = await this.client.createRecord('sp_instance', {
+                    sp_column: columnResult.data.sys_id,
+                    sp_widget: widgetSysId,
+                    order: widgetConfig.order || 100,
+                    title: widgetConfig.title || '',
+                    options: JSON.stringify(widgetConfig.options || {}),
+                    class_name: widgetConfig.instance_class || '',
+                    color: widgetConfig.color || 'default',
+                    active: true,
+                    public: true
+                  });
+
+                  if (instanceResult.success && instanceResult.data) {
+                    widgetInstances.push({
+                      widget: args.widget_name || widgetSysId,
+                      sys_id: instanceResult.data.sys_id,
+                      container: containerResult.data.sys_id,
+                      row: rowResult.data.sys_id,
+                      column: columnResult.data.sys_id
+                    });
+                    this.logger.info('Widget instance created on page', { 
+                      widget: args.widget_name,
+                      instance_id: instanceResult.data.sys_id 
+                    });
+                  }
+                }
+              }
+            }
+          } catch (instanceError) {
+            this.logger.error('Failed to create widget instance', { 
+              widget: widgetConfig.widget,
+              error: instanceError 
+            });
+          }
+        }
+      }
+
+      // Track in Update Set
+      if (pageResult.data) {
+        await this.ensureUpdateSetTracking({
+          sys_id: pageResult.data.sys_id,
+          type: 'Portal Page',
+          name: args.page_id,
+          table: 'sp_page'
+        });
+      }
+
+      // Build success message
+      const pageUrl = `https://${credentials?.instance}/${args.portal || 'sp'}?id=${args.page_id}`;
+      const designerUrl = `https://${credentials?.instance}/sp_config?id=page_designer&sys_id=${pageSysId}`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Portal page deployed successfully!
+              
+🎯 **Page Details:**
+- Page ID: ${args.page_id}
+- Title: ${args.title}
+- Sys ID: ${pageSysId}
+- Portal: ${args.portal === 'esc' ? 'Employee Service Center' : 'Service Portal'}
+- Layout: ${args.layout || 'single_column'}
+
+${widgetInstances.length > 0 ? `📦 **Widget Instances Created:**
+${widgetInstances.map((instance, i) => 
+  `${i + 1}. Widget: ${instance.widget} (Instance: ${instance.sys_id})`
+).join('\n')}
+` : '📦 **No widgets added** - Page created empty'}
+
+📦 **Update Set:**
+- Name: ${updateSetName}
+- ID: ${updateSetId}
+- Status: ✅ Tracked
+
+🔗 **Direct Links:**
+- View Page: ${pageUrl}
+- Page Designer: ${designerUrl}
+- Service Portal Config: https://${credentials?.instance}/sp_config?id=designer
+
+📝 **Next Steps:**
+1. ${widgetInstances.length === 0 ? 'Add widgets to the page using Page Designer' : 'Configure widget instance options if needed'}
+2. Adjust page layout and styling
+3. Set page permissions if needed
+4. Test the page in different portal themes
+5. Add the page to portal menus
+
+💡 **Success!** Your portal page is ready for use. ${widgetInstances.length > 0 ? 'The widget has been automatically placed on the page.' : 'Use Page Designer to add widgets.'}`
+          },
+        ],
+      };
+    } catch (error) {
+      const enhancedError = `🚨 Portal Page Deployment Failed
+
+📍 Error: ${error instanceof Error ? error.message : String(error)}
+
+🔧 Troubleshooting Steps:
+1. Check authentication: snow_auth_diagnostics()
+2. Verify portal permissions (sp_admin or sp_portal_manager role)
+3. Check if the widget exists: snow_find_artifact
+4. Verify Update Set: snow_update_set_current()
+
+💡 Alternative Approaches:
+• Deploy widget first: snow_deploy({ type: 'widget', ... })
+• Use manual creation in Page Designer
+• Check portal configuration
+
+📚 Documentation: See PORTAL-PAGE-ENHANCEMENT.md for details`;
+      throw new Error(enhancedError);
+    }
+  }
+
+  /**
+   * Generate manual steps for portal page creation
+   */
+  private generatePortalPageManualSteps(args: any, error: any, updateSetName: string, updateSetId: string): any {
+    const credentials = this.oauth.loadCredentials();
+    const instance = credentials?.then(c => c?.instance) || 'your-instance';
+    
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ **Automatic Portal Page Deployment Failed - Manual Steps Generated**
+
+🚨 **Error**: ${error instanceof Error ? error.message : String(error)}
+
+📦 **Update Set Ready**: ${updateSetName} (${updateSetId})
+✅ Manual changes will be automatically tracked in this Update Set.
+
+🔧 **Manual Portal Page Creation Steps:**
+
+1. **Navigate to Service Portal Configuration**
+   🔗 URL: https://${instance}/sp_config?id=designer
+   
+2. **Create New Page**
+   - Click "Pages" in the left menu
+   - Click "New" button
+   - Fill in:
+     - **Page ID**: ${args.page_id}
+     - **Title**: ${args.title}
+     - **Short Description**: ${args.description || 'Portal page with widget'}
+   
+3. **Configure Page Layout**
+   - Click "Open in Designer" after creating the page
+   - Select layout type: ${args.layout === 'multi_column' ? 'Multi-column' : args.layout === 'with_sidebar' ? 'With Sidebar' : 'Single Column'}
+   
+4. **Add Widget to Page** ${args.widget_name ? `(Widget: ${args.widget_name})` : ''}
+   - In Page Designer, click "+" to add a widget
+   - Search for: ${args.widget_name || 'your widget'}
+   - Drag widget to desired location
+   - Configure widget instance options if needed
+   
+5. **Add Custom CSS** (if provided)
+   ${args.page_css ? `\`\`\`css
+${args.page_css}
+\`\`\`` : '   - No custom CSS provided'}
+   
+6. **Configure Page Settings**
+   - Set "Public" to true for public access
+   - Configure roles if restricted access needed
+   - Set portal: ${args.portal === 'esc' ? 'Employee Service Center' : 'Service Portal'}
+   
+7. **Save and Test**
+   - Click "Save" in Page Designer
+   - Test URL: https://${instance}/${args.portal || 'sp'}?id=${args.page_id}
+   
+8. **Add to Portal Menu** (optional)
+   - Navigate to Service Portal > Menus
+   - Add menu item pointing to your new page
+
+💡 **Tips:**
+- Ensure your widget exists before adding to page
+- Use Preview mode to test before publishing
+- Check browser console for any client-side errors
+- Verify widget permissions match page permissions
+
+📋 **Widget Configuration for Page:**
+${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number) => `
+  Widget ${i + 1}:
+  - Column: ${w.column || 1}
+  - Size: ${w.size || 12} (of 12 columns)
+  - Order: ${w.order || 100}`).join('\n') : '  - No specific widget configuration provided'}`
+      }]
+    };
+  }
+
+  /**
+   * Generate CSS for portal page based on requirements
+   */
+  private generatePortalPageCSS(instruction: string): string {
+    const lower = instruction.toLowerCase();
+    
+    // Base portal page styles
+    let css = `
+/* Portal Page Custom Styles */
+.page-container {
+  padding: 20px 0;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 300;
+  color: #333;
+  margin: 0;
+}
+`;
+
+    // Dashboard-specific styles
+    if (lower.includes('dashboard')) {
+      css += `
+/* Dashboard Layout */
+.dashboard-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: -10px;
+}
+
+.dashboard-widget {
+  flex: 1 1 calc(50% - 20px);
+  min-width: 300px;
+  padding: 10px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-widget {
+    flex: 1 1 100%;
+  }
+}
+
+.metric-widget {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  transition: transform 0.2s;
+}
+
+.metric-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+`;
+    }
+
+    // Multi-column layout styles
+    if (lower.includes('multi') || lower.includes('column')) {
+      css += `
+/* Multi-Column Layout */
+.multi-column-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.column-widget {
+  background: #fff;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+`;
+    }
+
+    // Sidebar layout styles
+    if (lower.includes('sidebar')) {
+      css += `
+/* Sidebar Layout */
+.with-sidebar {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  flex: 0 0 300px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .with-sidebar {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    flex: 1 1 auto;
+  }
+}
+`;
+    }
+
+    // Responsive utilities
+    css += `
+/* Responsive Utilities */
+@media (max-width: 576px) {
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .page-container {
+    padding: 10px;
+  }
+}
+
+/* Widget Container Overrides */
+.sp-widget {
+  margin-bottom: 20px;
+}
+
+.sp-widget:last-child {
+  margin-bottom: 0;
+}
+
+/* Custom widget spacing */
+.widget-wrapper {
+  padding: 15px;
+  background: #fff;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+`;
+
+    return css;
   }
 
   private async deployFlow(args: any) {
@@ -4918,136 +5388,54 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
    * Process natural language instruction into deployment configuration
    */
   private async processNaturalLanguageInstruction(type: string, instruction: string): Promise<any> {
-    // For flows, create a proper flow structure
-    if (type === 'flow') {
-      // Extract flow name from instruction
-      const flowName = this.extractNameFromInstruction(instruction);
-      
-      // Create a basic flow definition based on the instruction
-      // This is a simplified version - in production, this would call the flow composer
+    // For portal pages, process the instruction to extract requirements
+    if (type === 'portal_page') {
       const lowerInstruction = instruction.toLowerCase();
       
-      // Determine trigger type
-      let triggerType = 'manual';
-      let triggerTable = '';
+      // Extract widget reference from instruction
+      let widgetName = '';
+      let widgetSysId = '';
       
-      if (lowerInstruction.includes('new service catalog request') || 
-          lowerInstruction.includes('new catalog request')) {
-        triggerType = 'record_created';
-        triggerTable = 'sc_request';
-      } else if (lowerInstruction.includes('new incident')) {
-        triggerType = 'record_created';
-        triggerTable = 'incident';
-      } else if (lowerInstruction.includes('updated') || lowerInstruction.includes('changes')) {
-        triggerType = 'record_updated';
+      // Look for widget references
+      const widgetMatch = instruction.match(/widget\s+(?:called\s+)?['"]*([^'"]+)['"]*|([^\s]+)\s+widget/i);
+      if (widgetMatch) {
+        widgetName = widgetMatch[1] || widgetMatch[2];
       }
       
-      // Create activities based on instruction
-      const activities = [];
-      let activityId = 1;
+      // Extract page details
+      const pageName = this.extractNameFromInstruction(instruction);
+      const pageTitle = pageName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
-      // Check for approval requirement
-      if (lowerInstruction.includes('approval') || lowerInstruction.includes('approve')) {
-        // Check for condition
-        if (lowerInstruction.includes('if') && 
-            (lowerInstruction.includes('monitor') || lowerInstruction.includes('display') || 
-             lowerInstruction.includes('screen') || lowerInstruction.includes('lcd'))) {
-          // Add condition activity
-          activities.push({
-            id: `activity_${activityId++}`,
-            name: 'Check Item Type',
-            type: 'condition',
-            condition: 'current.cat_item.name.toLowerCase().includes("monitor") || current.cat_item.name.toLowerCase().includes("display") || current.cat_item.name.toLowerCase().includes("screen") || current.cat_item.name.toLowerCase().includes("lcd")',
-            outputs: {
-              condition_met: true
-            }
-          });
-        }
-        
-        // Add approval activity
-        activities.push({
-          id: `activity_${activityId++}`,
-          name: 'Request Approval',
-          type: 'approval',
-          approval_type: 'user',
-          approvers: lowerInstruction.includes('admin') ? 'admin' : 'assignment_group.manager',
-          inputs: {
-            record: '${trigger.current}',
-            approvers: lowerInstruction.includes('admin') ? 'admin' : 'assignment_group.manager'
-          },
-          outputs: {
-            approval_state: '${approval.state}',
-            approval_comments: '${approval.comments}'
-          }
-        });
-        
-        // Add wait for approval if mentioned
-        if (lowerInstruction.includes('wait for approval')) {
-          activities.push({
-            id: `activity_${activityId++}`,
-            name: 'Wait for Approval',
-            type: 'wait',
-            wait_type: 'approval',
-            inputs: {
-              approval_record: '${activity_' + (activityId - 2) + '.approval_id}'
-            }
-          });
-        }
+      // Determine layout configuration
+      let layout = 'single_column'; // default
+      if (lowerInstruction.includes('dashboard') || lowerInstruction.includes('multi')) {
+        layout = 'multi_column';
+      } else if (lowerInstruction.includes('sidebar') || lowerInstruction.includes('side')) {
+        layout = 'with_sidebar';
       }
       
-      // Add update status if mentioned
-      if (lowerInstruction.includes('update') && lowerInstruction.includes('status')) {
-        activities.push({
-          id: `activity_${activityId++}`,
-          name: 'Update Request Status',
-          type: 'update_record',
-          table: triggerTable || 'sc_request',
-          inputs: {
-            record: '${trigger.current}',
-            fields: {
-              state: '${activity_' + (activityId - 2) + '.approval_state === "approved" ? "approved" : "rejected"}'
-            }
-          }
-        });
+      // Determine portal
+      let portal = 'sp'; // default Service Portal
+      if (lowerInstruction.includes('employee') || lowerInstruction.includes('esc')) {
+        portal = 'esc'; // Employee Service Center
       }
       
-      // Create flow definition
-      const flowDefinition = {
-        name: flowName,
-        description: instruction,
-        table: triggerTable,
-        trigger: {
-          type: triggerType,
-          table: triggerTable,
-          condition: ''
-        },
-        activities: activities.length > 0 ? activities : [{
-          id: 'activity_1',
-          name: 'Log Action',
-          type: 'log',
-          message: 'Flow executed for: ' + instruction,
-          level: 'info'
-        }],
-        connections: []
-      };
-      
-      // Generate connections between activities
-      for (let i = 0; i < activities.length - 1; i++) {
-        flowDefinition.connections.push({
-          from: activities[i].id,
-          to: activities[i + 1].id,
-          type: 'always'
-        });
-      }
-      
+      // Generate page configuration
       return {
-        name: flowName,
-        description: instruction,
-        flow_definition: flowDefinition,
-        table: triggerTable,
-        trigger_type: triggerType,
-        condition: '',
-        active: true
+        page_id: pageName,
+        title: pageTitle,
+        description: `Portal page for ${widgetName || 'widget'}`,
+        widget_name: widgetName,
+        widget_sys_id: widgetSysId,
+        layout: layout,
+        portal: portal,
+        page_css: this.generatePortalPageCSS(instruction),
+        widgets: [{
+          widget: widgetName,
+          column: 1,
+          order: 100,
+          size: layout === 'multi_column' ? 6 : 12
+        }]
       };
     }
     
@@ -5825,8 +6213,8 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
     switch (type) {
       case 'widget':
         return await this.deployWidget(scopedConfig);
-      case 'flow':
-        return await this.deployFlow(scopedConfig);
+      case 'portal_page':
+        return await this.deployPortalPage(scopedConfig);
       case 'application':
         return await this.deployApplication(scopedConfig);
       case 'xml_update_set':

@@ -6,7 +6,7 @@
 export interface ServiceNowTask {
   id: string;
   objective: string;
-  type: 'widget' | 'flow' | 'script' | 'application' | 'integration' | 'unknown';
+  type: 'widget' | 'portal_page' | 'flow' | 'script' | 'application' | 'integration' | 'unknown';
   artifacts: string[];
   status: 'analyzing' | 'planning' | 'executing' | 'completed' | 'failed';
   result?: any;
@@ -40,7 +40,8 @@ export type AgentType =
   | 'css-specialist'
   | 'backend-specialist'
   | 'frontend-specialist'
-  | 'performance-specialist';
+  | 'performance-specialist'
+  | 'page-designer';
 
 export interface DeploymentPattern {
   taskType: string;
@@ -78,7 +79,7 @@ export interface AgentMessage {
 }
 
 export interface ServiceNowArtifact {
-  type: 'widget' | 'flow' | 'script' | 'table' | 'catalog_item';
+  type: 'widget' | 'portal_page' | 'flow' | 'script' | 'table' | 'catalog_item';
   name: string;
   sys_id?: string;
   config: any;
