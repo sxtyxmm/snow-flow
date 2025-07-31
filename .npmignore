@@ -23,22 +23,38 @@ coverage/
 !README.md
 !LICENSE
 !CLAUDE.md
+PORTAL-PAGE-ENHANCEMENT.md
+TEST-REPORT.md
+COMMERCIAL-STRATEGY.md
+LICENSE-ANALYSIS.md
+LINKEDIN-LAUNCH-STRATEGY.md
 
-# Local data (exclude source but include compiled)
+# Database files - NEVER publish these!
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+.claude-flow/
+
+# Local data
 memory/
-!dist/memory/
 .swarm/
-# Don't ignore .claude/ entirely - we need some config files
+.hive-mind/
+coordination/
+servicenow/
+reports/
+
+# Claude config (only templates needed)
 .claude/*
 !.claude/mcp-config.json
 !.claude/config.json
 !.claude/claude-settings.json
 !.claude/settings.json
-!.claude/settings.local.json
 !.claude/commands/
-.snow-flow/
-coordination/
-servicenow/
+
+# Exclude local settings
+.claude/settings.local.json
+claude-flow.config.json
 
 # Config files
 .gitignore
@@ -46,6 +62,8 @@ servicenow/
 .prettierrc*
 jest.config.*
 tsconfig.json
+.husky/
+.releaserc.json
 
 # CI/CD
 .github/
@@ -65,12 +83,14 @@ tmp/
 
 # Build artifacts that shouldn't be published
 *.tsbuildinfo
+dist/*.bak
 
-# Examples and demos (if any remain)
+# Examples and demos
 examples/
 demo/
+docs/
 
-# Scripts (only keep what's needed)
+# Scripts (only keep essential ones)
 scripts/*
 !scripts/postinstall.js
 !scripts/setup-mcp.js
@@ -83,8 +103,17 @@ scripts/*
 !.claude.settings.template
 !.claude.mcp-config.template
 
-# Ignore generated .mcp.json files
+# Room modes
+.roo/
+.roomodes
+
+# Generated files
 .mcp.json
+manual-register-mcp.js
+mcp-wrapper.sh
+
+# Activation scripts (platform-specific)
+activate-mcp.sh
 
 # Keep only essential files:
 # - dist/ (compiled code)
@@ -95,3 +124,4 @@ scripts/*
 # - package.json
 # - README.md
 # - LICENSE
+# - CLAUDE.md

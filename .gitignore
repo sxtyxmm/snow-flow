@@ -32,6 +32,10 @@ logs/
 # Memory database
 memory/*.db
 memory/**/*.db
+*.db
+*.db-*
+.claude-flow/
+reports/
 
 # Sessions
 memory/sessions/*
