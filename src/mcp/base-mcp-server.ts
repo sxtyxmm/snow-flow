@@ -115,7 +115,7 @@ export abstract class BaseMCPServer {
       
       // Track metrics
       const startTime = Date.now();
-      let metrics = this.toolMetrics.get(name) || { calls: 0, totalTime: 0, errors: 0 };
+      const metrics = this.toolMetrics.get(name) || { calls: 0, totalTime: 0, errors: 0 };
       metrics.calls++;
       
       try {

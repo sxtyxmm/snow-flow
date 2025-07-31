@@ -85,7 +85,7 @@ export class ACLAnalyzer {
       };
 
     } catch (error) {
-      this.logger.error('ACL analysis failed:', error);
+      this.logger.error('ACL _analysis failed:', error);
       throw error;
     }
   }
@@ -342,7 +342,7 @@ export class ACLAnalyzer {
   /**
    * Attempt automatic fixes for permission issues
    */
-  async attemptAutoFix(analysis: ACLAnalysisResult): Promise<{
+  async attemptAutoFix(_analysis: ACLAnalysisResult): Promise<{
     fixed: boolean;
     appliedFixes: string[];
     failedFixes: string[];
@@ -350,7 +350,7 @@ export class ACLAnalyzer {
     const appliedFixes: string[] = [];
     const failedFixes: string[] = [];
 
-    for (const suggestion of analysis.suggestions) {
+    for (const suggestion of _analysis.suggestions) {
       if (suggestion.autoApplicable && suggestion.implementation) {
         try {
           this.logger.info(`Attempting auto-fix: ${suggestion.description}`);

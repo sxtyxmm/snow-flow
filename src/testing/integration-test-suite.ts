@@ -847,7 +847,7 @@ export class IntegrationTestSuite {
       {
         id: 'perf_001',
         name: 'Flow Performance Analysis',
-        description: 'Tests performance analysis and optimization recommendations',
+        description: 'Tests performance _analysis and optimization recommendations',
         type: 'performance',
         steps: [
           {
@@ -855,7 +855,7 @@ export class IntegrationTestSuite {
             name: 'Analyze Flow Performance',
             action: 'performanceOptimizer.analyzeFlowPerformance',
             parameters: { flowDefinition: {} },
-            validation: 'Performance analysis completed'
+            validation: 'Performance _analysis completed'
           }
         ],
         setup: {
@@ -881,7 +881,7 @@ export class IntegrationTestSuite {
         ],
         timeout: 60000,
         retryCount: 2,
-        tags: ['performance', 'optimization', 'analysis']
+        tags: ['performance', 'optimization', '_analysis']
       }
     ];
   }

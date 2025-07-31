@@ -110,7 +110,7 @@ export class ServiceNowReportingAnalyticsMCP extends BaseMCPServer {
             dataSource: { type: 'string', description: 'Data source table' },
             metrics: { type: 'array', description: 'Performance metrics to track' },
             dimensions: { type: 'array', description: 'Analysis dimensions' },
-            timeframe: { type: 'string', description: 'Time period for analysis' },
+            timeframe: { type: 'string', description: 'Time period for _analysis' },
             benchmarks: { type: 'array', description: 'Performance benchmarks' },
             alerts: { type: 'array', description: 'Alert configurations' }
           },
@@ -180,7 +180,7 @@ export class ServiceNowReportingAnalyticsMCP extends BaseMCPServer {
           properties: {
             table: { type: 'string', description: 'Table to analyze' },
             analysisType: { type: 'string', description: 'Analysis type (trends, patterns, anomalies)' },
-            timeframe: { type: 'string', description: 'Time period for analysis' },
+            timeframe: { type: 'string', description: 'Time period for _analysis' },
             generateRecommendations: { type: 'boolean', description: 'Generate recommendations' }
           },
           required: ['table']
@@ -545,9 +545,9 @@ export class ServiceNowReportingAnalyticsMCP extends BaseMCPServer {
   private async handleSnowAnalyzeDataQuality(args: any): Promise<ToolResult> {
     const startTime = Date.now();
     try {
-      // This would be a complex analysis in reality
+      // This would be a complex _analysis in reality
       // For now, simulate data quality analysis
-      const analysis = {
+      const _analysis = {
         table: args.table,
         total_records: Math.floor(Math.random() * 10000) + 1000,
         fields_analyzed: args.fields?.length || 'all',
@@ -576,7 +576,7 @@ export class ServiceNowReportingAnalyticsMCP extends BaseMCPServer {
 
       return {
         success: true,
-        result: analysis,
+        result: _analysis,
         executionTime: Date.now() - startTime
       };
     } catch (error) {

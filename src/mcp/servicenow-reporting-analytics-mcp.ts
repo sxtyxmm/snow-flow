@@ -152,7 +152,7 @@ class ServiceNowReportingAnalyticsMCP {
               dataSource: { type: 'string', description: 'Data source table' },
               metrics: { type: 'array', description: 'Performance metrics to track' },
               dimensions: { type: 'array', description: 'Analysis dimensions' },
-              timeframe: { type: 'string', description: 'Time period for analysis' },
+              timeframe: { type: 'string', description: 'Time period for _analysis' },
               benchmarks: { type: 'array', description: 'Performance benchmarks' },
               alerts: { type: 'array', description: 'Alert configurations' }
             },
@@ -222,7 +222,7 @@ class ServiceNowReportingAnalyticsMCP {
             properties: {
               table: { type: 'string', description: 'Table to analyze' },
               analysisType: { type: 'string', description: 'Analysis type (trends, patterns, anomalies)' },
-              timeframe: { type: 'string', description: 'Time period for analysis' },
+              timeframe: { type: 'string', description: 'Time period for _analysis' },
               generateRecommendations: { type: 'boolean', description: 'Generate recommendations' }
             },
             required: ['table']
@@ -668,7 +668,7 @@ class ServiceNowReportingAnalyticsMCP {
       }
 
       // Analyze data quality
-      const analysis = {
+      const _analysis = {
         table: args.table,
         totalRecords: sampleData.data.result.length,
         completeness: this.analyzeCompleteness(sampleData.data.result, args.fields),
@@ -678,12 +678,12 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       // Generate quality score
-      const qualityScore = (analysis.completeness.score + analysis.consistency.score + analysis.accuracy.score) / 3;
+      const qualityScore = (_analysis.completeness.score + _analysis.consistency.score + _analysis.accuracy.score) / 3;
 
       return {
         content: [{
           type: 'text',
-          text: `📊 Data Quality Analysis for **${tableInfo.label}** (${tableInfo.name}):\n\n📈 **Overall Quality Score: ${qualityScore.toFixed(1)}%**\n\n📋 **Sample Size:** ${analysis.totalRecords} records\n\n🔍 **Quality Metrics:**\n${args.checkCompleteness !== false ? `- **Completeness**: ${analysis.completeness.score.toFixed(1)}% (${analysis.completeness.complete}/${analysis.completeness.total} fields complete)\n` : ''}${args.checkConsistency !== false ? `- **Consistency**: ${analysis.consistency.score.toFixed(1)}% (${analysis.consistency.consistent}/${analysis.consistency.total} fields consistent)\n` : ''}${args.checkAccuracy !== false ? `- **Accuracy**: ${analysis.accuracy.score.toFixed(1)}% (${analysis.accuracy.accurate}/${analysis.accuracy.total} fields accurate)\n` : ''}\n${analysis.issues.length > 0 ? `\n🚨 **Issues Found:**\n${analysis.issues.map(issue => `- ${issue.type}: ${issue.description}`).join('\n')}\n` : ''}\n✨ Analysis completed with dynamic field discovery!`
+          text: `📊 Data Quality Analysis for **${tableInfo.label}** (${tableInfo.name}):\n\n📈 **Overall Quality Score: ${qualityScore.toFixed(1)}%**\n\n📋 **Sample Size:** ${_analysis.totalRecords} records\n\n🔍 **Quality Metrics:**\n${args.checkCompleteness !== false ? `- **Completeness**: ${_analysis.completeness.score.toFixed(1)}% (${_analysis.completeness.complete}/${_analysis.completeness.total} fields complete)\n` : ''}${args.checkConsistency !== false ? `- **Consistency**: ${_analysis.consistency.score.toFixed(1)}% (${_analysis.consistency.consistent}/${_analysis.consistency.total} fields consistent)\n` : ''}${args.checkAccuracy !== false ? `- **Accuracy**: ${_analysis.accuracy.score.toFixed(1)}% (${_analysis.accuracy.accurate}/${_analysis.accuracy.total} fields accurate)\n` : ''}\n${_analysis.issues.length > 0 ? `\n🚨 **Issues Found:**\n${_analysis.issues.map(issue => `- ${issue.type}: ${issue.description}`).join('\n')}\n` : ''}\n✨ Analysis completed with dynamic field discovery!`
         }]
       };
     } catch (error) {
@@ -707,10 +707,10 @@ class ServiceNowReportingAnalyticsMCP {
 
       const data = await this.client.searchRecords(args.table, '', 200);
       if (!data.success) {
-        throw new Error('Failed to retrieve data for analysis');
+        throw new Error('Failed to retrieve data for _analysis');
       }
 
-      // Generate insights based on analysis type
+      // Generate insights based on _analysis type
       const insights = {
         table: args.table,
         analysisType: args.analysisType || 'patterns',
@@ -742,7 +742,7 @@ class ServiceNowReportingAnalyticsMCP {
       return {
         content: [{
           type: 'text',
-          text: `🔍 Data Insights for **${tableInfo.label}** (${tableInfo.name}):\n\n📊 **Analysis Type:** ${insights.analysisType}\n📅 **Timeframe:** ${insights.timeframe}\n📈 **Sample Size:** ${data.data.result.length} records\n\n💡 **Key Insights:**\n${insights.insights.map(insight => `- **${insight.type}**: ${insight.description}`).join('\n')}\n\n${insights.recommendations.length > 0 ? `🎯 **Recommendations:**\n${insights.recommendations.map(rec => `- ${rec}`).join('\n')}\n\n` : ''}\n✨ Insights generated with dynamic data analysis!`
+          text: `🔍 Data Insights for **${tableInfo.label}** (${tableInfo.name}):\n\n📊 **Analysis Type:** ${insights.analysisType}\n📅 **Timeframe:** ${insights.timeframe}\n📈 **Sample Size:** ${data.data.result.length} records\n\n💡 **Key Insights:**\n${insights.insights.map(insight => `- **${insight.type}**: ${insight.description}`).join('\n')}\n\n${insights.recommendations.length > 0 ? `🎯 **Recommendations:**\n${insights.recommendations.map(rec => `- ${rec}`).join('\n')}\n\n` : ''}\n✨ Insights generated with dynamic data _analysis!`
         }]
       };
     } catch (error) {

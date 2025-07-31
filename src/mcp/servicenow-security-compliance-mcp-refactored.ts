@@ -160,7 +160,7 @@ export class ServiceNowSecurityComplianceMCP extends BaseMCPServer {
         }
       },
       {
-        name: 'snow_audit_trail_analysis',
+        name: 'snow_audit_trail__analysis',
         description: 'Analyze audit trails for security incidents',
         inputSchema: {
           type: 'object',
@@ -210,7 +210,7 @@ export class ServiceNowSecurityComplianceMCP extends BaseMCPServer {
         return await this.handleSnowDiscoverSecurityPolicies(args);
       case 'snow_run_compliance_scan':
         return await this.handleSnowRunComplianceScan(args);
-      case 'snow_audit_trail_analysis':
+      case 'snow_audit_trail__analysis':
         return await this.handleSnowAuditTrailAnalysis(args);
       case 'snow_security_risk_assessment':
         return await this.handleSnowSecurityRiskAssessment(args);

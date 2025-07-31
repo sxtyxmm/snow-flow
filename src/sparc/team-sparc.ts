@@ -14,7 +14,7 @@ export class TeamSparcExecutor {
       'flow': 'development', 
       'app': 'development',
       'application': 'development',
-      'adaptive': 'analysis'
+      'adaptive': '_analysis'
     };
     
     const strategy = strategyMap[teamType.toLowerCase()] || 'development';
@@ -50,11 +50,11 @@ export class TeamSparcExecutor {
     const specialistStrategyMap: Record<string, string> = {
       'frontend': 'development',
       'backend': 'development',
-      'security': 'analysis',
+      'security': '_analysis',
       'database': 'development',
       'process': 'development',
       'trigger': 'development', 
-      'data': 'analysis',
+      'data': '_analysis',
       'logic': 'development',
       'interface': 'development',
       'uiux': 'development',

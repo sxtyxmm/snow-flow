@@ -269,7 +269,7 @@ export class SnowFlowSystem extends EventEmitter {
       
       // Execute objective using Queen's main method
       const queenResult = await this.queen!.executeObjective(objective);
-      const analysis = { 
+      const _analysis = { 
         complexity: 0.5, 
         type: 'unknown', 
         estimatedDuration: 30000,
@@ -277,8 +277,8 @@ export class SnowFlowSystem extends EventEmitter {
         estimatedTasks: 1
       };
       
-      session.queenAgentId = analysis.queenId;
-      session.totalTasks = analysis.estimatedTasks;
+      session.queenAgentId = _analysis.queenId;
+      session.totalTasks = _analysis.estimatedTasks;
       session.status = 'active';
       
       // Execute swarm with Queen coordination (MCP-FIRST workflow)
@@ -508,7 +508,7 @@ export class SnowFlowSystem extends EventEmitter {
 
 // Type definitions
 export interface SwarmOptions {
-  strategy?: 'research' | 'development' | 'analysis' | 'testing' | 'optimization' | 'maintenance';
+  strategy?: 'research' | 'development' | '_analysis' | 'testing' | 'optimization' | 'maintenance';
   mode?: 'centralized' | 'distributed' | 'hierarchical' | 'mesh' | 'hybrid';
   maxAgents?: number;
   parallel?: boolean;

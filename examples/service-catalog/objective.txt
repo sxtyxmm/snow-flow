@@ -1,0 +1,63 @@
+Create a comprehensive laptop request service catalog item with complete approval and fulfillment automation:
+
+1. Service Catalog Item Configuration:
+   - Title: "Request New Laptop"
+   - Category: "Hardware" (create if doesn't exist)
+   - Professional description and image
+   - Proper pricing and billing setup
+   - Available to all employees
+
+2. Dynamic Request Form:
+   - Employee information (auto-populated from user profile)
+   - Laptop specifications with conditional fields:
+     - Operating System (Windows, macOS, Linux)
+     - RAM options (8GB, 16GB, 32GB) - conditional on OS
+     - Storage options (256GB SSD, 512GB SSD, 1TB SSD)
+     - Software requirements (conditional checkboxes)
+   - Business justification (mandatory text area)
+   - Delivery preferences (office pickup, home delivery)
+   - Urgency level with automatic approval routing
+
+3. Multi-Stage Approval Workflow:
+   - Level 1: Direct manager approval (auto-approve for standard configs)
+   - Level 2: IT department approval for non-standard requests
+   - Level 3: Finance approval for high-value requests (>$2000)
+   - Parallel approval for urgent requests
+   - Escalation after 48 hours of inactivity
+
+4. Automated Fulfillment Process:
+   - Create fulfillment tasks for IT team
+   - Procurement workflow for ordering
+   - Asset management integration
+   - Delivery coordination tasks
+   - User notification at each stage
+
+5. Communication & Notifications:
+   - Email templates for each approval stage
+   - SMS notifications for urgent requests
+   - Status updates to requester
+   - Manager notifications
+   - IT team task assignments
+
+6. Knowledge Integration:
+   - Self-service laptop comparison guide
+   - FAQ about laptop policies
+   - Software compatibility articles
+   - Delivery timeframe information
+
+7. Reporting & Analytics:
+   - Request volume tracking
+   - Approval time metrics
+   - Cost analysis by department
+   - User satisfaction surveys
+
+8. Technical Requirements:
+   - Mobile-responsive form design
+   - Integration with HR system for manager lookup
+   - Asset management system connection
+   - Proper security and access controls
+   - Audit trail for all activities
+   - SLA tracking and reporting
+
+The entire solution should be production-ready with proper error handling, security measures, and comprehensive testing.
+EOF < /dev/null

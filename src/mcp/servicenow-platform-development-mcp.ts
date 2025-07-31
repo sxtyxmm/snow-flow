@@ -861,7 +861,7 @@ class ServiceNowPlatformDevelopmentMCP {
       }
 
       // Get related tables if requested
-      let relatedTables: any[] = [];
+      const relatedTables: any[] = [];
       if (includeRelated && relationships.length > 0) {
         const uniqueRelatedTables = [...new Set(relationships.map((rel: any) => rel.targetTable))];
         

@@ -3,10 +3,10 @@
  * Tests the Queen Agent and Coordinator working together
  */
 
-import { QueenAgent } from './queen-agent';
-import { AgentCoordinator } from './coordinator';
-import { QueenMemorySystem } from '../queen/queen-memory';
-import { Agent, AgentType } from '../queen/types';
+import { QueenAgent } from '../../src/agents/queen-agent';
+import { AgentCoordinator } from '../../src/agents/coordinator';
+import { QueenMemorySystem } from '../../src/queen/queen-memory';
+import { Agent, AgentType } from '../../src/queen/types';
 import * as fs from 'fs';
 import * as path from 'path';
 

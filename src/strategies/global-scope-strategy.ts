@@ -600,7 +600,7 @@ export class GlobalScopeStrategy {
       applicationDependencies: []
     };
 
-    // Simple dependency analysis based on artifact content
+    // Simple dependency _analysis based on artifact content
     const content = JSON.stringify(artifactData);
     
     // Check for global API calls
@@ -705,9 +705,9 @@ export class GlobalScopeStrategy {
     };
 
     for (const artifact of existingArtifacts) {
-      const analysis = await this.analyzeScopeRequirements(artifact.type, artifact);
+      const _analysis = await this.analyzeScopeRequirements(artifact.type, artifact);
       
-      if (analysis.type === ScopeType.GLOBAL) {
+      if (_analysis.type === ScopeType.GLOBAL) {
         migrationPlan.globalCandidates.push({
           ...artifact,
           migrationComplexity: 'low',

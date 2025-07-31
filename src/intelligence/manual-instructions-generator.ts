@@ -405,7 +405,7 @@ export const MANUAL_INSTRUCTION_TEMPLATES: Partial<Record<RequirementType, Parti
   integration_endpoint: { title: 'Create Integration Endpoint' },
   query_rule: { title: 'Create Query Rule' },
   incident_table: { title: 'Configure Incident Table' },
-  incident_analysis: { title: 'Set up Incident Analysis' },
+  incident__analysis: { title: 'Set up Incident Analysis' },
   knowledge_article: { title: 'Create Knowledge Article' }
 };
 

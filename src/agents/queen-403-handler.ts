@@ -25,11 +25,11 @@ export class Queen403Handler {
   }
 
   /**
-   * Handle 403 permission errors with intelligent analysis and resolution
+   * Handle 403 permission errors with intelligent _analysis and resolution
    */
   async handle403Error(context: Permission403Context): Promise<{
     resolved: boolean;
-    analysis: any;
+    _analysis: any;
     nextSteps: string[];
     manualActions?: string[];
   }> {
@@ -69,7 +69,7 @@ export class Queen403Handler {
 
     return {
       resolved: autoFixed.length > 0,
-      analysis: {
+      _analysis: {
         totalPermissionIssues: aclRequirements.length,
         automaticallyFixed: autoFixed.length,
         requiresManualWork: aclRequirements.filter(r => !r.automatable).length,

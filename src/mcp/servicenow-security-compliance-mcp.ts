@@ -201,7 +201,7 @@ class ServiceNowSecurityComplianceMCP {
           }
         },
         {
-          name: 'snow_audit_trail_analysis',
+          name: 'snow_audit_trail__analysis',
           description: 'Analyze audit trails for security incidents',
           inputSchema: {
             type: 'object',
@@ -257,7 +257,7 @@ class ServiceNowSecurityComplianceMCP {
             return await this.discoverSecurityPolicies(args);
           case 'snow_run_compliance_scan':
             return await this.runComplianceScan(args);
-          case 'snow_audit_trail_analysis':
+          case 'snow_audit_trail__analysis':
             return await this.auditTrailAnalysis(args);
           case 'snow_security_risk_assessment':
             return await this.securityRiskAssessment(args);
@@ -691,7 +691,7 @@ class ServiceNowSecurityComplianceMCP {
       }
 
       // Analyze audit data
-      const analysis = {
+      const _analysis = {
         timeframe,
         total_events: auditRecords.data.result.length,
         unique_users: new Set(auditRecords.data.result.map((record: any) => record.user)).size,
@@ -703,10 +703,10 @@ class ServiceNowSecurityComplianceMCP {
       return {
         content: [{
           type: 'text',
-          text: `📊 Audit Trail Analysis (${timeframe}):\n\n📈 **Summary:**\n- Total Events: ${analysis.total_events}\n- Unique Users: ${analysis.unique_users}\n- Unique Tables: ${analysis.unique_tables}\n\n🔥 **Top Activities:**\n${analysis.top_activities.map((activity: any) => 
+          text: `📊 Audit Trail Analysis (${timeframe}):\n\n📈 **Summary:**\n- Total Events: ${_analysis.total_events}\n- Unique Users: ${_analysis.unique_users}\n- Unique Tables: ${_analysis.unique_tables}\n\n🔥 **Top Activities:**\n${_analysis.top_activities.map((activity: any) => 
             `- ${activity.action} (${activity.count} times)`
-          ).join('\n')}\n\n${analysis.anomalies.length > 0 ? 
-            `🚨 **Anomalies Detected:**\n${analysis.anomalies.map((anomaly: any) => 
+          ).join('\n')}\n\n${_analysis.anomalies.length > 0 ? 
+            `🚨 **Anomalies Detected:**\n${_analysis.anomalies.map((anomaly: any) => 
               `- ${anomaly.type}: ${anomaly.description}`
             ).join('\n')}\n\n` : ''
           }${args?.exportFormat ? `📤 Export generated in ${args.exportFormat} format\n` : ''}\n✨ Analysis completed with dynamic audit discovery!`

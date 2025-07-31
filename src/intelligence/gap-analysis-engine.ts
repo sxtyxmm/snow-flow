@@ -179,7 +179,7 @@ export class GapAnalysisEngine {
   }
   
   /**
-   * Quick analysis without resolution - useful for planning
+   * Quick _analysis without resolution - useful for planning
    */
   async analyzeOnly(objective: string): Promise<{
     requirements: ServiceNowRequirement[];
@@ -188,10 +188,10 @@ export class GapAnalysisEngine {
     requiresManual: number;
     estimatedTime: string;
   }> {
-    this.logger.info(`🔍 Quick analysis for: "${objective}"`);
+    this.logger.info(`🔍 Quick _analysis for: "${objective}"`);
     
-    const analysis = RequirementsAnalyzer.analyzeObjective(objective);
-    const coverage = McpCoverageAnalyzer.analyzeCoverage(analysis.requirements);
+    const _analysis = RequirementsAnalyzer.analyzeObjective(objective);
+    const coverage = McpCoverageAnalyzer.analyzeCoverage(_analysis.requirements);
     
     let canAutomate = coverage.covered.length;
     let requiresManual = coverage.gaps.length;
@@ -204,10 +204,10 @@ export class GapAnalysisEngine {
       }
     }
     
-    const estimatedTime = this.estimateTotalTime(analysis.requirements, canAutomate, requiresManual);
+    const estimatedTime = this.estimateTotalTime(_analysis.requirements, canAutomate, requiresManual);
     
     return {
-      requirements: analysis.requirements,
+      requirements: _analysis.requirements,
       coverage,
       canAutomate,
       requiresManual,
@@ -216,7 +216,7 @@ export class GapAnalysisEngine {
   }
   
   /**
-   * Get detailed analysis for a specific requirement type
+   * Get detailed _analysis for a specific requirement type
    */
   analyzeRequirementType(requirementType: string): {
     mcpTools: string[];
@@ -462,26 +462,26 @@ export async function analyzeGaps(
 }
 
 /**
- * Quick analysis without resolution
+ * Quick _analysis without resolution
  */
 export function quickAnalyze(objective: string): {
   requirements: ServiceNowRequirement[];
   coverage: CoverageAnalysis;
   estimatedComplexity: 'simple' | 'moderate' | 'complex';
 } {
-  const analysis = RequirementsAnalyzer.analyzeObjective(objective);
-  const coverage = McpCoverageAnalyzer.analyzeCoverage(analysis.requirements);
+  const _analysis = RequirementsAnalyzer.analyzeObjective(objective);
+  const coverage = McpCoverageAnalyzer.analyzeCoverage(_analysis.requirements);
   
   let estimatedComplexity: 'simple' | 'moderate' | 'complex' = 'simple';
   
-  if (analysis.requirements.length > 10 || coverage.coveragePercentage < 50) {
+  if (_analysis.requirements.length > 10 || coverage.coveragePercentage < 50) {
     estimatedComplexity = 'complex';
-  } else if (analysis.requirements.length > 5 || coverage.coveragePercentage < 80) {
+  } else if (_analysis.requirements.length > 5 || coverage.coveragePercentage < 80) {
     estimatedComplexity = 'moderate';
   }
   
   return {
-    requirements: analysis.requirements,
+    requirements: _analysis.requirements,
     coverage,
     estimatedComplexity
   };

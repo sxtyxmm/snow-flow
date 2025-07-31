@@ -61,7 +61,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         },
         {
           name: 'snow_analyze_artifact',
-          description: 'AUTONOMOUS deep analysis - intelligently indexes artifacts for optimal Claude understanding, stores in memory for future use. SELF-LEARNING SYSTEM.',
+          description: 'AUTONOMOUS deep _analysis - intelligently indexes artifacts for optimal Claude understanding, stores in memory for future use. SELF-LEARNING SYSTEM.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -70,7 +70,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
               session_id: { type: 'string' },
               agent_id: { type: 'string' },
               agent_type: { type: 'string' },
-              deep_analysis: { type: 'boolean', default: true, description: 'Perform deep analysis' }
+              deep__analysis: { type: 'boolean', default: true, description: 'Perform deep _analysis' }
             },
             required: ['sys_id', 'table']
           }
@@ -312,7 +312,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
       'snow_analyze_artifact',
       args,
       async (context) => {
-        const { sys_id, table, deep_analysis } = args;
+        const { sys_id, table, deep__analysis } = args;
 
         // 🔧 MANDATORY ServiceNow connection validation
         const connectionResult = await this.validateServiceNowConnection();
@@ -320,7 +320,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
           return this.createAuthenticationError(connectionResult.error);
         }
 
-        this.assertNoMockData('artifact analysis');
+        this.assertNoMockData('artifact _analysis');
 
         await this.reportProgress(context, 10, 'Fetching artifact details');
 
@@ -334,13 +334,13 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         await this.reportProgress(context, 30, 'Analyzing artifact structure');
 
         // Perform deep analysis
-        const analysis = await this.performDeepAnalysis(artifact.result, table, deep_analysis);
+        const _analysis = await this.performDeepAnalysis(artifact.result, table, deep__analysis);
         
-        // Store analysis in memory
+        // Store _analysis in memory
         await this.memory.updateSharedContext({
           session_id: context.session_id,
           context_key: `artifact_analysis_${sys_id}`,
-          context_value: JSON.stringify(analysis),
+          context_value: JSON.stringify(_analysis),
           created_by_agent: context.agent_id
         });
 
@@ -350,7 +350,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
           type: this.getArtifactType(table),
           name: artifact.result.name || artifact.result.id || sys_id,
           description: artifact.result.description,
-          config: analysis.config
+          config: _analysis.config
         });
 
         await this.reportProgress(context, 70, 'Identifying relationships');
@@ -359,18 +359,18 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         const relationships = await this.findRelationships(artifact.result, table, context);
         
         // Notify relevant agents based on artifact type
-        if (analysis.requires_ui_work && this.getArtifactType(table) === 'widget') {
+        if (_analysis.requires_ui_work && this.getArtifactType(table) === 'widget') {
           await this.notifyHandoff(context, 'ui_specialist', {
             type: 'widget',
             sys_id: sys_id,
-            next_steps: analysis.suggested_improvements || []
+            next_steps: _analysis.suggested_improvements || []
           });
         }
 
         await this.reportProgress(context, 100, 'Analysis complete');
 
         return this.createSuccessResponse(
-          `Deep analysis completed for ${artifact.result.name || sys_id}`,
+          `Deep _analysis completed for ${artifact.result.name || sys_id}`,
           {
             artifact: {
               sys_id: sys_id,
@@ -378,7 +378,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
               type: this.getArtifactType(table),
               table: table
             },
-            analysis: analysis,
+            _analysis: _analysis,
             relationships: relationships,
             indexed: true
           }
@@ -597,7 +597,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
     table: string,
     deep: boolean
   ): Promise<any> {
-    const analysis: any = {
+    const _analysis: any = {
       structure: {},
       dependencies: [],
       config: {},
@@ -609,7 +609,7 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
     
     switch (artifactType) {
       case 'widget':
-        analysis.structure = {
+        _analysis.structure = {
           has_template: !!artifact.template,
           has_css: !!artifact.css,
           has_client_script: !!artifact.client_script,
@@ -620,15 +620,15 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         if (deep) {
           // Check for common patterns
           if (artifact.template && !artifact.template.includes('ng-')) {
-            analysis.suggested_improvements.push('Consider using Angular directives');
+            _analysis.suggested_improvements.push('Consider using Angular directives');
           }
           if (!artifact.css || artifact.css.length < 50) {
-            analysis.suggested_improvements.push('Add responsive CSS styling');
-            analysis.requires_ui_work = true;
+            _analysis.suggested_improvements.push('Add responsive CSS styling');
+            _analysis.requires_ui_work = true;
           }
         }
         
-        analysis.config = {
+        _analysis.config = {
           name: artifact.name,
           template_size: artifact.template?.length || 0,
           css_size: artifact.css?.length || 0,
@@ -637,21 +637,21 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
         break;
 
       case 'flow':
-        analysis.structure = {
+        _analysis.structure = {
           trigger_type: artifact.trigger_type,
           table: artifact.table_name,
           active: artifact.active,
           has_conditions: !!artifact.condition
         };
         
-        analysis.config = {
+        _analysis.config = {
           name: artifact.name,
           complexity: 'medium' // Would need to analyze flow definition
         };
         break;
 
       case 'script':
-        analysis.structure = {
+        _analysis.structure = {
           api_name: artifact.api_name,
           client_callable: artifact.client_callable,
           active: artifact.active
@@ -664,12 +664,12 @@ export class ServiceNowIntelligentMCP extends BaseMCPServer {
           if (artifact.script.includes('GlideAjax')) scriptDeps.push('GlideAjax');
           if (artifact.script.includes('gs.')) scriptDeps.push('GlideSystem API');
           
-          analysis.dependencies = scriptDeps;
+          _analysis.dependencies = scriptDeps;
         }
         break;
     }
 
-    return analysis;
+    return _analysis;
   }
 
   private async findRelationships(

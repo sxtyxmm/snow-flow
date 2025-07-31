@@ -174,7 +174,7 @@ class ServiceNowGraphMemoryMCP {
         },
         {
           name: 'snow_graph_find_related',
-          description: 'INTELLIGENT relationship discovery - finds all artifacts related to a given artifact, understands dependencies, data flows, and impact analysis',
+          description: 'INTELLIGENT relationship discovery - finds all artifacts related to a given artifact, understands dependencies, data flows, and impact _analysis',
           inputSchema: {
             type: 'object',
             properties: {
@@ -215,7 +215,7 @@ class ServiceNowGraphMemoryMCP {
           },
         },
         {
-          name: 'snow_graph_pattern_analysis',
+          name: 'snow_graph_pattern__analysis',
           description: 'PATTERN RECOGNITION - identifies common patterns, best practices, and reusable components across all artifacts',
           inputSchema: {
             type: 'object',
@@ -266,7 +266,7 @@ class ServiceNowGraphMemoryMCP {
             return await this.analyzeImpact(args);
           case 'snow_graph_suggest_artifacts':
             return await this.suggestArtifacts(args);
-          case 'snow_graph_pattern_analysis':
+          case 'snow_graph_pattern__analysis':
             return await this.analyzePatterns(args);
           case 'snow_graph_visualize':
             return await this.generateVisualization(args);
@@ -353,7 +353,7 @@ class ServiceNowGraphMemoryMCP {
 💡 **Next Steps:**
 - Use snow_graph_find_related to explore connections
 - Use snow_graph_analyze_impact before modifications
-- Use snow_graph_pattern_analysis to find similar artifacts`
+- Use snow_graph_pattern__analysis to find similar artifacts`
         }]
       };
     } finally {
@@ -589,7 +589,7 @@ ${i + 1}. **${s.artifact.name}** (${s.artifact.type})
 
   private async analyzePatterns(args: any) {
     if (!this.neo4jAvailable || !this.driver) {
-      return this.createFallbackResponse('snow_graph_pattern_analysis');
+      return this.createFallbackResponse('snow_graph_pattern__analysis');
     }
     
     const session = this.driver!.session();

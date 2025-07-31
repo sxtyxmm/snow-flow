@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { Agent, AgentMessage, AgentType } from '../queen/types';
+import { Agent, AgentMessage } from '../queen/types';
 import { QueenMemorySystem } from '../queen/queen-memory';
 import * as crypto from 'crypto';
 
@@ -748,13 +748,14 @@ export class AgentCoordinator extends EventEmitter {
         });
         break;
 
-      case 'reassign':
+      case 'reassign': {
         // Find another agent
         const availableAgent = this.findAvailableAgent(context, action.config.preferredAgentType);
         if (availableAgent) {
           await this.reassignTasks(context, blockage.agentId, availableAgent.id);
         }
         break;
+      }
 
       case 'escalate':
         // Escalate to Queen
@@ -868,7 +869,7 @@ export class AgentCoordinator extends EventEmitter {
         }
         break;
       
-      case 'assignToAvailableAgents':
+      case 'assignToAvailableAgents': {
         // Distribute tasks to available agents
         const availableAgents = Array.from(context.agents.values())
           .filter(a => a.status === 'idle');
@@ -879,6 +880,7 @@ export class AgentCoordinator extends EventEmitter {
           agentCount: availableAgents.length
         });
         break;
+      }
       
       case 'spawnSpecialistAgent':
         // Request Queen to spawn specialist

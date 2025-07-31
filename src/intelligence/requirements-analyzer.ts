@@ -53,7 +53,7 @@ export type RequirementType =
   | 'data_source' | 'gauge' | 'chart_configuration' | 'dashboard_tab'
   | 'performance_analytics' | 'metric_definition' | 'job_queue' | 'transaction_quota'
   // Operations & Service Management
-  | 'incident_table' | 'incident_analysis' | 'query_rule' | 'catalog_item' | 'catalog_category'
+  | 'incident_table' | 'incident__analysis' | 'query_rule' | 'catalog_item' | 'catalog_category'
   | 'catalog_variable' | 'workflow_integration' | 'user_account' | 'user_group'
   | 'group_membership' | 'integration_endpoint' | 'update_set'
   // Automation & Monitoring
@@ -618,7 +618,7 @@ export class RequirementsAnalyzer {
 
     // Reporting & Analytics (Partial MCP Coverage)
     report: {
-      description: 'Reports and data analysis',
+      description: 'Reports and data _analysis',
       category: 'reporting_analytics',
       automatable: true,
       mcpCoverage: true,
@@ -829,7 +829,7 @@ export class RequirementsAnalyzer {
     const criticalPath = this.calculateCriticalPath(requirements);
     const estimatedDuration = this.estimateDuration(requirements);
 
-    const analysis: ObjectiveAnalysis = {
+    const _analysis: ObjectiveAnalysis = {
       objective,
       requirements,
       totalRequirements: requirements.length,
@@ -845,7 +845,7 @@ export class RequirementsAnalyzer {
 
     logger.info(`📊 Analysis complete: ${requirements.length} requirements, ${gapCount} gaps (${100 - mcpCoveragePercentage}% coverage gap)`);
     
-    return analysis;
+    return _analysis;
   }
 
   private static identifyRequirements(objective: string): ServiceNowRequirement[] {

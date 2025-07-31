@@ -714,7 +714,7 @@ export class ParallelAgentEngine extends EventEmitter {
       'app-architect': ['system_design', 'architecture_planning', 'integration'],
       'integration-specialist': ['rest_api', 'soap_services', 'data_transformation'],
       'catalog-manager': ['catalog_creation', 'variable_management', 'workflow_linking'],
-      'researcher': ['requirement_analysis', 'feasibility_study', 'solution_research'],
+      'researcher': ['requirement__analysis', 'feasibility_study', 'solution_research'],
       'tester': ['test_planning', 'test_execution', 'mock_data_creation']
     };
     

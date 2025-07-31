@@ -315,7 +315,7 @@ export class CostOptimizationEngine {
         );
       }
 
-      this.logger.info('✅ Cost analysis completed', {
+      this.logger.info('✅ Cost _analysis completed', {
         profileId,
         totalCost: profile.totalCost,
         optimizationsFound: optimizations.length,
@@ -333,7 +333,7 @@ export class CostOptimizationEngine {
       };
 
     } catch (error) {
-      this.logger.error('❌ Cost analysis failed', error);
+      this.logger.error('❌ Cost _analysis failed', error);
       throw error;
     }
   }

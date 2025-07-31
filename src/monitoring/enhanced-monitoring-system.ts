@@ -819,7 +819,7 @@ export class EnhancedMonitoringSystem extends EventEmitter {
   }
 
   private async runPredictiveAnalysis(): Promise<void> {
-    this.logger.debug('🔮 Running predictive analysis...');
+    this.logger.debug('🔮 Running predictive _analysis...');
     
     const predictions: PredictedIssue[] = [];
     

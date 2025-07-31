@@ -235,7 +235,7 @@ async function deployXMLToServiceNow(xmlFile: string, options: { preview?: boole
 program
   .command('swarm <objective>')
   .description('Execute multi-agent orchestration for a ServiceNow task - één command voor alles!')
-  .option('--strategy <strategy>', 'Execution strategy (development, analysis, research)', 'development')
+  .option('--strategy <strategy>', 'Execution strategy (development, _analysis, research)', 'development')
   .option('--mode <mode>', 'Coordination mode (hierarchical, mesh, distributed)', 'hierarchical')
   .option('--max-agents <number>', 'Maximum number of agents', '5')
   .option('--parallel', 'Enable parallel execution')
@@ -515,7 +515,7 @@ program
           if (isAuthenticated && options.autoDeploy) {
             cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
           } else {
-            cliLogger.info('📋 Planning mode - analysis and recommendations only');
+            cliLogger.info('📋 Planning mode - _analysis and recommendations only');
           }
         }
         
@@ -857,7 +857,7 @@ await snow_create_flow({
 - ✅ Imports XML to ServiceNow as remote update set
 - ✅ Automatic tool name resolution with MCPToolRegistry
 - ✅ Complete metadata extraction (sys_id, URLs, endpoints)
-- ✅ Performance analysis and recommendations
+- ✅ Performance _analysis and recommendations
 - ✅ 100% of requested features deploy correctly!
 
 🚫 **FORBIDDEN APPROACHES:**
@@ -906,7 +906,7 @@ mcp__servicenow-memory__memory_store({
     status: "initializing", 
     started_at: new Date().toISOString(),
     queen_agent_id: "queen_${sessionId}",
-    task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
+    task__analysis: ${JSON.stringify(taskAnalysis, null, 2)},
     configuration: {
       strategy: "${options.strategy}",
       mode: "${options.mode}",
@@ -1084,7 +1084,7 @@ TodoWrite([
 \`\`\`
 
 ### 4. Spawn Specialized Agents
-Based on the task analysis, spawn the following agents using the Task tool:
+Based on the task _analysis, spawn the following agents using the Task tool:
 
 **Primary Agent**: ${taskAnalysis.primaryAgent}
 \`\`\`javascript
@@ -2413,7 +2413,7 @@ Each server provides autonomous capabilities for different aspects of ServiceNow
 7. **Operations MCP** - Operations and monitoring management
 8. **Automation MCP** - Workflow and process automation
 9. **Security & Compliance MCP** - Security auditing and compliance
-10. **Reporting & Analytics MCP** - Data analysis and reporting
+10. **Reporting & Analytics MCP** - Data _analysis and reporting
 11. **Memory MCP** - Multi-agent coordination and todo management
 
 ### 🎯 Core Capabilities
@@ -3155,7 +3155,7 @@ snow_deploy({
 snow_create_flow({
   instruction: "create approval flow for purchases over $1000",
   deploy_immediately: true,
-  enable_intelligent_analysis: true
+  enable_intelligent__analysis: true
 })
 \`\`\`
 **Use for**: Creating flows from natural language
@@ -3667,7 +3667,7 @@ snow_analyze_incident({
 });
 
 // Pattern analysis
-snow_pattern_analysis({
+snow_pattern__analysis({
   analysis_type: "incident_patterns",
   timeframe: "month"
 });
@@ -3895,7 +3895,7 @@ With concurrent execution and batch operations:
 ### SPARC Modes
 - \`orchestrator\`: Coordinates complex multi-step tasks
 - \`coder\`: Focused code implementation
-- \`researcher\`: Deep analysis and discovery
+- \`researcher\`: Deep _analysis and discovery
 - \`tester\`: Comprehensive testing strategies
 - \`architect\`: System design and architecture
 

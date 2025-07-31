@@ -36,7 +36,7 @@ export interface ClaudeConfig {
 }
 
 export interface SwarmOptions {
-  strategy?: 'research' | 'development' | 'analysis' | 'testing' | 'optimization' | 'maintenance';
+  strategy?: 'research' | 'development' | '_analysis' | 'testing' | 'optimization' | 'maintenance';
   mode?: 'centralized' | 'distributed' | 'hierarchical' | 'mesh' | 'hybrid';
   maxAgents?: number;
   parallel?: boolean;

@@ -92,14 +92,14 @@ export const MCP_TOOL_CAPABILITIES: McpToolCapability[] = [
   {
     tool: 'snow_query_incidents',
     requirementTypes: ['incident_table', 'query_rule'],
-    description: 'Advanced incident querying and analysis',
+    description: 'Advanced incident querying and _analysis',
     scope: 'both',
     autoDeployable: false
   },
   {
     tool: 'snow_analyze_incident',
-    requirementTypes: ['incident_analysis', 'knowledge_article'],
-    description: 'AI-powered incident analysis with suggestions',
+    requirementTypes: ['incident__analysis', 'knowledge_article'],
+    description: 'AI-powered incident _analysis with suggestions',
     scope: 'both',
     autoDeployable: false
   },

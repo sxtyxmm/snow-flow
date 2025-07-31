@@ -825,7 +825,7 @@ class ServiceNowDeploymentMCP {
           this.logger.warn('Table record creation failed, trying manual step guidance', tableError);
           
           // Fallback strategy 2: Provide manual creation steps
-          // Enhanced error analysis for OAuth permissions
+          // Enhanced error _analysis for OAuth permissions
           const is403Error = (error: any) => {
             return error?.response?.status === 403 || 
                    error?.message?.includes('403') || 
@@ -908,7 +908,7 @@ Your widget has been deployed and is ready for testing in Service Portal.`
               diagnosticsResult = diagResponse.content[0].text;
             } catch (diagError) {
               this.logger.warn('Could not run auto-diagnostics:', diagError);
-              diagnosticsResult = '❌ Auto-diagnostics failed. Run snow_auth_diagnostics manually for detailed analysis.';
+              diagnosticsResult = '❌ Auto-diagnostics failed. Run snow_auth_diagnostics manually for detailed _analysis.';
             }
             
             troubleshootingSteps = `
@@ -1255,7 +1255,7 @@ Use \`snow_deployment_debug\` for more information about this session.`,
             validationText.includes('Auto-converted "actions" to "activities"') ||
             validationText.includes('Smart Auto-Corrections Applied')) {
           // Re-parse the corrected definition from the validation process
-          let tempDef = typeof args.flow_definition === 'string' ? JSON.parse(args.flow_definition) : args.flow_definition;
+          const tempDef = typeof args.flow_definition === 'string' ? JSON.parse(args.flow_definition) : args.flow_definition;
           if (tempDef.steps && !tempDef.activities) {
             tempDef.activities = tempDef.steps;
             delete tempDef.steps;
@@ -2810,8 +2810,8 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
     // Generate flow logic (connections between actions)
     for (let i = 0; i < actionIds.length; i++) {
       const logicId = this.generateGUID();
-      let fromId = i === 0 ? triggerId : actionIds[i - 1];
-      let toId = actionIds[i];
+      const fromId = i === 0 ? triggerId : actionIds[i - 1];
+      const toId = actionIds[i];
       
       const logicXml = this.generateFlowLogicXML(logicId, flowId, fromId, toId, i, timestamp);
       flowLogics.push({ id: logicId, xml: logicXml });
@@ -3388,7 +3388,7 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
         }
       }
 
-      // Code coverage analysis if requested
+      // Code coverage _analysis if requested
       let coverageReport = '';
       if (args.coverage !== false) {
         const coverage = this.analyzeCodeCoverage(widget);
@@ -5078,7 +5078,7 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
   private extractNameFromInstruction(instruction: string): string {
     // Simple name extraction - could be enhanced with NLP
     const words = instruction.toLowerCase().split(/\s+/);
-    let name = words.filter(word => 
+    const name = words.filter(word => 
       word.length > 2 && 
       !['the', 'and', 'for', 'with', 'that', 'will', 'can', 'should'].includes(word)
     ).slice(0, 3).join('_');
@@ -6168,7 +6168,7 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
         
         let mainWidget = null;
         let searchResults = null;
-        let verificationDetails = {
+        const verificationDetails = {
           attempt,
           mainWidgetCheck: 'pending',
           widgetSearchCheck: 'pending',

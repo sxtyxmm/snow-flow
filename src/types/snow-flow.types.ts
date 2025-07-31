@@ -32,7 +32,7 @@ export type AgentType =
   | 'widget-builder'          // Widget builder (alias)
   | 'flow-builder'            // Flow development specialist
   | 'script-writer'           // Script development specialist
-  | 'security-agent'          // Security analysis specialist (alias)
+  | 'security-agent'          // Security _analysis specialist (alias)
   | 'app-architect'           // Application architecture specialist
   | 'css-specialist'          // Styling and responsive design specialist
   | 'backend-specialist'      // Server script specialist
@@ -72,7 +72,7 @@ export interface Task {
 export type TaskType = 
   | 'research'
   | 'development'
-  | 'analysis'
+  | '_analysis'
   | 'testing'
   | 'optimization'
   | 'documentation'

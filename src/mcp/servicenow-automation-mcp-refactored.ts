@@ -663,7 +663,7 @@ export class ServiceNowAutomationMCP extends BaseMCPServer {
 
   private parseScheduleTime(schedule: string): string {
     // Simple parsing - in real implementation would be more sophisticated
-    const timeMatch = schedule.match(/(\d{1,2}):(\d{2})/);;
+    const timeMatch = schedule.match(/(\d{1,2}):(\d{2})/);
     if (timeMatch) {
       return `${timeMatch[1]}:${timeMatch[2]}:00`;
     }

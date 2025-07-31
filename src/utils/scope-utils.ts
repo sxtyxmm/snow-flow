@@ -21,7 +21,7 @@ export class ScopeUtils {
    * Analyze artifact content to determine optimal scope
    */
   static analyzeArtifactScope(artifactType: string, artifactData: any): ScopeAnalysisResult {
-    const analysis: ScopeAnalysisResult = {
+    const _analysis: ScopeAnalysisResult = {
       recommendedScope: ScopeType.GLOBAL,
       confidence: 0,
       indicators: {
@@ -66,7 +66,7 @@ export class ScopeUtils {
       const matches = content.match(indicator.pattern);
       if (matches) {
         globalScore += indicator.weight * matches.length;
-        analysis.indicators.global.push(`${indicator.pattern.source} (${matches.length} matches)`);
+        _analysis.indicators.global.push(`${indicator.pattern.source} (${matches.length} matches)`);
       }
     });
 
@@ -76,7 +76,7 @@ export class ScopeUtils {
       const matches = content.match(indicator.pattern);
       if (matches) {
         applicationScore += indicator.weight * matches.length;
-        analysis.indicators.application.push(`${indicator.pattern.source} (${matches.length} matches)`);
+        _analysis.indicators.application.push(`${indicator.pattern.source} (${matches.length} matches)`);
       }
     });
 
@@ -86,7 +86,7 @@ export class ScopeUtils {
       const matches = content.match(indicator.pattern);
       if (matches) {
         systemScore += indicator.weight * matches.length;
-        analysis.indicators.system.push(`${indicator.pattern.source} (${matches.length} matches)`);
+        _analysis.indicators.system.push(`${indicator.pattern.source} (${matches.length} matches)`);
       }
     });
 
@@ -94,26 +94,26 @@ export class ScopeUtils {
     const totalScore = globalScore + applicationScore + systemScore;
     if (totalScore > 0) {
       if (globalScore > applicationScore && globalScore > systemScore) {
-        analysis.recommendedScope = ScopeType.GLOBAL;
-        analysis.confidence = Math.min(globalScore / totalScore, 1.0);
+        _analysis.recommendedScope = ScopeType.GLOBAL;
+        _analysis.confidence = Math.min(globalScore / totalScore, 1.0);
       } else if (applicationScore > globalScore && applicationScore > systemScore) {
-        analysis.recommendedScope = ScopeType.APPLICATION;
-        analysis.confidence = Math.min(applicationScore / totalScore, 1.0);
+        _analysis.recommendedScope = ScopeType.APPLICATION;
+        _analysis.confidence = Math.min(applicationScore / totalScore, 1.0);
       } else {
-        analysis.recommendedScope = ScopeType.AUTO;
-        analysis.confidence = 0.5;
+        _analysis.recommendedScope = ScopeType.AUTO;
+        _analysis.confidence = 0.5;
       }
     } else {
-      analysis.confidence = 0.3;
+      _analysis.confidence = 0.3;
     }
 
     // Analyze complexity
-    analysis.complexity = this.analyzeComplexity(artifactType, artifactData);
+    _analysis.complexity = this.analyzeComplexity(artifactType, artifactData);
 
     // Check for cross-application integration
-    analysis.crossAppIntegration = this.hasCrossAppIntegration(content);
+    _analysis.crossAppIntegration = this.hasCrossAppIntegration(content);
 
-    return analysis;
+    return _analysis;
   }
 
   /**
@@ -250,30 +250,30 @@ export class ScopeUtils {
   /**
    * Generate scope recommendation report
    */
-  static generateScopeReport(analysis: ScopeAnalysisResult): string {
+  static generateScopeReport(_analysis: ScopeAnalysisResult): string {
     const report = `
 Scope Analysis Report
 ====================
 
-Recommended Scope: ${analysis.recommendedScope}
-Confidence: ${(analysis.confidence * 100).toFixed(1)}%
-Complexity: ${analysis.complexity}
-Cross-App Integration: ${analysis.crossAppIntegration ? 'Yes' : 'No'}
+Recommended Scope: ${_analysis.recommendedScope}
+Confidence: ${(_analysis.confidence * 100).toFixed(1)}%
+Complexity: ${_analysis.complexity}
+Cross-App Integration: ${_analysis.crossAppIntegration ? 'Yes' : 'No'}
 
 Indicators:
 -----------
 Global Scope Indicators:
-${analysis.indicators.global.map(i => `  • ${i}`).join('\n')}
+${_analysis.indicators.global.map(i => `  • ${i}`).join('\n')}
 
 Application Scope Indicators:
-${analysis.indicators.application.map(i => `  • ${i}`).join('\n')}
+${_analysis.indicators.application.map(i => `  • ${i}`).join('\n')}
 
 System Indicators:
-${analysis.indicators.system.map(i => `  • ${i}`).join('\n')}
+${_analysis.indicators.system.map(i => `  • ${i}`).join('\n')}
 
 Recommendations:
 ---------------
-${this.generateRecommendations(analysis).map(r => `  • ${r}`).join('\n')}
+${this.generateRecommendations(_analysis).map(r => `  • ${r}`).join('\n')}
 `;
 
     return report;
@@ -282,27 +282,27 @@ ${this.generateRecommendations(analysis).map(r => `  • ${r}`).join('\n')}
   /**
    * Generate recommendations based on analysis
    */
-  static generateRecommendations(analysis: ScopeAnalysisResult): string[] {
+  static generateRecommendations(_analysis: ScopeAnalysisResult): string[] {
     const recommendations: string[] = [];
 
-    if (analysis.confidence < 0.5) {
+    if (_analysis.confidence < 0.5) {
       recommendations.push('Consider manual scope selection due to low confidence');
     }
 
-    if (analysis.complexity === 'high') {
+    if (_analysis.complexity === 'high') {
       recommendations.push('High complexity artifact - ensure proper testing');
     }
 
-    if (analysis.crossAppIntegration) {
+    if (_analysis.crossAppIntegration) {
       recommendations.push('Cross-application integration detected - global scope recommended');
     }
 
-    if (analysis.recommendedScope === ScopeType.GLOBAL) {
+    if (_analysis.recommendedScope === ScopeType.GLOBAL) {
       recommendations.push('Ensure global scope permissions are available');
       recommendations.push('Consider impact on system performance');
     }
 
-    if (analysis.recommendedScope === ScopeType.APPLICATION) {
+    if (_analysis.recommendedScope === ScopeType.APPLICATION) {
       recommendations.push('Ensure application scope is properly configured');
       recommendations.push('Consider application lifecycle management');
     }
@@ -367,7 +367,7 @@ ${this.generateRecommendations(analysis).map(r => `  • ${r}`).join('\n')}
       case ScopeType.APPLICATION:
         return 'Application-specific scope with isolation';
       case ScopeType.AUTO:
-        return 'Automatic scope selection based on analysis';
+        return 'Automatic scope selection based on _analysis';
       default:
         return 'Unknown scope type';
     }
@@ -432,7 +432,7 @@ ${this.generateRecommendations(analysis).map(r => `  • ${r}`).join('\n')}
         return [
           'Potential incorrect scope selection',
           'Reduced user control',
-          'Dependency on analysis accuracy',
+          'Dependency on _analysis accuracy',
           'Complexity in troubleshooting decisions',
           'Need for fallback mechanisms'
         ];

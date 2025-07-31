@@ -375,89 +375,150 @@ export class WidgetCreatorAgent extends BaseAgent {
     let script = '(function() {\n';
     script += '  /* Server Script for ' + requirements.title + ' */\n\n';
     
-    // Handle different actions
-    script += '  var action = input.action || "load";\n\n';
+    script += '  try {\n';
     
-    script += '  if (action === "load") {\n';
-    script += '    loadWidgetData();\n';
-    script += '  } else if (action === "refresh") {\n';
-    script += '    loadWidgetData();\n';
-    script += '  } else if (action === "submit") {\n';
-    script += '    handleFormSubmission();\n';
-    script += '  }\n\n';
+    // Handle different actions
+    script += '    var action = input.action || "load";\n';
+    script += '    gs.log("Widget action: " + action, "' + requirements.name + '");\n\n';
+    
+    script += '    if (action === "load") {\n';
+    script += '      loadWidgetData();\n';
+    script += '    } else if (action === "refresh") {\n';
+    script += '      loadWidgetData();\n';
+    script += '    } else if (action === "submit") {\n';
+    script += '      handleFormSubmission();\n';
+    script += '    }\n\n';
 
     // Load data function
-    script += '  function loadWidgetData() {\n';
-    script += '    data.title = "' + requirements.title + '";\n';
+    script += '    function loadWidgetData() {\n';
+    script += '      try {\n';
+    script += '        data.title = "' + requirements.title + '";\n';
+    script += '        gs.log("Loading widget data for: " + data.title, "' + requirements.name + '");\n';
     
     if (requirements.dataSource) {
-      script += '    \n    // Query ' + requirements.dataSource + ' table\n';
-      script += '    var gr = new GlideRecord("' + requirements.dataSource + '");\n';
-      script += '    gr.addQuery("active", true);\n';
-      script += '    gr.orderByDesc("sys_created_on");\n';
-      script += '    gr.setLimit(10);\n';
-      script += '    gr.query();\n\n';
+      script += '        \n        // Query ' + requirements.dataSource + ' table\n';
+      script += '        var gr = new GlideRecord("' + requirements.dataSource + '");\n';
+      script += '        gr.addQuery("active", "true"); // ✅ FIXED: Use string instead of boolean\n';
+      script += '        gr.orderByDesc("sys_created_on");\n';
+      script += '        gr.setLimit(10);\n';
+      script += '        gr.query();\n';
+      script += '        \n        var recordCount = gr.getRowCount();\n';
+      script += '        gs.log("Found " + recordCount + " active records", "' + requirements.name + '");\n\n';
       
       if (requirements.needsTable) {
-        script += '    // Prepare table data\n';
-        script += '    data.columns = [\n';
-        script += '      { field: "number", label: "Number" },\n';
-        script += '      { field: "short_description", label: "Description" },\n';
-        script += '      { field: "state", label: "State" }\n';
-        script += '    ];\n';
-        script += '    data.rows = [];\n\n';
+        script += '        // Prepare table data\n';
+        script += '        data.columns = [\n';
+        script += '          { field: "number", label: "Number" },\n';
+        script += '          { field: "short_description", label: "Description" },\n';
+        script += '          { field: "state", label: "State" },\n';
+        script += '          { field: "caller", label: "Caller" }\n';
+        script += '        ];\n';
+        script += '        data.rows = [];\n\n';
         
-        script += '    while (gr.next()) {\n';
-        script += '      data.rows.push({\n';
-        script += '        number: gr.getValue("number"),\n';
-        script += '        short_description: gr.getValue("short_description"),\n';
-        script += '        state: gr.getDisplayValue("state")\n';
-        script += '      });\n';
-        script += '    }\n';
+        script += '        while (gr.next()) {\n';
+        script += '          var row = {\n';
+        script += '            sys_id: gr.getUniqueValue(),\n';
+        script += '            number: gr.getValue("number") || "",\n';
+        script += '            short_description: gr.getValue("short_description") || "",\n';
+        script += '            state: gr.getDisplayValue("state") || "Unknown",\n';
+        script += '            caller: ""\n';
+        script += '          };\n\n';
+        
+        script += '          // ✅ FIXED: Safe caller info lookup with proper null checks\n';
+        script += '          if (gr.caller_id && !gr.caller_id.nil()) {\n';
+        script += '            try {\n';
+        script += '              var callerGr = new GlideRecord("sys_user");\n';
+        script += '              if (callerGr.get(gr.caller_id.toString())) {\n';
+        script += '                // ✅ FIXED: Name field with fallback\n';
+        script += '                var callerName = callerGr.getDisplayValue("name");\n';
+        script += '                if (!callerName) {\n';
+        script += '                  var firstName = callerGr.getValue("first_name") || "";\n';
+        script += '                  var lastName = callerGr.getValue("last_name") || "";\n';
+        script += '                  callerName = (firstName + " " + lastName).trim() || "Unknown User";\n';
+        script += '                }\n';
+        script += '                row.caller = callerName;\n';
+        script += '              } else {\n';
+        script += '                row.caller = "User Not Found";\n';
+        script += '              }\n';
+        script += '            } catch (callerError) {\n';
+        script += '              gs.warn("Error fetching caller info: " + callerError.message, "' + requirements.name + '");\n';
+        script += '              row.caller = "Error Loading User";\n';
+        script += '            }\n';
+        script += '          } else {\n';
+        script += '            row.caller = "No Caller";\n';
+        script += '          }\n\n';
+        
+        script += '          data.rows.push(row);\n';
+        script += '        }\n';
+        script += '        \n        gs.log("Processed " + data.rows.length + " table rows", "' + requirements.name + '");\n';
       }
       
       if (requirements.needsChart) {
-        script += '    \n    // Prepare chart data\n';
-        script += '    var chartData = {\n';
-        script += '      type: "bar",\n';
-        script += '      labels: [],\n';
-        script += '      datasets: [{\n';
-        script += '        label: "' + requirements.dataSource + ' by State",\n';
-        script += '        data: [],\n';
-        script += '        backgroundColor: ["#428bca", "#5cb85c", "#d9534f", "#f0ad4e"]\n';
-        script += '      }]\n';
-        script += '    };\n\n';
+        script += '        \n        // Prepare chart data\n';
+        script += '        var chartData = {\n';
+        script += '          type: "bar",\n';
+        script += '          labels: [],\n';
+        script += '          datasets: [{\n';
+        script += '            label: "' + requirements.dataSource + ' by State",\n';
+        script += '            data: [],\n';
+        script += '            backgroundColor: ["#428bca", "#5cb85c", "#d9534f", "#f0ad4e"]\n';
+        script += '          }]\n';
+        script += '        };\n\n';
         
-        script += '    // Aggregate data for chart\n';
-        script += '    var stateCount = {};\n';
-        script += '    gr.rewind();\n';
-        script += '    while (gr.next()) {\n';
-        script += '      var state = gr.getDisplayValue("state") || "Unknown";\n';
-        script += '      stateCount[state] = (stateCount[state] || 0) + 1;\n';
-        script += '    }\n\n';
+        script += '        // Aggregate data for chart\n';
+        script += '        var stateCount = {};\n';
+        script += '        gr.rewind();\n';
+        script += '        while (gr.next()) {\n';
+        script += '          var state = gr.getDisplayValue("state") || "Unknown";\n';
+        script += '          stateCount[state] = (stateCount[state] || 0) + 1;\n';
+        script += '        }\n\n';
         
-        script += '    for (var state in stateCount) {\n';
-        script += '      chartData.labels.push(state);\n';
-        script += '      chartData.datasets[0].data.push(stateCount[state]);\n';
-        script += '    }\n';
-        script += '    data.chartData = chartData;\n';
+        script += '        for (var state in stateCount) {\n';
+        script += '          chartData.labels.push(state);\n';
+        script += '          chartData.datasets[0].data.push(stateCount[state]);\n';
+        script += '        }\n';
+        script += '        data.chartData = chartData;\n';
+        script += '        gs.log("Chart prepared with " + chartData.labels.length + " categories", "' + requirements.name + '");\n';
       }
     }
     
-    script += '  }\n\n';
+    script += '      } catch (loadError) {\n';
+    script += '        gs.error("Error loading widget data: " + loadError.message, "' + requirements.name + '");\n';
+    script += '        data.error = "Error loading data: " + loadError.message;\n';
+    script += '        data.success = false;\n';
+    script += '      }\n';
+    script += '    }\n\n';
 
     if (requirements.needsForm) {
-      script += '  function handleFormSubmission() {\n';
-      script += '    var formData = input.data || {};\n';
-      script += '    \n';
-      script += '    // Process form submission\n';
-      script += '    // Add your form processing logic here\n';
-      script += '    \n';
-      script += '    data.success = true;\n';
-      script += '    data.message = "Form submitted successfully";\n';
-      script += '  }\n';
+      script += '    function handleFormSubmission() {\n';
+      script += '      try {\n';
+      script += '        var formData = input.data || {};\n';
+      script += '        gs.log("Processing form submission", "' + requirements.name + '");\n';
+      script += '        \n';
+      script += '        // ✅ FIXED: Validate form data\n';
+      script += '        if (!formData || Object.keys(formData).length === 0) {\n';
+      script += '          throw new Error("No form data provided");\n';
+      script += '        }\n';
+      script += '        \n';
+      script += '        // Process form submission\n';
+      script += '        // Add your form processing logic here\n';
+      script += '        \n';
+      script += '        data.success = true;\n';
+      script += '        data.message = "Form submitted successfully";\n';
+      script += '        gs.log("Form submission successful", "' + requirements.name + '");\n';
+      script += '      } catch (formError) {\n';
+      script += '        gs.error("Error processing form: " + formError.message, "' + requirements.name + '");\n';
+      script += '        data.success = false;\n';
+      script += '        data.error = "Form submission failed: " + formError.message;\n';
+      script += '      }\n';
+      script += '    }\n';
     }
 
+    script += '  } catch (error) {\n';
+    script += '    gs.error("Critical widget error: " + error.message, "' + requirements.name + '");\n';
+    script += '    data.error = "Widget error: " + error.message;\n';
+    script += '    data.success = false;\n';
+    script += '  }\n';
     script += '})();';
 
     return script;

@@ -7,7 +7,7 @@
  * Features:
  * - Incident, Request, Problem, Change management
  * - CMDB and User management
- * - Intelligent incident analysis and auto-resolution
+ * - Intelligent incident _analysis and auto-resolution
  * - Pattern recognition and root cause analysis
  * - Knowledge base integration
  * - Predictive analytics
@@ -72,7 +72,7 @@ const operationalTableMapping = {
 interface IncidentAnalysis {
   incident_id: string;
   patterns_found: string[];
-  root_cause_analysis: string;
+  root_cause__analysis: string;
   suggested_resolution: string[];
   confidence_score: number;
   similar_incidents: any[];
@@ -97,26 +97,26 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
     return [
       {
         name: 'snow_query_incidents',
-        description: 'Advanced incident querying with filters and analysis',
+        description: 'Advanced incident querying with filters and _analysis',
         inputSchema: {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'ServiceNow encoded query or natural language description' },
             fields: { type: 'array', items: { type: 'string' }, description: 'Specific fields to return' },
             limit: { type: 'number', default: 10, description: 'Maximum number of results (default: 10)' },
-            include_analysis: { type: 'boolean', default: false, description: 'Include intelligent analysis of incidents' }
+            include__analysis: { type: 'boolean', default: false, description: 'Include intelligent _analysis of incidents' }
           },
           required: ['query']
         }
       },
       {
         name: 'snow_analyze_incident',
-        description: 'Intelligent analysis of a specific incident with auto-resolution suggestions',
+        description: 'Intelligent _analysis of a specific incident with auto-resolution suggestions',
         inputSchema: {
           type: 'object',
           properties: {
             incident_id: { type: 'string', description: 'Incident number or sys_id' },
-            include_similar: { type: 'boolean', default: true, description: 'Include similar incidents in analysis' },
+            include_similar: { type: 'boolean', default: true, description: 'Include similar incidents in _analysis' },
             suggest_resolution: { type: 'boolean', default: true, description: 'Generate automated resolution suggestions' }
           },
           required: ['incident_id']
@@ -149,7 +149,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       },
       {
         name: 'snow_query_problems',
-        description: 'Query and analyze problems with root cause analysis',
+        description: 'Query and analyze problems with root cause _analysis',
         inputSchema: {
           type: 'object',
           properties: {
@@ -208,7 +208,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
         }
       },
       {
-        name: 'snow_pattern_analysis',
+        name: 'snow_pattern__analysis',
         description: 'Analyze patterns in incidents, requests, and problems',
         inputSchema: {
           type: 'object',
@@ -216,13 +216,13 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
             analysis_type: { 
               type: 'string', 
               enum: ['incident_patterns', 'request_trends', 'problem_root_causes', 'user_behavior'],
-              description: 'Type of pattern analysis' 
+              description: 'Type of pattern _analysis' 
             },
             timeframe: { 
               type: 'string', 
               enum: ['day', 'week', 'month', 'quarter'],
               default: 'week',
-              description: 'Time period for analysis' 
+              description: 'Time period for _analysis' 
             }
           },
           required: ['analysis_type']
@@ -242,8 +242,8 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
         }
       },
       {
-        name: 'snow_predictive_analysis',
-        description: 'Predictive analysis for potential issues and trends',
+        name: 'snow_predictive__analysis',
+        description: 'Predictive _analysis for potential issues and trends',
         inputSchema: {
           type: 'object',
           properties: {
@@ -470,11 +470,11 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
           return await this.handleUserLookup(args);
         case 'snow_operational_metrics':
           return await this.handleOperationalMetrics(args);
-        case 'snow_pattern_analysis':
+        case 'snow_pattern__analysis':
           return await this.handlePatternAnalysis(args);
         case 'snow_knowledge_search':
           return await this.handleKnowledgeSearch(args);
-        case 'snow_predictive_analysis':
+        case 'snow_predictive__analysis':
           return await this.handlePredictiveAnalysis(args);
         case 'snow_catalog_item_manager':
           return await this.handleCatalogItemManager(args);
@@ -515,7 +515,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
   // Tool implementations
 
   private async handleQueryIncidents(args: any): Promise<ToolResult> {
-    const { query, fields, limit = 10, include_analysis } = args;
+    const { query, fields, limit = 10, include__analysis } = args;
 
     const queryParams: any = {
       sysparm_query: this.parseQuery(query),
@@ -544,10 +544,10 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       total: response.result.length
     };
 
-    if (include_analysis && response.result.length > 0) {
+    if (include__analysis && response.result.length > 0) {
       // Add basic analysis
-      const analysis = this.analyzeIncidentPatterns(response.result);
-      result = { ...result, ...analysis };
+      const _analysis = this.analyzeIncidentPatterns(response.result);
+      result = { ...result, ..._analysis };
     }
 
     return {
@@ -573,10 +573,10 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
     }
 
     const incident = response.result;
-    const analysis: IncidentAnalysis = {
+    const _analysis: IncidentAnalysis = {
       incident_id: incident.sys_id,
       patterns_found: this.detectPatterns(incident.short_description + ' ' + incident.description),
-      root_cause_analysis: 'Automated analysis based on patterns',
+      root_cause__analysis: 'Automated _analysis based on patterns',
       suggested_resolution: [],
       confidence_score: 0.75,
       similar_incidents: [],
@@ -597,17 +597,17 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       });
 
       if (similarResponse.success) {
-        analysis.similar_incidents = similarResponse.result;
+        _analysis.similar_incidents = similarResponse.result;
       }
     }
 
     if (suggest_resolution) {
-      analysis.suggested_resolution = this.generateResolutionSuggestions(incident, analysis.patterns_found);
+      _analysis.suggested_resolution = this.generateResolutionSuggestions(incident, _analysis.patterns_found);
     }
 
     return {
       success: true,
-      result: analysis
+      result: _analysis
     };
   }
 
@@ -685,7 +685,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       };
     }
 
-    let result = {
+    const result = {
       requests: response.result,
       total: response.result.length
     };
@@ -735,7 +735,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       };
     }
 
-    let result = {
+    const result = {
       problems: response.result,
       total: response.result.length
     };
@@ -790,7 +790,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
       };
     }
 
-    let result = {
+    const result = {
       configuration_items: response.result,
       total: response.result.length,
       ci_type: ci_type || 'any'
@@ -1713,7 +1713,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
 
     if (patterns.includes('database_issues')) {
       actions.push('Check database connection pool');
-      actions.push('Run database performance analysis');
+      actions.push('Run database performance _analysis');
     }
 
     if (patterns.includes('auth_issues')) {
@@ -1725,7 +1725,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
   }
 
   private analyzeIncidentPatterns(incidents: any[]): any {
-    const analysis: any = {
+    const _analysis: any = {
       common_categories: {},
       priority_distribution: {},
       state_distribution: {},
@@ -1737,15 +1737,15 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
     for (const incident of incidents) {
       // Category analysis
       const category = incident.category || 'uncategorized';
-      analysis.common_categories[category] = (analysis.common_categories[category] || 0) + 1;
+      _analysis.common_categories[category] = (_analysis.common_categories[category] || 0) + 1;
 
       // Priority analysis
       const priority = incident.priority || 'unset';
-      analysis.priority_distribution[priority] = (analysis.priority_distribution[priority] || 0) + 1;
+      _analysis.priority_distribution[priority] = (_analysis.priority_distribution[priority] || 0) + 1;
 
       // State analysis
       const state = incident.state || 'unknown';
-      analysis.state_distribution[state] = (analysis.state_distribution[state] || 0) + 1;
+      _analysis.state_distribution[state] = (_analysis.state_distribution[state] || 0) + 1;
 
       // Age calculation
       if (incident.sys_created_on) {
@@ -1756,10 +1756,10 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
     }
 
     if (incidents.length > 0) {
-      analysis.avg_age_hours = Math.round(totalAge / incidents.length / (1000 * 60 * 60));
+      _analysis.avg_age_hours = Math.round(totalAge / incidents.length / (1000 * 60 * 60));
     }
 
-    return { analysis };
+    return { _analysis };
   }
 
   private processIncidentMetrics(data: any): any {
@@ -2110,7 +2110,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
   }
 }
 
-// Simplified common patterns for intelligent analysis (moved from top to avoid duplication)
+// Simplified common patterns for intelligent _analysis (moved from top to avoid duplication)
 const commonPatterns = {
   network_issues: {
     keywords: ['network', 'connectivity', 'ping', 'dns', 'timeout', 'unreachable'],

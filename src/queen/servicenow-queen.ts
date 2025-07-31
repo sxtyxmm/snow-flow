@@ -132,13 +132,13 @@ export class ServiceNowQueen {
       }
 
       // Phase 3: Initial Neural Analysis (informed by MCP discovery)
-      const analysis = this.neuralLearning.analyzeTask(objective);
+      const _analysis = this.neuralLearning.analyzeTask(objective);
       
       // Phase 4: Create and register task
       const task: ServiceNowTask = {
         id: taskId,
         objective,
-        type: analysis.type,
+        type: _analysis.type,
         artifacts: [],
         status: 'analyzing'
       };
@@ -169,7 +169,7 @@ export class ServiceNowQueen {
           gapAnalysisResult.nextSteps.manual.forEach(step => this.logger.info(`  • ${step}`));
           
           if (gapAnalysisResult.manualGuides) {
-            this.logger.info('\n📚 Detailed manual guides available in gap analysis result');
+            this.logger.info('\n📚 Detailed manual guides available in gap _analysis result');
           }
         }
 
@@ -185,7 +185,7 @@ export class ServiceNowQueen {
           gapAnalysisResult.nextSteps.recommendations.forEach(rec => this.logger.info(`  • ${rec}`));
         }
 
-        // Store gap analysis result in task for later reference
+        // Store gap _analysis result in task for later reference
         (task as any).gapAnalysis = gapAnalysisResult;
 
       } catch (gapError) {
@@ -194,11 +194,11 @@ export class ServiceNowQueen {
       }
 
       // Phase 6: Spawn optimal agent swarm
-      const agents = this.spawnOptimalSwarm(task, analysis);
+      const agents = this.spawnOptimalSwarm(task, _analysis);
       
       // Phase 7: Execute coordinated deployment
       task.status = 'executing';
-      const result = await this.coordinateExecution(task, agents, analysis);
+      const result = await this.coordinateExecution(task, agents, _analysis);
       
       // Phase 8: Learn from execution
       const duration = Date.now() - startTime;
@@ -222,14 +222,14 @@ export class ServiceNowQueen {
     }
   }
 
-  private spawnOptimalSwarm(task: ServiceNowTask, analysis: TaskAnalysis): Agent[] {
+  private spawnOptimalSwarm(task: ServiceNowTask, _analysis: TaskAnalysis): Agent[] {
     if (this.config.debugMode) {
-      this.logger.info(`🐛 Spawning swarm for ${task.type} task (complexity: ${analysis.estimatedComplexity})`);
+      this.logger.info(`🐛 Spawning swarm for ${task.type} task (complexity: ${_analysis.estimatedComplexity})`);
     }
 
     // Use learned patterns or optimal sequence
-    const agentTypes = analysis.suggestedPattern?.agentSequence || 
-                      this.agentFactory.getOptimalAgentSequence(task.type, analysis.estimatedComplexity);
+    const agentTypes = _analysis.suggestedPattern?.agentSequence || 
+                      this.agentFactory.getOptimalAgentSequence(task.type, _analysis.estimatedComplexity);
     
     // Spawn agent swarm
     const agents = this.agentFactory.spawnAgentSwarm(agentTypes, task.id);
@@ -241,7 +241,7 @@ export class ServiceNowQueen {
     return agents;
   }
 
-  private async coordinateExecution(task: ServiceNowTask, agents: Agent[], analysis: TaskAnalysis): Promise<any> {
+  private async coordinateExecution(task: ServiceNowTask, agents: Agent[], _analysis: TaskAnalysis): Promise<any> {
     const results: any[] = [];
     
     try {
@@ -253,7 +253,7 @@ export class ServiceNowQueen {
       }
 
       // Coordinate final deployment using MCP tools
-      const deploymentResult = await this.executeFinalDeployment(task, results, analysis);
+      const deploymentResult = await this.executeFinalDeployment(task, results, _analysis);
       
       return {
         taskId: task.id,
@@ -324,13 +324,13 @@ export class ServiceNowQueen {
     }
   }
 
-  private async executeFinalDeployment(task: ServiceNowTask, agentResults: any[], analysis: TaskAnalysis): Promise<any> {
+  private async executeFinalDeployment(task: ServiceNowTask, agentResults: any[], _analysis: TaskAnalysis): Promise<any> {
     if (this.config.debugMode) {
       this.logger.info('🚀 Executing final deployment with MCP tools');
     }
 
     // The Queen coordinates the actual MCP tool calls based on agent recommendations
-    const deploymentPlan = this.createDeploymentPlan(task, agentResults, analysis);
+    const deploymentPlan = this.createDeploymentPlan(task, agentResults, _analysis);
     
     try {
       // Execute deployment using the unified deployment API
@@ -346,7 +346,7 @@ export class ServiceNowQueen {
           name: deploymentResult.name || task.objective,
           sys_id: deploymentResult.sys_id,
           config: deploymentResult.config || {},
-          dependencies: analysis.dependencies
+          dependencies: _analysis.dependencies
         });
       }
 
@@ -360,7 +360,7 @@ export class ServiceNowQueen {
     }
   }
 
-  private createDeploymentPlan(task: ServiceNowTask, agentResults: any[], analysis: TaskAnalysis): any {
+  private createDeploymentPlan(task: ServiceNowTask, agentResults: any[], _analysis: TaskAnalysis): any {
     // Extract deployment instructions from agent results
     const widgetCreator = agentResults.find(r => r.agentType === 'widget-creator');
     const flowBuilder = agentResults.find(r => r.agentType === 'flow-builder');
@@ -383,7 +383,7 @@ export class ServiceNowQueen {
         instruction: task.objective,
         config: {
           deploy_immediately: true,
-          enable_intelligent_analysis: true
+          enable_intelligent__analysis: true
         }
       };
     }
@@ -934,7 +934,7 @@ function($scope) {
   }
 
   /**
-   * Get gap analysis results for a task
+   * Get gap _analysis results for a task
    */
   getGapAnalysisResults(taskId: string): GapAnalysisResult | null {
     const task = this.activeTasks.get(taskId);
@@ -942,7 +942,7 @@ function($scope) {
   }
 
   /**
-   * Get all manual guides from gap analysis for a task
+   * Get all manual guides from gap _analysis for a task
    */
   getManualConfigurationGuides(taskId: string): any {
     const gapAnalysis = this.getGapAnalysisResults(taskId);

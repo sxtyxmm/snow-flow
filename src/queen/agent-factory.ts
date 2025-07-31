@@ -150,11 +150,11 @@ export class AgentFactory {
       coordination: 'collaborative'
     });
 
-    // Researcher Agent - Discovery and analysis specialist
+    // Researcher Agent - Discovery and _analysis specialist
     this.agentBlueprints.set('researcher', {
       type: 'researcher',
       capabilities: [
-        'Requirement analysis',
+        'Requirement _analysis',
         'Best practice research',
         'Existing artifact discovery',
         'Dependency identification',

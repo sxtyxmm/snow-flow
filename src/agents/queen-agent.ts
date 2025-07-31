@@ -10,7 +10,7 @@ import { TodoItem, TodoStatus } from '../types/todo.types';
 import { ServiceNowTask, Agent, AgentType, TaskAnalysis, DeploymentPattern } from '../queen/types';
 import { QueenMemorySystem } from '../queen/queen-memory';
 import { AgentCoordinator } from './coordinator';
-import { ParallelAgentEngine, ParallelizationOpportunity, ParallelExecutionPlan } from '../queen/parallel-agent-engine';
+import { ParallelAgentEngine, ParallelizationOpportunity } from '../queen/parallel-agent-engine';
 import { Queen403Handler } from './queen-403-handler';
 import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
@@ -102,22 +102,22 @@ export class QueenAgent extends EventEmitter {
 
     try {
       // Analyze objective using memory patterns and neural learning
-      const analysis = await this.performObjectiveAnalysis(queenObjective);
+      const _analysis = await this.performObjectiveAnalysis(queenObjective);
       
-      // Store analysis in memory for coordination
+      // Store _analysis in memory for coordination
       await this.memory.store(`analysis_${queenObjective.id}`, {
         objective: queenObjective,
-        analysis,
+        _analysis,
         timestamp: new Date().toISOString()
       });
 
       // Create TodoWrite coordination structure
-      const todoCoordination = await this.createTodoCoordination(queenObjective, analysis);
+      const todoCoordination = await this.createTodoCoordination(queenObjective, _analysis);
       this.todoCoordinations.set(queenObjective.id, todoCoordination);
 
-      this.emit('objective:analyzed', { objective: queenObjective, analysis, todos: todoCoordination.todos });
+      this.emit('objective:analyzed', { objective: queenObjective, _analysis, todos: todoCoordination.todos });
       
-      return analysis;
+      return _analysis;
 
     } catch (error) {
       this.emit('objective:error', { objective: queenObjective, error });
@@ -137,7 +137,7 @@ export class QueenAgent extends EventEmitter {
   }): Promise<boolean> {
     // Check if it's a 403 permission error
     if (this.is403Error(error)) {
-      console.log('🚨 Queen Agent: Detected 403 permission error - activating intelligent analysis');
+      console.log('🚨 Queen Agent: Detected 403 permission error - activating intelligent _analysis');
       
       const objective = this.activeObjectives.get(context.objectiveId);
       if (!objective) {
@@ -244,9 +244,9 @@ export class QueenAgent extends EventEmitter {
       throw new Error(`No todo coordination found for objective: ${objectiveId}`);
     }
 
-    const analysis = await this.memory.get(`analysis_${objectiveId}`) as { analysis: TaskAnalysis };
-    if (!analysis) {
-      throw new Error(`No analysis found for objective: ${objectiveId}`);
+    const _analysis = await this.memory.get(`analysis_${objectiveId}`) as { _analysis: TaskAnalysis };
+    if (!_analysis) {
+      throw new Error(`No _analysis found for objective: ${objectiveId}`);
     }
 
     console.log('🧠 Queen Agent: Analyzing parallelization opportunities...');
@@ -254,7 +254,7 @@ export class QueenAgent extends EventEmitter {
     // 🚀 NEW: Detect parallelization opportunities
     const opportunities = await this.parallelEngine.detectParallelizationOpportunities(
       todoCoordination.todos,
-      analysis.analysis.type,
+      _analysis._analysis.type,
       Array.from(this.activeAgents.values())
     );
 
@@ -263,7 +263,7 @@ export class QueenAgent extends EventEmitter {
       return await this.spawnParallelAgents(objectiveId, todoCoordination, opportunities);
     } else {
       console.log('📋 No parallelization opportunities found, using sequential approach');
-      return await this.spawnSequentialAgents(objectiveId, todoCoordination, analysis.analysis);
+      return await this.spawnSequentialAgents(objectiveId, todoCoordination, _analysis._analysis);
     }
   }
 
@@ -304,10 +304,10 @@ export class QueenAgent extends EventEmitter {
   private async spawnSequentialAgents(
     objectiveId: string,
     todoCoordination: TodoCoordination,
-    analysis: TaskAnalysis
+    _analysis: TaskAnalysis
   ): Promise<Agent[]> {
     const agents: Agent[] = [];
-    const requiredAgentTypes = new Set(analysis.requiredAgents);
+    const requiredAgentTypes = new Set(_analysis.requiredAgents);
 
     // Spawn agents for each required type
     for (const agentType of requiredAgentTypes) {
@@ -375,7 +375,7 @@ export class QueenAgent extends EventEmitter {
       avgDuration: 300,
       lastUsed: new Date()
     };
-    let dependencies: string[] = [];
+    const dependencies: string[] = [];
 
     // Widget development detection
     if (description.includes('widget') || description.includes('portal') || description.includes('ui component')) {
@@ -448,9 +448,9 @@ export class QueenAgent extends EventEmitter {
    */
   private async createTodoCoordination(
     objective: QueenObjective, 
-    analysis: TaskAnalysis
+    _analysis: TaskAnalysis
   ): Promise<TodoCoordination> {
-    const todos = this.generateTodosForObjective(objective, analysis);
+    const todos = this.generateTodosForObjective(objective, _analysis);
     
     const coordination: TodoCoordination = {
       objectiveId: objective.id,
@@ -468,7 +468,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Generate todos based on objective type
    */
-  private generateTodosForObjective(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private generateTodosForObjective(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const baseTodos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -497,24 +497,24 @@ export class QueenAgent extends EventEmitter {
     ];
 
     // Add type-specific todos
-    switch (analysis.type) {
+    switch (_analysis.type) {
       case 'widget':
-        baseTodos.push(...this.createWidgetTodos(objective, analysis));
+        baseTodos.push(...this.createWidgetTodos(objective, _analysis));
         break;
       case 'flow':
-        baseTodos.push(...this.createFlowTodos(objective, analysis));
+        baseTodos.push(...this.createFlowTodos(objective, _analysis));
         break;
       case 'application':
-        baseTodos.push(...this.createApplicationTodos(objective, analysis));
+        baseTodos.push(...this.createApplicationTodos(objective, _analysis));
         break;
       case 'script':
-        baseTodos.push(...this.createScriptTodos(objective, analysis));
+        baseTodos.push(...this.createScriptTodos(objective, _analysis));
         break;
       case 'integration':
-        baseTodos.push(...this.createIntegrationTodos(objective, analysis));
+        baseTodos.push(...this.createIntegrationTodos(objective, _analysis));
         break;
       default:
-        baseTodos.push(...this.createGenericTodos(objective, analysis));
+        baseTodos.push(...this.createGenericTodos(objective, _analysis));
     }
 
     // Add final todos
@@ -539,7 +539,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create widget-specific todos
    */
-  private createWidgetTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createWidgetTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     // 🚀 ENHANCED: More specific todos to trigger parallel agent specialization
     const todos: TodoItem[] = [
       {
@@ -598,7 +598,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create flow-specific todos
    */
-  private createFlowTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createFlowTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -650,7 +650,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create application-specific todos
    */
-  private createApplicationTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createApplicationTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -708,7 +708,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create script-specific todos
    */
-  private createScriptTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createScriptTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -760,7 +760,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create integration-specific todos
    */
-  private createIntegrationTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createIntegrationTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -818,7 +818,7 @@ export class QueenAgent extends EventEmitter {
   /**
    * Create generic todos for unknown task types
    */
-  private createGenericTodos(objective: QueenObjective, analysis: TaskAnalysis): TodoItem[] {
+  private createGenericTodos(objective: QueenObjective, _analysis: TaskAnalysis): TodoItem[] {
     const todos: TodoItem[] = [
       {
         id: this.generateId('todo'),
@@ -879,7 +879,7 @@ export class QueenAgent extends EventEmitter {
   private analyzeTodoDependencies(todos: TodoItem[]): Map<string, string[]> {
     const dependencies = new Map<string, string[]>();
     
-    // Simple dependency analysis - each todo depends on all previous high priority todos
+    // Simple dependency _analysis - each todo depends on all previous high priority todos
     const highPriorityTodos = todos.filter(t => t.priority === 'high');
     
     highPriorityTodos.forEach((todo, index) => {

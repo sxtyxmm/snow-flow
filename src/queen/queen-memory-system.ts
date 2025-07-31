@@ -11,7 +11,7 @@ import { EventEmitter } from 'events';
 export interface QueenMemoryPattern {
   // Objective tracking
   'objectives/[id]/definition': 'Store objective details and requirements';
-  'objectives/[id]/analysis': 'Task analysis and breakdown';
+  'objectives/[id]/_analysis': 'Task _analysis and breakdown';
   'objectives/[id]/status': 'Current status and progress';
   
   // Agent coordination
@@ -79,9 +79,9 @@ export class QueenMemorySystem extends EventEmitter {
   }
 
   /**
-   * Store task analysis with patterns
+   * Store task _analysis with patterns
    */
-  async storeTaskAnalysis(objectiveId: string, analysis: {
+  async storeTaskAnalysis(objectiveId: string, _analysis: {
     taskType: string;
     requiredCapabilities: string[];
     suggestedAgents: string[];
@@ -89,30 +89,30 @@ export class QueenMemorySystem extends EventEmitter {
     dependencies?: string[];
     similarPatterns?: string[];
   }): Promise<void> {
-    const key = `objectives/${objectiveId}/analysis`;
+    const key = `objectives/${objectiveId}/_analysis`;
     
     await this.memory.storeHierarchical({
       key,
       namespace: 'objectives',
-      type: 'analysis',
-      value: analysis,
+      type: '_analysis',
+      value: _analysis,
       metadata: {
-        tags: ['analysis', analysis.taskType, 'complexity-' + analysis.estimatedComplexity],
+        tags: ['_analysis', _analysis.taskType, 'complexity-' + _analysis.estimatedComplexity],
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
         version: 1,
         relationships: {
-          requires: analysis.dependencies || [],
-          similar: analysis.similarPatterns || [],
+          requires: _analysis.dependencies || [],
+          similar: _analysis.similarPatterns || [],
         },
       },
     });
 
     // Track patterns for learning
-    if (analysis.similarPatterns && analysis.similarPatterns.length > 0) {
+    if (_analysis.similarPatterns && _analysis.similarPatterns.length > 0) {
       await this.memory.trackAccessPattern('pattern_reuse', {
         objectiveId,
-        patterns: analysis.similarPatterns,
+        patterns: _analysis.similarPatterns,
       });
     }
   }

@@ -42,7 +42,7 @@ export class SecurityAgent extends BaseAgent {
         'Vulnerability scanning',
         'Access control validation',
         'Compliance checking',
-        'Code security analysis',
+        'Code security _analysis',
         'Authentication verification',
         'Authorization testing',
         'Data encryption validation',
@@ -55,7 +55,7 @@ export class SecurityAgent extends BaseAgent {
         'snow_create_security_policy',
         'snow_create_audit_rule',
         'snow_security_risk_assessment',
-        'snow_audit_trail_analysis'
+        'snow_audit_trail__analysis'
       ],
       ...config
     });
@@ -64,7 +64,7 @@ export class SecurityAgent extends BaseAgent {
   async execute(instruction: string, context?: Record<string, any>): Promise<AgentResult> {
     try {
       this.setStatus('working');
-      await this.reportProgress('Starting security analysis', 0);
+      await this.reportProgress('Starting security _analysis', 0);
 
       // Analyze security requirements
       const requirements = await this.analyzeSecurityRequirements(instruction, context);
@@ -108,7 +108,7 @@ export class SecurityAgent extends BaseAgent {
 
       // Generate security report
       const securityReport = this.generateSecurityReport(scanResults, securityAnalysis, remediationPlan);
-      await this.reportProgress('Security analysis completed', 100);
+      await this.reportProgress('Security _analysis completed', 100);
 
       this.setStatus('completed');
 
@@ -511,7 +511,7 @@ export class SecurityAgent extends BaseAgent {
   }
 
   private async analyzeSecurityPosture(scanResults: SecurityScanResult[]): Promise<any> {
-    const analysis = {
+    const _analysis = {
       totalArtifacts: scanResults.length,
       totalVulnerabilities: 0,
       totalComplianceIssues: 0,
@@ -525,37 +525,37 @@ export class SecurityAgent extends BaseAgent {
     };
 
     for (const result of scanResults) {
-      analysis.totalVulnerabilities += result.vulnerabilities.length;
-      analysis.totalComplianceIssues += result.complianceIssues.length;
+      _analysis.totalVulnerabilities += result.vulnerabilities.length;
+      _analysis.totalComplianceIssues += result.complianceIssues.length;
       
       if (result.passed) {
-        analysis.passedScans++;
+        _analysis.passedScans++;
       } else {
-        analysis.failedScans++;
+        _analysis.failedScans++;
       }
 
       // Count vulnerabilities by severity
       for (const vuln of result.vulnerabilities) {
-        if (vuln.severity === 'critical') analysis.criticalVulnerabilities++;
-        if (vuln.severity === 'high') analysis.highVulnerabilities++;
+        if (vuln.severity === 'critical') _analysis.criticalVulnerabilities++;
+        if (vuln.severity === 'high') _analysis.highVulnerabilities++;
         
         // Track vulnerability types
-        analysis.vulnerabilityBreakdown[vuln.type] = 
-          (analysis.vulnerabilityBreakdown[vuln.type] || 0) + 1;
+        _analysis.vulnerabilityBreakdown[vuln.type] = 
+          (_analysis.vulnerabilityBreakdown[vuln.type] || 0) + 1;
       }
 
       // Track compliance issues
       for (const issue of result.complianceIssues) {
-        analysis.complianceBreakdown[issue.framework] = 
-          (analysis.complianceBreakdown[issue.framework] || 0) + 1;
+        _analysis.complianceBreakdown[issue.framework] = 
+          (_analysis.complianceBreakdown[issue.framework] || 0) + 1;
       }
 
-      analysis.overallScore += result.securityScore;
+      _analysis.overallScore += result.securityScore;
     }
 
-    analysis.overallScore = Math.round(analysis.overallScore / scanResults.length);
+    _analysis.overallScore = Math.round(_analysis.overallScore / scanResults.length);
 
-    return analysis;
+    return _analysis;
   }
 
   private async generateRemediationPlan(scanResults: SecurityScanResult[]): Promise<any> {
@@ -641,21 +641,21 @@ export class SecurityAgent extends BaseAgent {
     });
   }
 
-  private generateSecurityReport(scanResults: SecurityScanResult[], analysis: any, remediationPlan: any): string {
+  private generateSecurityReport(scanResults: SecurityScanResult[], _analysis: any, remediationPlan: any): string {
     let report = '# Security Scan Report\n\n';
     report += `**Date**: ${new Date().toISOString()}\n`;
-    report += `**Overall Security Score**: ${analysis.overallScore}/100\n`;
-    report += `**Status**: ${analysis.overallScore >= 70 ? 'PASSED' : 'FAILED'}\n\n`;
+    report += `**Overall Security Score**: ${_analysis.overallScore}/100\n`;
+    report += `**Status**: ${_analysis.overallScore >= 70 ? 'PASSED' : 'FAILED'}\n\n`;
 
     report += '## Executive Summary\n';
-    report += `- **Artifacts Scanned**: ${analysis.totalArtifacts}\n`;
-    report += `- **Total Vulnerabilities**: ${analysis.totalVulnerabilities}\n`;
-    report += `- **Critical Vulnerabilities**: ${analysis.criticalVulnerabilities}\n`;
-    report += `- **High Vulnerabilities**: ${analysis.highVulnerabilities}\n`;
-    report += `- **Compliance Issues**: ${analysis.totalComplianceIssues}\n\n`;
+    report += `- **Artifacts Scanned**: ${_analysis.totalArtifacts}\n`;
+    report += `- **Total Vulnerabilities**: ${_analysis.totalVulnerabilities}\n`;
+    report += `- **Critical Vulnerabilities**: ${_analysis.criticalVulnerabilities}\n`;
+    report += `- **High Vulnerabilities**: ${_analysis.highVulnerabilities}\n`;
+    report += `- **Compliance Issues**: ${_analysis.totalComplianceIssues}\n\n`;
 
     report += '## Vulnerability Breakdown\n';
-    for (const [type, count] of Object.entries(analysis.vulnerabilityBreakdown)) {
+    for (const [type, count] of Object.entries(_analysis.vulnerabilityBreakdown)) {
       report += `- **${type}**: ${count} instances\n`;
     }
     report += '\n';

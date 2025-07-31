@@ -92,7 +92,7 @@ export class ServiceNowGraphMemoryMCP extends BaseMCPServer {
       },
       {
         name: 'snow_graph_find_related',
-        description: 'INTELLIGENT relationship discovery - finds all artifacts related to a given artifact, understands dependencies, data flows, and impact analysis',
+        description: 'INTELLIGENT relationship discovery - finds all artifacts related to a given artifact, understands dependencies, data flows, and impact _analysis',
         inputSchema: {
           type: 'object',
           properties: {
@@ -133,7 +133,7 @@ export class ServiceNowGraphMemoryMCP extends BaseMCPServer {
         }
       },
       {
-        name: 'snow_graph_pattern_analysis',
+        name: 'snow_graph_pattern__analysis',
         description: 'PATTERN RECOGNITION - identifies common patterns, best practices, and reusable components across all artifacts',
         inputSchema: {
           type: 'object',
@@ -186,7 +186,7 @@ export class ServiceNowGraphMemoryMCP extends BaseMCPServer {
         return await this.handleSnowGraphAnalyzeImpact(args);
       case 'snow_graph_suggest_artifacts':
         return await this.handleSnowGraphSuggestArtifacts(args);
-      case 'snow_graph_pattern_analysis':
+      case 'snow_graph_pattern__analysis':
         return await this.handleSnowGraphPatternAnalysis(args);
       case 'snow_graph_visualize':
         return await this.handleSnowGraphVisualize(args);
@@ -431,7 +431,7 @@ export class ServiceNowGraphMemoryMCP extends BaseMCPServer {
           result: {
             artifact_id,
             change_type,
-            impact_analysis: {
+            impact__analysis: {
               dependent_artifacts: dependents,
               dependency_artifacts: dependencies,
               total_affected: dependents.length,

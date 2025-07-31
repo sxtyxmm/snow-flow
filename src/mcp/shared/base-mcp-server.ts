@@ -988,7 +988,7 @@ ${errorText}
         // Continue with limited information
       }
 
-      // Enhanced role analysis based on operation type
+      // Enhanced role _analysis based on operation type
       const requiredRoles = this.determineRequiredRoles(operation);
       const requiredScopes = this.determineRequiredOAuthScopes(operation);
       const missingRoles = requiredRoles.filter(role => !currentRoles.includes(role));
@@ -1731,7 +1731,7 @@ ${errorText}
         this.logger.error('❌ Global scope deployment failed', {
           original_error: deploymentContext.original_error,
           global_deployment_error: globalDeploymentResult.error,
-          failure_analysis: failureAnalysis
+          failure__analysis: failureAnalysis
         });
 
         return {
@@ -1739,7 +1739,7 @@ ${errorText}
           reason: 'Global scope deployment failed after comprehensive attempts',
           original_error: deploymentContext.original_error,
           global_deployment_error: globalDeploymentResult.error,
-          failure_analysis: failureAnalysis,
+          failure__analysis: failureAnalysis,
           alternative_strategies: [
             '1. Manual Update Set creation and deployment',
             '2. Phased deployment (create components separately)',
@@ -1748,7 +1748,7 @@ ${errorText}
             '5. Direct database approach (requires elevated access)'
           ],
           diagnostic_commands: [
-            'snow_deployment_debug() - Get detailed error analysis',
+            'snow_deployment_debug() - Get detailed error _analysis',
             'snow_validate_deployment() - Pre-deployment validation',
             'snow_auth_diagnostics() - Check authentication and permissions',
             'snow_comprehensive_search() - Find similar existing artifacts'

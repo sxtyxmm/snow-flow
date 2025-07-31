@@ -39,7 +39,7 @@ export class AgentDetector {
     researcher: {
       keywords: ['research', 'analyze', 'investigate', 'study', 'explore', 'understand', 'learn', 'discover', 'onderzoek', 'analyseer', 'bestudeer', 'ontdek', 'begrijp'],
       confidence: 0.7,
-      description: 'Research and analysis',
+      description: 'Research and _analysis',
       requiredFor: ['requirements', 'best_practices', 'patterns']
     },
     tester: {
@@ -198,7 +198,7 @@ export class AgentDetector {
     
     for (const [agentType, config] of Object.entries(this.AGENT_PATTERNS)) {
       let matchCount = 0;
-      let totalKeywords = config.keywords.length;
+      const totalKeywords = config.keywords.length;
       
       for (const keyword of config.keywords) {
         if (objective.includes(keyword)) {
@@ -472,7 +472,7 @@ export class AgentDetector {
     
     if (hasDevelopmentKeywords) return 'general_development';
     
-    // Research or analysis tasks
+    // Research or _analysis tasks
     const researchKeywords = [
       'research', 'analyze', 'investigate', 'study', 'explore',
       'onderzoek', 'analyseer', 'bestudeer', 'ontdek'
@@ -484,7 +484,7 @@ export class AgentDetector {
     return 'orchestration_task';
   }
 
-  static generateAgentPrompt(agentType: string, objective: string, analysis: TaskAnalysis): string {
+  static generateAgentPrompt(agentType: string, objective: string, _analysis: TaskAnalysis): string {
     const agentConfig = this.AGENT_PATTERNS[agentType as keyof typeof this.AGENT_PATTERNS];
     const basePrompt = `You are a specialized ${agentType} agent in a ServiceNow multi-agent development swarm.
 
@@ -493,14 +493,14 @@ export class AgentDetector {
 🔍 **Task Context**: ${objective}
 
 🏗️ **Project Setup**:
-${analysis.requiresUpdateSet ? '- ✅ Update Set will be automatically created' : '- ⚠️ No Update Set required'}
-${analysis.requiresApplication ? '- ✅ New Application will be automatically created' : '- ⚠️ Using existing application context'}
+${_analysis.requiresUpdateSet ? '- ✅ Update Set will be automatically created' : '- ⚠️ No Update Set required'}
+${_analysis.requiresApplication ? '- ✅ New Application will be automatically created' : '- ⚠️ Using existing application context'}
 
 🤖 **Team Coordination**:
-- Primary Agent: ${analysis.primaryAgent}
-- Supporting Agents: ${analysis.supportingAgents.join(', ')}
-- Task Complexity: ${analysis.complexity}
-- ServiceNow Artifacts: ${analysis.serviceNowArtifacts.join(', ')}
+- Primary Agent: ${_analysis.primaryAgent}
+- Supporting Agents: ${_analysis.supportingAgents.join(', ')}
+- Task Complexity: ${_analysis.complexity}
+- ServiceNow Artifacts: ${_analysis.serviceNowArtifacts.join(', ')}
 
 📋 **Your Responsibilities**:`;
 

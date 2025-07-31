@@ -173,7 +173,7 @@ export const VERSION_INFO = {
       '📊 SMART DISCOVERY: Uses snow_discover_existing_flows to prevent flow duplication',
       '🚀 REAL SERVICENOW DATA: Stores artifacts with actual sys_ids from ServiceNow instead of mock data',
       '✨ ENHANCED FLOW COMPOSER: 5 professional templates (Approval, Incident, Request, Data Processing, User Management)',
-      '🧠 NATURAL LANGUAGE PROCESSING: Intelligent flow requirement analysis and automatic artifact creation',
+      '🧠 NATURAL LANGUAGE PROCESSING: Intelligent flow requirement _analysis and automatic artifact creation',
       '💪 WORKFLOW OPTIMIZATION: Complete elimination of 500+ lines of redundant hardcoded flow logic'
     ],
     '1.2.1': [
@@ -225,7 +225,7 @@ export const VERSION_INFO = {
     ],
     '1.1.88': [
       '🧠 INTELLIGENT GAP ANALYSIS ENGINE: Revolutionary beyond-MCP configuration detection and automation',
-      '🎯 REQUIREMENTS ANALYZER: AI-powered analysis of objectives to identify ALL ServiceNow configurations needed',
+      '🎯 REQUIREMENTS ANALYZER: AI-powered _analysis of objectives to identify ALL ServiceNow configurations needed',
       '📊 MCP COVERAGE ANALYZER: Comprehensive mapping of what MCP tools can vs cannot handle',
       '🤖 AUTO-RESOLUTION ENGINE: Automatic fixing of ServiceNow configurations beyond MCP tool scope',
       '📚 MANUAL INSTRUCTIONS GENERATOR: Detailed step-by-step guides for configurations that cannot be automated',
@@ -291,7 +291,7 @@ export const VERSION_INFO = {
       '🎯 DIRECT CLIENT PATTERN: All MCP servers now use consistent direct ServiceNowClient structure',
       '📦 NPM DEPLOYMENT: Full npm package with synchronized version across all components',
       '🚀 READY TO TEST: Package published with all makeRequest fixes and version alignment',
-      '🔍 INVESTIGATION COMPLETE: Thorough analysis and resolution of MCP protocol layer issues'
+      '🔍 INVESTIGATION COMPLETE: Thorough _analysis and resolution of MCP protocol layer issues'
     ],
     '1.1.81': [
       '🔧 MAKEQUEST FIX: Resolved phantom makeRequest error in MCP flow-composer tools',
@@ -301,7 +301,7 @@ export const VERSION_INFO = {
       '📋 MCP PROTOCOL LAYER: Improved error handling and debugging in MCP communication layer',
       '🚀 DEPLOYMENT READY: Fixed issues preventing flow creation via MCP tools from Claude Code',
       '📦 NPM READY: Package published to npm registry for testing in separate environments',
-      '🔍 INVESTIGATION COMPLETE: Thorough analysis of makeRequest phantom calls resolved'
+      '🔍 INVESTIGATION COMPLETE: Thorough _analysis of makeRequest phantom calls resolved'
     ],
     '1.1.80': [
       '🏗️ QUEEN AGENT FIX: All agents now ALWAYS attempt ServiceNow MCP tools first',
@@ -330,7 +330,7 @@ export const VERSION_INFO = {
     ],
     '1.1.77': [
       '🧠 COMPLETE HIVE-MIND: Full claude-flow architecture implementation',
-      '👑 QUEEN AGENT: Master coordinator with intelligent objective analysis',
+      '👑 QUEEN AGENT: Master coordinator with intelligent objective _analysis',
       '🤖 5 SPECIALIST AGENTS: Widget Creator, Flow Builder, Script Writer, Security, Test',
       '💾 SQLITE MEMORY: Persistent cross-agent coordination with <100ms queries',
       '🔧 AGENT-AWARE MCPS: All 11 MCP servers now integrate with agent system',
@@ -482,7 +482,7 @@ export const VERSION_INFO = {
       '👥 WIDGET TEAM: Frontend, Backend, UI/UX, Platform, and QA specialists for widgets',
       '🔄 FLOW TEAM: Process, Trigger, Data, Integration, and Security specialists for flows',
       '🏗️ APPLICATION TEAM: Database, Business Logic, Interface, Security, and Performance specialists',
-      '🤖 ADAPTIVE TEAM: Dynamic specialist assembly based on task analysis',
+      '🤖 ADAPTIVE TEAM: Dynamic specialist assembly based on task _analysis',
       '👨‍💻 INDIVIDUAL SPECIALISTS: 11 focused specialists for quick targeted tasks',
       '🎯 TEAMCOORDINATOR: Intelligent task routing between individuals, teams, or adaptive approach',
       '✅ QUALITY GATES: Automatic validation between specialist handoffs',
@@ -565,7 +565,7 @@ export const VERSION_INFO = {
       '🔧 MASSIVE FLOW TOOLS OVERHAUL - All Flow Type Issues FIXED!',
       '✅ CRITICAL: snow_deploy_flow now respects flow_type parameter (flow vs subflow)',
       '✅ CRITICAL: Fixed createFlow method ignoring flow.type in ServiceNowClient',
-      '✅ CRITICAL: snow_create_flow logic contradiction resolved - analysis.recommendedType now used',
+      '✅ CRITICAL: snow_create_flow logic contradiction resolved - _analysis.recommendedType now used',
       '✅ TRIGGER SYSTEM: Added sys_trigger creation for proper triggered flows',
       '✅ ENHANCED ACTIONS: Flow activities from flow_definition now properly created',
       '✅ VARIABLE SUPPORT: sys_hub_flow_variable records created for inputs/outputs',
@@ -670,7 +670,7 @@ export const VERSION_INFO = {
       'TRANSACTION SUPPORT: All-or-nothing deployment with automatic rollback on failures', 
       'PARALLEL OPTION: Deploy multiple artifacts simultaneously for faster execution',
       'DRY RUN MODE: Validate all artifacts before actual deployment',
-      'TABLE SCHEMA DISCOVERY: New snow_table_schema_discovery for comprehensive table analysis',
+      'TABLE SCHEMA DISCOVERY: New snow_table_schema_discovery for comprehensive table _analysis',
       'HIERARCHY ANALYSIS: Shows table inheritance, extensions, and relationships',
       'INDEX DISCOVERY: Lists all indexes and their configurations',
       'RELATIONSHIP MAPPING: Visual representation of table dependencies',
@@ -729,7 +729,7 @@ export const VERSION_INFO = {
       'AUTO-DIAGNOSTICS: Automatically runs auth diagnostics on 403 deployment failures',
       'ENHANCED: Better OAuth permission validation and troubleshooting guidance',
       'FIXED: URL construction issues that caused malformed API calls',
-      'IMPROVED: Deployment fallback mechanisms with detailed error analysis'
+      'IMPROVED: Deployment fallback mechanisms with detailed error _analysis'
     ],
     '1.1.36': [
       'CRITICAL: Fixed flow vs subflow confusion with explicit flow_type parameter',
@@ -741,11 +741,11 @@ export const VERSION_INFO = {
       'Improved Flow Designer integration with proper type handling'
     ],
     '1.1.35': [
-      'NEW: snow_preview_widget tool for widget preview and integration analysis',
+      'NEW: snow_preview_widget tool for widget preview and integration _analysis',
       'NEW: snow_widget_test tool for automated widget testing with scenarios',
       'Fixed validation feedback showing Failed when deployment actually succeeds',
       'Automatic Chart.js dependency detection and reporting',
-      'Code coverage analysis for HTML/CSS/JS integration',
+      'Code coverage _analysis for HTML/CSS/JS integration',
       'Detailed recommendations for widget improvement',
       'Integration checking between template variables and scripts'
     ],
@@ -888,7 +888,7 @@ export const VERSION_INFO = {
         'REVOLUTIONARY RELEASE: Intelligent Parallel Agent Engine - Complete solution for automatic parallel agent spawning',
         'USER REQUEST: "kunnen we de coder agent best opdelen in meerdere specifiekere agents die natuurlijk allemaal hun geheugen met elkaar delen om het proces te versnellen en deze parallel te laten werken" - IMPLEMENTED',
         'PARALLEL AGENT ENGINE: Advanced system for detecting and executing parallelizable work with 4 opportunity types',
-        'SMART DETECTION: Independent tasks, specialized breakdown, load distribution, and capability split analysis',
+        'SMART DETECTION: Independent tasks, specialized breakdown, load distribution, and capability split _analysis',
         'EXECUTION STRATEGIES: Wave-based, concurrent, pipeline, and hybrid execution patterns for optimal performance',
         'SPECIALIZED SPAWNING: Automatically creates CSS specialists, backend specialists, security specialists with unique focuses',
         'WORKLOAD BALANCING: Intelligent distribution of todos across agent teams with utilization tracking',
@@ -999,7 +999,7 @@ export const VERSION_INFO = {
       date: '2025-01-22',
       changes: [
         'MAKEQUEST ERROR RESOLVED: Fixed phantom makeRequest calls in flow-composer MCP tools',
-        'INVESTIGATION COMPLETE: Systematic analysis revealed flow-composer already used direct ServiceNowClient',
+        'INVESTIGATION COMPLETE: Systematic _analysis revealed flow-composer already used direct ServiceNowClient',
         'CONSISTENT MCP PATTERN: Verified all MCP servers follow same direct client structure as working tools',  
         'AUTHENTICATION CONSISTENCY: Enhanced OAuth authentication flow across all MCP servers',
         'ERROR HANDLING IMPROVED: Added comprehensive makeRequest method support to all client classes',
@@ -1088,7 +1088,7 @@ export const VERSION_INFO = {
         'FLOW COMPOSER IMPROVEMENTS: snow_create_flow now shows "⚠️ DEPLOYMENT MODE ACTIVE" vs "📋 PLANNING MODE"',
         'PARAMETER DESCRIPTIONS: deploy_immediately parameter description updated with clear warnings',
         'MCP TOOL RESPONSES: orchestration tools now include mode and warning fields',
-        'TRANSPARENT BEHAVIOR: Users always know if real artifacts will be created or if it is analysis only',
+        'TRANSPARENT BEHAVIOR: Users always know if real artifacts will be created or if it is _analysis only',
         'SAFETY IMPROVEMENTS: Better user awareness prevents accidental deployment in production environments'
       ]
     },
@@ -1168,7 +1168,7 @@ export const VERSION_INFO = {
         'WIDGET TEAM: 5 specialists - Frontend, Backend, UI/UX, Platform, QA - working together',
         'FLOW TEAM: 5 specialists - Process, Trigger, Data, Integration, Security - coordinated execution',
         'APPLICATION TEAM: 5 specialists - Database, Business Logic, Interface, Security, Performance',
-        'ADAPTIVE TEAM: Dynamic specialist assembly based on task analysis and scoring',
+        'ADAPTIVE TEAM: Dynamic specialist assembly based on task _analysis and scoring',
         'INDIVIDUAL SPECIALISTS: 11 standalone specialists for focused, quick tasks',
         'TEAMCOORDINATOR: Intelligent routing - analyzes tasks to select optimal approach',
         'QUALITY GATES: Automatic validation between specialist handoffs ensures quality',
@@ -1371,7 +1371,7 @@ export const VERSION_INFO = {
         'Transaction mode ensures all-or-nothing deployment with automatic rollback',
         'Parallel deployment option for faster execution when transaction mode is disabled',
         'Dry run validation to check all artifacts before deployment',
-        'TABLE SCHEMA DISCOVERY: Added snow_table_schema_discovery for deep table analysis',
+        'TABLE SCHEMA DISCOVERY: Added snow_table_schema_discovery for deep table _analysis',
         'Discovers fields, relationships, indexes, hierarchy, and dependencies',
         'Shows table extensions and which tables extend the current one',
         'Comprehensive field metadata including types, constraints, and references',
@@ -1490,10 +1490,10 @@ export const VERSION_INFO = {
       changes: [
         'NEW WIDGET TOOLS: Added snow_preview_widget and snow_widget_test for better development',
         'Preview tool analyzes HTML/CSS/JS integration and checks for missing dependencies',
-        'Test tool runs automated scenarios with code coverage analysis',
+        'Test tool runs automated scenarios with code coverage _analysis',
         'Fixed validation feedback to show nuanced messages instead of just Failed',
         'Automatic detection of Chart.js and other library dependencies',
-        'Integration analysis between template variables, client bindings, and server data',
+        'Integration _analysis between template variables, client bindings, and server data',
         'Detailed recommendations for improving widget code quality',
         'Based on user feedback from successful widget deployment experience'
       ]

@@ -406,7 +406,7 @@ export class ScopeManager {
   ): ScopeDecision {
     let selectedScope = config.type;
     let confidence = 0.8;
-    let rationale = 'Based on artifact analysis';
+    let rationale = 'Based on artifact _analysis';
     let fallbackScope: ScopeType | undefined;
 
     // Apply validation results

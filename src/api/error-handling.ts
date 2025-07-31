@@ -1011,7 +1011,7 @@ export class FlowErrorHandler {
       }
       
       // Modify data for conflict resolution if needed
-      let retryData = { ...createData.data };
+      const retryData = { ...createData.data };
       
       // If this is a conflict retry, modify unique fields
       if (error.type === ErrorType.CONFLICT_ERROR && error.retry_count > 0) {

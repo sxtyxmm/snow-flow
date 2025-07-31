@@ -7,7 +7,7 @@
  * Features:
  * - Incident, Request, Problem, Change management
  * - CMDB and User management
- * - Intelligent incident analysis and auto-resolution
+ * - Intelligent incident _analysis and auto-resolution
  * - Pattern recognition and root cause analysis
  * - Knowledge base integration
  * - Predictive analytics
@@ -132,7 +132,7 @@ const commonPatterns = {
 interface IncidentAnalysis {
   incident_id: string;
   patterns_found: string[];
-  root_cause_analysis: string;
+  root_cause__analysis: string;
   suggested_resolution: string[];
   confidence_score: number;
   similar_incidents: any[];
@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // Core Operational Queries
           {
             name: 'snow_query_incidents',
-            description: 'Advanced incident querying with filters and analysis',
+            description: 'Advanced incident querying with filters and _analysis',
             inputSchema: {
               type: 'object',
               properties: {
@@ -191,9 +191,9 @@ class ServiceNowOperationsMCP {
                   description: 'Maximum number of results (default: 10)',
                   default: 10
                 },
-                include_analysis: {
+                include__analysis: {
                   type: 'boolean',
-                  description: 'Include intelligent analysis of incidents',
+                  description: 'Include intelligent _analysis of incidents',
                   default: false
                 },
                 fields: {
@@ -208,7 +208,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_analyze_incident',
-            description: 'Intelligent analysis of a specific incident with auto-resolution suggestions',
+            description: 'Intelligent _analysis of a specific incident with auto-resolution suggestions',
             inputSchema: {
               type: 'object',
               properties: {
@@ -218,7 +218,7 @@ class ServiceNowOperationsMCP {
                 },
                 include_similar: {
                   type: 'boolean',
-                  description: 'Include similar incidents in analysis',
+                  description: 'Include similar incidents in _analysis',
                   default: true
                 },
                 suggest_resolution: {
@@ -278,7 +278,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_query_problems',
-            description: 'Query and analyze problems with root cause analysis',
+            description: 'Query and analyze problems with root cause _analysis',
             inputSchema: {
               type: 'object',
               properties: {
@@ -378,19 +378,19 @@ class ServiceNowOperationsMCP {
           },
           
           {
-            name: 'snow_pattern_analysis',
+            name: 'snow_pattern__analysis',
             description: 'Analyze patterns in incidents, requests, and problems',
             inputSchema: {
               type: 'object',
               properties: {
                 analysis_type: {
                   type: 'string',
-                  description: 'Type of pattern analysis',
+                  description: 'Type of pattern _analysis',
                   enum: ['incident_patterns', 'request_trends', 'problem_root_causes', 'user_behavior']
                 },
                 timeframe: {
                   type: 'string',
-                  description: 'Time period for analysis',
+                  description: 'Time period for _analysis',
                   enum: ['day', 'week', 'month', 'quarter'],
                   default: 'week'
                 }
@@ -424,8 +424,8 @@ class ServiceNowOperationsMCP {
           },
           
           {
-            name: 'snow_predictive_analysis',
-            description: 'Predictive analysis for potential issues and trends',
+            name: 'snow_predictive__analysis',
+            description: 'Predictive _analysis for potential issues and trends',
             inputSchema: {
               type: 'object',
               properties: {
@@ -939,11 +939,11 @@ class ServiceNowOperationsMCP {
             return await this.handleUserLookup(args);
           case 'snow_operational_metrics':
             return await this.handleOperationalMetrics(args);
-          case 'snow_pattern_analysis':
+          case 'snow_pattern__analysis':
             return await this.handlePatternAnalysis(args);
           case 'snow_knowledge_search':
             return await this.handleKnowledgeSearch(args);
-          case 'snow_predictive_analysis':
+          case 'snow_predictive__analysis':
             return await this.handlePredictiveAnalysis(args);
           case 'snow_catalog_item_manager':
             return await this.handleCatalogItemManager(args);
@@ -976,7 +976,7 @@ class ServiceNowOperationsMCP {
   }
 
   private async handleQueryIncidents(args: any) {
-    const { query, limit = 10, include_analysis = false, fields } = args;
+    const { query, limit = 10, include__analysis = false, fields } = args;
     
     logger.info(`Querying incidents with: ${query}`);
     
@@ -992,10 +992,10 @@ class ServiceNowOperationsMCP {
         incidents: incidents.success ? incidents.data.result : []
       };
       
-      // Add intelligent analysis if requested
-      if (include_analysis && incidents.success && incidents.data.result.length > 0) {
-        const analysis = await this.analyzeIncidents(incidents.data.result);
-        result = { ...result, ...analysis };
+      // Add intelligent _analysis if requested
+      if (include__analysis && incidents.success && incidents.data.result.length > 0) {
+        const _analysis = await this.analyzeIncidents(incidents.data.result);
+        result = { ...result, ..._analysis };
       }
       
       return {
@@ -1025,13 +1025,13 @@ class ServiceNowOperationsMCP {
       }
       
       // Perform intelligent analysis
-      const analysis = await this.performIncidentAnalysis(incident, include_similar, suggest_resolution);
+      const _analysis = await this.performIncidentAnalysis(incident, include_similar, suggest_resolution);
       
       return {
         content: [
           {
             type: 'text',
-            text: `Incident Analysis for ${incident_id}:\n\n${JSON.stringify(analysis, null, 2)}`
+            text: `Incident Analysis for ${incident_id}:\n\n${JSON.stringify(_analysis, null, 2)}`
           }
         ]
       };
@@ -1054,14 +1054,14 @@ class ServiceNowOperationsMCP {
       }
       
       // Analyze incident for auto-resolution potential
-      const analysis = await this.performIncidentAnalysis(incident, true, true);
+      const _analysis = await this.performIncidentAnalysis(incident, true, true);
       
       // Generate automated resolution actions
-      const resolutionActions = await this.generateResolutionActions(incident, analysis);
+      const resolutionActions = await this.generateResolutionActions(incident, _analysis);
       
-      let result: any = {
+      const result: any = {
         incident_id,
-        analysis,
+        _analysis,
         resolution_actions: resolutionActions,
         dry_run,
         actions_executed: []
@@ -1270,7 +1270,7 @@ class ServiceNowOperationsMCP {
   private async handlePatternAnalysis(args: any) {
     const { analysis_type, timeframe = 'week' } = args;
     
-    logger.info(`Performing pattern analysis: ${analysis_type} for ${timeframe}`);
+    logger.info(`Performing pattern _analysis: ${analysis_type} for ${timeframe}`);
     
     try {
       const patterns = await this.analyzePatterns(analysis_type, timeframe);
@@ -1329,7 +1329,7 @@ class ServiceNowOperationsMCP {
   private async handlePredictiveAnalysis(args: any) {
     const { prediction_type, timeframe = 'week' } = args;
     
-    logger.info(`Performing predictive analysis: ${prediction_type} for ${timeframe}`);
+    logger.info(`Performing predictive _analysis: ${prediction_type} for ${timeframe}`);
     
     try {
       const predictions = await this.performPredictiveAnalysis(prediction_type, timeframe);
@@ -1343,8 +1343,8 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error performing predictive analysis:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to perform predictive analysis: ${error}`);
+      logger.error('Error performing predictive _analysis:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to perform predictive _analysis: ${error}`);
     }
   }
 
@@ -1432,10 +1432,10 @@ class ServiceNowOperationsMCP {
   }
 
   private async performIncidentAnalysis(incident: any, include_similar: boolean, suggest_resolution: boolean): Promise<IncidentAnalysis> {
-    const analysis: IncidentAnalysis = {
+    const _analysis: IncidentAnalysis = {
       incident_id: incident.number,
       patterns_found: [],
-      root_cause_analysis: '',
+      root_cause__analysis: '',
       suggested_resolution: [],
       confidence_score: 0,
       similar_incidents: [],
@@ -1447,9 +1447,9 @@ class ServiceNowOperationsMCP {
     const description = (incident.short_description || '').toLowerCase();
     for (const [patternName, pattern] of Object.entries(commonPatterns)) {
       if (pattern.keywords.some(keyword => description.includes(keyword))) {
-        analysis.patterns_found.push(patternName);
-        analysis.suggested_resolution.push(...pattern.common_solutions);
-        analysis.confidence_score += 0.2;
+        _analysis.patterns_found.push(patternName);
+        _analysis.suggested_resolution.push(...pattern.common_solutions);
+        _analysis.confidence_score += 0.2;
       }
     }
     
@@ -1457,21 +1457,21 @@ class ServiceNowOperationsMCP {
     if (include_similar) {
       const similarQuery = `short_descriptionLIKE${incident.short_description}^sys_id!=${incident.sys_id}^state=6`;
       const similarIncidents = await this.client.searchRecords('incident', similarQuery, 5);
-      analysis.similar_incidents = similarIncidents.success ? similarIncidents.data.result : [];
+      _analysis.similar_incidents = similarIncidents.success ? similarIncidents.data.result : [];
     }
     
     // Root cause analysis
-    analysis.root_cause_analysis = this.generateRootCauseAnalysis(incident, analysis.patterns_found);
+    _analysis.root_cause__analysis = this.generateRootCauseAnalysis(incident, _analysis.patterns_found);
     
     // Search knowledge base
     const kbQuery = `textLIKE${incident.short_description}^workflow_state=published`;
     const kbArticles = await this.client.searchRecords('kb_knowledge', kbQuery, 3);
-    analysis.knowledge_articles = kbArticles.success ? kbArticles.data.result : [];
+    _analysis.knowledge_articles = kbArticles.success ? kbArticles.data.result : [];
     
     // Automated actions
-    analysis.automated_actions = this.generateAutomatedActions(incident, analysis.patterns_found);
+    _analysis.automated_actions = this.generateAutomatedActions(incident, _analysis.patterns_found);
     
-    return analysis;
+    return _analysis;
   }
 
   private generateRootCauseAnalysis(incident: any, patterns: string[]): string {
@@ -1479,25 +1479,25 @@ class ServiceNowOperationsMCP {
       return 'No specific patterns detected. Manual investigation required.';
     }
     
-    const analysis = [];
+    const _analysis = [];
     
     if (patterns.includes('network_issues')) {
-      analysis.push('Network connectivity issue detected. Check network infrastructure, DNS, and firewall rules.');
+      _analysis.push('Network connectivity issue detected. Check network infrastructure, DNS, and firewall rules.');
     }
     
     if (patterns.includes('database_issues')) {
-      analysis.push('Database connectivity or performance issue detected. Check database server, connection pools, and query performance.');
+      _analysis.push('Database connectivity or performance issue detected. Check database server, connection pools, and query performance.');
     }
     
     if (patterns.includes('application_errors')) {
-      analysis.push('Application error detected. Check application logs, resource utilization, and service status.');
+      _analysis.push('Application error detected. Check application logs, resource utilization, and service status.');
     }
     
     if (patterns.includes('auth_issues')) {
-      analysis.push('Authentication issue detected. Check user credentials, LDAP/SSO configuration, and permissions.');
+      _analysis.push('Authentication issue detected. Check user credentials, LDAP/SSO configuration, and permissions.');
     }
     
-    return analysis.join(' ');
+    return _analysis.join(' ');
   }
 
   private generateAutomatedActions(incident: any, patterns: string[]): string[] {
@@ -1530,21 +1530,21 @@ class ServiceNowOperationsMCP {
     return actions;
   }
 
-  private async generateResolutionActions(incident: any, analysis: IncidentAnalysis): Promise<string[]> {
+  private async generateResolutionActions(incident: any, _analysis: IncidentAnalysis): Promise<string[]> {
     const actions: string[] = [];
     
     // Add high-confidence automated actions
-    if (analysis.confidence_score > 0.6) {
-      actions.push(...analysis.automated_actions);
+    if (_analysis.confidence_score > 0.6) {
+      actions.push(..._analysis.automated_actions);
     }
     
     // Add knowledge-based actions
-    if (analysis.knowledge_articles.length > 0) {
+    if (_analysis.knowledge_articles.length > 0) {
       actions.push('Apply resolution from knowledge article');
     }
     
     // Add pattern-based actions
-    if (analysis.similar_incidents.length > 0) {
+    if (_analysis.similar_incidents.length > 0) {
       actions.push('Apply resolution from similar incident');
     }
     
@@ -1700,7 +1700,7 @@ class ServiceNowOperationsMCP {
       case 'user_behavior':
         return await this.analyzeUserBehavior(dateFilter);
       default:
-        return { error: 'Unknown analysis type' };
+        return { error: 'Unknown _analysis type' };
     }
   }
 
@@ -1893,7 +1893,7 @@ class ServiceNowOperationsMCP {
       
     } catch (error) {
       return {
-        error: 'User behavior analysis failed',
+        error: 'User behavior _analysis failed',
         message: error instanceof Error ? error.message : String(error),
         available_metrics: ['incident_reporting', 'request_frequency']
       };
@@ -1928,37 +1928,37 @@ class ServiceNowOperationsMCP {
   private async performPredictiveAnalysis(predictionType: string, timeframe: string): Promise<any> {
     try {
       const currentDate = new Date();
-      const analysis: any = {
+      const _analysis: any = {
         prediction_type: predictionType,
         timeframe: timeframe,
         generated_at: currentDate.toISOString(),
-        analysis_method: 'trend_analysis',
+        analysis_method: 'trend__analysis',
         data_points: []
       };
       
       switch (predictionType) {
         case 'incident_volume':
-          analysis.data_points = await this.analyzeIncidentTrends(timeframe);
-          analysis.interpretation = 'Based on recent incident creation patterns';
+          _analysis.data_points = await this.analyzeIncidentTrends(timeframe);
+          _analysis.interpretation = 'Based on recent incident creation patterns';
           break;
         case 'system_failure':
-          analysis.data_points = await this.analyzeSystemHealthTrends(timeframe);
-          analysis.interpretation = 'Based on critical incident patterns and system health indicators';
+          _analysis.data_points = await this.analyzeSystemHealthTrends(timeframe);
+          _analysis.interpretation = 'Based on critical incident patterns and system health indicators';
           break;
         case 'resource_exhaustion':
-          analysis.data_points = await this.analyzeResourceTrends(timeframe);
-          analysis.interpretation = 'Based on request volumes and capacity indicators';
+          _analysis.data_points = await this.analyzeResourceTrends(timeframe);
+          _analysis.interpretation = 'Based on request volumes and capacity indicators';
           break;
         case 'user_impact':
-          analysis.data_points = await this.analyzeUserImpactTrends(timeframe);
-          analysis.interpretation = 'Based on user-reported incidents and service requests';
+          _analysis.data_points = await this.analyzeUserImpactTrends(timeframe);
+          _analysis.interpretation = 'Based on user-reported incidents and service requests';
           break;
         default:
-          analysis.data_points = [{ error: 'Unknown prediction type', supported_types: ['incident_volume', 'system_failure', 'resource_exhaustion', 'user_impact'] }];
-          analysis.interpretation = 'Unsupported analysis type';
+          _analysis.data_points = [{ error: 'Unknown prediction type', supported_types: ['incident_volume', 'system_failure', 'resource_exhaustion', 'user_impact'] }];
+          _analysis.interpretation = 'Unsupported _analysis type';
       }
       
-      return analysis;
+      return _analysis;
     } catch (error) {
       return {
         prediction_type: predictionType,
@@ -1970,7 +1970,7 @@ class ServiceNowOperationsMCP {
     }
   }
 
-  // New trend analysis methods
+  // New trend _analysis methods
   private async analyzeIncidentTrends(timeframe: string): Promise<any[]> {
     try {
       const incidents = await this.client.searchRecords('incident', 'sys_created_onONToday@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)', 100);
@@ -1993,7 +1993,7 @@ class ServiceNowOperationsMCP {
     } catch (error) {
       return [{ error: 'Failed to analyze incident trends', message: String(error) }];
     }
-    return [{ message: 'No incident data available for analysis' }];
+    return [{ message: 'No incident data available for _analysis' }];
   }
 
   private async analyzeSystemHealthTrends(timeframe: string): Promise<any[]> {

@@ -902,10 +902,10 @@ try {
           name: 'Analyze Incident Severity',
           type: 'script',
           order: 100,
-          description: 'Comprehensive incident analysis with business impact assessment',
+          description: 'Comprehensive incident _analysis with business impact assessment',
           inputs: {
             script: `// Enhanced incident analysis
-var analysis = {
+var _analysis = {
   severity_score: 0,
   business_impact: 'low',
   escalation_required: false,
@@ -914,29 +914,29 @@ var analysis = {
 };
 
 // Calculate severity score
-if (current.priority == 1) analysis.severity_score = 100;
-else if (current.priority == 2) analysis.severity_score = 80;
+if (current.priority == 1) _analysis.severity_score = 100;
+else if (current.priority == 2) _analysis.severity_score = 80;
 
 // Business impact assessment
 if (current.category && current.category.toString().includes('business_critical')) {
-  analysis.business_impact = 'critical';
-  analysis.escalation_required = true;
+  _analysis.business_impact = 'critical';
+  _analysis.escalation_required = true;
 }
 
 // Determine notification channels
-analysis.notification_channels = ['email'];
-if (analysis.severity_score >= 90) {
-  analysis.notification_channels.push('sms', 'teams');
+_analysis.notification_channels = ['email'];
+if (_analysis.severity_score >= 90) {
+  _analysis.notification_channels.push('sms', 'teams');
 }
 
 // Check for after-hours escalation
 var isAfterHours = !gs.isBusinessHours();
-if (isAfterHours && analysis.severity_score >= 80) {
-  analysis.escalation_required = true;
-  analysis.notification_channels.push('emergency_contact');
+if (isAfterHours && _analysis.severity_score >= 80) {
+  _analysis.escalation_required = true;
+  _analysis.notification_channels.push('emergency_contact');
 }
 
-return analysis;`,
+return _analysis;`,
             timeout: 30
           },
           outputs: {

@@ -74,7 +74,7 @@ export interface AIRecommendation {
   };
   priority: number; // 1-10, 10 being highest
   validUntil: Date;
-  source: 'pattern_analysis' | 'ml_prediction' | 'historical_data' | 'real_time_monitoring';
+  source: 'pattern__analysis' | 'ml_prediction' | 'historical_data' | 'real_time_monitoring';
 }
 
 export interface PerformancePattern {
@@ -584,7 +584,7 @@ export class PerformanceRecommendationsEngine {
       ...performanceRecommendations.slice(0, 2).map(rec => rec.recommendation)
     ];
 
-    this.logger.info(`✅ Performance analysis complete: ${criticalIssues} critical issues, ${estimatedImprovementPercent.toFixed(1)}% potential improvement`);
+    this.logger.info(`✅ Performance _analysis complete: ${criticalIssues} critical issues, ${estimatedImprovementPercent.toFixed(1)}% potential improvement`);
 
     return {
       databaseIndexes,
@@ -968,7 +968,7 @@ export class PerformanceRecommendationsEngine {
   private async generateMLRecommendations(systemMetrics: any, performanceData: any): Promise<AIRecommendation[]> {
     const recommendations: AIRecommendation[] = [];
     
-    // Simple ML-like analysis based on correlations
+    // Simple ML-like _analysis based on correlations
     const dbScore = this.calculateDatabaseScore(systemMetrics, performanceData);
     const cacheScore = this.calculateCacheScore(systemMetrics, performanceData);
     
@@ -980,7 +980,7 @@ export class PerformanceRecommendationsEngine {
         impact: 'high',
         category: 'database_optimization',
         title: 'Database Performance Optimization Opportunity',
-        description: 'ML analysis indicates database optimization would provide significant benefits',
+        description: 'ML _analysis indicates database optimization would provide significant benefits',
         rationale: 'Cache performance is good but database performance is poor, indicating database bottlenecks',
         implementation: {
           steps: [
@@ -991,7 +991,7 @@ export class PerformanceRecommendationsEngine {
           ],
           estimatedTime: '3-6 hours',
           complexity: 'high',
-          prerequisites: ['Database admin access', 'Query analysis tools'],
+          prerequisites: ['Database admin access', 'Query _analysis tools'],
           risks: ['Index creation may temporarily impact performance']
         },
         metrics: {

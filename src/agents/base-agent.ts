@@ -133,7 +133,7 @@ export abstract class BaseAgent implements Agent {
    * Retrieve messages for this agent
    */
   protected async getMessages(): Promise<AgentMessage[]> {
-    const messagePrefix = `message_${this.id}_`;
+    const _messagePrefix = `message_${this.id}_`;
     const messages: AgentMessage[] = [];
     
     // This is a simplified implementation

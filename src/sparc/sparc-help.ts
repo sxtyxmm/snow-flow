@@ -27,7 +27,7 @@ The SPARC team functionality you're looking for is available through the SWARM s
 • 🛡️ Error Recovery: Automatic rollback on failures
 
 🔧 SWARM OPTIONS:
-• --strategy: research, development, analysis, testing, optimization
+• --strategy: research, development, _analysis, testing, optimization
 • --mode: centralized, distributed, hierarchical, mesh, hybrid  
 • --max-agents: Control team size (default: 5)
 • --parallel: Enable parallel execution
