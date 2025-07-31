@@ -1,0 +1,83 @@
+{
+  "name": "snow-flow",
+  "version": "1.4.6",
+  "description": "ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development inspired by claude-flow. Transform complex workflows into elegant one-command orchestration.",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "bin": {
+    "snow-flow": "bin/snow-flow"
+  },
+  "scripts": {
+    "build": "tsc || true",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:memory": "node dist/memory/memory-test.js",
+    "test:mcp-integration": "node dist/memory/mcp-integration-example.js",
+    "test:health": "node dist/health/test-system-health.js",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "setup-mcp": "node scripts/setup-mcp.js",
+    "postbuild-disabled": "npm run setup-mcp",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "keywords": [
+    "servicenow",
+    "multiagent",
+    "automation",
+    "development",
+    "mcp",
+    "ai",
+    "flow-designer",
+    "deployment",
+    "claude",
+    "natural-language"
+  ],
+  "author": "Snow-Flow Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/groeimetai/snow-flow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/groeimetai/snow-flow/issues"
+  },
+  "homepage": "https://github.com/groeimetai/snow-flow#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.1",
+    "@types/node-fetch": "^2.6.12",
+    "@types/uuid": "^10.0.0",
+    "axios": "^1.10.0",
+    "better-sqlite3": "^9.6.0",
+    "boxen": "^8.0.1",
+    "chalk": "^4.1.2",
+    "chalk-animation": "^2.0.3",
+    "commander": "^12.0.0",
+    "conf": "^14.0.0",
+    "dotenv": "^16.4.5",
+    "figlet": "^1.8.2",
+    "gradient-string": "^3.0.0",
+    "inquirer": "^12.7.0",
+    "neo4j-driver": "^5.23.0",
+    "node-fetch": "^3.3.2",
+    "ora": "^8.2.0",
+    "sqlite3": "^5.1.7",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.5"
+  }
+}

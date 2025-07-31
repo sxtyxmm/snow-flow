@@ -1,0 +1,37 @@
+{
+  "enabledMcpjsonServers": [
+    "servicenow-deployment",
+    "servicenow-flow-composer",
+    "servicenow-update-set",
+    "servicenow-intelligent",
+    "servicenow-graph-memory",
+    "servicenow-operations",
+    "servicenow-platform-development",
+    "servicenow-integration",
+    "servicenow-automation",
+    "servicenow-security-compliance",
+    "servicenow-reporting-analytics",
+    "claude-flow",
+    "ruv-swarm"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MultiEdit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "LS(*)",
+      "TodoWrite",
+      "Task(*)",
+      "mcp__servicenow-*",
+      "mcp__claude-flow__*"
+    ]
+  },
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "0",
+    "BASH_MAX_TIMEOUT_MS": "0"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceNow Deployment Configuration Schema",
+  "description": "Schema for validating ServiceNow artifact deployment configurations",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["widget", "flow", "application", "script", "business_rule", "table"],
+      "description": "Type of artifact to deploy"
+    },
+    "config": {
+      "type": "object",
+      "description": "Artifact configuration (varies by type)"
+    },
+    "auto_update_set": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically ensure active Update Set session"
+    },
+    "deployment_context": {
+      "type": "string",
+      "description": "Context for Update Set naming"
+    },
+    "fallback_strategy": {
+      "type": "string",
+      "enum": ["manual_steps", "update_set_only", "none"],
+      "default": "manual_steps",
+      "description": "Strategy when direct deployment fails"
+    },
+    "permission_escalation": {
+      "type": "string",
+      "enum": ["auto_request", "manual", "none"],
+      "default": "auto_request",
+      "description": "How to handle permission errors"
+    },
+    "scope_preference": {
+      "type": "string",
+      "enum": ["global", "application", "auto"],
+      "default": "auto",
+      "description": "Preferred deployment scope"
+    },
+    "validation_level": {
+      "type": "string",
+      "enum": ["basic", "standard", "comprehensive"],
+      "default": "standard",
+      "description": "Level of validation to perform"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["development", "testing", "production"],
+      "default": "development",
+      "description": "Target deployment environment"
+    }
+  },
+  "additionalProperties": false
+}

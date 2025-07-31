@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceNow Widget Configuration Schema",
+  "description": "Schema for validating ServiceNow Service Portal widget configurations",
+  "type": "object",
+  "required": ["name", "title", "template"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Internal widget name (lowercase, underscores allowed)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Display title for the widget"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Widget description"
+    },
+    "category": {
+      "type": "string",
+      "default": "custom",
+      "description": "Widget category for organization"
+    },
+    "template": {
+      "type": "string",
+      "minLength": 1,
+      "description": "HTML template for the widget"
+    },
+    "css": {
+      "type": "string",
+      "description": "CSS styles for the widget"
+    },
+    "client_script": {
+      "type": "string",
+      "description": "Client-side JavaScript controller"
+    },
+    "server_script": {
+      "type": "string",
+      "description": "Server-side script for data processing"
+    },
+    "option_schema": {
+      "type": "string",
+      "default": "[]",
+      "description": "JSON schema for widget options"
+    },
+    "demo_data": {
+      "type": "string",
+      "default": "{}",
+      "description": "Demo data for widget preview"
+    },
+    "has_preview": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether widget supports preview mode"
+    },
+    "sys_scope": {
+      "type": "string",
+      "description": "Application scope (global or application sys_id)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the widget is active"
+    }
+  },
+  "additionalProperties": false
+}

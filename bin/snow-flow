@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+// Snow-Flow CLI entry point
+require('../dist/cli.js');

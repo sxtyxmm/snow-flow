@@ -1,0 +1,207 @@
+{
+  "name": "XML Deployment Workflow Examples",
+  "description": "Complete examples for ServiceNow XML Update Set deployment workflows using snow-flow",
+  "version": "1.3.1",
+  "examples": [
+    {
+      "name": "Basic Flow Creation and XML Deployment",
+      "description": "Complete workflow from flow creation to XML deployment",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Create Flow with Swarm",
+          "command": "snow-flow swarm \"create approval workflow for equipment requests\"",
+          "description": "Queen Agent automatically detects Flow Designer requirement and spawns specialized agents",
+          "expected_output": [
+            "🧠 Queen Agent analyzing objective...",
+            "🤖 Spawning Flow Builder Agent for approval workflow creation",
+            "🔄 Flow Designer workflow created with multi-stage approval process",
+            "📁 XML export automatically generated in flow-update-sets/",
+            "💡 To deploy XML: snow-flow deploy-xml flow-update-sets/flow_equipment_approval.xml"
+          ]
+        },
+        {
+          "step": 2,
+          "action": "Deploy XML Update Set",
+          "command": "snow-flow deploy-xml flow-update-sets/flow_equipment_approval.xml",
+          "description": "Complete XML import with automatic preview and commit (only if clean)",
+          "expected_output": [
+            "🚀 Starting XML Update Set deployment...",
+            "📥 Importing XML to ServiceNow remote update set",
+            "🔄 Loading remote update set for preview",
+            "🔍 Analyzing preview for conflicts and problems",
+            "✅ Preview clean - no conflicts detected",
+            "💾 Committing update set automatically",
+            "🎉 Deployment complete! Flow is now active in ServiceNow"
+          ]
+        }
+      ],
+      "claude_prompt_example": "# Flow Designer XML Deployment Workflow\n\nUser: Create an approval workflow for equipment requests\n\nClaude: I'll create a complete approval workflow for equipment requests using the swarm command, which will automatically generate the Flow Designer workflow and provide XML deployment instructions.\n\n```bash\nsnow-flow swarm \"create approval workflow for equipment requests\"\n```\n\nOnce the flow is created, you'll see an XML file generated in the flow-update-sets/ directory. To deploy it:\n\n```bash\nsnow-flow deploy-xml flow-update-sets/flow_equipment_approval.xml\n```\n\nThis provides:\n✅ Complete automation: Import → Preview → Commit\n✅ Safety controls: Only commits if preview is clean\n✅ Zero manual steps in ServiceNow UI"
+    },
+    {
+      "name": "Complex Workflow with Manual Control",
+      "description": "Advanced workflow with manual preview control and problem handling",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Create Complex Flow",
+          "command": "snow-flow swarm \"create ITSM incident escalation flow with SLA tracking and multi-level approvals\"",
+          "description": "Create complex workflow with multiple components"
+        },
+        {
+          "step": 2,
+          "action": "Deploy with Preview Only",
+          "command": "snow-flow deploy-xml flow-update-sets/flow_itsm_escalation.xml --no-commit",
+          "description": "Preview changes without automatic commit for complex flows",
+          "expected_output": [
+            "🚀 Starting XML Update Set deployment (preview only)...",
+            "📥 Importing XML to ServiceNow remote update set",
+            "🔄 Loading remote update set for preview",
+            "🔍 Analyzing preview...",
+            "📋 Preview Results:",
+            "  • 5 Flow Designer components to be updated",
+            "  • 2 new SLA definitions",
+            "  • 1 business rule modification",
+            "⚠️  Manual commit required - use ServiceNow UI to commit after review"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Handle Preview Problems",
+          "command": "snow-flow deploy-xml flow-update-sets/flow_with_conflicts.xml",
+          "description": "Example of handling conflicts during preview",
+          "expected_output": [
+            "🚀 Starting XML Update Set deployment...",
+            "📥 Importing XML to ServiceNow remote update set",
+            "🔄 Loading remote update set for preview",
+            "🔍 Analyzing preview for conflicts and problems",
+            "⚠️  Preview problems detected:",
+            "  • Conflict: Business rule 'auto_assignment' already modified",
+            "  • Warning: Flow references missing action type",
+            "❌ Auto-commit cancelled due to preview problems",
+            "💡 Please resolve conflicts in ServiceNow UI before manual commit"
+          ]
+        }
+      ],
+      "claude_prompt_example": "# Advanced XML Deployment with Problem Handling\n\nUser: Deploy this flow XML but I want to review changes first\n\nClaude: I'll deploy the XML with preview-only mode so you can review all changes before committing:\n\n```bash\nsnow-flow deploy-xml your-flow.xml --no-commit\n```\n\nThis will:\n✅ Import the XML to a remote update set\n✅ Generate a preview of all changes\n✅ Show any conflicts or problems\n❌ Skip automatic commit\n\nIf the preview looks good, you can manually commit in ServiceNow UI. For future deployments of tested flows, you can use automatic commit:\n\n```bash\nsnow-flow deploy-xml your-flow.xml\n```"
+    },
+    {
+      "name": "Batch XML Deployment",
+      "description": "Deploy multiple XML files with dependency management",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Deploy Multiple Flows in Sequence",
+          "commands": [
+            "snow-flow deploy-xml flow-update-sets/flow_base_approval.xml",
+            "snow-flow deploy-xml flow-update-sets/flow_escalation_extension.xml",
+            "snow-flow deploy-xml flow-update-sets/flow_notification_addon.xml"
+          ],
+          "description": "Deploy related flows in dependency order"
+        }
+      ],
+      "claude_prompt_example": "# Batch XML Deployment\n\nUser: I have multiple related flow XMLs to deploy\n\nClaude: I'll help you deploy multiple XML files in the correct order to handle dependencies:\n\n```bash\n# Deploy base flow first\nsnow-flow deploy-xml flow-update-sets/flow_base_approval.xml\n\n# Deploy extensions that depend on base\nsnow-flow deploy-xml flow-update-sets/flow_escalation_extension.xml\nsnow-flow deploy-xml flow-update-sets/flow_notification_addon.xml\n```\n\nEach deployment includes:\n✅ Automatic dependency validation\n✅ Preview analysis for conflicts\n✅ Safe commit only if clean\n✅ Rollback capability if issues occur"
+    }
+  ],
+  "mcp_integration_examples": [
+    {
+      "name": "Using snow_deploy MCP Tool for XML",
+      "description": "Direct MCP tool usage for XML deployment",
+      "mcp_call": {
+        "tool": "snow_deploy",
+        "parameters": {
+          "type": "xml_update_set",
+          "xml_file_path": "/path/to/flow_export.xml",
+          "auto_preview": true,
+          "auto_commit": true,
+          "deployment_context": "flow deployment"
+        }
+      },
+      "expected_response": {
+        "success": true,
+        "result": {
+          "remote_update_set_id": "<update_set_sys_id>",
+          "preview_status": "clean",
+          "commit_status": "success",
+          "deployed_artifacts": [
+            {
+              "type": "sys_hub_flow",
+              "name": "Equipment Approval Flow",
+              "sys_id": "<flow_sys_id>"
+            }
+          ]
+        },
+        "deployment_info": {
+          "import_time": "2025-01-20T10:30:00Z",
+          "preview_time": "2025-01-20T10:30:15Z", 
+          "commit_time": "2025-01-20T10:30:30Z"
+        }
+      }
+    }
+  ],
+  "troubleshooting_examples": [
+    {
+      "problem": "Authentication Error During XML Deployment",
+      "error": "Failed to import XML: Authentication required",
+      "solution": {
+        "command": "snow-flow auth login",
+        "description": "Re-authenticate with ServiceNow before deployment",
+        "follow_up": "snow-flow deploy-xml your-file.xml"
+      }
+    },
+    {
+      "problem": "XML File Not Found",
+      "error": "Error: XML file not found at path",
+      "solution": {
+        "steps": [
+          "Check the flow-update-sets/ directory: ls flow-update-sets/",
+          "Verify the XML was generated after flow creation",
+          "Use absolute path if relative path fails"
+        ]
+      }
+    },
+    {
+      "problem": "Preview Problems Preventing Commit",
+      "error": "Preview problems detected - auto-commit cancelled",
+      "solution": {
+        "description": "Review problems in ServiceNow UI and resolve conflicts",
+        "manual_steps": [
+          "1. Open ServiceNow > System Update Sets > Retrieved Update Sets",
+          "2. Find your imported update set",
+          "3. Click 'Preview Update Set'",
+          "4. Review and resolve any conflicts",
+          "5. Click 'Commit Update Set' when clean"
+        ]
+      }
+    }
+  ],
+  "best_practices": [
+    {
+      "title": "XML Deployment Safety",
+      "practices": [
+        "Always test XML deployment in development environment first",
+        "Use --no-commit flag for complex flows to review changes",
+        "Keep original XML files for rollback purposes",
+        "Validate ServiceNow authentication before deployment"
+      ]
+    },
+    {
+      "title": "Flow Designer XML Generation",
+      "practices": [
+        "Use descriptive flow names that become clear XML filenames",
+        "Create flows with swarm command for automatic XML generation",
+        "Check flow-update-sets/ directory after flow creation",
+        "Test flows before XML export to ensure quality"
+      ]
+    },
+    {
+      "title": "Integration with Development Workflow",
+      "practices": [
+        "Combine swarm creation with immediate XML deployment",
+        "Use Version Control to track XML files",
+        "Document deployment commands in project README",
+        "Create CI/CD pipelines using deploy-xml command"
+      ]
+    }
+  ]
+}

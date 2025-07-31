@@ -1,0 +1,33 @@
+{
+  "type": "business_rule",
+  "name": "{{BUSINESS_RULE_NAME}}",
+  "description": "{{BUSINESS_RULE_DESCRIPTION}}",
+  "config": {
+    "name": "{{BUSINESS_RULE_NAME}}",
+    "table": "{{TABLE|incident}}",
+    "when": "{{WHEN|before}}",
+    "condition": "{{CONDITION|}}",
+    "script": "// Business Rule: {{BUSINESS_RULE_NAME}}\n(function executeRule(current, previous /*null when async*/) {\n    // {{BUSINESS_RULE_DESCRIPTION}}\n    \n    {{BUSINESS_LOGIC|// Add your business logic here}}\n    \n})(current, previous);",
+    "active": true,
+    "order": {{ORDER|100}},
+    "advanced": true,
+    "collection": "{{TABLE|incident}}",
+    "action_insert": {{ACTION_INSERT|true}},
+    "action_update": {{ACTION_UPDATE|true}},
+    "action_delete": {{ACTION_DELETE|false}},
+    "action_query": {{ACTION_QUERY|false}}
+  },
+  "variables": {
+    "BUSINESS_RULE_NAME": "My Business Rule",
+    "BUSINESS_RULE_DESCRIPTION": "A custom business rule for ServiceNow",
+    "TABLE": "incident",
+    "WHEN": "before",
+    "CONDITION": "",
+    "ORDER": 100,
+    "ACTION_INSERT": true,
+    "ACTION_UPDATE": true,
+    "ACTION_DELETE": false,
+    "ACTION_QUERY": false,
+    "BUSINESS_LOGIC": "// Add your business logic here"
+  }
+}

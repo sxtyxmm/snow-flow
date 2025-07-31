@@ -1,0 +1,140 @@
+{
+  "type": "composite",
+  "name": "Incident Management System Template",
+  "description": "Complete incident management system with dashboard, workflows, and automation",
+  "category": "patterns/composite",
+  "artifacts": [
+    {
+      "type": "widget",
+      "template": "patterns/widget.dashboard",
+      "variables": {
+        "WIDGET_NAME": "incident_dashboard",
+        "WIDGET_TITLE": "Incident Management Dashboard",
+        "WIDGET_DESCRIPTION": "Real-time incident tracking and analytics",
+        "TABLE_NAME": "incident"
+      }
+    },
+    {
+      "type": "widget",
+      "template": "patterns/widget.datatable",
+      "variables": {
+        "WIDGET_NAME": "incident_list",
+        "WIDGET_TITLE": "Active Incidents",
+        "WIDGET_DESCRIPTION": "Interactive list of active incidents",
+        "TABLE_NAME": "incident",
+        "ENABLE_INLINE_EDIT": "true"
+      }
+    },
+    {
+      "type": "flow",
+      "template": "patterns/flow.approval",
+      "variables": {
+        "FLOW_NAME": "incident_escalation",
+        "FLOW_DESCRIPTION": "Automatic incident escalation based on priority and age",
+        "TABLE_NAME": "incident",
+        "TRIGGER_TYPE": "scheduled",
+        "TRIGGER_CONDITION": "priority IN (1,2) AND state != 'resolved'"
+      }
+    },
+    {
+      "type": "business_rule",
+      "template": "base/business_rule",
+      "variables": {
+        "NAME": "incident_auto_assignment",
+        "DESCRIPTION": "Automatically assign incidents based on category",
+        "TABLE": "incident",
+        "WHEN": "before",
+        "CONDITION": "current.assigned_to.nil() && !current.category.nil()",
+        "SCRIPT": "// Auto-assignment logic\nvar category = current.getValue('category');\nvar assignmentGroup = '';\n\nswitch(category) {\n  case 'hardware':\n    assignmentGroup = 'hardware_support';\n    break;\n  case 'software':\n    assignmentGroup = 'software_support';\n    break;\n  case 'network':\n    assignmentGroup = 'network_support';\n    break;\n  default:\n    assignmentGroup = 'service_desk';\n}\n\ncurrent.assignment_group = assignmentGroup;"
+      }
+    },
+    {
+      "type": "script_include",
+      "template": "base/script_include",
+      "variables": {
+        "CLASS_NAME": "IncidentAnalytics",
+        "DESCRIPTION": "Utility functions for incident analytics and reporting",
+        "SCRIPT": "var IncidentAnalytics = Class.create();\nIncidentAnalytics.prototype = {\n  initialize: function() {},\n  \n  getMetrics: function() {\n    var metrics = {};\n    \n    // Total incidents\n    var gr = new GlideRecord('incident');\n    gr.addActiveQuery();\n    gr.query();\n    metrics.total = gr.getRowCount();\n    \n    // By priority\n    var priorities = {};\n    gr = new GlideRecord('incident');\n    gr.addActiveQuery();\n    gr.query();\n    while (gr.next()) {\n      var priority = gr.getValue('priority') || 'undefined';\n      priorities[priority] = (priorities[priority] || 0) + 1;\n    }\n    metrics.byPriority = priorities;\n    \n    // Average resolution time\n    gr = new GlideRecord('incident');\n    gr.addQuery('state', 'resolved');\n    gr.orderByDesc('sys_updated_on');\n    gr.setLimit(100);\n    gr.query();\n    \n    var totalTime = 0;\n    var count = 0;\n    while (gr.next()) {\n      var created = new GlideDateTime(gr.sys_created_on);\n      var resolved = new GlideDateTime(gr.resolved_at);\n      if (resolved.getNumericValue() > created.getNumericValue()) {\n        totalTime += resolved.getNumericValue() - created.getNumericValue();\n        count++;\n      }\n    }\n    \n    if (count > 0) {\n      metrics.avgResolutionTime = Math.round(totalTime / count / 1000 / 60); // minutes\n    }\n    \n    return metrics;\n  },\n  \n  type: 'IncidentAnalytics'\n};"
+      }
+    },
+    {
+      "type": "table",
+      "template": "base/table",
+      "variables": {
+        "NAME": "u_incident_metrics",
+        "LABEL": "Incident Metrics",
+        "EXTENDS": "sys_metadata",
+        "FIELDS": [
+          {
+            "name": "metric_date",
+            "label": "Metric Date",
+            "type": "glide_date",
+            "mandatory": true
+          },
+          {
+            "name": "total_incidents",
+            "label": "Total Incidents",
+            "type": "integer",
+            "default": "0"
+          },
+          {
+            "name": "high_priority",
+            "label": "High Priority",
+            "type": "integer",
+            "default": "0"
+          },
+          {
+            "name": "avg_resolution_time",
+            "label": "Avg Resolution Time (min)",
+            "type": "decimal",
+            "default": "0"
+          },
+          {
+            "name": "sla_breaches",
+            "label": "SLA Breaches",
+            "type": "integer",
+            "default": "0"
+          }
+        ]
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "widget.incident_dashboard",
+      "to": "script_include.IncidentAnalytics",
+      "type": "uses"
+    },
+    {
+      "from": "flow.incident_escalation",
+      "to": "table.incident",
+      "type": "updates"
+    },
+    {
+      "from": "business_rule.incident_auto_assignment",
+      "to": "table.incident",
+      "type": "triggers_on"
+    },
+    {
+      "from": "script_include.IncidentAnalytics",
+      "to": "table.u_incident_metrics",
+      "type": "writes_to"
+    }
+  ],
+  "deployment_order": [
+    "table.u_incident_metrics",
+    "script_include.IncidentAnalytics",
+    "business_rule.incident_auto_assignment",
+    "flow.incident_escalation",
+    "widget.incident_list",
+    "widget.incident_dashboard"
+  ],
+  "variables": {
+    "SYSTEM_NAME": "Incident Management",
+    "SYSTEM_PREFIX": "inc_mgmt",
+    "PRIMARY_TABLE": "incident",
+    "NOTIFICATION_GROUP": "incident_managers",
+    "SLA_WARNING_THRESHOLD": "80",
+    "ESCALATION_TIMEOUT": "3600"
+  }
+}

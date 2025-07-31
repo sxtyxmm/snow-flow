@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceNow Flow Configuration Schema",
+  "description": "Schema for validating ServiceNow Flow Designer flow configurations",
+  "type": "object",
+  "required": ["name", "description", "trigger_type"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Flow name"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Flow description"
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": ["record_created", "record_updated", "scheduled", "manual"],
+      "description": "Flow trigger type"
+    },
+    "table": {
+      "type": "string",
+      "description": "Target table for record-based triggers"
+    },
+    "condition": {
+      "type": "string",
+      "description": "Trigger condition (encoded query)"
+    },
+    "category": {
+      "type": "string",
+      "description": "Flow category (e.g., approval, automation)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the flow is active"
+    },
+    "flow_definition": {
+      "type": "string",
+      "description": "Flow Designer definition JSON"
+    },
+    "flow_type": {
+      "type": "string",
+      "enum": ["flow", "subflow", "action"],
+      "default": "flow",
+      "description": "Type of flow to create"
+    },
+    "validate_before_deploy": {
+      "type": "boolean",
+      "default": true,
+      "description": "Validate flow definition before deployment"
+    },
+    "sys_scope": {
+      "type": "string",
+      "description": "Application scope (global or application sys_id)"
+    },
+    "run_as": {
+      "type": "string",
+      "enum": ["system", "user"],
+      "default": "system",
+      "description": "Context for flow execution"
+    }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "trigger_type": {
+        "enum": ["record_created", "record_updated"]
+      }
+    }
+  },
+  "then": {
+    "required": ["table"]
+  }
+}

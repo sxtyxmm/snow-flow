@@ -1,0 +1,18 @@
+{
+  "type": "script_include",
+  "name": "{{CLASS_NAME}}",
+  "description": "{{DESCRIPTION}}",
+  "config": {
+    "api_name": "{{API_NAME|CLASS_NAME}}",
+    "access": "{{ACCESS|public}}",
+    "active": true,
+    "script": "var {{CLASS_NAME}} = Class.create();\n{{CLASS_NAME}}.prototype = {\n    initialize: function() {\n        // Constructor\n    },\n    \n    // Add your methods here\n    {{METHOD_NAME|exampleMethod}}: function() {\n        // Method implementation\n        return true;\n    },\n    \n    type: '{{CLASS_NAME}}'\n};"
+  },
+  "variables": {
+    "CLASS_NAME": "MyUtilityClass",
+    "DESCRIPTION": "Utility functions for ServiceNow",
+    "API_NAME": "MyUtilityClass",
+    "ACCESS": "public",
+    "METHOD_NAME": "exampleMethod"
+  }
+}
