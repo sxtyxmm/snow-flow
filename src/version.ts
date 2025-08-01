@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.14';
+export const VERSION = '1.4.15';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.15': [
+      '🐛 CRITICAL BUG FIX: Fixed swarm command flow detection issue',
+      '✅ SWARM ANALYSIS: Tool name "snow-flow" no longer triggers flow creation error',
+      '🔍 ANALYSIS TASKS: Script include dependency analysis now works correctly',
+      '🎯 IMPROVED ROUTING: Better command detection for analysis vs flow creation',
+      '💪 USER EXPERIENCE: Beta testers can now use swarm command without conflicts',
+      '🚀 IMMEDIATE UPDATE RECOMMENDED: All users should update for swarm functionality',
+    ],
     '1.4.14': [
       '🚀 SNOW-FLOW MCP SERVER: Created complete coordination server replacing claude-flow MCP',
       '🤖 COORDINATION TOOLS: Includes swarm_init, agent_spawn, task_orchestrate, memory_usage',
