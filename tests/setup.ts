@@ -5,7 +5,7 @@ import 'dotenv/config';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
-process.env.SNOW_FLOW_ENV = 'test';
+process.env.SNOW_FLOW_ENV = 'development';
 process.env.SNOW_FLOW_LOG_LEVEL = 'error';
 
 // Mock external dependencies that are not needed for unit tests

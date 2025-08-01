@@ -2873,6 +2873,39 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
     try {
       this.logger.info('Running authentication diagnostics...');
       
+      // Check if we're authenticated first
+      const isAuth = await this.oauth.isAuthenticated();
+      if (!isAuth) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ **Authentication Status: Not Authenticated**
+
+**Issue:** No credentials available. You need to authenticate first.
+
+**Solution:**
+1. Run the authentication command:
+   \`\`\`bash
+   snow-flow auth login
+   \`\`\`
+
+2. Or configure your .env file with ServiceNow OAuth credentials:
+   \`\`\`
+   SNOW_INSTANCE=dev123456.service-now.com
+   SNOW_CLIENT_ID=your_oauth_client_id
+   SNOW_CLIENT_SECRET=your_oauth_client_secret
+   \`\`\`
+
+3. After authentication, run diagnostics again:
+   \`\`\`
+   snow_auth_diagnostics
+   \`\`\``,
+            },
+          ],
+        };
+      }
+      
       const diagnostics = await this.client.validateDeploymentPermissions();
       
       if (!diagnostics.success) {
