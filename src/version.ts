@@ -2,7 +2,7 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.9';
+export const VERSION = '1.4.12';
 
 export const VERSION_INFO = {
   version: VERSION,
@@ -16,14 +16,34 @@ export const VERSION_INFO = {
       '✨ ENHANCED INIT: Creates .snow-flow/queen, .snow-flow/memory directories during initialization',
       '🛡️ SAFE MIGRATION: Original .claude-flow data preserved during migration for safety',
       '🧹 CODE CLEANUP: Replaced all claude-flow references with snow-flow in project paths',
-      '📝 MIGRATION UTILITY: New migrate-claude-flow.ts handles automatic data migration'
+      '📝 MIGRATION UTILITY: New migrate-claude-flow.ts handles automatic data migration',
+    ],
+    '1.4.12': [
+      '🏷️ COMPLETE BRAND CONSISTENCY: Replaced ALL claude-flow references with snow-flow in CLAUDE.md',
+      '✅ MCP TOOL REFERENCES: Fixed all mcp__claude-flow__ to mcp__snow-flow__ in documentation',
+      '📚 WORKFLOW EXAMPLES: Updated all workflow examples and batch patterns',
+      '🔧 CLI COMMANDS: Fixed all npx claude-flow to npx snow-flow',
+      '🔗 GITHUB URLS: Updated all URLs to point to groeimetai/snow-flow',
+      '🎯 INIT COMMAND: Now generates 100% consistent snow-flow branding',
+    ],
+    '1.4.11': [
+      '🔧 TEMPLATE FIX: Fixed .claude.settings.template to use snow-flow instead of claude-flow',
+      '✅ MCP SERVER LIST: Updated enabled servers list to use snow-flow',
+      '🔑 PERMISSIONS: Fixed MCP tool permission patterns for snow-flow',
+      '🎯 BRAND CONSISTENCY: Ensures init command generates correct settings',
+    ],
+    '1.4.10': [
+      '🏷️ BRAND UPDATE: Fixed remaining claude-flow references in CLAUDE.md',
+      '✅ MCP CONSISTENCY: Updated all MCP tool examples to use snow-flow',
+      '📚 DOCUMENTATION: Fixed hook commands and CLI examples',
+      '🔧 INIT COMMAND: Improved CLAUDE.md generation with correct branding',
     ],
     '1.4.8': [
       '🧹 NPM CLEANUP: Removed database files and logs from npm package',
       '📦 PACKAGE OPTIMIZATION: Reduced package from 829 to 766 files',
       '🔒 SECURITY: Excluded sensitive files via improved .npmignore',
       '📊 SIZE REDUCTION: Removed 77.8KB of unnecessary test databases',
-      '🎯 CLEANER DISTRIBUTION: Only essential files included in npm package'
+      '🎯 CLEANER DISTRIBUTION: Only essential files included in npm package',
     ],
     '1.4.7': [
       '🎉 PORTAL PAGE DEPLOYMENT: Complete implementation of Service Portal page deployment',
@@ -32,7 +52,7 @@ export const VERSION_INFO = {
       '📐 LAYOUT SUPPORT: Single column, multi-column, and sidebar layouts',
       '🔗 DIRECT LINKS: Returns both edit and preview URLs after deployment',
       '🚀 INTELLIGENT DETECTION: Automatic portal type detection (sp vs esc)',
-      '✨ DEPLOYMENT TYPES: Added portal_page to all deployment interfaces'
+      '✨ DEPLOYMENT TYPES: Added portal_page to all deployment interfaces',
     ],
     '1.4.6': [
       '🚀 OPEN SOURCE RELEASE: Complete preparation for public launch',
@@ -41,25 +61,25 @@ export const VERSION_INFO = {
       '🤝 COMMUNITY: Added CONTRIBUTING.md, issue/PR templates, and examples',
       '🔧 CODE QUALITY: ESLint improvements, Jest configuration, and pre-commit hooks',
       '📦 SEMANTIC RELEASE: Automated versioning and changelog generation',
-      '✨ PROFESSIONAL: Ready for enterprise adoption with MIT license'
+      '✨ PROFESSIONAL: Ready for enterprise adoption with MIT license',
     ],
     '1.3.31': [
       '🔧 VERSION FIX: Correct version now displayed with snow-flow --version',
-      '✅ All v1.3.30 fixes included plus proper version constant update'
+      '✅ All v1.3.30 fixes included plus proper version constant update',
     ],
     '1.3.30': [
       '🔥 CRITICAL FIX: BUG-001 Production Blocker Resolved - flowDef is not defined error fixed',
       '✅ Flow deployments now work correctly - all this.flowDef references fixed',
-      '⚡ Users should update immediately with npm update -g snow-flow'
+      '⚡ Users should update immediately with npm update -g snow-flow',
     ],
     '1.3.29': [
       '🚨 CRITICAL FIXES: v1.3.28 - All Beta Testing Issues RESOLVED!',
       '✅ Issue #1: Flow Deployment Creates Empty Flows - COMPLETELY FIXED',
-      '✅ Issue #2: Tool Registry Mapping Failures - COMPLETELY FIXED', 
+      '✅ Issue #2: Tool Registry Mapping Failures - COMPLETELY FIXED',
       '✅ Issue #3: Metadata Response Failures - COMPLETELY FIXED',
       '🚀 New CompleteFlowXMLGenerator with v2 tables and proper encoding',
       '🧠 New MCPToolRegistry with robust tool name resolution',
-      '📊 New DeploymentMetadataHandler with complete metadata extraction'
+      '📊 New DeploymentMetadataHandler with complete metadata extraction',
     ],
     '1.3.27': [
       '🤖 AUTONOMOUS SYSTEMS: All 4 autonomous systems now ENABLED BY DEFAULT in swarm command!',
@@ -71,12 +91,12 @@ export const VERSION_INFO = {
       '🚫 GLOBAL DISABLE: Use --no-autonomous-all to disable all autonomous systems',
       '💪 FORCE OVERRIDE: Use --autonomous-all to force enable all (overrides --no- flags)',
       '🎯 PERFECT ORCHESTRATOR: True "één command voor alles" - zero manual intervention needed!',
-      'Based on user request: "oke maar kunnen we het niet als standaard aanzetten dat al deze dingen beschikbaar zijn?"'
+      'Based on user request: "oke maar kunnen we het niet als standaard aanzetten dat al deze dingen beschikbaar zijn?"',
     ],
     '1.3.16': [
       '🔄 VERSION BUMP: Clean version update for npm publish',
       '✨ INCLUDES: All improvements from v1.3.15',
-      '📦 READY: Package prepared for npm distribution'
+      '📦 READY: Package prepared for npm distribution',
     ],
     '1.3.15': [
       '🎯 SWARM SIMPLIFIED: Removed XML generation from swarm command',
@@ -84,7 +104,7 @@ export const VERSION_INFO = {
       '🤖 AGENT RESPONSIBILITY: XML generation moved to Claude Code agents',
       '🚀 CLEANER ARCHITECTURE: Better separation of orchestration vs implementation',
       '📋 FLOW INSTRUCTIONS: Claude Code gets clear instructions for flow tasks',
-      '🔧 NO PREMATURE WORK: No more generating/deploying before agents start'
+      '🔧 NO PREMATURE WORK: No more generating/deploying before agents start',
     ],
     '1.3.14': [
       '🎯 CLEANER OUTPUT: Dramatically reduced verbose logging in swarm command',
@@ -92,7 +112,7 @@ export const VERSION_INFO = {
       '📊 --verbose FLAG: Added flag to see detailed execution information',
       '✨ STREAMLINED: No more walls of text before anything happens',
       '💡 SMART DEFAULTS: Shows objective, session ID, and actual progress only',
-      '🔧 BETTER UX: Clean, professional output focused on what matters'
+      '🔧 BETTER UX: Clean, professional output focused on what matters',
     ],
     '1.3.13': [
       '🐛 FIX ERROR MESSAGES: Separated XML generation and deployment error handling',
@@ -100,7 +120,7 @@ export const VERSION_INFO = {
       '🎯 FLOW DETECTION FIX: Flow tasks now correctly detected instead of widget_development',
       '🔧 BETTER ERROR HANDLING: Deployment errors show specific failure reasons',
       '📊 DEBUG LOGGING: Added artifact detection debugging with DEBUG env var',
-      '⚡ IMPROVED RELIABILITY: Better error recovery and clearer user feedback'
+      '⚡ IMPROVED RELIABILITY: Better error recovery and clearer user feedback',
     ],
     '1.3.12': [
       '🚀 AUTO-DEPLOY XML: Swarm command now automatically deploys flow XML to ServiceNow',
@@ -108,7 +128,7 @@ export const VERSION_INFO = {
       '🎯 SMART ERROR HANDLING: Falls back to manual deployment if issues occur',
       '🔧 SHARED DEPLOYMENT: Both swarm and deploy-xml use same deployment logic',
       '💾 DEPLOYMENT TRACKING: Successful deployments tracked in memory system',
-      '✅ COMPLETE AUTOMATION: No more manual "deploy-xml" command needed'
+      '✅ COMPLETE AUTOMATION: No more manual "deploy-xml" command needed',
     ],
     '1.3.11': [
       '🔥 IMPROVED FLOW GENERATOR: Complete rewrite fixing "too small to work" issue',
@@ -116,64 +136,64 @@ export const VERSION_INFO = {
       '📦 BASE64+GZIP ENCODING: Production-ready action value encoding',
       '🧩 COMPLETE LABEL_CACHE: All required metadata for Flow Designer UI',
       '📊 5-10X LARGER XML: Production-sized flows that actually work in ServiceNow',
-      '🚀 AUTOMATIC DETECTION: Swarm auto-detects Flow Designer tasks and uses XML-first'
+      '🚀 AUTOMATIC DETECTION: Swarm auto-detects Flow Designer tasks and uses XML-first',
     ],
     '1.3.10': [
       '🔥 RAW MODE FIX: Used --dangerously-skip-permissions flag',
       '📝 STDIN RESTORED: Proper prompt injection via stdin',
       '✅ FULLY AUTOMATIC: No manual input required anymore',
-      '🚀 LIKE OLD VERSIONS: Works exactly like v1.0-1.2 did'
+      '🚀 LIKE OLD VERSIONS: Works exactly like v1.0-1.2 did',
     ],
     '1.3.9': [
       '🚀 CLAUDE CODE AUTO-LAUNCH: Restored automatic Claude Code launching',
       '🤖 PROCESS SPAWNING: Claude CLI detection and proper process spawning',
       '📝 PROMPT INJECTION: Automatic prompt sending to Claude Code via stdin',
-      '🔧 MCP INTEGRATION: Auto-loads MCP servers when .mcp.json exists'
+      '🔧 MCP INTEGRATION: Auto-loads MCP servers when .mcp.json exists',
     ],
     '1.3.8': [
       '🤖 CLAUDE CODE FIX: Restored proper Claude Code agent spawning',
       '🚀 SWARM ORCHESTRATION: Snow-flow is orchestrator, Claude Code agents are workhorses',
       '🔧 NO EARLY EXIT: Flow Designer tasks now continue to full agent orchestration',
-      '📋 CLEAR INSTRUCTIONS: Better messaging about Snow-flow vs Claude Code roles'
+      '📋 CLEAR INSTRUCTIONS: Better messaging about Snow-flow vs Claude Code roles',
     ],
     '1.3.7': [
       '🚀 RELEASE VERSION: Combined all fixes from 1.3.2-1.3.6 into stable release',
       '✅ ZOD VALIDATION: Completely fixed all configuration schema issues',
       '🧠 HIERARCHICAL MEMORY: ServiceNow-specific memory patterns for agent coordination',
-      '📦 PRODUCTION READY: All version numbers aligned and ready for npm publish'
+      '📦 PRODUCTION READY: All version numbers aligned and ready for npm publish',
     ],
     '1.3.6': [
       '🐛 ZOD FIX: Fixed nested object validation errors in configuration schema',
       '🔧 NESTED DEFAULTS: Added .default({}) to all nested objects in ConfigSchema',
       '✅ STARTUP FIX: Package now starts correctly without Zod validation errors',
-      '💾 BACKWARDS COMPATIBLE: All configuration objects have proper default values'
+      '💾 BACKWARDS COMPATIBLE: All configuration objects have proper default values',
     ],
     '1.3.5': [
       '🧠 HIERARCHICAL MEMORY: Enhanced memory system with ServiceNow-specific patterns',
       '🤖 AGENT CAPABILITIES: 15+ specialized ServiceNow agent types defined',
       '📊 PATTERN LEARNING: Success/failure pattern recognition for continuous improvement',
-      '🔗 RELATIONSHIP TRACKING: Graph-like connections between artifacts'
+      '🔗 RELATIONSHIP TRACKING: Graph-like connections between artifacts',
     ],
     '1.3.4': [
       '🐛 ZOD FIX ATTEMPT 2: Added .default({}) to all top-level objects',
       '🔧 CONFIG SCHEMA: Fixed "Required" errors for all config properties',
-      '⚠️ PARTIAL FIX: Resolved top-level validation but nested objects still failed'
+      '⚠️ PARTIAL FIX: Resolved top-level validation but nested objects still failed',
     ],
     '1.3.3': [
       '🐛 ZOD FIX ATTEMPT 1: Fixed parseInt() returning NaN for undefined env vars',
       '🔧 DYNAMIC DEFAULTS: Removed dynamic parseInt() from schema defaults',
       '✅ NAN CHECKS: Added validation in loadFromEnvironment() method',
-      '⚠️ PARTIAL FIX: Resolved NaN errors but uncovered nested object issues'
+      '⚠️ PARTIAL FIX: Resolved NaN errors but uncovered nested object issues',
     ],
     '1.3.2': [
       '🚨 BUG INTRODUCED: Zod validation errors preventing package startup',
-      '❌ ISSUE: parseInt() with undefined env vars causing NaN in defaults'
+      '❌ ISSUE: parseInt() with undefined env vars causing NaN in defaults',
     ],
     '1.3.1': [
       '🚨 HOTFIX: Fixed "memory MCP tool is not available" error',
       '🔧 CONFIG BUG FIX: BaseMCPServer now properly stores config parameter',
       '✅ MEMORY RESTORED: Memory MCP server works again with requiresAuth: false',
-      '⚡ CRITICAL FIX: this.config was undefined causing authentication checks to fail'
+      '⚡ CRITICAL FIX: this.config was undefined causing authentication checks to fail',
     ],
     '1.3.0': [
       '🎯 BREAKTHROUGH: Fixed empty flows issue - ServiceNow flows now work completely!',
@@ -183,21 +203,21 @@ export const VERSION_INFO = {
       '⚡ TRIPLE SOLUTION: Direct API + XML Generation + Structure Builder - 3 ways to create working flows',
       '🧪 COMPREHENSIVE TESTING: Added iPhone Request Approval flow test with full validation',
       '📚 COMPLETE DOCUMENTATION: Full integration guides and architecture documentation',
-      '🎉 WORKING FLOWS: Flows created via swarm commands now display and execute properly in ServiceNow!'
+      '🎉 WORKING FLOWS: Flows created via swarm commands now display and execute properly in ServiceNow!',
     ],
     '1.2.4': [
       '🔐 MEMORY AUTH FIX: Fixed authentication error in servicenow-memory MCP server',
       '🏗️ ARCHITECTURE IMPROVEMENT: Added requiresAuth flag to BaseMCPServer for non-ServiceNow servers',
       '💾 MEMORY INDEPENDENCE: Memory server no longer requires ServiceNow authentication',
       '⚡ PERFORMANCE: Faster startup for memory-only operations without auth validation',
-      '🛡️ ERROR HANDLING: Eliminated unnecessary authentication failures for local-only servers'
+      '🛡️ ERROR HANDLING: Eliminated unnecessary authentication failures for local-only servers',
     ],
     '1.2.3': [
       '🔐 AUTHENTICATION FIX: Resolved MCP authentication failure due to environment variable mismatch',
       '🔧 CONFIG ALIGNMENT: Fixed discrepancy between .env file and MCP configuration files',
       '✅ VALIDATED CONNECTION: All ServiceNow MCP tools now authenticate properly',
       '💯 MEMORY SERVER: servicenow-memory MCP server authentication fully functional',
-      '🚀 SWARM READY: All swarm commands now execute without authentication errors'
+      '🚀 SWARM READY: All swarm commands now execute without authentication errors',
     ],
     '1.2.2': [
       '🎯 CRITICAL FIX: Resolved empty flows issue - Complete MCP integration achieved',
@@ -208,7 +228,7 @@ export const VERSION_INFO = {
       '🚀 REAL SERVICENOW DATA: Stores artifacts with actual sys_ids from ServiceNow instead of mock data',
       '✨ ENHANCED FLOW COMPOSER: 5 professional templates (Approval, Incident, Request, Data Processing, User Management)',
       '🧠 NATURAL LANGUAGE PROCESSING: Intelligent flow requirement _analysis and automatic artifact creation',
-      '💪 WORKFLOW OPTIMIZATION: Complete elimination of 500+ lines of redundant hardcoded flow logic'
+      '💪 WORKFLOW OPTIMIZATION: Complete elimination of 500+ lines of redundant hardcoded flow logic',
     ],
     '1.2.1': [
       '🧠 NEO4J SMART INTEGRATION: Auto-detects Neo4j during init and offers optional graph memory setup',
@@ -216,7 +236,7 @@ export const VERSION_INFO = {
       '🎯 CONDITIONAL CONFIGURATION: Graph memory only added to .mcp.json when Neo4j is enabled',
       '🔧 IMPROVED ERROR HANDLING: No more crashes when Neo4j is unavailable - smooth degradation',
       '📋 INIT ENHANCEMENT: Interactive prompt during init asks about graph memory features',
-      '💾 ADDED SERVICENOW-MEMORY: Memory MCP server now properly included in init configuration'
+      '💾 ADDED SERVICENOW-MEMORY: Memory MCP server now properly included in init configuration',
     ],
     '1.2.0': [
       '🔄 ARCHITECTURE CHANGE: Switched from claude-flow memory tools to native ServiceNow memory system',
@@ -225,14 +245,14 @@ export const VERSION_INFO = {
       '🚀 IMPROVED RELIABILITY: Queen Agent and swarm coordination now use dedicated ServiceNow memory infrastructure',
       '💾 SEAMLESS MIGRATION: Automatic transition from claude-flow memory to ServiceNow memory without data loss',
       '🔧 TOOL ALIGNMENT: All memory operations (store, get, search) now consistently use ServiceNow MCP server',
-      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system'
+      '📊 ENHANCED COORDINATION: Better multi-agent memory sharing through native ServiceNow memory system',
     ],
     '1.1.91': [
       '🔧 MEMORY TOOLS FIX: Added memory_store, memory_get, memory_list tools directly to Intelligent MCP server',
       '📝 TODO TOOLS: Added todo_write and todo_read tools for task coordination across agents',
       '💾 PERSISTENT MEMORY: Queen Agent and all agents can now properly use memory tools for coordination',
       '🔄 SEAMLESS INTEGRATION: Memory tools integrated directly into ServiceNow Intelligent MCP',
-      '🐛 BUG FIX: Resolved "memory tool not available" error in Queen Agent execution'
+      '🐛 BUG FIX: Resolved "memory tool not available" error in Queen Agent execution',
     ],
     '1.1.90': [
       '🚀 REVOLUTIONARY: Intelligent Parallel Agent Engine - automatically spawns specialized agent teams for optimal performance',
@@ -246,7 +266,7 @@ export const VERSION_INFO = {
       '📈 PERFORMANCE GAINS: Achieves 2-5x speedup through intelligent parallelization',
       '🧠 LEARNING SYSTEM: Stores execution results to improve future parallelization decisions',
       '✅ SEAMLESS INTEGRATION: Automatically used in Queen Agent when parallelization opportunities detected',
-      '🛡️ FALLBACK GRACEFUL: Falls back to sequential execution when parallelization not beneficial'
+      '🛡️ FALLBACK GRACEFUL: Falls back to sequential execution when parallelization not beneficial',
     ],
     '1.1.89': [
       '🔧 CRITICAL BUG FIX: Fixed snow_table_schema_discovery "Failed to get table details: undefined" error',
@@ -255,7 +275,7 @@ export const VERSION_INFO = {
       '🔍 DEBUG LOGGING: Better diagnostics for table schema discovery issues',
       '🧠 QUEEN AGENT RESILIENCE: Enhanced Queen Agent ability to continue when ServiceNow table details partially unavailable',
       '⚡ IMPROVED RECOVERY: Better error recovery for ServiceNow API communication issues',
-      '🔧 TYPESCRIPT FIXES: Fixed TypeScript compilation error with proper variable declaration'
+      '🔧 TYPESCRIPT FIXES: Fixed TypeScript compilation error with proper variable declaration',
     ],
     '1.1.88': [
       '🧠 INTELLIGENT GAP ANALYSIS ENGINE: Revolutionary beyond-MCP configuration detection and automation',
@@ -269,7 +289,7 @@ export const VERSION_INFO = {
       '🎯 QUEEN AGENT INTEGRATION: Built into Queen Agent workflow - analyzes objectives automatically',
       '📋 FALLBACK STRATEGIES: When automation fails, provides comprehensive manual instructions with warnings and verification steps',
       '🚀 USER REQUEST: "alle mogelijke soorten handelingen die nodig zouden zijn om een objective te bereiken" - IMPLEMENTED',
-      '💡 BEYOND MCP TOOLS: Handles user permissions, database indexes, email templates, ACLs, UI actions, and 50+ other configurations'
+      '💡 BEYOND MCP TOOLS: Handles user permissions, database indexes, email templates, ACLs, UI actions, and 50+ other configurations',
     ],
     '1.1.87': [
       '📦 AUTOMATIC DEPENDENCY MANAGEMENT: Detects Chart.js, moment.js, lodash, jQuery, d3.js in widget code',
@@ -280,7 +300,7 @@ export const VERSION_INFO = {
       '🚀 CDN INTEGRATION: Uses official CDN URLs with minified versions and integrity hashes',
       '✅ CONFLICT PREVENTION: Checks if dependencies already loaded before adding duplicates',
       '🧠 QUEEN AGENT INTEGRATION: Dependency management built into widget deployment workflow',
-      '🔧 NO MANUAL WORK: Chart.js widgets work immediately without manual theme editing'
+      '🔧 NO MANUAL WORK: Chart.js widgets work immediately without manual theme editing',
     ],
     '1.1.86': [
       '🔍 INTELLIGENT TABLE DISCOVERY: Analyzes objective to detect and discover required tables',
@@ -290,7 +310,7 @@ export const VERSION_INFO = {
       '⚡ AGENT COORDINATION: All agents use exact field names from discovered schemas',
       '📋 DISCOVERY EXAMPLES: Clear examples show how objectives map to table discovery',
       '🚀 INCREASED ACCURACY: Agents use correct field names like "short_description"',
-      '🧠 CONTEXT AWARENESS: Discovers related tables based on objective context'
+      '🧠 CONTEXT AWARENESS: Discovers related tables based on objective context',
     ],
     '1.1.85': [
       '💾 MEMORY INITIALIZATION FIX: Memory now initialized at START of Queen session, not middle',
@@ -300,7 +320,7 @@ export const VERSION_INFO = {
       '🔄 AGENT COORDINATION: Enhanced memory sharing with session and agent namespaces',
       '⚡ MCP-FIRST ENFORCEMENT: Queen executes Auth → Discovery → Update Set → Tables before agents',
       '📋 ARTIFACT TRACKING: Automatic Update Set tracking for all deployed artifacts',
-      '🧠 CONFLICT DETECTION: Real-time conflict detection and resolution via memory sync'
+      '🧠 CONFLICT DETECTION: Real-time conflict detection and resolution via memory sync',
     ],
     '1.1.84': [
       '📚 ENHANCED INIT COMMAND: Now generates comprehensive swarm documentation for new users',
@@ -310,14 +330,14 @@ export const VERSION_INFO = {
       '📁 EXAMPLE SCRIPTS: Ready-to-run examples for widget, workflow, and ITSM development',
       '💾 MEMORY PATTERNS: JSON files with success patterns and workflow templates',
       '🚀 QUICK START GUIDE: New QUICK_START.md for 5-minute onboarding',
-      '✅ MCP-FIRST WORKFLOW: Init ensures CLAUDE.md includes mandatory authentication flow'
+      '✅ MCP-FIRST WORKFLOW: Init ensures CLAUDE.md includes mandatory authentication flow',
     ],
     '1.1.83': [
       '🎯 FINAL VERSION SYNC: Complete CLI version synchronization - snow-flow --version now shows correct 1.1.83',
       '🔧 CLEAN BUILD: Fresh compilation ensuring dist/version.js matches src/version.ts',
       '📦 PROPER NPM PACKAGE: Rebuilt from scratch with synchronized version across all components',
       '✅ TESTING READY: Definitive package ready for makeRequest error testing',
-      '🚀 READY TO USE: Full package with all MCP fixes and correct version display'
+      '🚀 READY TO USE: Full package with all MCP fixes and correct version display',
     ],
     '1.1.82': [
       '✅ VERSION SYNCHRONIZATION: Complete alignment between package.json and CLI version display',
@@ -325,7 +345,7 @@ export const VERSION_INFO = {
       '🎯 DIRECT CLIENT PATTERN: All MCP servers now use consistent direct ServiceNowClient structure',
       '📦 NPM DEPLOYMENT: Full npm package with synchronized version across all components',
       '🚀 READY TO TEST: Package published with all makeRequest fixes and version alignment',
-      '🔍 INVESTIGATION COMPLETE: Thorough _analysis and resolution of MCP protocol layer issues'
+      '🔍 INVESTIGATION COMPLETE: Thorough _analysis and resolution of MCP protocol layer issues',
     ],
     '1.1.81': [
       '🔧 MAKEQUEST FIX: Resolved phantom makeRequest error in MCP flow-composer tools',
@@ -335,7 +355,7 @@ export const VERSION_INFO = {
       '📋 MCP PROTOCOL LAYER: Improved error handling and debugging in MCP communication layer',
       '🚀 DEPLOYMENT READY: Fixed issues preventing flow creation via MCP tools from Claude Code',
       '📦 NPM READY: Package published to npm registry for testing in separate environments',
-      '🔍 INVESTIGATION COMPLETE: Thorough _analysis of makeRequest phantom calls resolved'
+      '🔍 INVESTIGATION COMPLETE: Thorough _analysis of makeRequest phantom calls resolved',
     ],
     '1.1.80': [
       '🏗️ QUEEN AGENT FIX: All agents now ALWAYS attempt ServiceNow MCP tools first',
@@ -346,21 +366,21 @@ export const VERSION_INFO = {
       '🚨 ERROR RECOVERY: Specific recovery patterns for auth, permission, and not found errors',
       '💡 AGENT INSTRUCTIONS: Each agent type has specific auth and discovery workflows',
       '✅ NO MORE LOCAL FILES: Agents never skip directly to local file creation',
-      '🎯 SERVICENOW FIRST: Live development in ServiceNow is now mandatory approach'
+      '🎯 SERVICENOW FIRST: Live development in ServiceNow is now mandatory approach',
     ],
     '1.1.79': [
       '🎯 FINAL VERSION FIX: Corrected ALL version references including features object',
       '📊 DASHBOARD SYNC: Dashboard now shows correct v1.1.79 across all displays',
       '✅ COMPLETE ALIGNMENT: package.json, version.ts, CLI, and npm all synchronized',
       '🔧 VERSION HISTORY: Added proper version tracking in features object',
-      '🚀 READY TO USE: All version display issues resolved!'
+      '🚀 READY TO USE: All version display issues resolved!',
     ],
     '1.1.78': [
       '🎯 VERSION FIX: Corrected version display across all components (dashboard, CLI, npm)',
       '📦 NPM SYNC: Aligned package.json, version.ts, and binary version reporting',
       '✅ CONSISTENCY: snow-flow --version now correctly shows 1.1.78',
       '🔧 BUILD FIX: Updated compilation to reflect correct version info',
-      '📊 DASHBOARD: Dashboard header now shows accurate version number'
+      '📊 DASHBOARD: Dashboard header now shows accurate version number',
     ],
     '1.1.77': [
       '🧠 COMPLETE HIVE-MIND: Full claude-flow architecture implementation',
@@ -370,7 +390,7 @@ export const VERSION_INFO = {
       '🔧 AGENT-AWARE MCPS: All 11 MCP servers now integrate with agent system',
       '🚀 CLI ORCHESTRATION: Enhanced swarm command with Queen coordination',
       '📋 COMPREHENSIVE: Complete system integration and monitoring',
-      '🎉 BREAKTHROUGH: True AI hive-mind for ServiceNow development!'
+      '🎉 BREAKTHROUGH: True AI hive-mind for ServiceNow development!',
     ],
     '1.1.76': [
       '👑 REVOLUTIONARY: ServiceNow Queen Agent - Hive-Mind Intelligence inspired by claude-flow!',
@@ -384,7 +404,7 @@ export const VERSION_INFO = {
       '🚀 75% SIMPLER: One command vs complex --strategy --mode --max-agents flags',
       '💾 MEMORY COMMANDS: queen-memory export/import, queen-status, queen-insights',
       '📖 DOCS UPDATED: Complete documentation refresh showcasing Queen as primary interface',
-      '🎉 TRANSFORMATION: From enterprise complexity to claude-flow elegance - COMPLETE!'
+      '🎉 TRANSFORMATION: From enterprise complexity to claude-flow elegance - COMPLETE!',
     ],
     '1.1.75': [
       '🔧 CRITICAL FIX: snow_deploy with type:"flow" now properly generates flow_definition',
@@ -395,7 +415,7 @@ export const VERSION_INFO = {
       '🚫 EXCLUSION FILTER: Filters out irrelevant items like "Decommission Domain Controller"',
       '💡 BETTER SUGGESTIONS: Hardware searches suggest specific item types (monitor, keyboard, etc.)',
       '🚀 USER FEEDBACK: "Cannot read properties of undefined (reading \'flow\')" - FIXED',
-      '✅ CATEGORY SEARCH: Improved category filtering with fuzzy matching support'
+      '✅ CATEGORY SEARCH: Improved category filtering with fuzzy matching support',
     ],
     '1.1.74': [
       '🚨 CRITICAL FIX: Flow composer no longer uses wrong/mock flow actions!',
@@ -404,9 +424,9 @@ export const VERSION_INFO = {
       '✅ CORRECT TRIGGERS: "new service catalog request" now correctly uses record_created trigger',
       '📝 BETTER FLOW NAMES: Descriptive, context-aware names instead of generic "Sc_request Create Flow"',
       '🎯 FALLBACK STRATEGIES: When ServiceNow search fails, uses proper predefined action types',
-      '🔍 ENHANCED SEARCH: Only returns actions that match search terms and aren\'t contradictory',
+      "🔍 ENHANCED SEARCH: Only returns actions that match search terms and aren't contradictory",
       '💡 USER FEEDBACK: "proberen flow composer met placeholder of mock data te laten deployen" - FIXED',
-      '🚀 REAL DEPLOYMENTS: Flows now deploy with correct actions and configurations'
+      '🚀 REAL DEPLOYMENTS: Flows now deploy with correct actions and configurations',
     ],
     '1.1.73': [
       '🎯 API SIMPLIFICATION: snow_unified_deploy → snow_deploy (cleaner naming)',
@@ -417,7 +437,7 @@ export const VERSION_INFO = {
       '🚀 USER REQUEST: "unified_deploy gewoon deploy noemen om het simpel te houden" - IMPLEMENTED',
       '📊 INTELLIGENT REDIRECTION: Deprecated tools automatically convert args and redirect',
       '💡 MIGRATION PATH: Clear guidance from old tools to new simplified API',
-      '🎯 CLEAN API: Single snow_deploy tool handles widgets, flows, applications with fallbacks'
+      '🎯 CLEAN API: Single snow_deploy tool handles widgets, flows, applications with fallbacks',
     ],
     '1.1.72': [
       '🚀 UNIFIED DEPLOYMENT TOOL: Complete deployment workflow with resilient fallbacks - snow_unified_deploy',
@@ -429,7 +449,7 @@ export const VERSION_INFO = {
       '📊 MANUAL FALLBACK STEPS: Detailed manual deployment instructions when automation fails',
       '✅ USER REQUEST: "flow deployment faalde op permissions" - COMPLETELY RESOLVED',
       '⚙️ PERFECT WORKFLOW: Never "failure zonder plan" - always provides working solution',
-      '🎯 ONE COMMAND SOLUTION: snow_unified_deploy handles entire workflow automatically'
+      '🎯 ONE COMMAND SOLUTION: snow_unified_deploy handles entire workflow automatically',
     ],
     '1.1.71': [
       '🎯 ORCHESTRATION TRANSPARENCY: MCP tools now clearly show deployment vs planning mode',
@@ -440,7 +460,7 @@ export const VERSION_INFO = {
       '🔍 PARAMETER DESCRIPTIONS: deploy_immediately parameter description updated with deployment warnings',
       '✅ USER REQUEST: "orchestratie tools zijn niet transparant over of ze echt iets gaan deployen" - ADDRESSED',
       '💡 CLEAR INDICATORS: Mode and warning fields added to orchestration responses',
-      '🎯 NO MORE CONFUSION: Users always know if deployment will happen or if it is planning only'
+      '🎯 NO MORE CONFUSION: Users always know if deployment will happen or if it is planning only',
     ],
     '1.1.70': [
       '🔧 FLOW TESTING FIX: Improved flow discovery for both modern and legacy flows',
@@ -451,7 +471,7 @@ export const VERSION_INFO = {
       '💡 ALTERNATIVE SUGGESTIONS: Recommends snow_test_flow_with_mock for easier testing',
       '🔗 FLOW TYPE DETECTION: Automatically detects Flow Designer vs Legacy Workflow',
       '📊 ACTIVITY PARSING: Correctly extracts activities from latest_snapshot JSON',
-      '🚀 USER REQUEST: "geen heldere handeling van tracking van sys_ids" - ADDRESSED'
+      '🚀 USER REQUEST: "geen heldere handeling van tracking van sys_ids" - ADDRESSED',
     ],
     '1.1.69': [
       '🛠️ DIRECT CRUD TOOLS: Added comprehensive user and group management tools',
@@ -463,7 +483,7 @@ export const VERSION_INFO = {
       '🎯 USER REQUEST ADDRESSED: "Geen directe MCP tool om een user group te creëren"',
       '🔧 NO MORE WORKAROUNDS: Direct sys_user_group table operations, no script includes needed',
       '📊 INTELLIGENT LOOKUPS: Find users/groups by sys_id OR name automatically',
-      '🔐 SECURITY AWARE: Proper permission checks and informative error messages'
+      '🔐 SECURITY AWARE: Proper permission checks and informative error messages',
     ],
     '1.1.68': [
       '🔧 GENERAL CLI PROMPTS: Made CLI prompts more general as requested by user',
@@ -472,7 +492,7 @@ export const VERSION_INFO = {
       '🏷️ BRAND UPDATE: Replaced all claude-flow references with snow-flow in CLAUDE.md files',
       '✨ CLEANER PROMPTS: Removed detailed MCP tool lists and technical instructions',
       '📚 DOCUMENTATION DRIVEN: CLI prompts now reference CLAUDE.md for specifics',
-      '🚀 BETTER UX: More concise prompts that defer to comprehensive CLAUDE.md'
+      '🚀 BETTER UX: More concise prompts that defer to comprehensive CLAUDE.md',
     ],
     '1.1.67': [
       '🔧 CRITICAL MCP ERROR FIX: Fixed "Cannot read properties of undefined (reading flowName)" error',
@@ -481,35 +501,35 @@ export const VERSION_INFO = {
       '👥 TEAM-BASED PROMPTS: CLI now promotes specialized teams instead of generic agents',
       '📋 SERVICENOW BEST PRACTICES: Added specific guidance for sys_user_group table usage',
       '🚨 FIXED GROUP CREATION: Documents correct approach - use sys_user_group, NOT CMDB search',
-      '⚡ IMPROVED STABILITY: Flow composer now handles undefined parsedIntent gracefully'
+      '⚡ IMPROVED STABILITY: Flow composer now handles undefined parsedIntent gracefully',
     ],
     '1.1.66': [
       '🔧 CRITICAL NPM PACKAGE FIX: Added CLAUDE.md to .npmignore exceptions',
       '📦 PACKAGE INCLUSION: CLAUDE.md now included in npm package (was excluded by *.md rule)',
       '🎯 ROOT CAUSE RESOLVED: Users will now get complete 692-line CLAUDE.md from npm install',
       '📄 FULL DOCUMENTATION: Complete team-based SPARC documentation now available globally',
-      '✅ NPM PACKAGE COMPLETE: No more fallback to 380-line hardcoded template'
+      '✅ NPM PACKAGE COMPLETE: No more fallback to 380-line hardcoded template',
     ],
     '1.1.65': [
       '✅ CONFIRMED INIT COMMAND WORKS: Verified init command copies complete 692-line CLAUDE.md',
       '🔍 DEBUGGING COMPLETE: Found source path detection working correctly',
       '📊 VERIFIED OUTPUT: Generated CLAUDE.md contains all 22K+ characters',
       '🐛 CACHE FIX: New version to clear any npm/node cache issues',
-      '💡 USER SUPPORT: Addressed user report of missing lines in generated documentation'
+      '💡 USER SUPPORT: Addressed user report of missing lines in generated documentation',
     ],
     '1.1.64': [
       '🔧 FIXED INIT COMMAND: Now correctly finds and uses actual CLAUDE.md file',
       '📄 CORRECT DOCUMENTATION: Users get complete 22K+ character CLAUDE.md with all features',
       '🔍 IMPROVED PATH DETECTION: Better search algorithm for finding source files',
       '✅ SPARC COMMANDS VERIFIED: All team and specialist commands working correctly',
-      '🎯 COMPLETE TEAM FEATURES: Full team-based SPARC architecture documentation included'
+      '🎯 COMPLETE TEAM FEATURES: Full team-based SPARC architecture documentation included',
     ],
     '1.1.63': [
       '🔧 INIT COMMAND FIX: Now uses actual CLAUDE.md file instead of hardcoded template',
       '📄 DYNAMIC CLAUDE.MD: Init command now copies the real project documentation',
       '🏷️ BRAND CONSISTENCY: Replaced all claude-flow references with snow-flow throughout codebase',
       '📚 DOCUMENTATION SYNC: Users now get the complete up-to-date CLAUDE.md with team features',
-      '🛡️ IMPROVED INITIALIZATION: Better fallback when CLAUDE.md source cannot be found'
+      '🛡️ IMPROVED INITIALIZATION: Better fallback when CLAUDE.md source cannot be found',
     ],
     '1.1.62': [
       '🚀 TEAM-BASED SPARC ARCHITECTURE: Complete implementation of specialized development teams',
@@ -522,7 +542,7 @@ export const VERSION_INFO = {
       '✅ QUALITY GATES: Automatic validation between specialist handoffs',
       '💾 SHARED MEMORY: Cross-team context and coordination system',
       '📊 CLI INTEGRATION: sparc team widget/flow/app/adaptive and sparc specialist commands',
-      '🚨 BREAKING: None - All existing commands continue to work'
+      '🚨 BREAKING: None - All existing commands continue to work',
     ],
     '1.1.61': [
       '📚 DOCUMENTATION: Updated CLAUDE.md with concrete Update Set management steps',
@@ -532,7 +552,7 @@ export const VERSION_INFO = {
       '🔍 404 ERRORS: Now include specific causes, solutions, and alternative tools',
       '📋 UPDATE SETS: Automatic creation and artifact tracking prevents empty Update Sets',
       '💡 FLOW GUIDANCE: Clear distinction between snow_create_flow vs snow_deploy_flow',
-      '🛠️ COMPREHENSIVE: Five parallel improvements addressing all user-reported issues'
+      '🛠️ COMPREHENSIVE: Five parallel improvements addressing all user-reported issues',
     ],
     '1.1.60': [
       '🎯 CRITICAL FIX: "Your flow cannot be found" error resolved completely!',
@@ -542,7 +562,7 @@ export const VERSION_INFO = {
       '🛠️ REMOVED: No more createFlowTrigger, createFlowLogic, createFlowActionInstance calls',
       '🚀 RESULT: Flows now open correctly in Flow Designer without corruption',
       '📄 INCLUDES: latest_snapshot field with complete flow structure',
-      '🆕 generateFlowSnapshot: Added as fallback to regenerate snapshots if needed'
+      '🆕 generateFlowSnapshot: Added as fallback to regenerate snapshots if needed',
     ],
     '1.1.59': [
       '🔧 CRITICAL FIX: Flows no longer created as draft - added status: published, validated: true',
@@ -551,7 +571,7 @@ export const VERSION_INFO = {
       '🔗 URL FIXES: Flow Designer links now use proper nav_to.do?uri=sys_hub_flow.do format',
       '✅ USER ISSUE: Fixed "Flows worden als draft aangemaakt" problem completely',
       '🚀 FLOW STATUS: Flows now created with active: true, status: published, validated: true',
-      '🌐 DOMAIN FIX: Removed hardcoded .service-now.com URLs, now uses instance-specific URLs'
+      '🌐 DOMAIN FIX: Removed hardcoded .service-now.com URLs, now uses instance-specific URLs',
     ],
     '1.1.58': [
       '🔧 CRITICAL FIX: snow_auth_diagnostics "Cannot read properties of undefined" error fixed!',
@@ -561,7 +581,7 @@ export const VERSION_INFO = {
       '✅ DEFAULT VALUES: All summary fields now have safe default values (0 or "Unknown")',
       '🎯 USER ISSUE RESOLVED: Authentication diagnostics now works even with partial data',
       '📊 ROBUST FORMATTING: Test results display correctly even with missing properties',
-      '🚨 TRAILING SLASH DETECTION: Still detects and warns about trailing slash in SNOW_INSTANCE'
+      '🚨 TRAILING SLASH DETECTION: Still detects and warns about trailing slash in SNOW_INSTANCE',
     ],
     '1.1.57': [
       '🔧 CRITICAL FIX: Single flow creation instead of multiple flows for one request!',
@@ -571,7 +591,7 @@ export const VERSION_INFO = {
       '✅ SUBFLOW LOGIC: Only creates separate subflows when instruction contains "multiple flows/subflows"',
       '🎯 USER ISSUE RESOLVED: No more unwanted multiple flows when asking for single flow',
       '📊 SMART DETECTION: Recognizes phrases like "split into", "separate flows", "multiple subflows"',
-      '🚀 INTELLIGENT BEHAVIOR: Keeps approval, notification, script steps as activities in main flow'
+      '🚀 INTELLIGENT BEHAVIOR: Keeps approval, notification, script steps as activities in main flow',
     ],
     '1.1.56': [
       '🔧 CRITICAL FIX: Flow validation now accepts "actions" array in flow definitions!',
@@ -581,7 +601,7 @@ export const VERSION_INFO = {
       '✅ ERROR ELIMINATION: No more "Missing activities or steps array" for flows with actions',
       '🎯 USER ISSUE RESOLVED: Flow deployment with "actions" array now works correctly',
       '📊 SMART VALIDATION: Automatically detects and converts all array name variations',
-      '🚀 BACKWARDS COMPATIBLE: Still supports "activities" and "steps" arrays as before'
+      '🚀 BACKWARDS COMPATIBLE: Still supports "activities" and "steps" arrays as before',
     ],
     '1.1.55': [
       '🔧 CRITICAL FIX: snow_resilient_deployment mock implementation replaced with REAL API calls!',
@@ -593,7 +613,7 @@ export const VERSION_INFO = {
       '✅ COMPREHENSIVE LOGGING: Real deployment tracking with sys_id and URL responses',
       '🎯 USER ISSUE RESOLVED: "404 errors bij testen" - artifacts are now actually created',
       '📊 DEPLOYMENT VERIFICATION: Real ServiceNow records created with proper validation',
-      '🚀 INTELLIGENT FALLBACKS: Global scope, simplified version, business rule conversion, minimal deployment'
+      '🚀 INTELLIGENT FALLBACKS: Global scope, simplified version, business rule conversion, minimal deployment',
     ],
     '1.1.54': [
       '🔧 MASSIVE FLOW TOOLS OVERHAUL - All Flow Type Issues FIXED!',
@@ -606,7 +626,7 @@ export const VERSION_INFO = {
       '✅ API RESPONSES: Proper ServiceNow URLs and type information in all responses',
       '🎯 ROOT CAUSE FIXED: Flow type "flow" vs "subflow" now works correctly',
       '📊 USER FEEDBACK ADDRESSED: All identified MCP tool problems resolved',
-      '🚀 COMPLETE FLOW STACK: sys_hub_flow + action_instances + variables + triggers'
+      '🚀 COMPLETE FLOW STACK: sys_hub_flow + action_instances + variables + triggers',
     ],
     '1.1.53': [
       'CRITICAL BUG FIX: Fixed ServiceNow Flow Composer MCP server failing to start',
@@ -614,7 +634,7 @@ export const VERSION_INFO = {
       'ARTIFACT INDEXER AVAILABILITY: ServiceNow Artifact Indexer now available in npm installations',
       'MCP SERVER STABILITY: All 11 MCP servers now start correctly after npm installation',
       'ADDRESSES USER ISSUE: "servicenow-flow-composer MCP Server Status: ✘ failed" - FIXED',
-      'FLOW CREATION ENABLED: Users can now create flows using the Flow Composer MCP server'
+      'FLOW CREATION ENABLED: Users can now create flows using the Flow Composer MCP server',
     ],
     '1.1.52': [
       'CRITICAL DOCUMENTATION FIX: Updated README.md template in init command to match comprehensive project README',
@@ -622,7 +642,7 @@ export const VERSION_INFO = {
       'COMPREHENSIVE GUIDE: New users get complete Snow-Flow documentation from first init',
       'FEATURE COMPLETE DOCS: Includes all features, MCP servers, usage examples, and advanced capabilities',
       'DOCUMENTATION CONSISTENCY: Both CLAUDE.md and README.md now comprehensive in init template',
-      'ADDRESSES USER FEEDBACK: "readme is nog steeds ook heel leeg vergeleken met wat we hier hebben" - FIXED'
+      'ADDRESSES USER FEEDBACK: "readme is nog steeds ook heel leeg vergeleken met wat we hier hebben" - FIXED',
     ],
     '1.1.51': [
       'CRITICAL BUG FIX: Fixed JSON validation for nested flow structures (flow.steps)',
@@ -631,7 +651,7 @@ export const VERSION_INFO = {
       'ACTIVITY PROMOTION: Automatically promotes nested activities to top-level for ServiceNow compatibility',
       'VALIDATION ACCURACY: Activity count now correctly reflects nested structure processing',
       'ADDRESSES USER ISSUE: "Missing activities or steps array" error with nested JSON - FIXED',
-      'ENHANCED ERROR RECOVERY: Handles all common Flow Designer JSON format variations seamlessly'
+      'ENHANCED ERROR RECOVERY: Handles all common Flow Designer JSON format variations seamlessly',
     ],
     '1.1.50': [
       'CRITICAL FIX: Updated init command to use comprehensive CLAUDE.md template instead of basic one',
@@ -639,7 +659,7 @@ export const VERSION_INFO = {
       'DOCUMENTATION SYNCHRONIZATION: Init command now creates the same comprehensive docs as the project',
       'COMPLETE GUIDE: New users get full Snow-Flow ServiceNow development guide from day one',
       'ADDRESSES USER FEEDBACK: "claude.md super summier vergeleken wat we hier hebben" - FIXED',
-      'INIT IMPROVEMENT: snow-flow init --sparc now creates production-ready CLAUDE.md with all features'
+      'INIT IMPROVEMENT: snow-flow init --sparc now creates production-ready CLAUDE.md with all features',
     ],
     '1.1.49': [
       'ROOT CAUSE FIXED: Flow Designer validation now accepts both "steps" and "activities" JSON formats',
@@ -649,7 +669,7 @@ export const VERSION_INFO = {
       'NESTED DEFINITION SUPPORT: Extracts activities from nested flow_definition structures',
       'TRIGGER AUTO-GENERATION: Creates missing trigger definitions from deployment parameters',
       'VALIDATION TRANSPARENCY: Shows exactly which auto-corrections were applied',
-      'ADDRESSES ROOT CAUSE: The original "Missing activities array" error now impossible'
+      'ADDRESSES ROOT CAUSE: The original "Missing activities array" error now impossible',
     ],
     '1.1.48': [
       'INTELLIGENT FALLBACKS: Flow Designer automatically falls back to Business Rules when deployment fails',
@@ -659,7 +679,7 @@ export const VERSION_INFO = {
       'BUSINESS RULE GENERATION: Flow definitions automatically converted to equivalent Business Rules',
       'FALLBACK DETECTION: Testing tools detect and suggest Business Rule alternatives when flows not found',
       'COMPREHENSIVE ERROR RECOVERY: All systematic errors from user feedback now automatically resolved',
-      'ZERO MANUAL INTERVENTION: Complete automation of error handling and recovery strategies'
+      'ZERO MANUAL INTERVENTION: Complete automation of error handling and recovery strategies',
     ],
     '1.1.47': [
       'TEST CLEANUP: Added snow_cleanup_test_artifacts tool for cleaning test data',
@@ -668,7 +688,7 @@ export const VERSION_INFO = {
       'DRY RUN: Preview what would be deleted before actual cleanup',
       'AGE FILTERING: Only removes artifacts older than specified hours',
       'MULTI-TYPE: Cleans catalog items, flows, users, and requests',
-      'ADDRESSES: Test catalog items remaining in Update Sets after testing'
+      'ADDRESSES: Test catalog items remaining in Update Sets after testing',
     ],
     '1.1.46': [
       'CATALOG DEFAULTS: Catalog items automatically get default catalog/category assigned',
@@ -677,7 +697,7 @@ export const VERSION_INFO = {
       'TEMPLATE UPDATES: All flow templates now create flows, not subflows',
       'GLOBAL SCOPE: Enhanced flow deployment with explicit type checking',
       'ADDRESSES: "Content not found. Subflow cannot be found" error',
-      'ADDRESSES: Catalog items without proper catalog assignment'
+      'ADDRESSES: Catalog items without proper catalog assignment',
     ],
     '1.1.45': [
       'CATALOG-FLOW LINKING: Added snow_link_catalog_to_flow for direct integration',
@@ -687,7 +707,7 @@ export const VERSION_INFO = {
       'EXECUTION OPTIONS: Control run context, completion waiting, progress updates',
       'TEST CAPABILITY: Optional test request creation to verify the link',
       'ADDRESSES: Direct catalog-flow linking requested by user',
-      'ENABLES: Equipment provisioning workflows with catalog integration'
+      'ENABLES: Equipment provisioning workflows with catalog integration',
     ],
     '1.1.44': [
       'FLOW TESTING: Added snow_test_flow_with_mock for comprehensive flow testing',
@@ -697,11 +717,11 @@ export const VERSION_INFO = {
       'COMPREHENSIVE RESULTS: Detailed test results with timing, approvals, and errors',
       'CLEANUP SUPPORT: Optional automatic cleanup of test data after execution',
       'ADDRESSES: "Flow test tool gaf 404 error" - now provides working flow testing',
-      'ADDRESSES: "Kon niet verifiëren of flow werkt" - full verification capabilities'
+      'ADDRESSES: "Kon niet verifiëren of flow werkt" - full verification capabilities',
     ],
     '1.1.43': [
       'BULK DEPLOYMENT: New snow_bulk_deploy tool for deploying multiple artifacts at once',
-      'TRANSACTION SUPPORT: All-or-nothing deployment with automatic rollback on failures', 
+      'TRANSACTION SUPPORT: All-or-nothing deployment with automatic rollback on failures',
       'PARALLEL OPTION: Deploy multiple artifacts simultaneously for faster execution',
       'DRY RUN MODE: Validate all artifacts before actual deployment',
       'TABLE SCHEMA DISCOVERY: New snow_table_schema_discovery for comprehensive table _analysis',
@@ -709,7 +729,7 @@ export const VERSION_INFO = {
       'INDEX DISCOVERY: Lists all indexes and their configurations',
       'RELATIONSHIP MAPPING: Visual representation of table dependencies',
       'MEMORY FIX: Clarified that shared memory uses existing snow-flow memory system',
-      'Fixed TypeScript errors in deployment and operations MCP servers'
+      'Fixed TypeScript errors in deployment and operations MCP servers',
     ],
     '1.1.42': [
       'SWARM COMMAND ENHANCED: Intelligent features now enabled by default - één command voor alles!',
@@ -721,7 +741,7 @@ export const VERSION_INFO = {
       'PROGRESS MONITORING: Real-time progress tracking (default: true)',
       'INTELLIGENT ORCHESTRATION: Uses snow_orchestrate_development MCP tool when features enabled',
       'NO FLAGS NEEDED: Just run "snow-flow swarm" and everything works automatically',
-      'Based on user request: "oke maar ik zou willen dat de swarm command ook al deze dingen heeft"'
+      'Based on user request: "oke maar ik zou willen dat de swarm command ook al deze dingen heeft"',
     ],
     '1.1.41': [
       'GAME CHANGER: 5 new critical MCP tools addressing all user feedback!',
@@ -731,7 +751,7 @@ export const VERSION_INFO = {
       'BATCH VALIDATION: batch_deployment_validator - comprehensive multi-artifact validation',
       'AUTO ROLLBACK: deployment_rollback_manager - automatic rollback with backup creation',
       'NO MORE SIMULATION: Addresses "agents simulated deployment success without real validation"',
-      'Based on extensive user feedback - the complete ServiceNow Development Copilot!'
+      'Based on extensive user feedback - the complete ServiceNow Development Copilot!',
     ],
     '1.1.40': [
       'BREAKTHROUGH: Fixed the root cause of static 2-agent limitation!',
@@ -739,7 +759,7 @@ export const VERSION_INFO = {
       'REAL USER CONTROL: --max-agents=5 now actually spawns 5 agents',
       'SMART ALLOCATION: Prioritizes high-confidence agents, then adds lower-confidence ones',
       'NO MORE 2-AGENT LIMIT: System respects your agent count request',
-      'Based on user feedback: "statisch maximaal 2 agents gespawnd worden" - FIXED!'
+      'Based on user feedback: "statisch maximaal 2 agents gespawnd worden" - FIXED!',
     ],
     '1.1.39': [
       'INTELLIGENT: Enhanced artifact detection with Dutch language support',
@@ -747,7 +767,7 @@ export const VERSION_INFO = {
       'MULTILINGUAL: Full Dutch keyword support for all agent types and artifacts',
       'SMART DETECTION: Pattern matching for "widget", "flow", "script", "table", etc.',
       'NO MORE EMPTY: ServiceNow Artifacts field now properly populated',
-      'Based on user feedback: "ServiceNow Artifacts:" showing empty - now fixed!'
+      'Based on user feedback: "ServiceNow Artifacts:" showing empty - now fixed!',
     ],
     '1.1.38': [
       'CRITICAL: Fixed max agents limitation - now properly respects --max-agents flag',
@@ -755,7 +775,7 @@ export const VERSION_INFO = {
       'USER CONTROL: --max-agents=5 now actually spawns up to 5 agents as requested',
       'SMART ALLOCATION: Balances user request with required agents (Update Set, Application)',
       'TRANSPARENCY: Shows Requested vs Estimated vs Actual agent counts in output',
-      'Based on user feedback: "hard coded max agents = 2 hebben ingesteld, zelfs als ik de flag --max-agents=5 meegeven"'
+      'Based on user feedback: "hard coded max agents = 2 hebben ingesteld, zelfs als ik de flag --max-agents=5 meegeven"',
     ],
     '1.1.37': [
       'CRITICAL: Fixed 403 authentication errors caused by trailing slash in instance URL',
@@ -763,7 +783,7 @@ export const VERSION_INFO = {
       'AUTO-DIAGNOSTICS: Automatically runs auth diagnostics on 403 deployment failures',
       'ENHANCED: Better OAuth permission validation and troubleshooting guidance',
       'FIXED: URL construction issues that caused malformed API calls',
-      'IMPROVED: Deployment fallback mechanisms with detailed error _analysis'
+      'IMPROVED: Deployment fallback mechanisms with detailed error _analysis',
     ],
     '1.1.36': [
       'CRITICAL: Fixed flow vs subflow confusion with explicit flow_type parameter',
@@ -772,7 +792,7 @@ export const VERSION_INFO = {
       'NEW: Solution package tool for grouping and deploying related artifacts together',
       'NEW: Interactive flow wizard for step-by-step flow creation',
       'Added createSubflow, createFlowAction, and setCurrentUpdateSet methods',
-      'Improved Flow Designer integration with proper type handling'
+      'Improved Flow Designer integration with proper type handling',
     ],
     '1.1.35': [
       'NEW: snow_preview_widget tool for widget preview and integration _analysis',
@@ -781,7 +801,7 @@ export const VERSION_INFO = {
       'Automatic Chart.js dependency detection and reporting',
       'Code coverage _analysis for HTML/CSS/JS integration',
       'Detailed recommendations for widget improvement',
-      'Integration checking between template variables and scripts'
+      'Integration checking between template variables and scripts',
     ],
     '1.1.34': [
       'CRITICAL: Fixed Service Portal widget field mapping (script vs server_script)',
@@ -789,7 +809,7 @@ export const VERSION_INFO = {
       'Added proactive Service Portal permission validation before deployment',
       'Comprehensive deployment error diagnostics with troubleshooting steps',
       'Auto-generated Update Set XML for manual import as deployment fallback',
-      'Widget-specific deployment logic tailored for Service Portal requirements'
+      'Widget-specific deployment logic tailored for Service Portal requirements',
     ],
     '1.1.33': [
       'CRITICAL: Fixed MCP tool data consistency issues',
@@ -797,112 +817,112 @@ export const VERSION_INFO = {
       'Enhanced getBySysId with retry logic and fallback search for new records',
       'Added verification system to editBySysId for data consistency',
       'New snow_sync_data_consistency tool for automatic data healing',
-      'Improved error handling and troubleshooting guidance'
+      'Improved error handling and troubleshooting guidance',
     ],
     '1.1.32': [
       'MAJOR: Fixed all critical deployment issues identified in feedback',
       'Added comprehensive sys_id tracking and validation system',
       'Implemented deployment fallback strategies for 403 errors',
       'Automatic update set management with emergency fallbacks',
-      'Real-time artifact consistency validation and debugging tools'
+      'Real-time artifact consistency validation and debugging tools',
     ],
     '1.1.31': [
       'Added direct sys_id lookup tools to servicenow-intelligent MCP',
       'Vastly improved search query intelligence - extracts artifact names properly',
       'Fixed widget server script deployment by adding sys_id based editing',
-      'Much more reliable artifact finding and editing capabilities'
+      'Much more reliable artifact finding and editing capabilities',
     ],
     '1.1.30': [
       'Fixed servicenow-flow-composer MCP server compatibility issues',
       'Enhanced error handling and runtime stability',
       'Improved MCP server initialization and discovery',
-      'All 13 MCP servers now fully operational and tested'
+      'All 13 MCP servers now fully operational and tested',
     ],
     '1.1.29': [
       'Added snow-flow and ruv-swarm MCP servers to configuration',
       'Snow-flow MCP provides advanced orchestration capabilities',
       'Ruv-swarm MCP enables distributed swarm coordination',
-      'Expanded to 13 total MCP servers for comprehensive development'
+      'Expanded to 13 total MCP servers for comprehensive development',
     ],
     '1.1.28': [
       'Restored MCP activation scripts in init command',
       'Init creates activation scripts without auto-starting Claude Code',
       'Better balance - MCP preparation during init, activation when needed',
-      'Cross-platform activation scripts (Windows/Mac/Linux)'
+      'Cross-platform activation scripts (Windows/Mac/Linux)',
     ],
     '1.1.27': [
       'Removed Claude Code auto-start from init command for cleaner initialization',
       'Added automatic MCP server activation to swarm and create-flow commands',
       'Claude Code now starts with MCP servers when using operational commands',
-      'Improved user experience - MCP only activates when actually needed'
+      'Improved user experience - MCP only activates when actually needed',
     ],
     '1.1.26': [
       'Fixed MCP configuration schema error - using mcpServers instead of servers',
       'Corrected .mcp.json format to match Claude Code requirements',
-      'Resolved "Invalid MCP configuration" error during auto-activation'
+      'Resolved "Invalid MCP configuration" error during auto-activation',
     ],
     '1.1.25': [
       'Automatic MCP server activation with claude --mcp-config',
       'Interactive prompt to auto-start Claude Code with MCP servers',
       'Cross-platform activation scripts (Mac/Linux/Windows)',
-      'Direct Claude Code integration without manual approval steps'
+      'Direct Claude Code integration without manual approval steps',
     ],
     '1.1.24': [
       'Added MCP debug command for troubleshooting: snow-flow mcp debug',
       'Improved MCP server path resolution for global installations',
       'Enhanced init output with detailed debug information',
-      'Better instructions for Claude Code MCP server approval'
+      'Better instructions for Claude Code MCP server approval',
     ],
     '1.1.23': [
       'Fixed .npmignore to include essential .claude config files',
       'Added .claude/mcp-config.json generation for additional MCP configuration',
       'Created .claude.mcp-config.template for proper MCP server setup',
-      'Ensured all MCP server start scripts are included in npm package'
+      'Ensured all MCP server start scripts are included in npm package',
     ],
     '1.1.22': [
       'Verified MCP server registration works correctly with global npm installation',
       'Confirmed .claude/settings.json properly includes all 11 ServiceNow MCP servers',
       'Tested and validated MCP paths are correctly resolved for global installations',
-      'Ready for production use with Claude Code MCP integration'
+      'Ready for production use with Claude Code MCP integration',
     ],
     '1.1.21': [
       'Added .claude.settings.template to npm package',
       'Template file ensures settings.json is properly created from npm install',
-      'Fixed .npmignore to include the template file'
+      'Fixed .npmignore to include the template file',
     ],
     '1.1.20': [
       'FINAL FIX: Actually creates .claude/settings.json with enabledMcpjsonServers',
       'MCP servers now truly visible in Claude Code after init',
-      'Fixed the missing settings.json generation in init command'
+      'Fixed the missing settings.json generation in init command',
     ],
     '1.1.19': [
       'Fixed MCP servers visibility in Claude Code by adding enabledMcpjsonServers',
       'All 11 ServiceNow MCP servers now automatically enabled in .claude/settings.json',
-      'MCP servers work immediately after init without manual registration'
+      'MCP servers work immediately after init without manual registration',
     ],
     '1.1.18': [
       'Fixed MCP server registration using claude mcp add-json',
       'Proper JSON format for MCP server configuration',
-      'Improved compatibility with Claude Code MCP commands'
+      'Improved compatibility with Claude Code MCP commands',
     ],
     '1.1.17': [
       'Automatic MCP server registration with Claude Code',
       'Added claude mcp add commands to init process',
-      'Better error handling for MCP registration'
+      'Better error handling for MCP registration',
     ],
     '1.1.15': [
       'Fixed MCP server paths for global npm installations',
-      'MCP servers now correctly load from global npm directory'
+      'MCP servers now correctly load from global npm directory',
     ],
     '1.1.14': [
       'Fixed version display in global installation',
-      'Dynamic version control instead of hardcoded values'
+      'Dynamic version control instead of hardcoded values',
     ],
     '1.1.4': [
       'Fixed MCP server setup for global npm installations',
       'Automatic .mcp.json generation with correct paths',
       'Claude Code automatically loads MCP servers from .mcp.json',
-      'All 11 ServiceNow MCP servers properly configured'
+      'All 11 ServiceNow MCP servers properly configured',
     ],
     '1.1.0': [
       'Enhanced Flow Composer MCP with natural language flow creation',
@@ -912,8 +932,8 @@ export const VERSION_INFO = {
       'Composite templates for complete systems',
       'Natural language understanding for artifact generation',
       'Update Set management for all deployments',
-      'Neo4j graph memory for intelligent artifact understanding'
-    ]
+      'Neo4j graph memory for intelligent artifact understanding',
+    ],
   },
   changelog: {
     '1.1.90': {
@@ -932,8 +952,8 @@ export const VERSION_INFO = {
         'QUEEN AGENT INTEGRATION: Seamlessly integrated into Queen Agent workflow - automatically detects opportunities',
         'GRACEFUL FALLBACKS: Falls back to sequential execution when parallelization not beneficial or available',
         'COMPREHENSIVE PLANNING: Creates detailed execution plans with agent workloads, timelines, and coordination',
-        'BREAKTHROUGH ACHIEVEMENT: Transforms single-agent sequential work into optimized multi-agent parallel execution'
-      ]
+        'BREAKTHROUGH ACHIEVEMENT: Transforms single-agent sequential work into optimized multi-agent parallel execution',
+      ],
     },
     '1.1.89': {
       date: '2025-01-22',
@@ -945,8 +965,8 @@ export const VERSION_INFO = {
         'DEBUG LOGGING: Added detailed debug logging for better diagnostics of table discovery operations',
         'QUEEN AGENT RESILIENCE: Enhanced Queen Agent ability to continue operation when ServiceNow table details are partially unavailable',
         'ERROR RECOVERY: Better error recovery for ServiceNow API communication issues and missing response properties',
-        'TYPESCRIPT FIXES: Fixed TypeScript compilation error with proper variable declaration in table discovery method'
-      ]
+        'TYPESCRIPT FIXES: Fixed TypeScript compilation error with proper variable declaration in table discovery method',
+      ],
     },
     '1.1.88': {
       date: '2025-01-22',
@@ -954,7 +974,7 @@ export const VERSION_INFO = {
         'REVOLUTIONARY: Intelligent Gap Analysis Engine - analyzes objectives for ALL required ServiceNow configurations',
         'USER REQUEST: "alle mogelijke soorten handelingen die nodig zouden zijn om een objective te bereiken die vallen buiten de standaard mcps" - FULLY IMPLEMENTED',
         'REQUIREMENTS ANALYZER: AI-powered parser that identifies 60+ types of ServiceNow configurations from natural language',
-        'MCP COVERAGE ANALYZER: Comprehensive mapping system showing what MCP tools can handle vs missing gaps',  
+        'MCP COVERAGE ANALYZER: Comprehensive mapping system showing what MCP tools can handle vs missing gaps',
         'AUTO-RESOLUTION ENGINE: Attempts automatic configuration of system properties, navigation, authentication, database indexes, and more',
         'MANUAL INSTRUCTIONS GENERATOR: Creates detailed step-by-step guides with role requirements, warnings, and verification steps',
         'INTELLIGENT DETECTION: Detects system properties, LDAP configs, OAuth providers, navigation modules, form layouts, ACL rules, data policies',
@@ -963,8 +983,8 @@ export const VERSION_INFO = {
         'COMPREHENSIVE COVERAGE: Handles user permissions, database indexes, email templates, scheduled jobs, ACL rules, UI actions, import sets, transforms, and 50+ other configurations',
         'AUTOMATIC FALLBACKS: When automation fails, provides comprehensive manual instructions with environment-specific guidance',
         'PERFECT WORKFLOW: Authentication → Discovery → Gap Analysis → MCP Tools → Auto-Resolution → Manual Instructions',
-        'BEYOND MCP SCOPE: Finally addresses all ServiceNow configurations that fall outside standard MCP tool capabilities'
-      ]
+        'BEYOND MCP SCOPE: Finally addresses all ServiceNow configurations that fall outside standard MCP tool capabilities',
+      ],
     },
     '1.1.87': {
       date: '2025-01-22',
@@ -978,8 +998,8 @@ export const VERSION_INFO = {
         'CONFLICT PREVENTION: Checks if dependencies already loaded to prevent duplicates',
         'QUEEN AGENT INTEGRATION: Built into widget deployment workflow - no manual steps needed',
         'COMPREHENSIVE TESTING: Full test suite for dependency detection and theme management',
-        'INTELLIGENT PROMPTS: When auto-permissions disabled, provides clear dependency installation prompts'
-      ]
+        'INTELLIGENT PROMPTS: When auto-permissions disabled, provides clear dependency installation prompts',
+      ],
     },
     '1.1.86': {
       date: '2025-01-22',
@@ -991,8 +1011,8 @@ export const VERSION_INFO = {
         'CONTEXT AWARENESS: Discovers related tables based on objective context (e.g., "catalog" → sc_cat_item, sc_category)',
         'AGENT COORDINATION: All agents receive discovered table schemas to use exact field names like "short_description"',
         'MEMORY INTEGRATION: Stores discovered schemas in memory for all agents to access during execution',
-        'DISCOVERY EXAMPLES: Clear documentation showing how objectives map to table discovery patterns'
-      ]
+        'DISCOVERY EXAMPLES: Clear documentation showing how objectives map to table discovery patterns',
+      ],
     },
     '1.1.84': {
       date: '2025-01-22',
@@ -1004,8 +1024,8 @@ export const VERSION_INFO = {
         'MEMORY PATTERNS: successful-deployments.json and workflow-templates.json for learning patterns',
         'QUICK START GUIDE: QUICK_START.md provides 5-minute onboarding experience',
         'MCP-FIRST WORKFLOW: Init ensures CLAUDE.md contains mandatory authentication workflow',
-        'IMPROVED OUTPUT: Init command now clearly shows all documentation created for users'
-      ]
+        'IMPROVED OUTPUT: Init command now clearly shows all documentation created for users',
+      ],
     },
     '1.1.83': {
       date: '2025-01-22',
@@ -1015,8 +1035,8 @@ export const VERSION_INFO = {
         'NPM PACKAGE INTEGRITY: Fresh npm package with properly compiled version information',
         'CLI VERSION FIXED: snow-flow --version now correctly shows 1.1.83 instead of cached old version',
         'TESTING READY: Package ready for comprehensive testing of makeRequest fixes',
-        'BUILD CHAIN VERIFIED: Complete source → build → publish workflow validated'
-      ]
+        'BUILD CHAIN VERIFIED: Complete source → build → publish workflow validated',
+      ],
     },
     '1.1.82': {
       date: '2025-01-22',
@@ -1026,21 +1046,21 @@ export const VERSION_INFO = {
         'NPM PACKAGE DEPLOYMENT: Published complete package with synchronized version across all components',
         'MAKEQUEST INVESTIGATION: Comprehensive resolution of phantom makeRequest calls in MCP tools',
         'TESTING READY: Package available for installation and testing in separate environments',
-        'COMPLETE WORKFLOW: From investigation → fix → version sync → npm publish → testing'
-      ]
+        'COMPLETE WORKFLOW: From investigation → fix → version sync → npm publish → testing',
+      ],
     },
     '1.1.81': {
       date: '2025-01-22',
       changes: [
         'MAKEQUEST ERROR RESOLVED: Fixed phantom makeRequest calls in flow-composer MCP tools',
         'INVESTIGATION COMPLETE: Systematic _analysis revealed flow-composer already used direct ServiceNowClient',
-        'CONSISTENT MCP PATTERN: Verified all MCP servers follow same direct client structure as working tools',  
+        'CONSISTENT MCP PATTERN: Verified all MCP servers follow same direct client structure as working tools',
         'AUTHENTICATION CONSISTENCY: Enhanced OAuth authentication flow across all MCP servers',
         'ERROR HANDLING IMPROVED: Added comprehensive makeRequest method support to all client classes',
         'MCP PROTOCOL DEBUGGING: Better error tracing and debugging capabilities in MCP communication layer',
         'NPM PACKAGE READY: Published v1.1.81 to npm registry for testing in separate environments',
-        'DEPLOYMENT RELIABILITY: Resolved issues that prevented flow creation via MCP tools in Claude Code'
-      ]
+        'DEPLOYMENT RELIABILITY: Resolved issues that prevented flow creation via MCP tools in Claude Code',
+      ],
     },
     '1.1.80': {
       date: '2025-01-22',
@@ -1056,8 +1076,8 @@ export const VERSION_INFO = {
         'AGENT-SPECIFIC WORKFLOWS: Each agent type has tailored authentication and discovery instructions',
         'MEMORY INTEGRATION: All plans stored in memory for future automated deployment',
         'NO MORE LOCAL FILES: Eliminated direct file creation - ServiceNow-first development is mandatory',
-        'USER FEEDBACK ADDRESSED: Agents no longer create local files when MCP tools are available'
-      ]
+        'USER FEEDBACK ADDRESSED: Agents no longer create local files when MCP tools are available',
+      ],
     },
     '1.1.74': {
       date: '2025-01-21',
@@ -1071,8 +1091,8 @@ export const VERSION_INFO = {
         'FALLBACK STRATEGIES: Uses predefined actions when ServiceNow search returns inappropriate results',
         'ENHANCED VALIDATION: Only accepts actions that actually match search terms and make sense',
         'REAL DEPLOYMENTS: Flows now deploy with proper ServiceNow action types and configurations',
-        'IMPROVED FLOW STRUCTURE: Activities now correctly linked to appropriate flow actions'
-      ]
+        'IMPROVED FLOW STRUCTURE: Activities now correctly linked to appropriate flow actions',
+      ],
     },
     '1.1.73': {
       date: '2025-01-21',
@@ -1089,8 +1109,8 @@ export const VERSION_INFO = {
         '75% REDUCTION: From 4+ deployment tools down to 1 unified snow_deploy tool',
         'SAME FUNCTIONALITY: All features preserved but through cleaner, simpler interface',
         'BETTER UX: Users no longer confused by multiple overlapping deployment tools',
-        'CLEAN CODEBASE: Reduced complexity while maintaining full backward compatibility'
-      ]
+        'CLEAN CODEBASE: Reduced complexity while maintaining full backward compatibility',
+      ],
     },
     '1.1.72': {
       date: '2025-01-21',
@@ -1108,8 +1128,8 @@ export const VERSION_INFO = {
         'PERFECT WORKFLOW GUARANTEE: Never returns "failure zonder plan" - always provides working solution',
         'COMPREHENSIVE ERROR RECOVERY: Multiple fallback strategies ensure successful deployment or clear manual path',
         'ONE COMMAND SOLUTION: snow_unified_deploy({type: "flow", instruction: "approval flow"}) handles everything',
-        'WORKFLOW IMPROVEMENTS: Addresses all issues from comprehensive user feedback systematically'
-      ]
+        'WORKFLOW IMPROVEMENTS: Addresses all issues from comprehensive user feedback systematically',
+      ],
     },
     '1.1.71': {
       date: '2025-01-21',
@@ -1123,8 +1143,8 @@ export const VERSION_INFO = {
         'PARAMETER DESCRIPTIONS: deploy_immediately parameter description updated with clear warnings',
         'MCP TOOL RESPONSES: orchestration tools now include mode and warning fields',
         'TRANSPARENT BEHAVIOR: Users always know if real artifacts will be created or if it is _analysis only',
-        'SAFETY IMPROVEMENTS: Better user awareness prevents accidental deployment in production environments'
-      ]
+        'SAFETY IMPROVEMENTS: Better user awareness prevents accidental deployment in production environments',
+      ],
     },
     '1.1.70': {
       date: '2025-01-21',
@@ -1139,8 +1159,8 @@ export const VERSION_INFO = {
         'ACTIVITY EXTRACTION: Correctly parses activities from latest_snapshot JSON for modern flows',
         'TESTING RECOMMENDATIONS: Enhanced guidance based on flow type (modern vs legacy)',
         'ALTERNATIVE TOOLS: Suggests snow_test_flow_with_mock and snow_find_artifact as fallbacks',
-        'URL GENERATION: Provides correct URLs for both Flow Designer and Legacy Workflow IDE'
-      ]
+        'URL GENERATION: Provides correct URLs for both Flow Designer and Legacy Workflow IDE',
+      ],
     },
     '1.1.69': {
       date: '2025-01-21',
@@ -1156,8 +1176,8 @@ export const VERSION_INFO = {
         'DUPLICATE PREVENTION: Checks if users/groups exist before creation to prevent duplicates',
         'PROPER TABLE USAGE: Direct operations on sys_user_group table, not CMDB search',
         'COMPREHENSIVE RESPONSES: Returns sys_ids, URLs, and detailed status for all operations',
-        'ERROR HANDLING: Clear permission requirements and troubleshooting guidance'
-      ]
+        'ERROR HANDLING: Clear permission requirements and troubleshooting guidance',
+      ],
     },
     '1.1.68': {
       date: '2025-01-21',
@@ -1169,8 +1189,8 @@ export const VERSION_INFO = {
         'GENERALIZED DELIVERABLES: Removed specific file lists, now references CLAUDE.md for details',
         'BRAND CONSISTENCY: Updated all CLAUDE.md files to use snow-flow instead of claude-flow',
         'IMPROVED DEVELOPER EXPERIENCE: Cleaner, more concise prompts that defer to documentation',
-        'MAINTAINED TEAM-BASED ARCHITECTURE: Still promotes specialized teams but without technical details'
-      ]
+        'MAINTAINED TEAM-BASED ARCHITECTURE: Still promotes specialized teams but without technical details',
+      ],
     },
     '1.1.64': {
       date: '2025-01-21',
@@ -1180,8 +1200,8 @@ export const VERSION_INFO = {
         'IMPROVED PATH DETECTION: Better search algorithm for finding source files in dist/ and src/',
         'SPARC COMMANDS VERIFIED: All team and specialist commands working correctly as documented',
         'COMPLETE TEAM FEATURES: Full team-based SPARC architecture documentation included',
-        'REMOVED DEBUG LOGS: Cleaned up init command output for better user experience'
-      ]
+        'REMOVED DEBUG LOGS: Cleaned up init command output for better user experience',
+      ],
     },
     '1.1.63': {
       date: '2025-01-21',
@@ -1191,8 +1211,8 @@ export const VERSION_INFO = {
         'BRAND CONSISTENCY: Replaced all claude-flow references with snow-flow throughout codebase',
         'DOCUMENTATION SYNC: Users now get complete up-to-date CLAUDE.md with team features',
         'IMPROVED INITIALIZATION: Better fallback when CLAUDE.md source cannot be found',
-        'VERSION MANAGEMENT: Comprehensive search paths for finding source CLAUDE.md file'
-      ]
+        'VERSION MANAGEMENT: Comprehensive search paths for finding source CLAUDE.md file',
+      ],
     },
     '1.1.62': {
       date: '2025-01-21',
@@ -1213,8 +1233,8 @@ export const VERSION_INFO = {
         'REAL-WORLD ALIGNMENT: Teams mirror actual software development structures',
         'INTELLIGENT COORDINATION: Sequential, parallel, or hybrid execution patterns',
         'ERROR RECOVERY: Graceful handling of specialist failures with fallback strategies',
-        'BACKWARD COMPATIBLE: All existing commands continue to work unchanged'
-      ]
+        'BACKWARD COMPATIBLE: All existing commands continue to work unchanged',
+      ],
     },
     '1.1.53': {
       date: '2025-01-20',
@@ -1236,8 +1256,8 @@ export const VERSION_INFO = {
         '  - ServiceNow Flow Composer functionality restored',
         '  - Flow creation tools now available via MCP tools',
         'PACKAGE INTEGRITY: npm package now includes all required compiled dependencies',
-        'DEPLOYMENT VERIFICATION: All MCP servers tested and confirmed working after npm install'
-      ]
+        'DEPLOYMENT VERIFICATION: All MCP servers tested and confirmed working after npm install',
+      ],
     },
     '1.1.52': {
       date: '2025-01-20',
@@ -1256,8 +1276,8 @@ export const VERSION_INFO = {
         '  - Real-world use cases and examples',
         'CONSISTENCY: New users get identical documentation to project maintainers',
         'INIT IMPROVEMENT: snow-flow init --sparc now creates production-ready documentation environment',
-        'NO MORE EMPTY DOCS: Both major documentation files now comprehensive from day one'
-      ]
+        'NO MORE EMPTY DOCS: Both major documentation files now comprehensive from day one',
+      ],
     },
     '1.1.51': {
       date: '2025-01-20',
@@ -1275,8 +1295,8 @@ export const VERSION_INFO = {
         'TRIGGER HANDLING: Enhanced trigger generation for nested structures',
         'ACTIVITY COUNT FIX: Validation report now shows correct activity count from processed structure',
         'COMPREHENSIVE ERROR RECOVERY: Handles all Flow Designer JSON format variations seamlessly',
-        'USER ISSUE RESOLVED: The specific JSON format that was failing now validates and deploys successfully'
-      ]
+        'USER ISSUE RESOLVED: The specific JSON format that was failing now validates and deploys successfully',
+      ],
     },
     '1.1.50': {
       date: '2025-01-20',
@@ -1295,8 +1315,8 @@ export const VERSION_INFO = {
         'USER ISSUE RESOLVED: Basic template (claude.md super summier) replaced with production-ready guide',
         'INIT COMMAND IMPROVEMENT: snow-flow init --sparc now provides complete development environment',
         'DOCUMENTATION CONSISTENCY: Init template matches project documentation exactly',
-        'NEW USER EXPERIENCE: Complete Snow-Flow capabilities visible from first init'
-      ]
+        'NEW USER EXPERIENCE: Complete Snow-Flow capabilities visible from first init',
+      ],
     },
     '1.1.49': {
       date: '2025-01-20',
@@ -1312,8 +1332,8 @@ export const VERSION_INFO = {
         'BACKWARDS COMPATIBILITY: Existing flows with "activities" continue to work unchanged',
         'ADDRESSES USER FEEDBACK: "Missing or invalid activities array" error now impossible',
         'The original failure: "steps" vs "activities" mismatch - PERMANENTLY SOLVED',
-        'Flow deployment validation now succeeds with both old and new JSON formats'
-      ]
+        'Flow deployment validation now succeeds with both old and new JSON formats',
+      ],
     },
     '1.1.48': {
       date: '2025-01-20',
@@ -1335,8 +1355,8 @@ export const VERSION_INFO = {
         'Intelligent trigger mapping: record_created → after, record_updated → after, manual → async',
         'Preserves flow variables and converts them to Business Rule script variables',
         'ZERO ERRORS: All Flow Designer tools now guaranteed to work or provide intelligent alternatives',
-        'Addresses ALL user feedback systematically: Flow failures, session errors, testing issues, schema problems'
-      ]
+        'Addresses ALL user feedback systematically: Flow failures, session errors, testing issues, schema problems',
+      ],
     },
     '1.1.47': {
       date: '2025-01-20',
@@ -1350,8 +1370,8 @@ export const VERSION_INFO = {
         'Comprehensive reporting with detailed breakdown by artifact type',
         'Safe request handling - cancels instead of deletes for audit purposes',
         'Error handling with detailed troubleshooting guidance',
-        'Addresses user feedback: test catalog items remaining in Update Sets'
-      ]
+        'Addresses user feedback: test catalog items remaining in Update Sets',
+      ],
     },
     '1.1.46': {
       date: '2025-01-20',
@@ -1365,8 +1385,8 @@ export const VERSION_INFO = {
         'DEPLOYMENT FIXES: Resolved "Content not found. Subflow cannot be found" error',
         'Added extensive logging for flow type detection and deployment',
         'Addresses user feedback: "hij maakt een subflow aan in plaats van een flow"',
-        'Ensures consistent flow deployment across all creation paths'
-      ]
+        'Ensures consistent flow deployment across all creation paths',
+      ],
     },
     '1.1.45': {
       date: '2025-01-20',
@@ -1379,8 +1399,8 @@ export const VERSION_INFO = {
         'Optional test link creation with sample request for verification',
         'Comprehensive error handling and troubleshooting guidance',
         'Addresses user request for direct catalog-flow linking capabilities',
-        'Perfect for equipment provisioning and automated fulfillment workflows'
-      ]
+        'Perfect for equipment provisioning and automated fulfillment workflows',
+      ],
     },
     '1.1.44': {
       date: '2025-01-20',
@@ -1394,8 +1414,8 @@ export const VERSION_INFO = {
         'Detailed test reporting with execution status, timing, and errors',
         'Optional cleanup removes all test data after execution',
         'Solves user feedback: "Flow test tool gaf 404 error"',
-        'Enables flow verification: "Kon niet verifiëren of flow werkt"'
-      ]
+        'Enables flow verification: "Kon niet verifiëren of flow werkt"',
+      ],
     },
     '1.1.43': {
       date: '2025-01-20',
@@ -1412,8 +1432,8 @@ export const VERSION_INFO = {
         'MEMORY CLARIFICATION: Shared memory feature uses existing snow-flow memory system',
         'Fixed duplicate catalog table entries in operations MCP',
         'Fixed TypeScript type errors in platform development MCP',
-        'Fixed ensureUpdateSet parameter mismatch in bulk deploy'
-      ]
+        'Fixed ensureUpdateSet parameter mismatch in bulk deploy',
+      ],
     },
     '1.1.42': {
       date: '2025-01-19',
@@ -1427,8 +1447,8 @@ export const VERSION_INFO = {
         'ENHANCED PROMPT: Shows which intelligent features are active and what will happen',
         'UNIFIED EXPERIENCE: één command voor alles - one command for everything!',
         'Use --no- prefix to disable features (e.g., --no-auto-deploy for manual control)',
-        'Documentation updated in README.md and CLAUDE.md files with examples'
-      ]
+        'Documentation updated in README.md and CLAUDE.md files with examples',
+      ],
     },
     '1.1.41': {
       date: '2025-01-19',
@@ -1445,8 +1465,8 @@ export const VERSION_INFO = {
         'Real-time response from ServiceNow APIs for all deployment operations',
         'Live URL generation after successful deployment with actual confirmation',
         'Intelligent rollback suggestions and automated safety nets',
-        'Complete ServiceNow Development Copilot experience with live instance integration'
-      ]
+        'Complete ServiceNow Development Copilot experience with live instance integration',
+      ],
     },
     '1.1.40': {
       date: '2025-01-19',
@@ -1459,8 +1479,8 @@ export const VERSION_INFO = {
         'Fixed CLI chain: options.maxAgents → analyzeObjective → AgentDetector.analyzeTask → determineSupportingAgents',
         'Intelligent fallback: includes essential agents (tester, orchestrator) while respecting user limits',
         'User feedback solved: "statisch maximaal 2 agents gespawnd worden voor een swarm"',
-        '--max-agents=5 now truly spawns up to 5 agents instead of being limited to 2 by confidence filter'
-      ]
+        '--max-agents=5 now truly spawns up to 5 agents instead of being limited to 2 by confidence filter',
+      ],
     },
     '1.1.39': {
       date: '2025-01-19',
@@ -1473,8 +1493,8 @@ export const VERSION_INFO = {
         'Added pattern matching for complex phrases: "service portal", "business rule", "script include"',
         'Context-aware detection combines creation intent with artifact hints',
         'Multilingual support for requiresUpdateSet and requiresApplication detection',
-        'Solved user issue: ServiceNow Artifacts field showing empty in swarm startup output'
-      ]
+        'Solved user issue: ServiceNow Artifacts field showing empty in swarm startup output',
+      ],
     },
     '1.1.38': {
       date: '2025-01-19',
@@ -1486,8 +1506,8 @@ export const VERSION_INFO = {
         'Updated CLI display to show Requested | Estimated | Actual agent counts for transparency',
         'Solved user issue: "hard coded max agents = 2" - now properly uses --max-agents=5',
         'System now calculates: 1 primary + supporting agents (within user limit) + required agents',
-        'Required agents (Update Set Manager, Application Manager) are preserved regardless of limit'
-      ]
+        'Required agents (Update Set Manager, Application Manager) are preserved regardless of limit',
+      ],
     },
     '1.1.37': {
       date: '2025-01-19',
@@ -1500,8 +1520,8 @@ export const VERSION_INFO = {
         'Enhanced error handling with specific recommendations for URL, OAuth, and role issues',
         'Improved fallback mechanisms for deployment failures',
         'Better troubleshooting guidance with actionable steps',
-        'URL validation and OAuth scope checking built into diagnostics'
-      ]
+        'URL validation and OAuth scope checking built into diagnostics',
+      ],
     },
     '1.1.36': {
       date: '2025-01-19',
@@ -1516,8 +1536,8 @@ export const VERSION_INFO = {
         'Enhanced ServiceNowClient with createSubflow and createFlowAction methods',
         'Added setCurrentUpdateSet for Update Set management',
         'Improved flow deployment with validation before deploy option',
-        'Better error messages and troubleshooting for flow deployment issues'
-      ]
+        'Better error messages and troubleshooting for flow deployment issues',
+      ],
     },
     '1.1.35': {
       date: '2025-01-19',
@@ -1529,8 +1549,8 @@ export const VERSION_INFO = {
         'Automatic detection of Chart.js and other library dependencies',
         'Integration _analysis between template variables, client bindings, and server data',
         'Detailed recommendations for improving widget code quality',
-        'Based on user feedback from successful widget deployment experience'
-      ]
+        'Based on user feedback from successful widget deployment experience',
+      ],
     },
     '1.1.34': {
       date: '2025-01-19',
@@ -1542,8 +1562,8 @@ export const VERSION_INFO = {
         'Comprehensive error diagnostics with specific OAuth and permission troubleshooting',
         'Auto-generated Update Set XML for manual import when direct deployment fails',
         'Widget-specific deployment logic with Service Portal table requirements',
-        'Enhanced fallback strategies with multiple deployment options'
-      ]
+        'Enhanced fallback strategies with multiple deployment options',
+      ],
     },
     '1.1.33': {
       date: '2025-01-19',
@@ -1555,8 +1575,8 @@ export const VERSION_INFO = {
         'Added missing activateUpdateSet method to ServiceNowClient',
         'New snow_sync_data_consistency tool for automatic data healing and cache refresh',
         'Improved error messages with specific troubleshooting guidance',
-        'Progressive delay retry mechanism for handling ServiceNow indexing delays'
-      ]
+        'Progressive delay retry mechanism for handling ServiceNow indexing delays',
+      ],
     },
     '1.1.32': {
       date: '2025-01-19',
@@ -1567,8 +1587,8 @@ export const VERSION_INFO = {
         'Enhanced update set management with auto-activation and emergency fallbacks',
         'Added snow_validate_sysid and snow_deployment_debug tools for troubleshooting',
         'Real-time validation of deployed artifacts with inconsistency detection',
-        'Comprehensive error handling and recovery strategies for 403 errors'
-      ]
+        'Comprehensive error handling and recovery strategies for 403 errors',
+      ],
     },
     '1.1.31': {
       date: '2025-01-19',
@@ -1577,8 +1597,8 @@ export const VERSION_INFO = {
         'Implemented smart identifier extraction - removes artifact type keywords properly',
         'Fixed search queries to extract "incident bar chart" from "incident bar chart widget"',
         'Direct sys_id based editing is now much more reliable than text-based search',
-        'Solved the empty script field issue in widget deployment'
-      ]
+        'Solved the empty script field issue in widget deployment',
+      ],
     },
     '1.1.30': {
       date: '2025-01-19',
@@ -1586,16 +1606,16 @@ export const VERSION_INFO = {
         'Fixed servicenow-flow-composer MCP server runtime issues',
         'Enhanced error handling in all MCP server modules',
         'Improved stability and reliability of MCP server operations',
-        'Verified all 13 MCP servers are working correctly'
-      ]
+        'Verified all 13 MCP servers are working correctly',
+      ],
     },
     '1.1.29': {
       date: '2025-01-19',
       changes: [
         'Both servers integrate with Claude Code for enhanced orchestration',
         'Updated enabledMcpjsonServers to include snow-flow and ruv-swarm',
-        'Total of 13 MCP servers now available'
-      ]
+        'Total of 13 MCP servers now available',
+      ],
     },
     '1.1.28': {
       date: '2025-01-19',
@@ -1604,8 +1624,8 @@ export const VERSION_INFO = {
         'Scripts are created but Claude Code is not auto-started',
         'Provides activate-mcp.sh (Unix/Mac) and activate-mcp.bat/.ps1 (Windows)',
         'Users can manually activate MCP servers when ready',
-        'Maintains cleaner init experience while providing activation options'
-      ]
+        'Maintains cleaner init experience while providing activation options',
+      ],
     },
     '1.1.27': {
       date: '2025-01-19',
@@ -1614,8 +1634,8 @@ export const VERSION_INFO = {
         'Added MCP server auto-activation to swarm and create-flow commands',
         'MCP servers now activate only when running operational commands',
         'Investigated external MCP integration - some use different architectures',
-        'Improved initialization flow - cleaner and faster setup'
-      ]
+        'Improved initialization flow - cleaner and faster setup',
+      ],
     },
     '1.1.26': {
       date: '2025-01-19',
@@ -1623,8 +1643,8 @@ export const VERSION_INFO = {
         'Fixed MCP configuration schema validation error in Claude Code',
         'Changed .mcp.json structure from "servers" to "mcpServers" key',
         'Resolved issue preventing Claude Code from auto-starting with MCP servers',
-        'Ensures compatibility with latest Claude Code MCP schema requirements'
-      ]
+        'Ensures compatibility with latest Claude Code MCP schema requirements',
+      ],
     },
     '1.1.25': {
       date: '2025-01-19',
@@ -1632,8 +1652,8 @@ export const VERSION_INFO = {
         'Added automatic MCP server activation using claude --mcp-config flag',
         'Interactive prompt during init to start Claude Code with MCP servers',
         'Created platform-specific activation scripts (.sh for Unix, .bat/.ps1 for Windows)',
-        'Removed manual MCP approval requirement - servers load automatically'
-      ]
+        'Removed manual MCP approval requirement - servers load automatically',
+      ],
     },
     '1.1.24': {
       date: '2025-01-19',
@@ -1641,8 +1661,8 @@ export const VERSION_INFO = {
         'Added snow-flow mcp debug command to troubleshoot MCP configuration',
         'Fixed MCP server path detection in MCPServerManager',
         'Improved init command output with debug paths and approval instructions',
-        'Enhanced error handling and user guidance for MCP activation'
-      ]
+        'Enhanced error handling and user guidance for MCP activation',
+      ],
     },
     '1.1.23': {
       date: '2025-01-19',
@@ -1650,8 +1670,8 @@ export const VERSION_INFO = {
         'Fixed .npmignore blocking critical .claude configuration files',
         'Added support for .claude/mcp-config.json generation',
         'Included all necessary MCP startup scripts in npm package',
-        'Improved MCP server configuration for better Claude Code integration'
-      ]
+        'Improved MCP server configuration for better Claude Code integration',
+      ],
     },
     '1.1.22': {
       date: '2025-01-19',
@@ -1659,8 +1679,8 @@ export const VERSION_INFO = {
         'Final verification of MCP server registration functionality',
         'Tested global npm installation generates correct paths in .mcp.json',
         'Confirmed .claude/settings.json includes all 11 ServiceNow MCP servers',
-        'Production-ready release with full MCP server integration'
-      ]
+        'Production-ready release with full MCP server integration',
+      ],
     },
     '1.1.21': {
       date: '2025-01-19',
@@ -1668,8 +1688,8 @@ export const VERSION_INFO = {
         'Added .claude.settings.template file that gets included in npm package',
         'Fixed .npmignore to include the template file',
         'Template ensures Claude Code settings are properly configured',
-        'Resolves issue where settings worked locally but not from npm'
-      ]
+        'Resolves issue where settings worked locally but not from npm',
+      ],
     },
     '1.1.20': {
       date: '2025-01-19',
@@ -1677,8 +1697,8 @@ export const VERSION_INFO = {
         'FINAL FIX: settings.json now actually created during init command',
         'MCP servers properly enabled in Claude Code via enabledMcpjsonServers',
         'Fixed code that created settings but never wrote it to disk',
-        'All 11 ServiceNow MCP servers now work after npm install -g'
-      ]
+        'All 11 ServiceNow MCP servers now work after npm install -g',
+      ],
     },
     '1.1.19': {
       date: '2025-01-19',
@@ -1686,8 +1706,8 @@ export const VERSION_INFO = {
         'CRITICAL FIX: Added enabledMcpjsonServers to .claude/settings.json',
         'MCP servers now automatically visible in Claude Code without manual steps',
         'All 11 ServiceNow servers properly registered in Claude Code settings',
-        'Fixed the root cause of MCP servers not appearing after npm install'
-      ]
+        'Fixed the root cause of MCP servers not appearing after npm install',
+      ],
     },
     '1.1.18': {
       date: '2025-01-19',
@@ -1695,8 +1715,8 @@ export const VERSION_INFO = {
         'Fixed MCP server registration to use claude mcp add-json command',
         'Corrected JSON format for MCP server configuration',
         'Improved error handling for server registration',
-        'Better compatibility with Claude Code MCP CLI'
-      ]
+        'Better compatibility with Claude Code MCP CLI',
+      ],
     },
     '1.1.17': {
       date: '2025-01-19',
@@ -1704,8 +1724,8 @@ export const VERSION_INFO = {
         'Automatic MCP server registration with Claude Code using claude mcp add',
         'Init command now registers all 11 MCP servers with Claude Code',
         'Better error handling and user feedback for MCP registration',
-        'Servers are registered with project scope for better organization'
-      ]
+        'Servers are registered with project scope for better organization',
+      ],
     },
     '1.1.16': {
       date: '2025-01-19',
@@ -1713,8 +1733,8 @@ export const VERSION_INFO = {
         'Fixed .mcp.json generation to write correct paths after all initialization',
         'Removed .mcp.json files from package to prevent overwriting',
         'Init command now generates .mcp.json with proper global npm paths',
-        'Ensures MCP servers are accessible from any directory after global install'
-      ]
+        'Ensures MCP servers are accessible from any directory after global install',
+      ],
     },
     '1.1.15': {
       date: '2025-01-19',
@@ -1722,16 +1742,16 @@ export const VERSION_INFO = {
         'Fixed MCP server paths for global npm installations',
         'setup-mcp.js now correctly distinguishes between package and project directories',
         'MCP configuration points to correct global npm module paths',
-        'Resolves issue where MCP servers could not be found after npm install -g'
-      ]
+        'Resolves issue where MCP servers could not be found after npm install -g',
+      ],
     },
     '1.1.14': {
       date: '2025-01-19',
       changes: [
         'Fixed version display showing 1.1.0 instead of current version',
         'Replaced all hardcoded version strings with dynamic VERSION constant',
-        'Proper version synchronization across all files'
-      ]
+        'Proper version synchronization across all files',
+      ],
     },
     '1.1.4': {
       date: '2025-01-19',
@@ -1740,8 +1760,8 @@ export const VERSION_INFO = {
         'setup-mcp.js now correctly detects global vs local installation',
         'Init command copies .mcp.json to project directory when needed',
         'Claude Code automatically loads MCP servers from .mcp.json',
-        'Simplified and reliable MCP server registration'
-      ]
+        'Simplified and reliable MCP server registration',
+      ],
     },
     '1.1.0': {
       date: '2025-01-17',
@@ -1750,8 +1770,8 @@ export const VERSION_INFO = {
         'Expanded template system with intelligent variations',
         'Enhanced template engine with NLP capabilities',
         'Added composite templates for complex systems',
-        'Improved ServiceNow artifact discovery and orchestration'
-      ]
+        'Improved ServiceNow artifact discovery and orchestration',
+      ],
     },
     '1.0.0': {
       date: '2025-01-15',
@@ -1760,10 +1780,10 @@ export const VERSION_INFO = {
         'ServiceNow OAuth integration',
         'MCP server support',
         'Basic template system',
-        'SPARC methodology implementation'
-      ]
-    }
-  }
+        'SPARC methodology implementation',
+      ],
+    },
+  },
 };
 
 /**
