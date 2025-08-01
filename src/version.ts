@@ -2,13 +2,23 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.13';
+export const VERSION = '1.4.14';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.14': [
+      '🚀 SNOW-FLOW MCP SERVER: Created complete coordination server replacing claude-flow MCP',
+      '🤖 COORDINATION TOOLS: Includes swarm_init, agent_spawn, task_orchestrate, memory_usage',
+      '🧠 NEURAL FEATURES: Added neural_train, neural_patterns, neural_status tools',
+      '📊 PERFORMANCE TOOLS: Added performance_report, bottleneck_analyze, token_usage',
+      '🔗 GITHUB INTEGRATION: Added github_repo_analyze, github_pr_manage tools',
+      '✨ DYNAMIC AGENTS: Added daa_agent_create, daa_capability_match tools',
+      '📚 MCP DOCUMENTATION: Updated README with complete MCP integration instructions',
+      '✅ FULLY TESTED: All coordination tools tested and working via stdio transport',
+    ],
     '1.4.9': [
       '🔄 DIRECTORY MIGRATION: Migrated all .claude-flow directories to .snow-flow for brand consistency',
       '📁 PROJECT STRUCTURE: Updated Queen memory, MCP memory, and test paths to use .snow-flow',
