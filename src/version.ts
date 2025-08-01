@@ -2,7 +2,7 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.12';
+export const VERSION = '1.4.13';
 
 export const VERSION_INFO = {
   version: VERSION,
@@ -17,6 +17,12 @@ export const VERSION_INFO = {
       '🛡️ SAFE MIGRATION: Original .claude-flow data preserved during migration for safety',
       '🧹 CODE CLEANUP: Replaced all claude-flow references with snow-flow in project paths',
       '📝 MIGRATION UTILITY: New migrate-claude-flow.ts handles automatic data migration',
+    ],
+    '1.4.13': [
+      '📌 VERSION SYNC: Updated version.ts to match package.json version',
+      '✅ VERSION CONSISTENCY: Ensures version.ts and package.json are synchronized',
+      '📚 VERSION HISTORY: Added complete version history for 1.4.10, 1.4.11, and 1.4.12',
+      '🔧 BUILD SYSTEM: Fixed version mismatch between source and package',
     ],
     '1.4.12': [
       '🏷️ COMPLETE BRAND CONSISTENCY: Replaced ALL claude-flow references with snow-flow in CLAUDE.md',
