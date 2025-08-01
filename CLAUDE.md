@@ -5,6 +5,7 @@
 **ABSOLUTE RULE**: ALL operations MUST be concurrent/parallel in a single message:
 
 ### 🔴 MANDATORY CONCURRENT PATTERNS:
+
 1. **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
 2. **Task tool**: ALWAYS spawn ALL agents in ONE message with full instructions
 3. **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
@@ -14,6 +15,7 @@
 ### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
 
 **Examples of CORRECT concurrent execution:**
+
 ```javascript
 // ✅ CORRECT: Everything in ONE message
 [Single Message]:
@@ -31,6 +33,7 @@
 ```
 
 **Examples of WRONG sequential execution:**
+
 ```javascript
 // ❌ WRONG: Multiple messages (NEVER DO THIS)
 Message 1: TodoWrite { todos: [single todo] }
@@ -45,6 +48,7 @@ Message 6: Bash("npm install")
 ### 🎯 CONCURRENT EXECUTION CHECKLIST:
 
 Before sending ANY message, ask yourself:
+
 - ✅ Are ALL related TodoWrite operations batched together?
 - ✅ Are ALL Task spawning operations in ONE message?
 - ✅ Are ALL file operations (Read/Write/Edit) batched together?
@@ -54,6 +58,7 @@ Before sending ANY message, ask yourself:
 If ANY answer is "No", you MUST combine operations into a single message!
 
 ## Project Overview
+
 This project combines the SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with **14 Advanced ServiceNow Features** for systematic Test-Driven Development with AI assistance through Claude-Flow orchestration.
 
 **🚀 Batchtools Optimization Enabled**: This configuration includes optimized prompts and parallel processing capabilities for improved performance and efficiency.
@@ -67,6 +72,7 @@ All features work directly with your ServiceNow instance using OAuth authenticat
 ### **📊 Core Analytics & Performance (Features 1-4)**
 
 #### **1. Smart Batch API Operations (`snow_batch_api`)**
+
 - **80% API call reduction** through intelligent batching
 - **Parallel execution** with transaction support
 - **Query optimization** and result caching
@@ -76,16 +82,22 @@ All features work directly with your ServiceNow instance using OAuth authenticat
 // Execute multiple operations in a single transaction
 snow_batch_api({
   operations: [
-    { operation: 'query', table: 'incident', query: 'state=1', fields: ['number', 'short_description'] },
+    {
+      operation: 'query',
+      table: 'incident',
+      query: 'state=1',
+      fields: ['number', 'short_description'],
+    },
     { operation: 'update', table: 'incident', sys_id: 'xxx', data: { urgency: '1' } },
-    { operation: 'insert', table: 'problem', data: { short_description: 'System issue' } }
+    { operation: 'insert', table: 'problem', data: { short_description: 'System issue' } },
   ],
   parallel: true,
-  transactional: true
-})
+  transactional: true,
+});
 ```
 
 #### **2. Table Relationship Mapping (`snow_get_table_relationships`)**
+
 - **Deep relationship discovery** across table hierarchies
 - **Visual relationship diagrams** (Mermaid format)
 - **Impact analysis** for schema changes
@@ -97,11 +109,12 @@ snow_get_table_relationships({
   table: 'incident',
   max_depth: 3,
   generate_visualization: true,
-  include_counts: true
-})
+  include_counts: true,
+});
 ```
 
 #### **3. Query Performance Analyzer (`snow_analyze_query`)**
+
 - **Query execution analysis** with bottleneck detection
 - **Index recommendations** for performance optimization
 - **Alternative query suggestions**
@@ -113,11 +126,12 @@ snow_analyze_query({
   query: 'state=1^priority<=2^assigned_to.manager=javascript:gs.getUserID()',
   table: 'incident',
   analyze_indexes: true,
-  suggest_optimizations: true
-})
+  suggest_optimizations: true,
+});
 ```
 
 #### **4. Field Usage Intelligence (`snow_analyze_field_usage`)**
+
 - **Comprehensive field usage analysis** across all ServiceNow components
 - **Unused field detection** with deprecation recommendations
 - **Technical debt scoring** and optimization opportunities
@@ -130,13 +144,14 @@ snow_analyze_field_usage({
   analyze_queries: true,
   analyze_reports: true,
   analyze_business_rules: true,
-  unused_threshold_days: 90
-})
+  unused_threshold_days: 90,
+});
 ```
 
 ### **🔄 Migration & Architecture (Features 5-7)**
 
 #### **5. Migration Helper (`snow_create_migration_plan`)**
+
 - **Automated migration planning** with risk assessment
 - **Data transformation scripts** generation
 - **Performance impact estimation**
@@ -150,12 +165,13 @@ snow_create_migration_plan({
   target_table: 'incident',
   target_changes: {
     fields_to_add: [{ name: 'u_severity_score', type: 'integer' }],
-    fields_to_modify: [{ name: 'urgency', new_type: 'choice' }]
-  }
-})
+    fields_to_modify: [{ name: 'urgency', new_type: 'choice' }],
+  },
+});
 ```
 
 #### **6. Deep Table Analysis (`snow_analyze_table_deep`)**
+
 - **Multi-dimensional table analysis** (structure, data quality, performance)
 - **Security and compliance** assessment
 - **Usage pattern analysis** and optimization recommendations
@@ -166,11 +182,12 @@ snow_create_migration_plan({
 snow_analyze_table_deep({
   table_name: 'incident',
   analysis_scope: ['structure', 'data_quality', 'performance', 'security'],
-  generate_recommendations: true
-})
+  generate_recommendations: true,
+});
 ```
 
 #### **7. Code Pattern Detector (`snow_detect_code_patterns`)**
+
 - **Advanced pattern recognition** across all script types
 - **Performance anti-pattern detection**
 - **Security vulnerability scanning**
@@ -181,13 +198,14 @@ snow_analyze_table_deep({
 snow_detect_code_patterns({
   analysis_scope: ['business_rules', 'script_includes', 'workflows'],
   pattern_categories: ['performance', 'security', 'maintainability'],
-  max_scripts: 100
-})
+  max_scripts: 100,
+});
 ```
 
 ### **🔮 AI-Powered Intelligence (Features 8-10)**
 
 #### **8. Predictive Impact Analysis (`snow_predict_change_impact`)**
+
 - **AI-powered change impact prediction**
 - **Risk assessment** with confidence scoring
 - **Dependency chain analysis**
@@ -200,12 +218,13 @@ snow_predict_change_impact({
   target_object: 'incident',
   change_details: {
     field_changes: ['urgency'],
-    new_values: { mandatory: true }
-  }
-})
+    new_values: { mandatory: true },
+  },
+});
 ```
 
 #### **9. Auto Documentation Generator (`snow_generate_documentation`)**
+
 - **Intelligent documentation generation** from code and configuration
 - **Multiple output formats** (Markdown, HTML, PDF)
 - **Relationship diagrams** and architecture documentation
@@ -217,11 +236,12 @@ snow_generate_documentation({
   documentation_scope: ['tables', 'workflows', 'integrations'],
   target_objects: ['incident', 'problem'],
   output_format: 'markdown',
-  include_diagrams: true
-})
+  include_diagrams: true,
+});
 ```
 
 #### **10. Intelligent Refactoring (`snow_refactor_code`)**
+
 - **AI-driven code refactoring** with performance optimization
 - **Modern JavaScript patterns** and best practices
 - **Security hardening** and error handling improvements
@@ -232,13 +252,14 @@ snow_generate_documentation({
 snow_refactor_code({
   refactoring_scope: ['business_rules', 'script_includes'],
   refactoring_goals: ['performance', 'security', 'readability'],
-  generate_preview: true
-})
+  generate_preview: true,
+});
 ```
 
 ### **⚙️ Process Mining & Workflow (Features 11-14)**
 
 #### **11. Process Mining Engine (`snow_discover_process`)**
+
 - **Real process discovery** from ServiceNow event logs
 - **Process variant analysis** and bottleneck identification
 - **Compliance checking** against reference models
@@ -250,11 +271,12 @@ snow_discover_process({
   process_type: 'incident_management',
   analysis_period: '30d',
   include_variants: true,
-  compliance_analysis: true
-})
+  compliance_analysis: true,
+});
 ```
 
 #### **12. Workflow Reality Analyzer (`snow_analyze_workflow_execution`)**
+
 - **Real workflow execution analysis** vs. designed processes
 - **Performance bottleneck identification**
 - **SLA compliance monitoring**
@@ -266,11 +288,12 @@ snow_analyze_workflow_execution({
   workflow_type: 'incident',
   analysis_period: '7d',
   include_performance_metrics: true,
-  identify_bottlenecks: true
-})
+  identify_bottlenecks: true,
+});
 ```
 
 #### **13. Cross Table Process Discovery (`snow_discover_cross_table_process`)**
+
 - **Multi-table process flow discovery**
 - **Data lineage and transformation tracking**
 - **Integration point analysis**
@@ -282,11 +305,12 @@ snow_discover_cross_table_process({
   start_table: 'incident',
   end_tables: ['problem', 'change_request'],
   analysis_period: '90d',
-  include_data_flow: true
-})
+  include_data_flow: true,
+});
 ```
 
 #### **14. Real Time Process Monitoring (`snow_monitor_process`)**
+
 - **Live process monitoring** with real-time alerts
 - **Anomaly detection** using machine learning
 - **Performance trend analysis**
@@ -298,8 +322,8 @@ snow_monitor_process({
   process_name: 'incident_resolution',
   tables_to_monitor: ['incident', 'task'],
   monitoring_duration: '24h',
-  enable_anomaly_detection: true
-})
+  enable_anomaly_detection: true,
+});
 ```
 
 ### **🚀 Performance Metrics & Benefits**
@@ -322,29 +346,32 @@ snow_monitor_process({
 
 ```bash
 # Quick ServiceNow analysis
-npx claude-flow sparc run servicenow-analyzer "Analyze incident table performance and suggest optimizations"
+npx snow-flow sparc run servicenow-analyzer "Analyze incident table performance and suggest optimizations"
 
 # Comprehensive process mining
-npx claude-flow swarm "Discover all incident management processes and identify bottlenecks" --strategy analysis --auto-deploy
+npx snow-flow swarm "Discover all incident management processes and identify bottlenecks" --strategy analysis --auto-deploy
 
 # Real-time monitoring setup
-npx claude-flow sparc run servicenow-monitor "Setup real-time monitoring for change management processes"
+npx snow-flow sparc run servicenow-monitor "Setup real-time monitoring for change management processes"
 ```
 
 ## SPARC Development Commands
 
 ### Core SPARC Commands
-- `npx claude-flow sparc modes`: List all available SPARC development modes
-- `npx claude-flow sparc run <mode> "<task>"`: Execute specific SPARC mode for a task
-- `npx claude-flow sparc tdd "<feature>"`: Run complete TDD workflow using SPARC methodology
-- `npx claude-flow sparc info <mode>`: Get detailed information about a specific mode
+
+- `npx snow-flow sparc modes`: List all available SPARC development modes
+- `npx snow-flow sparc run <mode> "<task>"`: Execute specific SPARC mode for a task
+- `npx snow-flow sparc tdd "<feature>"`: Run complete TDD workflow using SPARC methodology
+- `npx snow-flow sparc info <mode>`: Get detailed information about a specific mode
 
 ### Batchtools Commands (Optimized)
-- `npx claude-flow sparc batch <modes> "<task>"`: Execute multiple SPARC modes in parallel
-- `npx claude-flow sparc pipeline "<task>"`: Execute full SPARC pipeline with parallel processing
-- `npx claude-flow sparc concurrent <mode> "<tasks-file>"`: Process multiple tasks concurrently
+
+- `npx snow-flow sparc batch <modes> "<task>"`: Execute multiple SPARC modes in parallel
+- `npx snow-flow sparc pipeline "<task>"`: Execute full SPARC pipeline with parallel processing
+- `npx snow-flow sparc concurrent <mode> "<tasks-file>"`: Process multiple tasks concurrently
 
 ### Standard Build Commands
+
 - `npm run build`: Build the project
 - `npm run test`: Run the test suite
 - `npm run lint`: Run linter and format checks
@@ -353,49 +380,61 @@ npx claude-flow sparc run servicenow-monitor "Setup real-time monitoring for cha
 ## SPARC Methodology Workflow (Batchtools Enhanced)
 
 ### 1. Specification Phase (Parallel Analysis)
+
 ```bash
 # Create detailed specifications with concurrent requirements analysis
-npx claude-flow sparc run spec-pseudocode "Define user authentication requirements" --parallel
+npx snow-flow sparc run spec-pseudocode "Define user authentication requirements" --parallel
 ```
+
 **Batchtools Optimization**: Simultaneously analyze multiple requirement sources, validate constraints in parallel, and generate comprehensive specifications.
 
 ### 2. Pseudocode Phase (Concurrent Logic Design)
+
 ```bash
 # Develop algorithmic logic with parallel pattern analysis
-npx claude-flow sparc run spec-pseudocode "Create authentication flow pseudocode" --batch-optimize
+npx snow-flow sparc run spec-pseudocode "Create authentication flow pseudocode" --batch-optimize
 ```
+
 **Batchtools Optimization**: Process multiple algorithm patterns concurrently, validate logic flows in parallel, and optimize data structures simultaneously.
 
 ### 3. Architecture Phase (Parallel Component Design)
+
 ```bash
 # Design system architecture with concurrent component analysis
-npx claude-flow sparc run architect "Design authentication service architecture" --parallel
+npx snow-flow sparc run architect "Design authentication service architecture" --parallel
 ```
+
 **Batchtools Optimization**: Generate multiple architectural alternatives simultaneously, validate integration points in parallel, and create comprehensive documentation concurrently.
 
 ### 4. Refinement Phase (Parallel TDD Implementation)
+
 ```bash
 # Execute Test-Driven Development with parallel test generation
-npx claude-flow sparc tdd "implement user authentication system" --batch-tdd
+npx snow-flow sparc tdd "implement user authentication system" --batch-tdd
 ```
+
 **Batchtools Optimization**: Generate multiple test scenarios simultaneously, implement and validate code in parallel, and optimize performance concurrently.
 
 ### 5. Completion Phase (Concurrent Integration)
+
 ```bash
 # Integration with parallel validation and documentation
-npx claude-flow sparc run integration "integrate authentication with user management" --parallel
+npx snow-flow sparc run integration "integrate authentication with user management" --parallel
 ```
+
 **Batchtools Optimization**: Run integration tests in parallel, generate documentation concurrently, and validate requirements simultaneously.
 
 ## Batchtools Integration Features
 
 ### Parallel Processing Capabilities
+
 - **Concurrent File Operations**: Read, analyze, and modify multiple files simultaneously
 - **Parallel Code Analysis**: Analyze dependencies, patterns, and architecture concurrently
 - **Batch Test Generation**: Create comprehensive test suites in parallel
 - **Concurrent Documentation**: Generate multiple documentation formats simultaneously
 
 ### Performance Optimizations
+
 - **Smart Batching**: Group related operations for optimal performance
 - **Pipeline Processing**: Chain dependent operations with parallel stages
 - **Resource Management**: Efficient utilization of system resources
@@ -404,6 +443,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 ## Performance Benchmarks
 
 ### Batchtools Performance Improvements
+
 - **File Operations**: Up to 300% faster with parallel processing
 - **Code Analysis**: 250% improvement with concurrent pattern recognition
 - **Test Generation**: 400% faster with parallel test creation
@@ -413,6 +453,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 ## Code Style and Best Practices (Batchtools Enhanced)
 
 ### SPARC Development Principles with Batchtools
+
 - **Modular Design**: Keep files under 500 lines, optimize with parallel analysis
 - **Environment Safety**: Never hardcode secrets, validate with concurrent checks
 - **Test-First**: Always write tests before implementation using parallel generation
@@ -420,6 +461,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 - **Parallel Documentation**: Maintain clear, up-to-date documentation with concurrent updates
 
 ### Batchtools Best Practices
+
 - **Parallel Operations**: Use batchtools for independent tasks
 - **Concurrent Validation**: Validate multiple aspects simultaneously
 - **Batch Processing**: Group similar operations for efficiency
@@ -446,7 +488,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 // ✅ CORRECT: Concurrent agent deployment
 [Single Message]:
   - Task("Agent 1", "full instructions", "agent-type-1")
-  - Task("Agent 2", "full instructions", "agent-type-2") 
+  - Task("Agent 2", "full instructions", "agent-type-2")
   - Task("Agent 3", "full instructions", "agent-type-3")
   - Task("Agent 4", "full instructions", "agent-type-4")
   - Task("Agent 5", "full instructions", "agent-type-5")
@@ -455,6 +497,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 ### 📋 Agent Categories & Concurrent Patterns
 
 #### **Core Development Agents**
+
 - `coder` - Implementation specialist
 - `reviewer` - Code quality assurance
 - `tester` - Test creation and validation
@@ -462,16 +505,18 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 - `researcher` - Information gathering
 
 **Concurrent Usage:**
+
 ```bash
 # Deploy full development swarm
 Task("Research requirements", "...", "researcher")
-Task("Plan architecture", "...", "planner") 
+Task("Plan architecture", "...", "planner")
 Task("Implement features", "...", "coder")
 Task("Create tests", "...", "tester")
 Task("Review code", "...", "reviewer")
 ```
 
 #### **Swarm Coordination Agents**
+
 - `hierarchical-coordinator` - Queen-led coordination
 - `mesh-coordinator` - Peer-to-peer networks
 - `adaptive-coordinator` - Dynamic topology
@@ -479,6 +524,7 @@ Task("Review code", "...", "reviewer")
 - `swarm-memory-manager` - Distributed memory
 
 **Concurrent Swarm Deployment:**
+
 ```bash
 # Deploy multi-topology coordination
 Task("Hierarchical coordination", "...", "hierarchical-coordinator")
@@ -487,6 +533,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 ```
 
 #### **Consensus & Distributed Systems**
+
 - `byzantine-coordinator` - Byzantine fault tolerance
 - `raft-manager` - Leader election protocols
 - `gossip-coordinator` - Epidemic dissemination
@@ -496,6 +543,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 - `security-manager` - Cryptographic security
 
 #### **Performance & Optimization**
+
 - `perf-analyzer` - Bottleneck identification
 - `performance-benchmarker` - Performance testing
 - `task-orchestrator` - Workflow optimization
@@ -503,6 +551,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 - `smart-agent` - Intelligent coordination
 
 #### **GitHub & Repository Management**
+
 - `github-modes` - Comprehensive GitHub integration
 - `pr-manager` - Pull request management
 - `code-review-swarm` - Multi-agent code review
@@ -514,6 +563,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 - `multi-repo-swarm` - Cross-repository coordination
 
 #### **SPARC Methodology Agents**
+
 - `sparc-coord` - SPARC orchestration
 - `sparc-coder` - TDD implementation
 - `specification` - Requirements analysis
@@ -522,6 +572,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 - `refinement` - Iterative improvement
 
 #### **Specialized Development**
+
 - `backend-dev` - API development
 - `mobile-dev` - React Native development
 - `ml-developer` - Machine learning
@@ -532,19 +583,22 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 - `base-template-generator` - Boilerplate creation
 
 #### **Testing & Validation**
+
 - `tdd-london-swarm` - Mock-driven TDD
 - `production-validator` - Real implementation validation
 
 #### **Migration & Planning**
+
 - `migration-planner` - System migrations
 - `swarm-init` - Topology initialization
 
 ### 🎯 Concurrent Agent Patterns
 
 #### **Full-Stack Development Swarm (8 agents)**
+
 ```bash
 Task("System architecture", "...", "system-architect")
-Task("Backend APIs", "...", "backend-dev") 
+Task("Backend APIs", "...", "backend-dev")
 Task("Frontend mobile", "...", "mobile-dev")
 Task("Database design", "...", "coder")
 Task("API documentation", "...", "api-docs")
@@ -554,16 +608,18 @@ Task("Production validation", "...", "production-validator")
 ```
 
 #### **Distributed System Swarm (6 agents)**
+
 ```bash
 Task("Byzantine consensus", "...", "byzantine-coordinator")
 Task("Raft coordination", "...", "raft-manager")
-Task("Gossip protocols", "...", "gossip-coordinator") 
+Task("Gossip protocols", "...", "gossip-coordinator")
 Task("CRDT synchronization", "...", "crdt-synchronizer")
 Task("Security management", "...", "security-manager")
 Task("Performance monitoring", "...", "perf-analyzer")
 ```
 
 #### **GitHub Workflow Swarm (5 agents)**
+
 ```bash
 Task("PR management", "...", "pr-manager")
 Task("Code review", "...", "code-review-swarm")
@@ -573,10 +629,11 @@ Task("Workflow automation", "...", "workflow-automation")
 ```
 
 #### **SPARC TDD Swarm (7 agents)**
+
 ```bash
 Task("Requirements spec", "...", "specification")
 Task("Algorithm design", "...", "pseudocode")
-Task("System architecture", "...", "architecture") 
+Task("System architecture", "...", "architecture")
 Task("TDD implementation", "...", "sparc-coder")
 Task("London school tests", "...", "tdd-london-swarm")
 Task("Iterative refinement", "...", "refinement")
@@ -586,25 +643,30 @@ Task("Production validation", "...", "production-validator")
 ### ⚡ Performance Optimization
 
 **Agent Selection Strategy:**
+
 - **High Priority**: Use 3-5 agents max for critical path
 - **Medium Priority**: Use 5-8 agents for complex features
 - **Large Projects**: Use 8+ agents with proper coordination
 
 **Memory Management:**
+
 - Use `memory-coordinator` for cross-agent state
 - Implement `swarm-memory-manager` for distributed coordination
 - Apply `collective-intelligence-coordinator` for decision-making
 
-For more information about SPARC methodology and batchtools optimization, see: 
+For more information about SPARC methodology and batchtools optimization, see:
+
 - SPARC Guide: https://github.com/ruvnet/claude-code-flow/docs/sparc.md
 - Batchtools Documentation: https://github.com/ruvnet/claude-code-flow/docs/batchtools.md
 
 # important-instruction-reminders
+
 Message 3: Task("Agent 2")
 Message 4: Read("file1.js")
 Message 5: Write("output1.js")
 Message 6: Bash("npm install")
 // This is 6x slower and breaks coordination!
+
 ```
 
 ### 🎯 CONCURRENT EXECUTION CHECKLIST:
@@ -709,8 +771,10 @@ If ANY answer is "No", you MUST combine operations into a single message!
 ### ⚡ THE GOLDEN RULE OF SWARMS
 
 ```
+
 If you need to do X operations, they should be in 1 message, not X messages
-```
+
+````
 
 ### 🚨 MANDATORY TODO AND TASK BATCHING
 
@@ -747,7 +811,7 @@ If you need to do X operations, they should be in 1 message, not X messages
   Write "app/package.json"
   Write "app/README.md"
   Write "app/src/index.js"
-```
+````
 
 **❌ WRONG - Multiple Messages (NEVER DO THIS):**
 
@@ -794,8 +858,8 @@ Message 6: Write "package.json"
 ### 1. Add MCP Server (Stdio - No Port Needed)
 
 ```bash
-# Add Claude Flow MCP server to Claude Code using stdio
-claude mcp add claude-flow npx claude-flow@alpha mcp start
+# Add Snow Flow MCP server to Claude Code using stdio
+claude mcp add snow-flow npx snow-flow@alpha mcp start
 ```
 
 ### 2. Use MCP Tools for Coordination in Claude Code
@@ -886,10 +950,10 @@ Once configured, Claude Flow MCP tools enhance Claude Code's coordination:
 **What Actually Happens:**
 
 1. The swarm sets up a coordination framework
-2. Each agent MUST use Claude Flow hooks for coordination:
-   - `npx claude-flow@alpha hooks pre-task` before starting
-   - `npx claude-flow@alpha hooks post-edit` after each file operation
-   - `npx claude-flow@alpha hooks notify` to share decisions
+2. Each agent MUST use Snow Flow hooks for coordination:
+   - `npx snow-flow hooks pre-task` before starting
+   - `npx snow-flow hooks post-edit` after each file operation
+   - `npx snow-flow hooks notify` to share decisions
 3. Claude Code uses its native Read, WebSearch, and Task tools
 4. The swarm coordinates through shared memory and hooks
 5. Results are synthesized by Claude Code with full coordination history
@@ -1105,29 +1169,29 @@ When you spawn an agent using the Task tool, that agent MUST:
 
 ```bash
 # Check previous work and load context
-npx claude-flow@alpha hooks pre-task --description "[agent task]" --auto-spawn-agents false
-npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]" --load-memory true
+npx snow-flow hooks pre-task --description "[agent task]" --auto-spawn-agents false
+npx snow-flow hooks session-restore --session-id "swarm-[id]" --load-memory true
 ```
 
 **2️⃣ DURING Work (After EVERY Major Step):**
 
 ```bash
 # Store progress in memory after each file operation
-npx claude-flow@alpha hooks post-edit --file "[filepath]" --memory-key "swarm/[agent]/[step]"
+npx snow-flow hooks post-edit --file "[filepath]" --memory-key "swarm/[agent]/[step]"
 
 # Store decisions and findings
-npx claude-flow@alpha hooks notify --message "[what was done]" --telemetry true
+npx snow-flow hooks notify --message "[what was done]" --telemetry true
 
 # Check coordination with other agents
-npx claude-flow@alpha hooks pre-search --query "[what to check]" --cache-results true
+npx snow-flow hooks pre-search --query "[what to check]" --cache-results true
 ```
 
 **3️⃣ AFTER Completing Work:**
 
 ```bash
 # Save all results and learnings
-npx claude-flow@alpha hooks post-task --task-id "[task]" --analyze-performance true
-npx claude-flow@alpha hooks session-end --export-metrics true --generate-summary true
+npx snow-flow hooks post-task --task-id "[task]" --analyze-performance true
+npx snow-flow hooks session-end --export-metrics true --generate-summary true
 ```
 
 ### 🎯 AGENT PROMPT TEMPLATE
@@ -1138,10 +1202,10 @@ When spawning agents, ALWAYS include these coordination instructions:
 You are the [Agent Type] agent in a coordinated swarm.
 
 MANDATORY COORDINATION:
-1. START: Run `npx claude-flow@alpha hooks pre-task --description "[your task]"`
-2. DURING: After EVERY file operation, run `npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "agent/[step]"`
-3. MEMORY: Store ALL decisions using `npx claude-flow@alpha hooks notify --message "[decision]"`
-4. END: Run `npx claude-flow@alpha hooks post-task --task-id "[task]" --analyze-performance true`
+1. START: Run `npx snow-flow hooks pre-task --description "[your task]"`
+2. DURING: After EVERY file operation, run `npx snow-flow hooks post-edit --file "[file]" --memory-key "agent/[step]"`
+3. MEMORY: Store ALL decisions using `npx snow-flow hooks notify --message "[decision]"`
+4. END: Run `npx snow-flow hooks post-task --task-id "[task]" --analyze-performance true`
 
 Your specific task: [detailed task description]
 
