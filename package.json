@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "1.4.9",
+  "version": "1.4.10",
   "description": "Snow-Flow: ServiceNow Advanced Intelligence Platform - 14 AI-powered analysis tools with multi-agent orchestration. Zero Mock Data, 100% Real API Integration. Revolutionize ServiceNow development with hive-mind intelligence.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -44,7 +44,13 @@
       "name": "Smart Batch API Operations",
       "description": "Execute multiple ServiceNow API operations in optimized batches with 80% API call reduction through intelligent query optimization, parallel execution, and result caching.",
       "category": "performance",
-      "features": ["batch_execution", "query_optimization", "parallel_processing", "transaction_support", "cache_management"],
+      "features": [
+        "batch_execution",
+        "query_optimization",
+        "parallel_processing",
+        "transaction_support",
+        "cache_management"
+      ],
       "metrics": {
         "api_reduction": "80%",
         "performance_gain": "300%",
@@ -55,7 +61,13 @@
       "name": "Table Relationship Mapping",
       "description": "Deep relationship discovery across table hierarchies with visual relationship diagrams (Mermaid format), impact analysis for schema changes, and performance optimization recommendations.",
       "category": "analysis",
-      "features": ["hierarchy_discovery", "visual_diagrams", "impact_analysis", "relationship_mapping", "schema_optimization"],
+      "features": [
+        "hierarchy_discovery",
+        "visual_diagrams",
+        "impact_analysis",
+        "relationship_mapping",
+        "schema_optimization"
+      ],
       "metrics": {
         "discovery_depth": "unlimited",
         "visualization": "mermaid_diagrams",
@@ -66,7 +78,13 @@
       "name": "Query Performance Analyzer",
       "description": "Query execution analysis with bottleneck detection, index recommendations for performance optimization, alternative query suggestions, and risk assessment with execution time prediction.",
       "category": "performance",
-      "features": ["bottleneck_detection", "index_recommendations", "query_optimization", "risk_assessment", "execution_prediction"],
+      "features": [
+        "bottleneck_detection",
+        "index_recommendations",
+        "query_optimization",
+        "risk_assessment",
+        "execution_prediction"
+      ],
       "metrics": {
         "optimization_suggestions": "real_time",
         "performance_scoring": "intelligent",
@@ -77,7 +95,13 @@
       "name": "Field Usage Intelligence",
       "description": "Comprehensive field usage analysis across all ServiceNow components, unused field detection with deprecation recommendations, technical debt scoring, and cross-component impact analysis.",
       "category": "analysis",
-      "features": ["usage_analytics", "deprecation_analysis", "technical_debt_scoring", "cross_component_analysis", "optimization_opportunities"],
+      "features": [
+        "usage_analytics",
+        "deprecation_analysis",
+        "technical_debt_scoring",
+        "cross_component_analysis",
+        "optimization_opportunities"
+      ],
       "metrics": {
         "analysis_scope": "all_components",
         "usage_tracking": "comprehensive",
@@ -88,7 +112,13 @@
       "name": "Migration Helper",
       "description": "Automated migration planning with risk assessment, data transformation scripts generation, performance impact estimation, and rollback strategy creation for safe ServiceNow changes.",
       "category": "migration",
-      "features": ["risk_assessment", "automation_scripts", "performance_impact", "rollback_strategies", "migration_planning"],
+      "features": [
+        "risk_assessment",
+        "automation_scripts",
+        "performance_impact",
+        "rollback_strategies",
+        "migration_planning"
+      ],
       "metrics": {
         "automation_level": "90%",
         "risk_mitigation": "comprehensive",
@@ -99,7 +129,14 @@
       "name": "Deep Table Analysis",
       "description": "Multi-dimensional table analysis including structure, data quality, performance, security and compliance assessment, usage pattern analysis, and optimization recommendations with risk scoring.",
       "category": "analysis",
-      "features": ["structure_analysis", "data_quality", "performance_metrics", "security_assessment", "compliance_check", "usage_patterns"],
+      "features": [
+        "structure_analysis",
+        "data_quality",
+        "performance_metrics",
+        "security_assessment",
+        "compliance_check",
+        "usage_patterns"
+      ],
       "metrics": {
         "analysis_dimensions": "6+",
         "quality_scoring": "intelligent",
@@ -110,7 +147,13 @@
       "name": "Code Pattern Detector",
       "description": "Advanced pattern recognition across all script types, performance anti-pattern detection, security vulnerability scanning, and maintainability scoring with refactoring suggestions.",
       "category": "code_quality",
-      "features": ["pattern_recognition", "anti_pattern_detection", "security_scanning", "maintainability_scoring", "refactoring_suggestions"],
+      "features": [
+        "pattern_recognition",
+        "anti_pattern_detection",
+        "security_scanning",
+        "maintainability_scoring",
+        "refactoring_suggestions"
+      ],
       "metrics": {
         "pattern_categories": "10+",
         "security_coverage": "comprehensive",
@@ -121,7 +164,13 @@
       "name": "Predictive Impact Analysis",
       "description": "AI-powered change impact prediction with risk assessment and confidence scoring, dependency chain analysis, and rollback requirement prediction for safe ServiceNow modifications.",
       "category": "ai_intelligence",
-      "features": ["ai_prediction", "risk_assessment", "confidence_scoring", "dependency_analysis", "rollback_prediction"],
+      "features": [
+        "ai_prediction",
+        "risk_assessment",
+        "confidence_scoring",
+        "dependency_analysis",
+        "rollback_prediction"
+      ],
       "metrics": {
         "prediction_accuracy": "90%+",
         "risk_scoring": "intelligent",
@@ -132,7 +181,14 @@
       "name": "Auto Documentation Generator",
       "description": "Intelligent documentation generation from code and configuration with multiple output formats (Markdown, HTML, PDF), relationship diagrams, architecture documentation, and usage examples.",
       "category": "documentation",
-      "features": ["intelligent_generation", "multiple_formats", "relationship_diagrams", "architecture_docs", "usage_examples", "best_practices"],
+      "features": [
+        "intelligent_generation",
+        "multiple_formats",
+        "relationship_diagrams",
+        "architecture_docs",
+        "usage_examples",
+        "best_practices"
+      ],
       "metrics": {
         "automation_level": "95%",
         "output_formats": "3+",
@@ -143,7 +199,14 @@
       "name": "Intelligent Refactoring",
       "description": "AI-driven code refactoring with performance optimization, modern JavaScript patterns and best practices, security hardening, error handling improvements, and preview validation.",
       "category": "code_quality",
-      "features": ["ai_refactoring", "performance_optimization", "modern_patterns", "security_hardening", "error_handling", "preview_validation"],
+      "features": [
+        "ai_refactoring",
+        "performance_optimization",
+        "modern_patterns",
+        "security_hardening",
+        "error_handling",
+        "preview_validation"
+      ],
       "metrics": {
         "refactoring_accuracy": "95%+",
         "performance_improvement": "60%+",
@@ -154,7 +217,14 @@
       "name": "Process Mining Engine",
       "description": "Real process discovery from ServiceNow event logs, process variant analysis and bottleneck identification, compliance checking against reference models, and optimization recommendations with ROI calculation.",
       "category": "process_mining",
-      "features": ["process_discovery", "variant_analysis", "bottleneck_identification", "compliance_checking", "roi_calculation", "optimization_recommendations"],
+      "features": [
+        "process_discovery",
+        "variant_analysis",
+        "bottleneck_identification",
+        "compliance_checking",
+        "roi_calculation",
+        "optimization_recommendations"
+      ],
       "metrics": {
         "discovery_accuracy": "90%+",
         "variant_detection": "comprehensive",
@@ -165,7 +235,13 @@
       "name": "Workflow Reality Analyzer",
       "description": "Real workflow execution analysis vs. designed processes, performance bottleneck identification, SLA compliance monitoring, and resource utilization optimization with actionable insights.",
       "category": "process_mining",
-      "features": ["execution_analysis", "performance_bottlenecks", "sla_monitoring", "resource_optimization", "reality_vs_design"],
+      "features": [
+        "execution_analysis",
+        "performance_bottlenecks",
+        "sla_monitoring",
+        "resource_optimization",
+        "reality_vs_design"
+      ],
       "metrics": {
         "execution_accuracy": "real_time",
         "sla_compliance": "monitored",
@@ -176,7 +252,13 @@
       "name": "Cross Table Process Discovery",
       "description": "Multi-table process flow discovery, data lineage and transformation tracking, integration point analysis, and process automation opportunities identification across ServiceNow tables.",
       "category": "process_mining",
-      "features": ["cross_table_discovery", "data_lineage", "transformation_tracking", "integration_analysis", "automation_opportunities"],
+      "features": [
+        "cross_table_discovery",
+        "data_lineage",
+        "transformation_tracking",
+        "integration_analysis",
+        "automation_opportunities"
+      ],
       "metrics": {
         "cross_table_scope": "unlimited",
         "lineage_tracking": "comprehensive",
@@ -187,7 +269,14 @@
       "name": "Real Time Process Monitoring",
       "description": "Live process monitoring with real-time alerts, anomaly detection using machine learning, performance trend analysis, and predictive failure detection for proactive ServiceNow management.",
       "category": "monitoring",
-      "features": ["real_time_monitoring", "anomaly_detection", "machine_learning", "trend_analysis", "predictive_failure", "proactive_alerts"],
+      "features": [
+        "real_time_monitoring",
+        "anomaly_detection",
+        "machine_learning",
+        "trend_analysis",
+        "predictive_failure",
+        "proactive_alerts"
+      ],
       "metrics": {
         "monitoring_scope": "real_time",
         "anomaly_accuracy": "95%+",
