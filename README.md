@@ -320,13 +320,33 @@ SNOW_ENABLE_CACHING=true
 ```
 
 ### **MCP Server Integration**
-```bash
-# Start as MCP server for Claude Code integration
-snow-flow mcp start --port 3000
 
-# Add to Claude Code
+Snow-Flow includes two types of MCP servers:
+
+#### **1. ServiceNow MCP Tools (14 Advanced Features)**
+These are automatically installed when you run `snow-flow init`:
+- Deployment, Operations, Intelligence, Security, Analytics, and more
+- Each server provides specialized ServiceNow functionality
+
+#### **2. Snow-Flow Coordination Server**
+For multi-agent orchestration and swarm coordination:
+
+```bash
+# Add Snow-Flow coordination server to Claude Code (recommended)
 claude mcp add snow-flow npx snow-flow mcp start
+
+# The coordination server provides:
+# - swarm_init: Initialize agent swarms
+# - agent_spawn: Create specialized agents
+# - task_orchestrate: Coordinate complex workflows
+# - memory_usage: Persistent memory across sessions
+# - neural_train: AI pattern learning
+# - performance_report: Real-time metrics
 ```
+
+All MCP tools work through Claude Code using the `mcp__` prefix:
+- ServiceNow tools: `mcp__servicenow-*`
+- Coordination tools: `mcp__snow-flow__*`
 
 ### **Programmatic Usage**
 ```typescript
