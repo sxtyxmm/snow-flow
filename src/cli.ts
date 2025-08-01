@@ -39,7 +39,8 @@ function checkFlowDeprecation(command: string, objective?: string) {
   const isFlowCommand = flowKeywords.some(keyword => command.includes(keyword));
   const isFlowObjective = objective && objective.toLowerCase().includes('flow') && 
                          !objective.toLowerCase().includes('workflow') &&
-                         !objective.toLowerCase().includes('data flow');
+                         !objective.toLowerCase().includes('data flow') &&
+                         !objective.toLowerCase().includes('snow-flow');
   
   if (isFlowCommand || isFlowObjective) {
     console.error('❌ Flow creation has been removed from snow-flow v1.4.0+');
