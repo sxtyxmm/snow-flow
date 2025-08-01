@@ -859,7 +859,7 @@ Message 6: Write "package.json"
 
 ```bash
 # Add Snow Flow MCP server to Claude Code using stdio
-claude mcp add snow-flow npx snow-flow@alpha mcp start
+claude mcp add snow-flow npx snow-flow mcp start
 ```
 
 ### 2. Use MCP Tools for Coordination in Claude Code

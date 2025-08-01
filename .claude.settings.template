@@ -11,8 +11,7 @@
     "servicenow-automation",
     "servicenow-security-compliance",
     "servicenow-reporting-analytics",
-    "snow-flow",
-    "ruv-swarm"
+    "snow-flow"
   ],
   "permissions": {
     "allow": [

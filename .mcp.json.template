@@ -101,6 +101,13 @@
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
+    },
+    "snow-flow": {
+      "command": "node",
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
+      "env": {
+        "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
+      }
     }
   }
 }
