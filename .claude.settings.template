@@ -11,7 +11,7 @@
     "servicenow-automation",
     "servicenow-security-compliance",
     "servicenow-reporting-analytics",
-    "claude-flow",
+    "snow-flow",
     "ruv-swarm"
   ],
   "permissions": {
@@ -27,7 +27,7 @@
       "TodoWrite",
       "Task(*)",
       "mcp__servicenow-*",
-      "mcp__claude-flow__*"
+      "mcp__snow-flow__*"
     ]
   },
   "env": {
