@@ -20,7 +20,9 @@
     "setup-mcp": "node scripts/setup-mcp.js",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "node scripts/postinstall.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "version": "node scripts/update-version.js && npm run build && git add -A dist src/version.ts",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [
     "servicenow",
