@@ -728,81 +728,71 @@ class ServiceNowDeploymentMCP {
         throw new Error('Widget must have name, title, and template');
       }
 
-      // Validate Service Portal permissions before deployment
+      // IMPROVED: Softer Service Portal permissions check with graceful fallback
+      let hasServicePortalAccess = false;
       try {
-        this.logger.info('Validating Service Portal permissions...');
+        this.logger.info('Testing Service Portal access...');
         
-        // Test access to sp_widget table by attempting to query it
-        const permissionTest = await this.client.searchRecords('sp_widget', 'sys_idISNOTEMPTY', 1);
+        // Light permission test - just check if table exists
+        const permissionTest = await this.client.makeRequest({
+          method: 'GET',
+          url: '/api/now/table/sp_widget',
+          params: { 
+            sysparm_limit: 1,
+            sysparm_fields: 'sys_id' 
+          }
+        });
         
-        if (!permissionTest.success) {
-          this.logger.warn('Service Portal read access test failed', permissionTest.error);
-          
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `🚫 **Service Portal Permission Check Failed**
-
-**Issue:** Cannot access Service Portal widgets table (sp_widget)
-
-**Possible Solutions:**
-1. **Re-authenticate with proper scopes:**
-   \`\`\`bash
-   snow-flow auth login
-   \`\`\`
-   (Now includes 'write' and 'admin' permissions)
-
-2. **Verify ServiceNow user roles:**
-   - admin
-   - service_portal_admin 
-   - sp_admin
-   - sp_portal_manager
-
-3. **Check OAuth Application scope:**
-   - Navigate to: System OAuth > Application Registry
-   - Verify "Accessible from" is set to "All application scopes"
-
-**Error:** ${permissionTest.error}
-
-**Alternative:** Use manual deployment - widget code has been prepared for you to copy-paste into ServiceNow manually.`,
-              },
-            ],
-          };
+        hasServicePortalAccess = permissionTest && !permissionTest.error;
+        
+        if (hasServicePortalAccess) {
+          this.logger.info('✅ Service Portal access confirmed');
+        } else {
+          this.logger.warn('⚠️ Limited Service Portal access, will use alternative deployment methods');
         }
-        
-        this.logger.info('Service Portal permissions validated successfully');
       } catch (permissionError) {
-        this.logger.warn('Permission validation failed, proceeding with deployment attempt', permissionError);
+        this.logger.warn('⚠️ Service Portal access test failed, using fallback deployment', permissionError);
+        hasServicePortalAccess = false;
       }
 
-      // Create widget in ServiceNow with fallback strategies
+      // IMPROVED: Smart deployment strategy based on permissions
       let result;
-      let deploymentMethod = 'direct';
+      let deploymentMethod = 'unknown';
+      let deploymentSuccess = false;
+      let directError: any = null;
+      let tableError: any = null;
       
-      try {
-        // Primary deployment strategy: Direct API call
-        result = await this.client.createWidget({
-          name: args.name,
-          id: args.name,
-          title: args.title,
-          description: args.description || '',
-          template: args.template,
-          css: args.css || '',
-          client_script: args.client_script || '',
-          server_script: args.server_script || '',
-          option_schema: args.option_schema || '[]',
-          demo_data: args.demo_data || '{}',
-          has_preview: true,
-          category: args.category || 'custom',
-        });
-        deploymentMethod = 'direct_api';
-      } catch (directError) {
-        this.logger.warn('Direct widget deployment failed, trying fallback strategy', directError);
-        
-        // Fallback strategy 1: Create record directly in sp_widget table
+      // Strategy 1: Direct API call (if we have Service Portal access)
+      if (hasServicePortalAccess) {
         try {
-          this.logger.info('Attempting fallback: Direct table record creation');
+          this.logger.info('🚀 Attempting direct widget deployment...');
+          result = await this.client.createWidget({
+            name: args.name,
+            id: args.name,
+            title: args.title,
+            description: args.description || '',
+            template: args.template,
+            css: args.css || '',
+            client_script: args.client_script || '',
+            server_script: args.server_script || '',
+            option_schema: args.option_schema || '[]',
+            demo_data: args.demo_data || '{}',
+            has_preview: true,
+            category: args.category || 'custom',
+          });
+          deploymentMethod = 'direct_api';
+          deploymentSuccess = true;
+          this.logger.info('✅ Direct deployment successful');
+        } catch (error) {
+          directError = error;
+          this.logger.warn('⚠️ Direct widget deployment failed, trying fallback', directError);
+        }
+      }
+      
+      // Strategy 2: Direct table record creation (fallback)
+      if (!deploymentSuccess) {
+        try {
+          this.logger.info('🔄 Attempting fallback: Direct table record creation');
           result = await this.client.createRecord('sp_widget', {
             name: args.name,
             id: args.name,
@@ -821,7 +811,8 @@ class ServiceNowDeploymentMCP {
             servicenow: false
           });
           deploymentMethod = 'table_record';
-        } catch (tableError) {
+        } catch (error) {
+          tableError = error;
           this.logger.warn('Table record creation failed, trying manual step guidance', tableError);
           
           // Fallback strategy 2: Provide manual creation steps
@@ -3977,10 +3968,73 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
 
       this.logger.info('Testing widget', { sys_id: args.sys_id });
       
-      // Fetch the widget
-      const widget = await this.client.getRecord('sp_widget', args.sys_id);
-      if (!widget) {
-        throw new Error(`Widget not found: ${args.sys_id}`);
+      // IMPROVED: Fetch the widget with better error handling
+      let widget;
+      try {
+        widget = await this.client.getRecord('sp_widget', args.sys_id);
+        if (!widget) {
+          throw new Error(`Widget not found: ${args.sys_id}`);
+        }
+      } catch (error) {
+        // Handle 404 and permission errors gracefully
+        if (error?.response?.status === 404 || error?.message?.includes('404')) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `❌ **Widget Not Found**
+
+**Issue:** Widget with sys_id "${args.sys_id}" does not exist in ServiceNow.
+
+**Possible Solutions:**
+1. **Verify the sys_id:**
+   - Check that the sys_id is correct
+   - Use: \`snow-flow swarm "Find widgets by name"\` to search
+
+2. **Check widget exists:**
+   - Navigate to Service Portal > Widgets in ServiceNow
+   - Search for the widget manually
+
+3. **Create the widget first:**
+   - Use: \`snow_deploy\` to create the widget
+   - Then test it with this tool
+
+**Error Details:** ${error?.message || 'Widget not found'}`
+              }
+            ]
+          };
+        } else if (error?.response?.status === 403 || error?.message?.includes('403')) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `🚫 **Service Portal Access Denied**
+
+**Issue:** Insufficient permissions to access widget "${args.sys_id}".
+
+**Solutions:**
+1. **Check ServiceNow roles:**
+   - admin
+   - service_portal_admin
+   - sp_admin
+
+2. **Re-authenticate with proper scopes:**
+   \`\`\`bash
+   snow-flow auth login
+   \`\`\`
+
+3. **Verify OAuth Application permissions:**
+   - Navigate to: System OAuth > Application Registry
+   - Check "Accessible from" setting
+
+**Error Details:** ${error?.message || 'Permission denied'}`
+              }
+            ]
+          };
+        } else {
+          // Other errors - rethrow
+          throw error;
+        }
       }
 
       const testResults = [];

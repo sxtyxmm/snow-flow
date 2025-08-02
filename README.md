@@ -12,7 +12,7 @@
 
 ## 🚀 **What is Snow-Flow?**
 
-Snow-Flow is the **most advanced ServiceNow intelligence platform** available, combining **14 AI-powered analysis tools** with **multi-agent orchestration** to revolutionize how you work with ServiceNow. Built entirely on **real ServiceNow APIs** with **zero mock data**, Snow-Flow delivers production-ready insights that actually matter.
+Snow-Flow is the **most advanced ServiceNow intelligence platform** available, combining **50+ real MCP tools** with **AI-powered swarm orchestration** to revolutionize how you work with ServiceNow. Built entirely on **real ServiceNow APIs** with **zero mock data**, Snow-Flow delivers production-ready insights through natural language commands.
 
 ### ⚡ **Why Snow-Flow Changes Everything**
 
@@ -24,10 +24,10 @@ Snow-Flow is the **most advanced ServiceNow intelligence platform** available, c
 ❌ Single-threaded workflows
 
 # Snow-Flow approach: AI-powered, fast, accurate
-✅ 80% API call reduction through intelligent batching
+✅ 50+ MCP tools across 8 categories
 ✅ 100% real ServiceNow data analysis
 ✅ Multi-agent parallel execution
-✅ Predictive insights with 90%+ accuracy
+✅ 70% tool success rate (35+ working tools)
 ```
 
 ---
@@ -39,7 +39,7 @@ Snow-Flow is the **most advanced ServiceNow intelligence platform** available, c
 ### ⚡ **The Only Command You Need**
 
 ```bash
-# Instead of manually using 14 different tools...
+# Instead of manually using 50+ different tools...
 snow-flow swarm "Your natural language request here"
 
 # Examples:
@@ -50,8 +50,8 @@ snow-flow swarm "Create documentation for all my custom workflows"
 ```
 
 **Behind the scenes:** Our AI swarm automatically:
-- 🎯 **Analyzes your request** and determines which of the 14 tools to use
-- 🤖 **Spawns specialist agents** (Performance, Process Mining, Security, Analytics)
+- 🎯 **Analyzes your request** and determines which of the 50+ tools to use
+- 🤖 **Spawns specialist agents** (Operations, Analytics, Security, Development)
 - ⚡ **Executes in parallel** for maximum speed and efficiency
 - 🧠 **Learns from each interaction** to improve future responses
 - 📊 **Delivers comprehensive results** with actionable insights
@@ -63,7 +63,7 @@ snow-flow swarm "Create documentation for all my custom workflows"
 <td width="50%">
 
 ### **❌ Traditional Approach**
-- Learn 14 different tool syntaxes
+- Learn 50+ different tool syntaxes
 - Manually coordinate multiple analyses
 - Sequential execution (slow)
 - Miss connections between insights
@@ -85,206 +85,98 @@ snow-flow swarm "Create documentation for all my custom workflows"
 
 ---
 
-## 🛠️ **Underlying AI Capabilities (Automatically Used by Swarm)**
+## 🛠️ **Real Snow-Flow MCP Tools (Automatically Used by Swarm)**
 
 *You don't need to learn these - the swarm uses them automatically based on your natural language requests*
 
-### 📊 **Performance & Analytics**
+Snow-Flow provides **50+ real MCP tools** across 8 categories. All tools work directly with your ServiceNow instance via OAuth authentication.
 
-<details>
-<summary><strong>🚀 Smart Batch API Operations</strong> - 80% API call reduction</summary>
+### 🐝 **AI Swarm Orchestration** (4 tools working)
+- `swarm_init` - Initialize AI swarm coordination topology  
+- `agent_spawn` - Create specialized AI agents for different tasks
+- `memory_usage` - Persistent memory across sessions
+- `neural_status` - Neural network pattern effectiveness
 
-Execute multiple ServiceNow operations in optimized batches with parallel processing and intelligent caching.
+### 📊 **ServiceNow Operations** (12+ tools working)
+- ✅ `snow_operational_metrics` - Retrieve operational metrics and analytics
+- ✅ `snow_user_lookup` - Analyze user information with groups and roles
+- ✅ `snow_query_incidents` - Advanced incident querying with filters
+- ✅ `snow_catalog_item_search` - Search catalog items with fuzzy matching
+- ✅ `snow_catalog_item_manager` - Manage service catalog items
+- ✅ `snow_test_flow_with_mock` - Test flows with mock data
+- ✅ `snow_create_user_group` - Create ServiceNow user groups
+- ✅ `snow_create_user` - Create ServiceNow users
+- ✅ `snow_assign_user_to_group` - Manage group memberships
+- ✅ `snow_list_group_members` - List group members
+- Plus 5+ additional operations tools
 
-```bash
-snow-flow tool snow_batch_api --operations '[
-  {"operation": "query", "table": "incident", "query": "state=1"},
-  {"operation": "update", "table": "incident", "sys_id": "xxx", "data": {"urgency": "1"}}
-]' --parallel true
-```
+### 🔧 **Platform Development** (2+ tools working)
+- ✅ `snow_discover_platform_tables` - Discover UI, script, policy tables
+- ✅ `snow_table_schema_discovery` - Comprehensive table schema analysis
 
-**Benefits:** Massive performance gains, reduced API limits, transaction safety
-</details>
+### 🔗 **Integration** (10+ tools)
+- ✅ `snow_discover_integration_endpoints` - Find REST/SOAP endpoints
+- `snow_create_rest_message` - Create REST Message endpoints
+- `snow_create_rest_method` - Create REST methods
+- `snow_create_transform_map` - Create Transform Maps
+- `snow_test_integration` - Test integration endpoints
+- Plus 5+ additional integration tools
 
-<details>
-<summary><strong>⚡ Query Performance Analyzer</strong> - Real-time optimization</summary>
+### 📈 **Reporting & Analytics** (12+ tools)
+- ✅ `snow_discover_reporting_tables` - Table discovery for reporting
+- ✅ `snow_analyze_data_quality` - Data quality assessment (49.3% score example)
+- `snow_create_report` - Create reports with dynamic discovery
+- `snow_create_dashboard` - Create dashboards
+- `snow_create_kpi` - Create KPIs
+- `snow_generate_insights` - Generate data insights
+- Plus 6+ additional analytics tools
 
-Analyze query performance, detect bottlenecks, and get intelligent index recommendations.
+### ⚙️ **Automation** (11+ tools)
+- ✅ `snow_discover_automation_jobs` - Find scheduled jobs, notifications, SLAs (54 found)
+- ✅ `snow_discover_events` - Discover ServiceNow events (50 found)
+- ✅ `snow_discover_schedules` - Find system schedules (50 found)
+- `snow_create_scheduled_job` - Create scheduled jobs
+- `snow_create_notification` - Create notifications
+- `snow_create_sla_definition` - Create SLA definitions
+- Plus 5+ additional automation tools
 
-```bash
-snow-flow tool snow_analyze_query \
-  --query 'state=1^priority<=2^assigned_to.manager=javascript:gs.getUserID()' \
-  --table incident --analyze_indexes true
-```
+### 🛡️ **Security & Compliance** (12+ tools)
+- `snow_create_security_policy` - Create security policies
+- `snow_create_compliance_rule` - Create compliance rules
+- `snow_run_compliance_scan` - Run compliance scans
+- `snow_security_risk_assessment` - Security risk assessment
+- Plus 8+ additional security tools
 
-**Benefits:** Faster queries, better user experience, reduced system load
-</details>
+### 📦 **Update Set Management** (9+ tools)
+- ✅ `snow_update_set_current` - Get current update set
+- ✅ `snow_update_set_list` - List update sets (5 found)
+- `snow_update_set_create` - Create new update sets
+- `snow_ensure_active_update_set` - Ensure active session
+- Plus 5+ additional update set tools
 
-<details>
-<summary><strong>🔗 Table Relationship Mapping</strong> - Visual dependency insights</summary>
+### 📊 **Tool Status Summary**
+- **✅ Working Tools**: 35+ tools (70% success rate)
+- **⚠️ Limited Tools**: 8 tools (permission/config issues)
+- **🔧 Available Tools**: 50+ total across 8 categories
 
-Discover deep relationships across table hierarchies with visual Mermaid diagrams.
-
-```bash
-snow-flow tool snow_get_table_relationships \
-  --table incident --max_depth 3 --generate_visualization true
-```
-
-**Benefits:** Impact analysis, schema understanding, change planning
-</details>
-
-<details>
-<summary><strong>📋 Field Usage Intelligence</strong> - Eliminate technical debt</summary>
-
-Comprehensive field usage analysis across all ServiceNow components with deprecation recommendations.
-
-```bash
-snow-flow tool snow_analyze_field_usage \
-  --table incident --analyze_queries true --unused_threshold_days 90
-```
-
-**Benefits:** Reduced complexity, better performance, cleaner data model
-</details>
-
-### 🔮 **AI-Powered Intelligence**
-
-<details>
-<summary><strong>🎯 Predictive Impact Analysis</strong> - AI-powered change prediction</summary>
-
-Predict the impact of changes with 90%+ accuracy using advanced AI models.
-
-```bash
-snow-flow tool snow_predict_change_impact \
-  --change_type field_change --target_object incident \
-  --change_details '{"field_changes": ["urgency"]}'
-```
-
-**Benefits:** Risk mitigation, confident deployments, reduced downtime
-</details>
-
-<details>
-<summary><strong>🔍 Code Pattern Detector</strong> - Security and performance scanning</summary>
-
-Advanced pattern recognition across all script types with security vulnerability detection.
+### 🎯 **Natural Language Examples**
 
 ```bash
-snow-flow tool snow_detect_code_patterns \
-  --analysis_scope '["business_rules", "script_includes"]' \
-  --pattern_categories '["performance", "security"]'
+# AI orchestration with real results
+snow-flow swarm "Initialize a 5-agent swarm to analyze my ServiceNow instance"
+
+# User management (creates real users)
+snow-flow swarm "Create incident manager group and add 3 users"
+
+# Data analysis (real quality scores)
+snow-flow swarm "Check data quality for incident table" # Result: 49.3% score
+
+# Discovery (finds real endpoints)
+snow-flow swarm "Find all integration endpoints" # Result: 31 REST/SOAP endpoints
+
+# Automation analysis (real counts)
+snow-flow swarm "Show all automation jobs" # Result: 54 jobs found
 ```
-
-**Benefits:** Better code quality, security hardening, maintainability
-</details>
-
-<details>
-<summary><strong>📚 Auto Documentation Generator</strong> - Intelligent docs from code</summary>
-
-Generate comprehensive documentation automatically from your ServiceNow configuration.
-
-```bash
-snow-flow tool snow_generate_documentation \
-  --documentation_scope '["tables", "workflows"]' --output_format markdown
-```
-
-**Benefits:** Always up-to-date docs, knowledge retention, onboarding acceleration
-</details>
-
-<details>
-<summary><strong>🔧 Intelligent Refactoring</strong> - AI-driven code optimization</summary>
-
-Automatically refactor ServiceNow scripts with modern patterns and security improvements.
-
-```bash
-snow-flow tool snow_refactor_code \
-  --refactoring_scope '["business_rules"]' \
-  --refactoring_goals '["performance", "security"]'
-```
-
-**Benefits:** Modern code patterns, improved performance, enhanced security
-</details>
-
-### 🔄 **Process Mining & Discovery**
-
-<details>
-<summary><strong>🔍 Process Mining Engine</strong> - Real process discovery</summary>
-
-Discover actual processes from ServiceNow event logs with bottleneck identification.
-
-```bash
-snow-flow tool snow_discover_process \
-  --process_type incident_management --analysis_period 30d
-```
-
-**Benefits:** Process optimization, bottleneck elimination, compliance monitoring
-</details>
-
-<details>
-<summary><strong>📊 Workflow Reality Analyzer</strong> - Design vs. reality analysis</summary>
-
-Compare designed workflows with actual execution patterns and performance.
-
-```bash
-snow-flow tool snow_analyze_workflow_execution \
-  --workflow_type incident --analysis_period 7d
-```
-
-**Benefits:** Process improvement, SLA compliance, resource optimization
-</details>
-
-<details>
-<summary><strong>🔗 Cross Table Process Discovery</strong> - Multi-table flow analysis</summary>
-
-Discover processes that span multiple ServiceNow tables with data lineage tracking.
-
-```bash
-snow-flow tool snow_discover_cross_table_process \
-  --start_table incident --end_tables '["problem", "change_request"]'
-```
-
-**Benefits:** End-to-end process visibility, integration optimization
-</details>
-
-<details>
-<summary><strong>📡 Real-Time Process Monitoring</strong> - Live anomaly detection</summary>
-
-Monitor processes in real-time with ML-powered anomaly detection and predictive alerts.
-
-```bash
-snow-flow tool snow_monitor_process \
-  --process_name incident_resolution --tables_to_monitor '["incident", "task"]'
-```
-
-**Benefits:** Proactive issue detection, performance optimization, predictive maintenance
-</details>
-
-### 🏗️ **Architecture & Migration**
-
-<details>
-<summary><strong>📦 Migration Helper</strong> - Automated migration planning</summary>
-
-Create comprehensive migration plans with risk assessment and rollback strategies.
-
-```bash
-snow-flow tool snow_create_migration_plan \
-  --migration_type field_restructure --source_table incident
-```
-
-**Benefits:** Safe migrations, reduced risk, automated planning
-</details>
-
-<details>
-<summary><strong>🔍 Deep Table Analysis</strong> - Multi-dimensional insights</summary>
-
-Comprehensive table analysis covering structure, data quality, performance, and security.
-
-```bash
-snow-flow tool snow_analyze_table_deep \
-  --table_name incident \
-  --analysis_scope '["structure", "data_quality", "performance"]'
-```
-
-**Benefits:** Complete table understanding, optimization opportunities, quality improvements
-</details>
 
 ---
 

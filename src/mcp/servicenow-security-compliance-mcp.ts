@@ -278,6 +278,49 @@ class ServiceNowSecurityComplianceMCP {
     try {
       this.logger.info('Creating Security Policy...');
       
+      // IMPROVED: Validate security policy table exists and permissions
+      const securityTableCheck = await this.validateSecurityAccess();
+      if (!securityTableCheck.hasAccess) {
+        return {
+          content: [{
+            type: 'text',
+            text: `🚫 **Security Policy Creation Failed**
+
+**Issue:** ${securityTableCheck.error}
+
+**Common Solutions:**
+
+1. **Check ServiceNow Security Module:**
+   - Navigate to: System Security > Security Policies
+   - Verify the Security module is installed and activated
+
+2. **Verify User Permissions:**
+   - Required roles: security_admin, admin
+   - Check: User Administration > Roles
+
+3. **Alternative Approach:**
+   - Use Business Rules for security logic
+   - Create custom security validation scripts
+   - Implement ACL (Access Control Lists) instead
+
+4. **Manual Creation:**
+   - Navigate to: System Security > Security Policies
+   - Create the policy manually with these details:
+   
+   **Policy Configuration:**
+   - Name: ${args.name}
+   - Type: ${args.type}
+   - Enforcement: ${args.enforcement || 'moderate'}
+   - Scope: ${args.scope || 'global'}
+   - Active: ${args.active !== false ? 'Yes' : 'No'}
+   
+   **Rules:** ${JSON.stringify(args.rules || [], null, 2)}
+
+**Help:** If your ServiceNow instance doesn't have Security Policies, consider using Business Rules or ACLs for similar functionality.`
+          }]
+        };
+      }
+      
       // Get available policy types and enforcement levels
       const policyTypes = await this.getSecurityPolicyTypes();
       const enforcementLevels = await this.getEnforcementLevels();
@@ -293,10 +336,31 @@ class ServiceNowSecurityComplianceMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_security_policy', policyData);
       
-      if (!response.success) {
-        throw new Error(`Failed to create Security Policy: ${response.error}`);
+      // Try multiple table names as fallback
+      let response;
+      const possibleTables = [
+        'sys_security_policy',      // Primary table
+        'sys_security_rule',        // Alternative 1
+        'sys_policy',              // Alternative 2
+        'u_security_policy'        // Custom table fallback
+      ];
+      
+      for (const tableName of possibleTables) {
+        try {
+          response = await this.client.createRecord(tableName, policyData);
+          if (response.success) {
+            this.logger.info(`Security policy created in table: ${tableName}`);
+            break;
+          }
+        } catch (tableError) {
+          this.logger.warn(`Failed to create in table ${tableName}:`, tableError);
+          continue;
+        }
+      }
+      
+      if (!response || !response.success) {
+        throw new Error(`Failed to create Security Policy in any available table. Error: ${response?.error || 'No suitable table found'}`);
       }
 
       return {
@@ -307,6 +371,42 @@ class ServiceNowSecurityComplianceMCP {
       };
     } catch (error) {
       this.logger.error('Failed to create Security Policy:', error);
+      
+      // Better error handling with helpful suggestions
+      if (error?.response?.status === 400) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ **Security Policy Creation Error (400)**
+
+**Issue:** Invalid data or table structure issue.
+
+**Possible Causes:**
+1. **Missing required fields** - Some fields may be mandatory
+2. **Invalid field values** - Check enum values for type/enforcement
+3. **Table doesn't support** these field names
+4. **Data format issues** - Rules field may need different format
+
+**Troubleshooting Steps:**
+1. **Simplify the policy:**
+   \`\`\`bash
+   snow_create_security_policy({
+     name: "Simple Test Policy",
+     type: "access",
+     rules: ["basic_rule"]
+   })
+   \`\`\`
+
+2. **Check field requirements:**
+   - Navigate to: System Definition > Tables
+   - Search for security policy tables
+   - Review required fields
+
+**Error Details:** ${error?.message || 'Bad Request'}`
+          }]
+        };
+      }
+      
       throw new McpError(ErrorCode.InternalError, `Failed to create Security Policy: ${error}`);
     }
   }
@@ -914,6 +1014,56 @@ class ServiceNowSecurityComplianceMCP {
     });
     
     return anomalies;
+  }
+
+  /**
+   * Validate security table access and permissions
+   */
+  private async validateSecurityAccess(): Promise<{ hasAccess: boolean; error?: string }> {
+    try {
+      // Check if common security tables exist and are accessible
+      const securityTables = [
+        'sys_security_policy',
+        'sys_security_rule', 
+        'sys_policy',
+        'sys_acl'
+      ];
+      
+      for (const tableName of securityTables) {
+        try {
+          // Try to query the table with minimal data
+          const testQuery = await this.client.makeRequest({
+            method: 'GET',
+            url: `/api/now/table/${tableName}`,
+            params: {
+              sysparm_limit: 1,
+              sysparm_fields: 'sys_id'
+            }
+          });
+          
+          if (testQuery && !testQuery.error) {
+            this.logger.info(`Security access confirmed for table: ${tableName}`);
+            return { hasAccess: true };
+          }
+        } catch (tableError) {
+          this.logger.warn(`Table ${tableName} not accessible:`, tableError);
+          continue;
+        }
+      }
+      
+      // No security tables accessible
+      return { 
+        hasAccess: false, 
+        error: 'No security policy tables found or accessible. Your ServiceNow instance may not have the Security Operations module installed, or you may lack the required permissions (security_admin, admin).' 
+      };
+      
+    } catch (error) {
+      this.logger.error('Security access validation failed:', error);
+      return { 
+        hasAccess: false, 
+        error: `Security validation failed: ${error?.message || 'Unknown error'}` 
+      };
+    }
   }
 
   async run() {
