@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.29';
+export const VERSION = '1.4.30';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.30': [
+      '🧹 FINAL CLAUDE-FLOW CLEANUP: Removed ALL remaining claude-flow references from .claude directory',
+      '📜 SCRIPT UPDATES: Fixed setup-mcp.sh, github-setup.sh, quick-start.sh to use snow-flow',
+      '📚 COMMAND DOCS: Renamed and updated claude-flow-memory.md and claude-flow-help.md files',
+      '🔧 MCP SETUP: Fixed MCP server registration to use snow-flow instead of claude-flow',
+      '✨ 100% SNOW-FLOW: All references now correctly use snow-flow branding and commands',
+    ],
     '1.4.29': [
       '🧹 CODE CLEANUP: Removed deprecated deployXMLToServiceNow function',
       '🔥 REMOVED COMMAND: Removed deploy-xml command (no longer needed)',
