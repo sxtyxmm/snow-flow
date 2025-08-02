@@ -2,13 +2,22 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.26';
+export const VERSION = '1.4.27';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.27': [
+      '🚀 SNOW-FLOW SWARM ORCHESTRATION: Activated native Snow-Flow swarm MCP server',
+      '🔧 16 MCP SERVERS: Increased from 15 to 16 with Snow-Flow own orchestration',
+      '🎯 REPLACES EXTERNAL TOOLS: Snow-Flow now replaces claude-flow/ruv-swarm completely',
+      '🧹 REMOVED DEPENDENCIES: Cleaned all claude-flow/ruv-swarm references from settings',
+      '🤖 NATIVE SWARM TOOLS: swarm_init, agent_spawn, task_orchestrate, memory tools',
+      '📝 UPDATED DOCUMENTATION: All docs reflect 16 MCP servers and native swarm',
+      '✨ EIGEN IMPLEMENTATIE: Snow-Flow has its own complete swarm orchestration',
+    ],
     '1.4.17': [
       '🔐 AUTH CLARIFICATION: OAuth is the only supported authentication method',
       '📝 DOCUMENTATION: Clear explanation that username/password is not used',

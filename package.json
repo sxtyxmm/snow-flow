@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "1.4.26",
+  "version": "1.4.27",
   "description": "Snow-Flow: ServiceNow Advanced Intelligence Platform - 50+ real MCP tools with AI-powered swarm orchestration. Zero Mock Data, 100% Real API Integration. Natural language interface for ServiceNow operations.",
   "main": "dist/index.js",
   "type": "commonjs",
