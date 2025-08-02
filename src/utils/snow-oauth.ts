@@ -15,6 +15,7 @@ import net from 'net';
 import crypto from 'crypto';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
 import { unifiedAuthStore } from './unified-auth-store.js';
+import { OAuthTemplates } from './oauth-html-templates.js';
 
 export interface ServiceNowAuthResult {
   success: boolean;
@@ -272,15 +273,7 @@ export class ServiceNowOAuth {
             // Validate state parameter
             if (state !== this.stateParameter) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body>
-                    <h1>❌ Security Error</h1>
-                    <p>Invalid state parameter - possible CSRF attack</p>
-                    <p>You can close this window.</p>
-                  </body>
-                </html>
-              `);
+              res.end(OAuthTemplates.securityError);
               
               server.close();
               resolve({
@@ -292,15 +285,7 @@ export class ServiceNowOAuth {
             
             if (error) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body>
-                    <h1>❌ OAuth Error</h1>
-                    <p>Error: ${error}</p>
-                    <p>You can close this window.</p>
-                  </body>
-                </html>
-              `);
+              res.end(OAuthTemplates.error(error));
               
               server.close();
               resolve({
@@ -312,15 +297,7 @@ export class ServiceNowOAuth {
             
             if (!code) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body>
-                    <h1>❌ Missing Authorization Code</h1>
-                    <p>No authorization code received.</p>
-                    <p>You can close this window.</p>
-                  </body>
-                </html>
-              `);
+              res.end(OAuthTemplates.missingCode);
               
               server.close();
               resolve({
@@ -336,29 +313,13 @@ export class ServiceNowOAuth {
             
             if (tokenResult.success) {
               res.writeHead(200, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body>
-                    <h1>✅ Authentication Successful!</h1>
-                    <p>You can now close this window and return to the terminal.</p>
-                    <p>Snow-Flow is now connected to ServiceNow!</p>
-                  </body>
-                </html>
-              `);
+              res.end(OAuthTemplates.success);
               
               server.close();
               resolve(tokenResult);
             } else {
               res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body>
-                    <h1>❌ Token Exchange Failed</h1>
-                    <p>Error: ${tokenResult.error}</p>
-                    <p>You can close this window.</p>
-                  </body>
-                </html>
-              `);
+              res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || 'Unknown error'));
               
               server.close();
               resolve(tokenResult);

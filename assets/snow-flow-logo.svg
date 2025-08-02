@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mountain -->
+  <path d="M 50 150 L 100 50 L 150 150 Z" fill="#4A90E2" stroke="#2E5C8A" stroke-width="2"/>
+  
+  <!-- Snow cap on mountain -->
+  <path d="M 100 50 L 80 90 L 120 90 Z" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1"/>
+  
+  <!-- Mountain base -->
+  <rect x="40" y="150" width="120" height="10" fill="#2E5C8A"/>
+  
+  <!-- Snowflakes falling from top -->
+  <!-- Motion trail from top -->
+  <circle cx="100" cy="20" r="1" fill="#4A90E2" opacity="0.1"/>
+  <circle cx="105" cy="30" r="1.2" fill="#4A90E2" opacity="0.2"/>
+  <circle cx="95" cy="40" r="1.5" fill="#4A90E2" opacity="0.3"/>
+  
+  <!-- Main snowflake -->
+  <g transform="translate(100, 55)">
+    <!-- Snowflake center -->
+    <circle cx="0" cy="0" r="3" fill="#FFFFFF" stroke="#4A90E2" stroke-width="1"/>
+    
+    <!-- Snowflake arms -->
+    <line x1="-12" y1="0" x2="12" y2="0" stroke="#4A90E2" stroke-width="2"/>
+    <line x1="0" y1="-12" x2="0" y2="12" stroke="#4A90E2" stroke-width="2"/>
+    <line x1="-8" y1="-8" x2="8" y2="8" stroke="#4A90E2" stroke-width="2"/>
+    <line x1="-8" y1="8" x2="8" y2="-8" stroke="#4A90E2" stroke-width="2"/>
+    
+    <!-- Snowflake decorations -->
+    <circle cx="-8" cy="0" r="2" fill="#FFFFFF"/>
+    <circle cx="8" cy="0" r="2" fill="#FFFFFF"/>
+    <circle cx="0" cy="-8" r="2" fill="#FFFFFF"/>
+    <circle cx="0" cy="8" r="2" fill="#FFFFFF"/>
+  </g>
+  
+  <!-- Additional smaller snowflakes -->
+  <g transform="translate(80, 70) scale(0.7)">
+    <circle cx="0" cy="0" r="2" fill="#FFFFFF" stroke="#4A90E2" stroke-width="1"/>
+    <line x1="-8" y1="0" x2="8" y2="0" stroke="#4A90E2" stroke-width="1.5"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#4A90E2" stroke-width="1.5"/>
+  </g>
+  
+  <g transform="translate(120, 65) scale(0.5)">
+    <circle cx="0" cy="0" r="2" fill="#FFFFFF" stroke="#4A90E2" stroke-width="1"/>
+    <line x1="-8" y1="0" x2="8" y2="0" stroke="#4A90E2" stroke-width="1.5"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#4A90E2" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="180" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#2E5C8A">Snow-Flow</text>
+</svg>

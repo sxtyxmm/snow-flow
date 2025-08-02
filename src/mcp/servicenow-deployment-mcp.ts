@@ -2873,31 +2873,78 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
     try {
       this.logger.info('Running authentication diagnostics...');
       
-      // Check if we're authenticated first
+      // 🔧 ENHANCED: Try to load credentials from multiple sources
+      let credentials = null;
+      let credentialSource = 'none';
+      let authStatus = 'Not Authenticated';
+      
+      // First, check OAuth tokens
       const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
+      if (isAuth) {
+        try {
+          credentials = await this.oauth.loadTokens();
+          credentialSource = 'OAuth tokens';
+          authStatus = 'OAuth Authenticated';
+        } catch (error) {
+          this.logger.warn('Failed to load OAuth tokens despite isAuthenticated=true:', error);
+        }
+      }
+      
+      // If no OAuth tokens, try loadCredentials which checks .env fallbacks
+      if (!credentials) {
+        try {
+          credentials = await this.oauth.loadCredentials();
+          if (credentials) {
+            if (credentials.accessToken) {
+              credentialSource = 'OAuth tokens (loaded)';
+              authStatus = 'OAuth Authenticated';
+            } else {
+              credentialSource = '.env file (OAuth setup required)';
+              authStatus = 'Credentials Found - OAuth Setup Needed';
+            }
+          }
+        } catch (error) {
+          this.logger.warn('Failed to load credentials from any source:', error);
+        }
+      }
+      
+      // If still no credentials, provide comprehensive error with detection
+      if (!credentials) {
         return {
           content: [
             {
               type: 'text',
-              text: `❌ **Authentication Status: Not Authenticated**
+              text: `❌ **Authentication Status: ${authStatus}**
 
-**Issue:** No credentials available. You need to authenticate first.
+**Issue:** No credentials available from any source.
 
-**Solution:**
-1. Run the authentication command:
+**Credential Detection Results:**
+- OAuth tokens: ❌ Not found
+- .env file: ❌ Not configured
+- Unified auth store: ❌ No valid tokens
+
+**Solutions:**
+
+1. **Quick Setup with OAuth (Recommended):**
    \`\`\`bash
    snow-flow auth login
    \`\`\`
 
-2. Or configure your .env file with ServiceNow OAuth credentials:
-   \`\`\`
+2. **Or configure .env file first:**
+   \`\`\`env
    SNOW_INSTANCE=dev123456.service-now.com
    SNOW_CLIENT_ID=your_oauth_client_id
    SNOW_CLIENT_SECRET=your_oauth_client_secret
    \`\`\`
+   Then run: \`snow-flow auth login\`
 
-3. After authentication, run diagnostics again:
+3. **Get OAuth credentials from ServiceNow:**
+   - Navigate to: System OAuth > Application Registry
+   - Create new OAuth application
+   - Redirect URI: http://localhost:3005/callback
+   - Scopes: useraccount write admin
+
+4. **After setup, run diagnostics again:**
    \`\`\`
    snow_auth_diagnostics
    \`\`\``,
@@ -2906,7 +2953,82 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
         };
       }
       
-      const diagnostics = await this.client.validateDeploymentPermissions();
+      // If we have credentials but no access token, provide specific guidance
+      if (credentials && !credentials.accessToken) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `⚠️ **Authentication Status: ${authStatus}**
+
+**Issue:** Credentials found in ${credentialSource} but no active OAuth session.
+
+**Credential Details:**
+- Instance: ${credentials.instance || 'Not specified'}
+- Client ID: ${credentials.clientId ? '✅ Present' : '❌ Missing'}
+- Client Secret: ${credentials.clientSecret ? '✅ Present' : '❌ Missing'}
+- Access Token: ❌ Missing (OAuth login required)
+
+**Solution:**
+Your .env file is configured but you need to complete OAuth authentication:
+
+\`\`\`bash
+snow-flow auth login
+\`\`\`
+
+This will use your .env credentials to start the OAuth flow and generate access tokens.`,
+            },
+          ],
+        };
+      }
+      
+      // 🔧 ENHANCED: Try to run diagnostics with better error handling
+      let diagnostics;
+      try {
+        diagnostics = await this.client.validateDeploymentPermissions();
+      } catch (apiError) {
+        this.logger.error('Failed to run deployment permission validation:', apiError);
+        
+        // Return specific error for API failures even with valid credentials
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `⚠️ **Authentication Status:** ${authStatus}
+**📍 Credential Source:** ${credentialSource}
+
+**❌ Diagnostic API Call Failed**
+
+**Credential Details:**
+- Instance: ${credentials?.instance || 'Unknown'} ${credentials?.instance ? '✅' : '❌'}
+- Client ID: ${credentials?.clientId ? '✅ Present' : '❌ Missing'}
+- Access Token: ${credentials?.accessToken ? '✅ Present' : '❌ Missing'}
+
+**Error Details:**
+${apiError instanceof Error ? apiError.message : String(apiError)}
+
+**Possible Causes:**
+1. **ServiceNow instance is down or unreachable**
+2. **OAuth token has expired** - Run: \`snow-flow auth login\`
+3. **Network/firewall issues** blocking API calls
+4. **Invalid instance URL** in credentials
+5. **Insufficient API permissions** for your OAuth application
+
+**🔧 Troubleshooting Steps:**
+1. Verify instance URL: https://${credentials?.instance || 'your-instance'}/
+2. Check if you can access ServiceNow web interface
+3. Re-authenticate: \`snow-flow auth login\`
+4. Test with simple API call
+5. Check OAuth application permissions in ServiceNow
+
+**💡 Alternative Approaches:**
+- Test deployment with: \`snow_validate_deployment\`
+- Check Update Set status: \`snow_update_set_current\`
+- Try manual deployment in ServiceNow web interface`,
+            },
+          ],
+        };
+      }
       
       if (!diagnostics.success) {
         this.logger.warn('Authentication diagnostics found issues:', diagnostics.data);
@@ -2970,10 +3092,18 @@ ${sessionSummary.statusCounts.pending > 0 ? '- 📋 Complete pending deployments
             type: 'text',
             text: `🔐 **Authentication & Deployment Diagnostics**
 
-**Instance:** ${data.instance_url || 'Unknown'}
-**Timestamp:** ${data.timestamp || new Date().toISOString()}
+**✅ Authentication Status:** ${authStatus}
+**📍 Credential Source:** ${credentialSource}
+**🌐 Instance:** ${data.instance_url || credentials?.instance || 'Unknown'}
+**⏰ Timestamp:** ${data.timestamp || new Date().toISOString()}
 
-**📊 Summary:**
+**🔑 Credential Details:**
+- Instance: ${credentials?.instance || 'Unknown'} ${credentials?.instance ? '✅' : '❌'}
+- Client ID: ${credentials?.clientId ? '✅ Present' : '❌ Missing'}
+- Access Token: ${credentials?.accessToken ? '✅ Valid' : '❌ Missing'}
+- Token Expires: ${credentials?.expiresAt ? new Date(credentials.expiresAt).toLocaleString() : 'Unknown'}
+
+**📊 Permission Test Summary:**
 - Total Tests: ${summary.total_tests || 0}
 - Passed: ${summary.passed || 0} ✅
 - Failed: ${summary.failed || 0} ${(summary.failed || 0) > 0 ? '❌' : ''}
@@ -2992,7 +3122,8 @@ ${(summary.failed || 0) === 0 && summary.total_tests > 0
 1. If 403 errors persist: Check OAuth scopes in ServiceNow (System OAuth > Application Registry)
 2. If URL issues: Remove trailing slash from SNOW_INSTANCE in .env file
 3. If role issues: Contact ServiceNow admin to assign sp_portal_manager or admin role
-4. Re-test: Run this diagnostic again after making changes`
+4. If token expired: Run \`snow-flow auth login\` to refresh tokens
+5. Re-test: Run this diagnostic again after making changes`
           }
         ]
       };
