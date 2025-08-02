@@ -39,6 +39,38 @@ async function startAllServers() {
     {
       name: 'ServiceNow Advanced Features MCP',
       script: 'dist/mcp/advanced/servicenow-advanced-features-mcp.js'
+    },
+    {
+      name: 'ServiceNow Operations MCP',
+      script: 'dist/mcp/servicenow-operations-mcp.js'
+    },
+    {
+      name: 'ServiceNow Reporting Analytics MCP',
+      script: 'dist/mcp/servicenow-reporting-analytics-mcp.js'
+    },
+    {
+      name: 'ServiceNow Security Compliance MCP',
+      script: 'dist/mcp/servicenow-security-compliance-mcp.js'
+    },
+    {
+      name: 'ServiceNow Platform Development MCP',
+      script: 'dist/mcp/servicenow-platform-development-mcp.js'
+    },
+    {
+      name: 'ServiceNow Automation MCP',
+      script: 'dist/mcp/servicenow-automation-mcp.js'
+    },
+    {
+      name: 'ServiceNow Integration MCP',
+      script: 'dist/mcp/servicenow-integration-mcp.js'
+    },
+    {
+      name: 'ServiceNow XML Flow MCP',
+      script: 'dist/mcp/servicenow-xml-flow-mcp.js'
+    },
+    {
+      name: 'ServiceNow Memory MCP',
+      script: 'dist/mcp/servicenow-memory-mcp.js'
     }
   ];
 

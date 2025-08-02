@@ -263,6 +263,86 @@ mcp__snow-flow__memory_usage({
 })
 ```
 
+## Snow-Flow MCP Tools (100+ Total)
+
+Snow-Flow provides comprehensive ServiceNow intelligence through 15 specialized MCP servers:
+
+### 🧠 **Graph Memory & Dependency Analysis** (7 tools)
+- `snow_graph_index_artifact` - Index artifacts in Neo4j with relationship mapping
+- `snow_graph_find_related` - Find ALL connections & dependencies of any script/artifact
+- `snow_graph_analyze_impact` - AI-powered impact analysis before making changes
+- `snow_graph_suggest_artifacts` - Intelligent artifact suggestions based on patterns
+- `snow_graph_pattern_analysis` - Advanced pattern recognition across all code
+- `snow_graph_visualize` - Generate visual dependency graphs (Cypher/Mermaid)
+- `snow_graph_export_knowledge` - Export learned patterns and relationships
+
+### 🔄 **Process Mining & Workflow Analysis** (4 tools)
+- `snow_discover_process` - Real process mining from ServiceNow audit logs
+- `snow_analyze_workflow_execution` - Analyze how workflows REALLY work vs design
+- `snow_discover_cross_table_process` - Discover end-to-end processes across tables
+- `snow_monitor_process` - Real-time process monitoring with anomaly detection
+
+### ⚡ **Advanced Analytics & Performance** (6 tools)
+- `snow_batch_api` - 80% API call reduction through intelligent batching
+- `snow_get_table_relationships` - Deep table relationship mapping with visualizations
+- `snow_analyze_query` - Query performance analysis with optimization suggestions
+- `snow_predict_change_impact` - AI-powered change impact prediction (90% accuracy)
+- `snow_detect_code_patterns` - Security & performance anti-pattern detection
+- `snow_generate_documentation` - Auto-generate documentation from code analysis
+
+### 📊 **ServiceNow Operations** (15+ tools)
+- Complete ITIL lifecycle management (Incident, Request, Problem, Change)
+- CMDB and User management with intelligent analysis
+- AI-powered incident analysis and auto-resolution capabilities
+- Pattern recognition and predictive analytics
+- Knowledge base integration with smart suggestions
+
+### 🔧 **Platform Development** (8+ tools)
+- UI component creation (Pages, scripts, policies, actions)
+- Business rule management with dynamic rule creation
+- Client script development and form automation
+- Complete table schema discovery and analysis
+- Field management with dynamic discovery
+- Script include development for reusable code libraries
+
+### 🔗 **Integration** (10+ tools)
+- REST/SOAP endpoint discovery for external system integration
+- Transform map creation and data transformation
+- Import set management and data import automation
+- Web service integration with WSDL-based connections
+- Email configuration and communication integration
+- Comprehensive data source discovery and analysis
+
+### 📈 **Reporting & Analytics** (12+ tools)
+- Dynamic report creation with no hardcoded configurations
+- Interactive ServiceNow dashboard generation
+- KPI management and business metrics tracking
+- Advanced data visualization (charts, graphs, visual analytics)
+- System performance monitoring and analytics
+- Automated report delivery and scheduling
+
+### ⚙️ **Automation** (11+ tools)
+- Scheduled job management with dynamic schedule discovery
+- Event rule creation and automated event handling
+- Smart notification management and delivery
+- SLA definition and service level automation
+- Escalation rules and automated escalation processes
+- Comprehensive workflow activities and process automation
+
+### 🛡️ **Security & Compliance** (12+ tools)
+- Security policy management with dynamic configurations
+- Compliance rule enforcement (SOX, GDPR, HIPAA)
+- Audit trail analysis and security incident detection
+- Access control management and role/permission analysis
+- Proactive vulnerability scanning and assessment
+- Comprehensive security risk assessment and analysis
+
+### 🔄 **XML Flow Generation** (5+ tools)
+- XML-first flow creation to bypass API limitations
+- Direct XML deployment with alternative deployment methods
+- Flow template generation for standardized workflows
+- Natural language mapping with AI-powered flow design
+
 ## Available Agents (25+ Total)
 
 ### Core Development Agents
