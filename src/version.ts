@@ -2,13 +2,20 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.28';
+export const VERSION = '1.4.29';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.29': [
+      '🧹 CODE CLEANUP: Removed deprecated deployXMLToServiceNow function',
+      '🔥 REMOVED COMMAND: Removed deploy-xml command (no longer needed)',
+      '📝 HELP TEXT: Cleaned up references to XML deployment',
+      '🗑️ UNUSED CODE: Removed createSparcFiles function (replaced by init --sparc)',
+      '✨ CLEANER CLI: Streamlined command structure without deprecated functions',
+    ],
     '1.4.28': [
       '🧹 FINAL CLEANUP: Removed last Claude-Flow reference in swarm prompt',
       '📝 SWARM PROMPT: Changed "Claude-Flow pattern" to "Snow-Flow pattern"',
