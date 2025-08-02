@@ -4365,23 +4365,40 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
 }
 
 async function createEnvFile(targetDir: string, force: boolean = false) {
-  const envContent = `# ServiceNow OAuth Configuration
-# Replace these values with your actual ServiceNow instance and OAuth credentials
+  const envContent = `# ServiceNow Configuration
+# ===========================================
 
 # ServiceNow Instance URL (without https://)
 # Example: dev12345.service-now.com
 SNOW_INSTANCE=your-instance.service-now.com
 
+# ===========================================
+# OAuth Authentication (Required)
+# ===========================================
+# Snow-Flow uses OAuth for secure authentication to ServiceNow
+# 
+# How to set up OAuth in ServiceNow:
+# 1. Navigate to: System OAuth > Application Registry
+# 2. Click "New" > "Create an OAuth API endpoint for external clients"
+# 3. Fill in:
+#    - Name: Snow-Flow Development
+#    - Client ID: (will be auto-generated)
+#    - Client Secret: (set your own or auto-generate)
+# 4. Copy the Client ID and Secret below:
+
 # OAuth Client ID from ServiceNow Application Registry
-# How to get: System OAuth > Application Registry > New > Create an OAuth application
 SNOW_CLIENT_ID=your-oauth-client-id
 
 # OAuth Client Secret from ServiceNow Application Registry
 SNOW_CLIENT_SECRET=your-oauth-client-secret
 
-# Username and Password for OAuth (required for password grant type)
-SNOW_USERNAME=your-username
-SNOW_PASSWORD=your-password
+# ===========================================
+# Legacy Username/Password (Not Recommended)
+# ===========================================
+# These fields are kept for backwards compatibility but are not used
+# Snow-Flow requires OAuth authentication for security
+# SNOW_USERNAME=not-used
+# SNOW_PASSWORD=not-used
 
 # Optional: Additional Configuration
 # SNOW_REDIRECT_URI=http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback

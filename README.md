@@ -225,8 +225,9 @@ snow-flow auth login
 export SNOW_INSTANCE=your-instance.service-now.com
 export SNOW_CLIENT_ID=your-oauth-client-id
 export SNOW_CLIENT_SECRET=your-oauth-client-secret
-export SNOW_USERNAME=your-username
-export SNOW_PASSWORD=your-password
+
+# Note: Username/Password authentication is not supported
+# Snow-Flow requires OAuth for secure ServiceNow access
 ```
 
 ### **Verify Connection**
@@ -307,10 +308,13 @@ snow-flow swarm "Setup comprehensive monitoring for all critical ServiceNow proc
 ```bash
 # ServiceNow Instance Configuration
 SNOW_INSTANCE=your-instance.service-now.com
+
+# OAuth Authentication (Required)
 SNOW_CLIENT_ID=your-oauth-client-id
 SNOW_CLIENT_SECRET=your-oauth-client-secret
-SNOW_USERNAME=your-username
-SNOW_PASSWORD=your-password
+
+# Note: Username/Password authentication is not supported
+# Snow-Flow uses OAuth for secure API access
 
 # Advanced Settings
 SNOW_API_TIMEOUT=30000
@@ -439,10 +443,13 @@ Snow-Flow uses environment variables for configuration. Copy `.env.template` to 
 ```bash
 # ServiceNow Instance Configuration
 SNOW_INSTANCE=your-instance.service-now.com
+
+# OAuth Authentication (Required)
 SNOW_CLIENT_ID=your-client-id
 SNOW_CLIENT_SECRET=your-client-secret
-SNOW_USERNAME=your-username
-SNOW_PASSWORD=your-password
+
+# Note: Snow-Flow requires OAuth authentication
+# Username/Password authentication is not supported
 
 # Timeout Configuration
 SNOW_REQUEST_TIMEOUT=60000          # Regular operations (60 seconds)
@@ -465,6 +472,27 @@ For complex deployments (large widgets), Snow-Flow supports extended timeouts:
 - **MCP Transport**: 6 minutes default (`MCP_DEPLOYMENT_TIMEOUT`)
 
 These can be adjusted based on your ServiceNow instance performance and network conditions.
+
+### **Setting up OAuth in ServiceNow**
+
+Snow-Flow requires OAuth authentication for secure API access. Here's how to set it up:
+
+1. **Log into ServiceNow** as an administrator
+2. Navigate to **System OAuth > Application Registry**
+3. Click **New** > **Create an OAuth API endpoint for external clients**
+4. Fill in the following:
+   - **Name**: Snow-Flow Development
+   - **Client ID**: (auto-generated, copy this)
+   - **Client Secret**: (set your own or auto-generate, copy this)
+   - **Redirect URL**: http://localhost:3000/callback
+   - **Grant type**: Resource Owner Password Credentials
+   - **Active**: true
+5. Click **Submit**
+6. Copy the Client ID and Client Secret to your `.env` file
+
+**Important**: Make sure your ServiceNow user has the necessary roles:
+- `rest_api_explorer` - For API access
+- `admin` or specific table access - For the tables you want to access
 
 ---
 
