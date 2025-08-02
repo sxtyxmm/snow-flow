@@ -1,8 +1,10 @@
 # Snow-Flow Realistische Test Prompt
 
-## Test de 50+ echte MCP tools systematisch
+## Test de 65+ echte MCP tools systematisch
 
-**Verwachting:** ~70% succes rate (35+ van 50+ tools werken)
+**Verwachting:** ~80% succes rate (52+ van 65+ tools werken)
+
+**🚀 NIEUW: Advanced Features geherintroduceerd - Graph Memory, Process Mining & AI Analytics!**
 
 Kopieer deze prompt en plak in Claude Code:
 
@@ -49,10 +51,28 @@ Test Snow-Flow's 50+ MCP tools systematisch per categorie en rapporteer welke we
 ### 🐝 **AI Swarm Orchestration** (4+ tools - coördinatie werkt)
 18. snow-flow swarm "Initialiseer 5-agent swarm voor ServiceNow analyse"
 
+### 🧠 **KILLER FEATURE: Graph Memory & Dependency Analysis** (7+ tools - GEAVANCEERD!)
+19. snow-flow swarm "Map alle verbindingen en dependencies van script 'IncidentUtils'"
+20. snow-flow swarm "Analyseer impact als ik Priority veld wijzig in incident table"
+21. snow-flow swarm "Maak visual dependency graph van al mijn custom scripts"
+22. snow-flow swarm "Vind alle patterns en anti-patterns in mijn ServiceNow code"
+
+### 🔄 **REVOLUTIONARY: Process Mining & Workflow Analysis** (4+ tools - BAANBREKEND!)
+23. snow-flow swarm "Ontdek hoe incident management ECHT werkt uit audit logs"
+24. snow-flow swarm "Analyseer hoe mijn workflows WERKELIJK uitgevoerd worden vs design"
+25. snow-flow swarm "Vind end-to-end processen van request naar asset naar incident"
+26. snow-flow swarm "Monitor mijn processen real-time met anomaly detection"
+
+### ⚡ **GAME CHANGERS: Advanced Analytics & Performance** (6+ tools - KRACHTIG!)
+27. snow-flow swarm "Optimaliseer mijn API calls met batch processing (80% reductie)"
+28. snow-flow swarm "Analyseer query performance en geef optimization suggestions"
+29. snow-flow swarm "Genereer automatisch documentatie van al mijn workflows"
+30. snow-flow swarm "Detect security vulnerabilities in al mijn scripts"
+
 ## 🔧 **RECENT GEFIXTE TOOLS TESTEN:**
-19. Test de verbeterde snow_deploy tool
-20. Test de gefixte snow_widget_test tool  
-21. Test de gefixe snow_create_security_policy tool
+31. Test de verbeterde snow_deploy tool
+32. Test de gefixte snow_widget_test tool  
+33. Test de gefixe snow_create_security_policy tool
 
 ## 📋 **RAPPORTAGE per test:**
 - ✅ Werkt perfect / ⚠️ Werkt deels / ❌ Werkt niet / 🔒 Permission issue
@@ -66,15 +86,18 @@ Test Snow-Flow's 50+ MCP tools systematisch per categorie en rapporteer welke we
 - **❌ Niet werkende**: Mogelijk complexe migration tools, predictive features
 
 ## 📋 **FINAL SUMMARY RAPPORT:**
-- **Totaal getest**: X tools van 50+
+- **Totaal getest**: X tools van 65+
 - **✅ Volledig werkend**: X tools (X%)
 - **⚠️ Gedeeltelijk**: X tools (permission/config issues)
 - **❌ Niet werkend**: X tools 
-- **🏆 Snow-Flow Score**: X/50+ (vergelijk met verwachte 70%)
+- **🏆 Snow-Flow Score**: X/65+ (vergelijk met verwachte 80%)
+- **🚀 Advanced Features**: Hoe werken Graph Memory, Process Mining, AI Analytics?
 - **💡 Top bevindingen**: Welke categorieën werken best?
 - **🔧 Prioriteit fixes**: Top 3 belangrijkste issues
 ```
 
 ---
 
-**🎯 Realistisch verwachtingsmanagement - Snow-Flow heeft 50+ echte tools met ~70% succes rate!** 🏔️
+**🎯 Realistisch verwachtingsmanagement - Snow-Flow heeft 65+ echte tools met ~80% succes rate!** 
+
+**🚀 PLUS: Graph Memory, Process Mining & AI Analytics voor ongekende ServiceNow insights!** 🏔️

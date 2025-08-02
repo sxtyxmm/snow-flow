@@ -35,6 +35,10 @@ async function startAllServers() {
     {
       name: 'ServiceNow Update Set MCP',
       script: 'dist/mcp/servicenow-update-set-mcp.js'
+    },
+    {
+      name: 'ServiceNow Advanced Features MCP',
+      script: 'dist/mcp/advanced/servicenow-advanced-features-mcp.js'
     }
   ];
 
