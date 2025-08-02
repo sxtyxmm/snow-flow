@@ -288,9 +288,26 @@ snow-flow tool snow_analyze_table_deep \
 
 ---
 
-## ⚡ **Quick Start: From Zero to AI-Powered Analysis in 3 Minutes**
+## ⚡ **Quick Start: From Zero to AI-Powered Analysis in 5 Minutes**
 
-### 1. **Installation**
+### 0. **Prerequisites**
+
+⚠️ **IMPORTANT: Claude Code must be installed first** (Snow-Flow orchestrates through Claude Code):
+
+```bash
+# 1. Install Claude Code globally
+npm install -g @anthropic-ai/claude-code
+
+# 2. (Optional) Skip permissions check for faster setup
+# Only use if you understand the security implications
+claude --dangerously-skip-permissions
+```
+
+**Platform Support:**
+- ✅ **macOS**: Extensively tested and fully supported
+- ⚙️ **Linux/Windows**: Should work but not extensively tested yet
+
+### 1. **Install Snow-Flow**
 
 ```bash
 # Install Snow-Flow globally
@@ -311,6 +328,8 @@ snow-flow auth login
 
 ### 3. **Start Using Swarm (The Magic Begins)**
 
+**How it works:** Snow-Flow orchestrates through Claude Code, giving you natural language control over 14 advanced ServiceNow tools.
+
 ```bash
 # Just tell Snow-Flow what you want in natural language:
 
@@ -330,7 +349,7 @@ snow-flow swarm "Create documentation for all my custom workflows and scripts"
 snow-flow swarm "Analyze my instance for security vulnerabilities and compliance issues"
 ```
 
-**That's literally it!** No complex command syntax, no manual tool selection, no configuration. Just natural language requests and Snow-Flow's AI swarm handles everything.
+**That's literally it!** No complex command syntax, no manual tool selection, no configuration. Just natural language requests and Snow-Flow's AI swarm handles everything through Claude Code's intelligent orchestration.
 
 ### 🎯 **What Happens Behind the Scenes**
 
@@ -598,9 +617,9 @@ npm test
 
 ### **Future Vision (2025-2026)**
 - 🧠 **Q4 2025**: Advanced ML models for process optimization and prediction
-- 🎯 **Q1 2026**: Natural language query interface for direct ServiceNow interaction  
-- 🔮 **Q2 2026**: Predictive maintenance capabilities with anomaly detection
-- 🌟 **Q3 2026**: Multi-platform ITSM integration (Jira, Azure DevOps, etc.)
+- 🔮 **Q1 2026**: Predictive maintenance capabilities with anomaly detection  
+- 🌟 **Q2 2026**: Multi-platform ITSM integration (Jira, Azure DevOps, etc.)
+- 🚀 **Q3 2026**: Enhanced natural language processing with domain-specific understanding
 
 ---
 
