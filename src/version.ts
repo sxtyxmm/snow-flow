@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.16';
+export const VERSION = '1.4.17';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.17': [
+      '🔐 AUTH CLARIFICATION: OAuth is the only supported authentication method',
+      '📝 DOCUMENTATION: Clear explanation that username/password is not used',
+      '🎯 NO CONFUSION: Removed misleading authentication options',
+      '📋 SETUP GUIDE: Added OAuth setup instructions in README',
+      '✨ BETTER UX: Users now understand OAuth is required, not optional',
+      '🚫 LEGACY FIELDS: Username/password marked as unused legacy fields',
+    ],
     '1.4.16': [
       '⏱️ DEPLOYMENT TIMEOUTS: Added configurable timeout settings for widget deployments',
       '🚀 EXTENDED TIMEOUTS: 5-minute default for deployments (was 60 seconds)',
