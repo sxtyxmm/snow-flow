@@ -4379,6 +4379,10 @@ SNOW_CLIENT_ID=your-oauth-client-id
 # OAuth Client Secret from ServiceNow Application Registry
 SNOW_CLIENT_SECRET=your-oauth-client-secret
 
+# Username and Password for OAuth (required for password grant type)
+SNOW_USERNAME=your-username
+SNOW_PASSWORD=your-password
+
 # Optional: Additional Configuration
 # SNOW_REDIRECT_URI=http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback
 
@@ -4399,6 +4403,24 @@ SNOW_FLOW_MAX_AGENTS=5
 # Set to 0 to disable timeout (infinite execution time)
 # Default: 60 minutes
 SNOW_FLOW_TIMEOUT_MINUTES=0
+
+# ===========================================
+# Deployment Timeout Configuration
+# ===========================================
+
+# ServiceNow API timeout for regular operations (milliseconds)
+# Default: 60000 (60 seconds)
+SNOW_REQUEST_TIMEOUT=60000
+
+# ServiceNow API timeout for DEPLOYMENT operations (milliseconds)
+# Deployments need more time for complex widgets
+# Default: 300000 (5 minutes)
+SNOW_DEPLOYMENT_TIMEOUT=300000
+
+# MCP transport timeout for deployment operations (milliseconds)
+# Should be higher than SNOW_DEPLOYMENT_TIMEOUT
+# Default: 360000 (6 minutes)
+MCP_DEPLOYMENT_TIMEOUT=360000
 
 # ===========================================
 # How to Set Up ServiceNow OAuth
@@ -4496,7 +4518,9 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         "env": {
           "SNOW_INSTANCE": "${SNOW_INSTANCE}",
           "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
+          "SNOW_DEPLOYMENT_TIMEOUT": "${SNOW_DEPLOYMENT_TIMEOUT}",
+          "MCP_DEPLOYMENT_TIMEOUT": "${MCP_DEPLOYMENT_TIMEOUT}"
         }
       },
       "servicenow-update-set": {

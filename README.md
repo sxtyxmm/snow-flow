@@ -430,6 +430,44 @@ export SNOW_ENABLE_CACHING=true
 
 ---
 
+## ⚙️ **Configuration**
+
+### **Environment Variables**
+
+Snow-Flow uses environment variables for configuration. Copy `.env.template` to `.env` and configure:
+
+```bash
+# ServiceNow Instance Configuration
+SNOW_INSTANCE=your-instance.service-now.com
+SNOW_CLIENT_ID=your-client-id
+SNOW_CLIENT_SECRET=your-client-secret
+SNOW_USERNAME=your-username
+SNOW_PASSWORD=your-password
+
+# Timeout Configuration
+SNOW_REQUEST_TIMEOUT=60000          # Regular operations (60 seconds)
+SNOW_DEPLOYMENT_TIMEOUT=300000      # Deployment operations (5 minutes)
+MCP_DEPLOYMENT_TIMEOUT=360000       # MCP deployment timeout (6 minutes)
+
+# Snow-Flow Configuration
+SNOW_FLOW_DEBUG=false               # Enable debug logging
+SNOW_FLOW_STRATEGY=development      # Default coordination strategy
+SNOW_FLOW_MAX_AGENTS=5             # Maximum number of agents
+SNOW_FLOW_TIMEOUT_MINUTES=0        # Claude Code timeout (0 = unlimited)
+```
+
+### **Timeout Settings**
+
+For complex deployments (large widgets), Snow-Flow supports extended timeouts:
+
+- **Regular Operations**: 60 seconds default (`SNOW_REQUEST_TIMEOUT`)
+- **Deployment Operations**: 5 minutes default (`SNOW_DEPLOYMENT_TIMEOUT`)
+- **MCP Transport**: 6 minutes default (`MCP_DEPLOYMENT_TIMEOUT`)
+
+These can be adjusted based on your ServiceNow instance performance and network conditions.
+
+---
+
 ## 🤝 **Contributing**
 
 ### **Development Setup**

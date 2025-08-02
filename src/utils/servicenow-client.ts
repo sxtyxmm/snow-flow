@@ -68,6 +68,7 @@ export class ServiceNowClient {
   private credentials: ServiceNowCredentials | null = null;
   private actionTypeCache: ActionTypeCache;
   private logger: Logger;
+  private deploymentTimeout: number;
 
   constructor() {
     this.logger = new Logger('ServiceNowClient');
@@ -130,6 +131,9 @@ export class ServiceNowClient {
       maxRedirects: 5,
       validateStatus: (status) => status < 400 // Reject 4xx and 5xx by default
     });
+    
+    // Store deployment timeout from environment
+    this.deploymentTimeout = parseInt(process.env.SNOW_DEPLOYMENT_TIMEOUT || '300000'); // 5 minutes default
     
     // 🔧 CRITICAL FIX: Add makeRequest method to Axios instance to fix phantom calls
     // Some code expects makeRequest to exist on this.client (the Axios instance)
@@ -788,6 +792,12 @@ export class ServiceNowClient {
           demo_data: widget.demo_data || '{}',
           has_preview: widget.has_preview || false,
           category: widget.category || 'custom'
+        },
+        {
+          timeout: this.deploymentTimeout, // Use deployment-specific timeout
+          headers: {
+            'X-Operation-Type': 'deployment' // Mark as deployment operation
+          }
         }
       );
       
@@ -829,7 +839,13 @@ export class ServiceNowClient {
       
       const response = await this.client.patch(
         `${this.getBaseUrl()}/api/now/table/sp_widget/${sysId}`,
-        mappedWidget
+        mappedWidget,
+        {
+          timeout: this.deploymentTimeout, // Use deployment-specific timeout
+          headers: {
+            'X-Operation-Type': 'deployment' // Mark as deployment operation
+          }
+        }
       );
       
       this.logger.info('✅ Widget updated successfully!');
