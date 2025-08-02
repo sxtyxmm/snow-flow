@@ -2,13 +2,19 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.27';
+export const VERSION = '1.4.28';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.28': [
+      '🧹 FINAL CLEANUP: Removed last Claude-Flow reference in swarm prompt',
+      '📝 SWARM PROMPT: Changed "Claude-Flow pattern" to "Snow-Flow pattern"',
+      '✨ COMPLETE MIGRATION: Snow-Flow is now 100% independent',
+      '🚀 NO EXTERNAL DEPS: All swarm orchestration is native Snow-Flow',
+    ],
     '1.4.27': [
       '🚀 SNOW-FLOW SWARM ORCHESTRATION: Activated native Snow-Flow swarm MCP server',
       '🔧 16 MCP SERVERS: Increased from 15 to 16 with Snow-Flow own orchestration',

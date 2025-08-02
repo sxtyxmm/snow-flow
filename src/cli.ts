@@ -1489,11 +1489,11 @@ Agents must ALWAYS try MCP tools first!` : ''}
 
 ## 👑 Queen Agent Coordination Instructions
 
-### 5. Claude-Flow Memory Synchronization Pattern
+### 5. Snow-Flow Memory Synchronization Pattern
 Implement continuous memory synchronization for real-time coordination:
 
 \`\`\`javascript
-// Initialize coordination heartbeat (Claude-Flow pattern)
+// Initialize coordination heartbeat (Snow-Flow pattern)
 const coordinationInterval = setInterval(async () => {
   // Sync agent states across namespace
   const agentStates = await mcp__servicenow-memory__memory_search({
