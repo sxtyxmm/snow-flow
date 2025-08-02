@@ -265,7 +265,20 @@ mcp__snow-flow__memory_usage({
 
 ## Snow-Flow MCP Tools (100+ Total)
 
-Snow-Flow provides comprehensive ServiceNow intelligence through 15 specialized MCP servers:
+Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized MCP servers:
+
+### 🐝 **Snow-Flow AI Swarm Orchestration** (10+ tools) - REPLACES claude-flow/ruv-swarm!
+**IMPORTANT: Use Snow-Flow's built-in swarm orchestration - no external tools needed!**
+- `swarm_init` - Initialize AI swarm coordination topology
+- `agent_spawn` - Create specialized AI agents for different tasks
+- `task_orchestrate` - Orchestrate complex task workflows in parallel
+- `swarm_status` - Monitor swarm health and performance  
+- `memory_usage` - Persistent memory across sessions with namespacing
+- `neural_status` - Neural network pattern effectiveness
+- `neural_train` - Train neural patterns with WASM SIMD acceleration
+- `neural_patterns` - Analyze cognitive patterns for better coordination
+- `memory_search` - Search memory with pattern matching
+- `performance_report` - Generate performance reports with metrics
 
 ### 🧠 **Graph Memory & Dependency Analysis** (7 tools)
 - `snow_graph_index_artifact` - Index artifacts in Neo4j with relationship mapping

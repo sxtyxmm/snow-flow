@@ -89,13 +89,20 @@ snow-flow swarm "Create documentation for all my custom workflows"
 
 *You don't need to learn these - the swarm uses them automatically based on your natural language requests*
 
-Snow-Flow provides **100+ real MCP tools** across 15 categories via **15 specialized MCP servers**. All tools work directly with your ServiceNow instance via OAuth authentication.
+Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 specialized MCP servers**. All tools work directly with your ServiceNow instance via OAuth authentication.
 
-### 🐝 **AI Swarm Orchestration** (4 tools working)
-- `swarm_init` - Initialize AI swarm coordination topology  
-- `agent_spawn` - Create specialized AI agents for different tasks
-- `memory_usage` - Persistent memory across sessions
-- `neural_status` - Neural network pattern effectiveness
+### 🐝 **Snow-Flow AI Swarm Orchestration** (10+ tools - REPLACES claude-flow/ruv-swarm!)
+**IMPORTANT: Snow-Flow has its own swarm orchestration - no external tools needed!**
+- ✅ `swarm_init` - Initialize AI swarm coordination topology  
+- ✅ `agent_spawn` - Create specialized AI agents for different tasks
+- ✅ `task_orchestrate` - Orchestrate complex task workflows in parallel
+- ✅ `swarm_status` - Monitor swarm health and performance
+- ✅ `memory_usage` - Persistent memory across sessions with namespacing
+- ✅ `neural_status` - Neural network pattern effectiveness
+- ✅ `neural_train` - Train neural patterns with WASM SIMD acceleration
+- ✅ `neural_patterns` - Analyze cognitive patterns for better coordination
+- ✅ `memory_search` - Search memory with pattern matching
+- ✅ `performance_report` - Generate performance reports with metrics
 
 ### 🧠 **Graph Memory & Dependency Analysis** (7 tools - KILLER FEATURES!)
 - ✅ `snow_graph_index_artifact` - Index artifacts in Neo4j with full relationship mapping
@@ -214,9 +221,9 @@ Snow-Flow provides **100+ real MCP tools** across 15 categories via **15 special
 ### 📊 **Tool Status Summary**
 - **✅ Working Tools**: 85+ tools (85% success rate)
 - **⚠️ Limited Tools**: 10 tools (permission/config issues)  
-- **🔧 Available Tools**: 100+ total across 15 categories
+- **🔧 Available Tools**: 100+ total across 16 categories
 - **🚀 Advanced Features**: Graph Memory, Process Mining, AI Analytics
-- **🏗️ Architecture**: 15 specialized MCP servers for comprehensive coverage
+- **🏗️ Architecture**: 16 specialized MCP servers for comprehensive coverage
 
 ### 🎯 **Natural Language Examples**
 
@@ -432,7 +439,7 @@ snow-flow swarm "Create documentation for all my custom stuff"
 | 🎯 **Automation** | **90% of Tasks** | AI-powered analysis, predictive insights |
 | 📊 **Data Accuracy** | **100% Real** | Direct ServiceNow APIs, zero mock data |
 | 🛠️ **Setup Time** | **< 5 Minutes** | OAuth authentication, automatic configuration |
-| 💥 **Tool Coverage** | **100+ Tools** | 15 specialized MCP servers (was 7) |
+| 💥 **Tool Coverage** | **100+ Tools** | 16 specialized MCP servers (was 7) |
 | 🔧 **Success Rate** | **85%+ Expected** | Comprehensive testing, robust error handling |
 
 ---

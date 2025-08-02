@@ -71,6 +71,10 @@ async function startAllServers() {
     {
       name: 'ServiceNow Memory MCP',
       script: 'dist/mcp/servicenow-memory-mcp.js'
+    },
+    {
+      name: 'Snow-Flow MCP',
+      script: 'dist/mcp/snow-flow-mcp.js'
     }
   ];
 
