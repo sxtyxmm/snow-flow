@@ -1,6 +1,8 @@
-# Snow-Flow Simpele Test Prompt
+# Snow-Flow Realistische Test Prompt
 
-## Test alle 14 tools in één keer
+## Test de 50+ echte MCP tools systematisch
+
+**Verwachting:** ~70% succes rate (35+ van 50+ tools werken)
 
 Kopieer deze prompt en plak in Claude Code:
 
@@ -9,38 +11,70 @@ Kopieer deze prompt en plak in Claude Code:
 **PROMPT VOOR CLAUDE CODE:**
 
 ```
-Test alle 14 Snow-Flow tools systematisch en rapporteer welke werken en welke niet.
+Test Snow-Flow's 50+ MCP tools systematisch per categorie en rapporteer welke werken.
 
-Voer deze commando's uit en documenteer de resultaten:
+## 🎯 REALISTISCH TESTEN - Verwacht ~70% succes rate
 
-1. snow-flow swarm "Test batch API performance met incident table"
-2. snow-flow swarm "Analyseer query performance van mijn incident table" 
-3. snow-flow swarm "Maak relationship diagram van incident table"
-4. snow-flow swarm "Vind ongebruikte velden in mijn ServiceNow instance"
-5. snow-flow swarm "Voorspel impact van wijziging aan incident urgency veld"
-6. snow-flow swarm "Scan alle scripts op security issues en performance problemen"
-7. snow-flow swarm "Genereer documentatie voor mijn custom workflows"
-8. snow-flow swarm "Refactor mijn business rules met moderne JavaScript patterns"
-9. snow-flow swarm "Ontdek alle incident management processen uit event logs"
-10. snow-flow swarm "Analyseer hoe mijn workflows echt werken vs design"
-11. snow-flow swarm "Vind cross-table processen van incident naar problem naar change"
-12. snow-flow swarm "Monitor mijn incident process real-time met anomaly detection"
-13. snow-flow swarm "Maak migration plan voor incident table herstructurering"
-14. snow-flow swarm "Doe deep analysis van incident table: structure, quality, performance"
+### 📊 **ServiceNow Operations** (12+ tools - meeste werken)
+1. snow-flow swarm "Geef me operational metrics van mijn ServiceNow instance"
+2. snow-flow swarm "Zoek user information en groups voor admin gebruikers"  
+3. snow-flow swarm "Query incidents met status Open en hoge priority"
+4. snow-flow swarm "Zoek catalog items met fuzzy search voor iPhone"
+5. snow-flow swarm "Maak nieuwe user group voor incident managers"
 
-Voor elke test, noteer:
-- ✅ Werkt perfect / ⚠️ Werkt deels / ❌ Werkt niet
+### 🔧 **Update Set Management** (9+ tools - basis functionaliteit werkt)
+6. snow-flow swarm "Laat me de huidige update set zien"
+7. snow-flow swarm "Lijst alle update sets die in progress zijn"
+8. snow-flow swarm "Zorg voor een actieve update set session"
+
+### 📈 **Reporting & Analytics** (12+ tools - data quality werkt)
+9. snow-flow swarm "Analyseer data quality van incident table"
+10. snow-flow swarm "Vind alle beschikbare tabellen voor reporting"
+
+### ⚙️ **Automation** (11+ tools - discovery werkt goed)
+11. snow-flow swarm "Vind alle automation jobs in mijn instance"
+12. snow-flow swarm "Ontdek alle ServiceNow events"
+13. snow-flow swarm "Laat alle system schedules zien"
+
+### 🔗 **Integration** (10+ tools - endpoint discovery werkt)
+14. snow-flow swarm "Vind alle REST en SOAP integration endpoints"
+
+### 🔧 **Platform Development** (2+ tools - schema discovery werkt)
+15. snow-flow swarm "Ontdek alle platform development tabellen"
+16. snow-flow swarm "Analyseer table schema van incident table"
+
+### 🛡️ **Security & Compliance** (12+ tools - mogelijk beperkt door permissions)
+17. snow-flow swarm "Scan mijn instance voor security policies"
+
+### 🐝 **AI Swarm Orchestration** (4+ tools - coördinatie werkt)
+18. snow-flow swarm "Initialiseer 5-agent swarm voor ServiceNow analyse"
+
+## 🔧 **RECENT GEFIXTE TOOLS TESTEN:**
+19. Test de verbeterde snow_deploy tool
+20. Test de gefixte snow_widget_test tool  
+21. Test de gefixe snow_create_security_policy tool
+
+## 📋 **RAPPORTAGE per test:**
+- ✅ Werkt perfect / ⚠️ Werkt deels / ❌ Werkt niet / 🔒 Permission issue
 - Execution tijd
-- Eventuele error messages
-- Welke data/resultaten je kreeg
+- Echte data gekregen? (aantallen, namen, sys_ids)
+- Error messages (403, 404, 400, etc.)
 
-Maak een summary rapport met:
-- Hoeveel tools werken (X/14)
-- Welke tools hebben problemen
-- Top 3 meest kritieke issues
-- Aanbevelingen voor fixes
+## 📊 **VERWACHTE RESULTATEN:**
+- **✅ Werkende tools**: 12+ operations tools, update set basics, data analysis, discovery tools
+- **⚠️ Beperkte tools**: Security tools (permissions), sommige automation tools  
+- **❌ Niet werkende**: Mogelijk complexe migration tools, predictive features
+
+## 📋 **FINAL SUMMARY RAPPORT:**
+- **Totaal getest**: X tools van 50+
+- **✅ Volledig werkend**: X tools (X%)
+- **⚠️ Gedeeltelijk**: X tools (permission/config issues)
+- **❌ Niet werkend**: X tools 
+- **🏆 Snow-Flow Score**: X/50+ (vergelijk met verwachte 70%)
+- **💡 Top bevindingen**: Welke categorieën werken best?
+- **🔧 Prioriteit fixes**: Top 3 belangrijkste issues
 ```
 
 ---
 
-Dat is alles! Simpel en direct. 🏔️
+**🎯 Realistisch verwachtingsmanagement - Snow-Flow heeft 50+ echte tools met ~70% succes rate!** 🏔️
