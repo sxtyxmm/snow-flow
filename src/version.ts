@@ -2,13 +2,21 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.15';
+export const VERSION = '1.4.16';
 
 export const VERSION_INFO = {
   version: VERSION,
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '1.4.16': [
+      '⏱️ DEPLOYMENT TIMEOUTS: Added configurable timeout settings for widget deployments',
+      '🚀 EXTENDED TIMEOUTS: 5-minute default for deployments (was 60 seconds)',
+      '🔧 MCP TRANSPORT: 6-minute timeout for MCP deployment operations',
+      '📋 INIT COMMAND: .env template now includes all timeout configurations',
+      '🎯 NO MORE TIMEOUTS: Prevents MCP error -32001 on complex widget deployments',
+      '📝 FLOW REMOVAL: Removed all references to flow deployments (widgets only)',
+    ],
     '1.4.15': [
       '🐛 CRITICAL BUG FIX: Fixed swarm command flow detection issue',
       '✅ SWARM ANALYSIS: Tool name "snow-flow" no longer triggers flow creation error',
