@@ -29,16 +29,12 @@
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
     },
-    "servicenow-graph-memory": {
+    "servicenow-memory": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-graph-memory-mcp.js"],
+      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"],
       "env": {
-        "NEO4J_URI": "{{NEO4J_URI}}",
-        "NEO4J_USER": "{{NEO4J_USER}}",
-        "NEO4J_PASSWORD": "{{NEO4J_PASSWORD}}",
-        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
-        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
-        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+        "MEMORY_PATH": "{{MEMORY_PATH}}",
+        "SNOW_FLOW_HOME": "{{SNOW_FLOW_HOME}}"
       }
     },
     "servicenow-operations": {
@@ -95,21 +91,10 @@
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
     },
-    "servicenow-memory": {
-      "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"],
-      "env": {
-        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
-        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
-        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
-      }
-    },
     "snow-flow": {
       "command": "node",
       "args": ["{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
-      "env": {
-        "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
-      }
+      "env": {}
     }
   }
 }

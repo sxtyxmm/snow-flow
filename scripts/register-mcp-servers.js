@@ -53,9 +53,9 @@ const SNOW_FLOW_SERVERS = {
     "command": "node",
     "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-intelligent-mcp.js"]
   },
-  "snow-flow-graph-memory": {
+  "snow-flow-memory": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-graph-memory-mcp.js"]
+    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-memory-mcp.js"]
   }
 };
 

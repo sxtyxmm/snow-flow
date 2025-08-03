@@ -3739,7 +3739,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "servicenow-deployment",
       "servicenow-update-set",
       "servicenow-intelligent",
-      "servicenow-graph-memory",
+      "servicenow-memory",
       "servicenow-operations",
       "servicenow-platform-development",
       "servicenow-integration",
