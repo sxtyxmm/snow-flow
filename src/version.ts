@@ -2,7 +2,9 @@
  * Snow-Flow Version Management
  */
 
-export const VERSION = '1.4.41';
+import { VERSION as DYNAMIC_VERSION } from './dynamic-version';
+
+export const VERSION = DYNAMIC_VERSION;
 
 export const VERSION_INFO = {
   version: VERSION,

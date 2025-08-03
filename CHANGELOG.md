@@ -5,6 +5,23 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.44] - 2025-08-03
+
+### 🔄 Dynamic Version Loading
+
+**Enhancement**: Version is now dynamically loaded from package.json instead of being hardcoded.
+
+### Changed
+- Created `dynamic-version.ts` module for runtime version detection
+- Modified `version.ts` to import version from dynamic module
+- Version now automatically stays in sync with package.json
+- No more manual version updates needed in version.ts file
+
+### Technical Details
+- Searches for package.json in multiple locations for compatibility
+- Falls back to hardcoded version if package.json cannot be read
+- Maintains backward compatibility with existing VERSION_INFO structure
+
 ## [1.4.43] - 2025-08-03
 
 ### 🚀 MCP Server Startup Fixes
