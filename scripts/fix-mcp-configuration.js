@@ -81,13 +81,13 @@ function fixMcpTemplate() {
   console.log('📝 Updating .mcp.json.template...');
   
   const config = {
-    mcpServers: {}
+    servers: {}
   };
   
   // Build configuration from MCP_SERVERS
   Object.entries(MCP_SERVERS).forEach(([name, serverConfig]) => {
     const filename = name === 'snow-flow' ? 'snow-flow-mcp.js' : `${name}-mcp.js`;
-    config.mcpServers[name] = {
+    config.servers[name] = {
       command: "node",
       args: [`{{PROJECT_ROOT}}/dist/mcp/${filename}`],
       env: {}
@@ -95,7 +95,7 @@ function fixMcpTemplate() {
     
     // Add environment variables
     serverConfig.env.forEach(envVar => {
-      config.mcpServers[name].env[envVar] = `{{${envVar}}}`;
+      config.servers[name].env[envVar] = `{{${envVar}}}`;
     });
   });
   
@@ -110,13 +110,13 @@ function fixClaudeTemplate() {
   console.log('📝 Updating .claude.mcp-config.template...');
   
   const config = {
-    mcpServers: {}
+    servers: {}
   };
   
   // Build configuration from MCP_SERVERS
   Object.entries(MCP_SERVERS).forEach(([name, serverConfig]) => {
     const filename = name === 'snow-flow' ? 'snow-flow-mcp.js' : `${name}-mcp.js`;
-    config.mcpServers[name] = {
+    config.servers[name] = {
       command: "node",
       args: [`\${MCP_PATH}/${filename}`],
       env: {}
@@ -124,7 +124,7 @@ function fixClaudeTemplate() {
     
     // Add environment variables with ${} syntax for Claude
     serverConfig.env.forEach(envVar => {
-      config.mcpServers[name].env[envVar] = `\${${envVar}}`;
+      config.servers[name].env[envVar] = `\${${envVar}}`;
     });
   });
   
