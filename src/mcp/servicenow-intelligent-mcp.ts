@@ -86,26 +86,30 @@ export class ServiceNowIntelligentMCP {
   }
 
   private async initializeSystemsInBackground() {
-    try {
-      // Initialize autonomous systems in background
-      this.memorySystem = new MemorySystem({
-        dbPath: './intelligent-mcp.db',
-        cache: { enabled: true, maxSize: 100, ttl: 3600 },
-        ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
-      });
-      
-      await this.memorySystem.initialize();
-      
-      this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
-      this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
-      this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
-      this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
-      
-      this.logger.info('All systems initialized successfully');
-    } catch (error) {
-      this.logger.error('Failed to initialize systems:', error);
-      // Continue without these systems - don't crash the server
-    }
+    // Initialize systems in background - don't block server startup on failures
+    setTimeout(async () => {
+      try {
+        // Initialize autonomous systems in background
+        this.memorySystem = new MemorySystem({
+          dbPath: './intelligent-mcp.db',
+          cache: { enabled: true, maxSize: 100, ttl: 3600 },
+          ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
+        });
+        
+        await this.memorySystem.initialize();
+        this.logger.info('Memory system initialized');
+        
+        this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
+        this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
+        this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
+        this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
+        
+        this.logger.info('All systems initialized successfully');
+      } catch (error) {
+        this.logger.error('Failed to initialize systems:', error);
+        // Continue without these systems - don't crash the server
+      }
+    }, 100); // Small delay to ensure server starts first
   }
 
   private async ensureSystemsInitialized() {

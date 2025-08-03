@@ -56,7 +56,7 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     }
   }
 
-  async initialize(): Promise<void> {
+  public async initialize(): Promise<void> {
     // Initialize memory system
     this.memorySystem = new MemorySystem({
       dbPath: path.join(this.memoryPath, 'snow-flow-memory.db')
@@ -412,16 +412,20 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
 }
 
 // Start the server
-const server = new ServiceNowMemoryMCP();
-// Start server directly - initialization happens in the background
-server.start()
-  .catch(error => {
+async function startServer() {
+  const server = new ServiceNowMemoryMCP();
+  
+  try {
+    // Initialize memory system first
+    await server.initialize();
+    
+    // Then start the server
+    await server.start();
+    
+  } catch (error) {
     console.error('Failed to start Memory MCP server:', error);
     process.exit(1);
-  });
+  }
+}
 
-// Initialize memory system after server starts
-server.initialize().catch(error => {
-  console.error('Failed to initialize memory system:', error);
-  // Don't exit - server can still function without memory system
-});
+startServer();
