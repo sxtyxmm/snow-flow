@@ -1,217 +1,166 @@
-# Snow-Flow Comprehensive Test Prompt v1.4.26
+# COMPREHENSIVE SNOW-FLOW MCP TOOLS TEST PROMPT v1.4.39
 
-## Test alle 100+ echte MCP tools systematisch
+**UPDATE: Neo4j removed, neural_status & token_usage added, deprecated tools cleaned up**
 
-**Verwachting:** ~85% succes rate - 85+ van 100+ tools werken
+## 🔥 COPY-PASTE THIS ENTIRE PROMPT INTO CLAUDE TO TEST ALL 90+ WORKING TOOLS!
 
-**v1.4.26: 16 MCP servers geactiveerd met 100+ production-ready tools**
-**KILLER FEATURES: Graph Memory, Process Mining & AI Analytics**
-**BELANGRIJK: Snow-Flow heeft eigen swarm orchestration - geen externe tools nodig**
+Dit is een **COMPLETE test** van alle Snow-Flow MCP tools. Volg de instructies en test elke categorie systematisch.
 
-Kopieer deze prompt en plak in Claude Code:
+**Expected Results**: ~87% success rate (based on v1.4.39 cleanup)
 
 ---
 
-**PROMPT VOOR CLAUDE CODE:**
+**PROMPT FOR CLAUDE CODE:**
 
 ```
-Test Snow-Flow 100+ MCP tools systematisch per categorie en rapporteer welke werken.
+Test Snow-Flow MCP tools v1.4.39 systematically per category and report results.
 
-## COMPREHENSIVE TESTING - Verwacht ~85% succes rate - 85+ van 100+ tools
+## COMPREHENSIVE TESTING - Expected ~87% success rate
 
-### SNOW-FLOW NATIVE AI Swarm Orchestration - 10+ tools - EIGEN IMPLEMENTATIE
-1. snow-flow swarm "Initialiseer 5-agent swarm voor ServiceNow analyse"
-2. snow-flow swarm "Start mesh topology swarm met 8 agents voor complex project"
-3. snow-flow swarm "Check swarm status en agent metrics"
-4. snow-flow swarm "Store findings in persistent memory voor volgende sessie"
-5. snow-flow swarm "Train neural patterns voor betere coordinatie"
-6. snow-flow swarm "Analyseer cognitive patterns van agents"
-7. snow-flow swarm "Genereer performance report van swarm activiteiten"
-8. snow-flow swarm "Identificeer bottlenecks in swarm coordinatie"
-9. snow-flow swarm "Analyseer token usage van alle agents"
-10. snow-flow swarm "Search memory met pattern matching voor eerdere oplossingen"
+### 🐝 Snow-Flow Native AI Swarm Orchestration (14 tools)
+1. mcp__snow-flow__swarm_init --topology "hierarchical" --maxAgents 5
+2. mcp__snow-flow__agent_spawn --type "researcher" --name "Research Agent"
+3. mcp__snow-flow__task_orchestrate --task "Analyze ServiceNow best practices"
+4. mcp__snow-flow__swarm_status
+5. mcp__snow-flow__memory_usage --action "store" --key "test_result" --value "success"
+6. mcp__snow-flow__memory_search --pattern "test" --limit 10
+7. mcp__snow-flow__neural_train --pattern_type "optimization" --training_data "sample data"
+8. mcp__snow-flow__neural_patterns --action "analyze"
+9. mcp__snow-flow__performance_report --format "summary"
+10. mcp__snow-flow__neural_status --modelId "default-model"
+11. mcp__snow-flow__token_usage --operation "all" --timeframe "24h"
+12. mcp__snow-flow__memory_usage --action "retrieve" --key "test_result"
+13. mcp__snow-flow__memory_usage --action "list" --namespace "default"
+14. mcp__snow-flow__memory_usage --action "delete" --key "test_result"
 
-### KILLER FEATURE: Graph Memory & Dependency Analysis - 7+ tools - REVOLUTIONAIR
-11. snow-flow swarm "Index alle mijn ServiceNow artifacts in Neo4j graph database"
-12. snow-flow swarm "Map alle verbindingen en dependencies van script 'IncidentUtils'"
-13. snow-flow swarm "Analyseer impact als ik Priority veld wijzig in incident table"
-14. snow-flow swarm "Maak visual dependency graph van al mijn custom scripts"
-15. snow-flow swarm "Vind alle patterns en anti-patterns in mijn ServiceNow code"
-16. snow-flow swarm "Suggest artifacts gebaseerd op current development context"
-17. snow-flow swarm "Export alle learned patterns en relationships voor backup"
+### 🔄 Update Set Management (9 tools) - 100% WERKT
+15. mcp__servicenow-update-set__snow_update_set_create --name "TEST-139: v1.4.39 Testing" --description "Testing all tools"
+16. mcp__servicenow-update-set__snow_update_set_current
+17. mcp__servicenow-update-set__snow_update_set_list --limit 5
+18. mcp__servicenow-update-set__snow_update_set_add_artifact --type "widget" --sys_id "test123" --name "Test Widget"
+19. mcp__servicenow-update-set__snow_update_set_preview
+20. mcp__servicenow-update-set__snow_update_set_complete --notes "Testing completed"
+21. mcp__servicenow-update-set__snow_update_set_export --output_path "./update_set_export.xml"
+22. mcp__servicenow-update-set__snow_ensure_active_update_set --context "testing v1.4.39"
+23. mcp__servicenow-deployment__snow_smart_update_set --detect_context true
 
-### REVOLUTIONARY: Process Mining & Workflow Analysis - 4+ tools - BAANBREKEND
-18. snow-flow swarm "Ontdek hoe incident management ECHT werkt uit audit logs"
-19. snow-flow swarm "Analyseer hoe mijn workflows WERKELIJK uitgevoerd worden vs design"
-20. snow-flow swarm "Vind end-to-end processen van request naar asset naar incident"
-21. snow-flow swarm "Monitor mijn processen real-time met anomaly detection"
+### 🚀 Deployment Tools (10 tools)
+24. mcp__servicenow-deployment__snow_auth_diagnostics
+25. mcp__servicenow-deployment__snow_deployment_status --limit 5
+26. mcp__servicenow-deployment__snow_validate_deployment --type "widget" --artifact {}
+27. mcp__servicenow-deployment__snow_export_artifact --type "widget" --sys_id "test123"
+28. mcp__servicenow-deployment__snow_validate_sysid --sys_id "test123" --table "sp_widget"
+29. mcp__servicenow-deployment__snow_deployment_debug
+30. mcp__servicenow-deployment__snow_preview_widget --template "<div>Test</div>"
+31. mcp__servicenow-deployment__snow_widget_test --sys_id "test123"
+32. mcp__servicenow-deployment__snow_deploy --type "widget" --instruction "Create test widget"
+33. mcp__servicenow-deployment__snow_create_solution_package --name "Test Package" --artifacts []
 
-### GAME CHANGERS: Advanced Analytics & Performance - 6+ tools - KRACHTIG
-22. snow-flow swarm "Optimaliseer mijn API calls met batch processing 80% reductie"
-23. snow-flow swarm "Analyseer table relationships met visual dependency mapping"
-24. snow-flow swarm "Analyseer query performance en geef optimization suggestions"
-25. snow-flow swarm "Predict change impact met AI 90% accuracy"
-26. snow-flow swarm "Detect security vulnerabilities in al mijn scripts"
-27. snow-flow swarm "Genereer automatisch documentatie van al mijn workflows"
+### 📊 ServiceNow Operations (20 tools) - UITSTEKEND
+34. mcp__servicenow-operations__snow_query_incidents --query "priority=1" --limit 5
+35. mcp__servicenow-operations__snow_analyze_incident --incident_id "INC0000001"
+36. mcp__servicenow-operations__snow_query_requests --query "active=true" --limit 5
+37. mcp__servicenow-operations__snow_query_problems --query "active=true" --limit 5
+38. mcp__servicenow-operations__snow_cmdb_search --query "server" --ci_type "server"
+39. mcp__servicenow-operations__snow_user_lookup --identifier "admin"
+40. mcp__servicenow-operations__snow_operational_metrics --timeframe "week"
+41. mcp__servicenow-operations__snow_pattern__analysis --analysis_type "incident_patterns"
+42. mcp__servicenow-operations__snow_knowledge_search --query "network issues"
+43. mcp__servicenow-operations__snow_predictive__analysis --prediction_type "incident_volume"
+44. mcp__servicenow-operations__snow_catalog_item_manager --action "list"
+45. mcp__servicenow-operations__snow_catalog_item_search --query "iPhone"
+46. mcp__servicenow-operations__snow_cleanup_test_artifacts --dry_run true
+47. mcp__servicenow-operations__snow_create_user_group --name "Test Group v139"
+48. mcp__servicenow-operations__snow_create_user --user_name "test.user.v139" --first_name "Test" --last_name "User" --email "test@example.com"
+49. mcp__servicenow-operations__snow_assign_user_to_group --user "test.user.v139" --group "Test Group v139"
+50. mcp__servicenow-operations__snow_list_group_members --group "Test Group v139"
+51. mcp__servicenow-operations__snow_auto_resolve_incident --incident_id "INC0000001" --dry_run true
+52. mcp__servicenow-operations__snow_remove_user_from_group --user "test.user.v139" --group "Test Group v139"
+53. mcp__servicenow-operations__snow_catalog_item_manager --action "create" --name "Test Item v139"
 
-### ServiceNow Operations - 15+ tools - MEESTE WERKEN GOED
-28. snow-flow swarm "Geef me operational metrics van mijn ServiceNow instance"
-29. snow-flow swarm "Zoek user information en groups voor admin gebruikers"  
-30. snow-flow swarm "Query incidents met status Open en hoge priority met intelligent analysis"
-31. snow-flow swarm "Analyseer specifieke incident voor auto-resolution suggestions"
-32. snow-flow swarm "Zoek catalog items met fuzzy search voor iPhone"
-33. snow-flow swarm "Query en analyseer service requests met request items"
-34. snow-flow swarm "Query problems met root cause analysis"
-35. snow-flow swarm "Search CMDB voor servers en applications met relationships"
-36. snow-flow swarm "Lookup user details inclusief groups en roles"
-37. snow-flow swarm "Get pattern analysis van incidents, requests en problems"
-38. snow-flow swarm "Search knowledge base met intelligent matching"
-39. snow-flow swarm "Predictive analysis voor incident volume en system failures"
-40. snow-flow swarm "Maak nieuwe user group voor incident managers"
-41. snow-flow swarm "Maak nieuwe ServiceNow user met alle details"
-42. snow-flow swarm "Test flow execution met mock data en cleanup"
+### 🔧 Platform Development (9 tools) - PERFECT
+54. mcp__servicenow-platform-development__snow_discover_platform_tables --category "all"
+55. mcp__servicenow-platform-development__snow_discover_table_fields --tableName "incident"
+56. mcp__servicenow-platform-development__snow_table_schema_discovery --tableName "incident"
+57. mcp__servicenow-platform-development__snow_create_ui_page --name "test_page_v139" --title "Test Page" --html "<h1>Test</h1>"
+58. mcp__servicenow-platform-development__snow_create_script_include --name "TestUtils139" --script "var TestUtils139 = Class.create();"
+59. mcp__servicenow-platform-development__snow_create_business_rule --name "Test Rule v139" --tableName "incident" --script "// test" --when "before"
+60. mcp__servicenow-platform-development__snow_create_client_script --name "Test Client v139" --tableName "incident" --script "// test" --type "onLoad"
+61. mcp__servicenow-platform-development__snow_create_ui_policy --name "Test Policy v139" --tableName "incident" --condition "priority=1"
+62. mcp__servicenow-platform-development__snow_create_ui_action --name "Test Action v139" --tableName "incident" --script "// test"
 
-### Platform Development - 8+ tools - SCHEMA DISCOVERY UITSTEKEND
-43. snow-flow swarm "Ontdek alle platform development tabellen"
-44. snow-flow swarm "Analyseer comprehensive table schema van incident table"
-45. snow-flow swarm "Create UI Page met dynamic field discovery"
-46. snow-flow swarm "Create Script Include met client callable functions"
-47. snow-flow swarm "Create Business Rule met dynamic table discovery"
-48. snow-flow swarm "Create Client Script voor form automation"
-49. snow-flow swarm "Create UI Policy met dynamic field discovery"
-50. snow-flow swarm "Create UI Action met form en list button support"
+### 🔗 Integration (10 tools)
+63. mcp__servicenow-integration__snow_discover_integration_endpoints --type "all"
+64. mcp__servicenow-integration__snow_discover_data_sources
+65. mcp__servicenow-integration__snow_create_rest_message --name "Test REST v139" --endpoint "https://api.example.com"
+66. mcp__servicenow-integration__snow_create_rest_method --restMessageName "Test REST v139" --methodName "GET" --httpMethod "GET"
+67. mcp__servicenow-integration__snow_create_transform_map --name "Test Transform v139" --sourceTable "import_set" --targetTable "incident"
+68. mcp__servicenow-integration__snow_create_field_map --transformMapName "Test Transform v139" --sourceField "priority" --targetField "priority"
+69. mcp__servicenow-integration__snow_create_import_set --name "test_import_v139" --label "Test Import"
+70. mcp__servicenow-integration__snow_create_web_service --name "Test WS v139" --wsdlUrl "https://example.com/wsdl"
+71. mcp__servicenow-integration__snow_create_email_config --name "Test Email v139" --serverType "SMTP" --serverName "smtp.example.com"
+72. mcp__servicenow-integration__snow_test_integration --endpointName "Test REST v139"
 
-### Integration - 10+ tools - ENDPOINT DISCOVERY WERKT GOED
-51. snow-flow swarm "Vind alle REST en SOAP integration endpoints"
-52. snow-flow swarm "Discover alle beschikbare data sources"
-53. snow-flow swarm "Create REST Message endpoint met dynamic discovery"
-54. snow-flow swarm "Create REST Method met parameter discovery"
-55. snow-flow swarm "Create Transform Map met dynamic field discovery"
-56. snow-flow swarm "Create Field Map met transformation scripts"
-57. snow-flow swarm "Create Import Set table met dynamic schema"
-58. snow-flow swarm "Create Web Service met WSDL discovery"
-59. snow-flow swarm "Create Email Configuration met server discovery"
-60. snow-flow swarm "Test integration endpoint met validation"
+### 📈 Reporting & Analytics (11 tools)
+73. mcp__servicenow-reporting-analytics__snow_discover_reporting_tables
+74. mcp__servicenow-reporting-analytics__snow_discover_report_fields --table "incident"
+75. mcp__servicenow-reporting-analytics__snow_analyze_data_quality --table "incident"
+76. mcp__servicenow-reporting-analytics__snow_create_report --name "Test Report v139" --table "incident" --fields ["number", "priority"]
+77. mcp__servicenow-reporting-analytics__snow_create_dashboard --name "Test Dashboard v139" --widgets []
+78. mcp__servicenow-reporting-analytics__snow_create_kpi --name "Test KPI v139" --table "incident" --metric "count" --aggregation "count"
+79. mcp__servicenow-reporting-analytics__snow_create_data_visualization --name "Test Viz v139" --type "bar" --dataSource "incident"
+80. mcp__servicenow-reporting-analytics__snow_create_performance_analytics --name "Test Analytics v139" --dataSource "incident" --metrics ["count"]
+81. mcp__servicenow-reporting-analytics__snow_create_scheduled_report --reportName "Test Report v139" --schedule "daily" --recipients ["test@example.com"]
+82. mcp__servicenow-reporting-analytics__snow_generate_insights --table "incident"
+83. mcp__servicenow-reporting-analytics__snow_export_report_data --reportName "Test Report v139" --format "CSV"
 
-### Reporting & Analytics - 12+ tools - DATA ANALYSIS STERK
-61. snow-flow swarm "Analyseer data quality van incident table"
-62. snow-flow swarm "Vind alle beschikbare tabellen voor reporting"
-63. snow-flow swarm "Discover report fields voor incident table"
-64. snow-flow swarm "Create rapport met dynamic table en field discovery"
-65. snow-flow swarm "Create dashboard met widget discovery"
-66. snow-flow swarm "Create KPI met dynamic metric discovery"
-67. snow-flow swarm "Create data visualization met chart discovery"
-68. snow-flow swarm "Create performance analytics met metric tracking"
-69. snow-flow swarm "Create scheduled report met delivery discovery"
-70. snow-flow swarm "Generate insights en recommendations"
-71. snow-flow swarm "Export report data in verschillende formats"
+### ⚙️ Automation (10 tools)
+84. mcp__servicenow-automation__snow_discover_schedules
+85. mcp__servicenow-automation__snow_discover_events
+86. mcp__servicenow-automation__snow_discover_automation_jobs
+87. mcp__servicenow-automation__snow_create_scheduled_job --name "Test Job v139" --script "gs.log('test');" --schedule "daily"
+88. mcp__servicenow-automation__snow_create_notification --name "Test Notif v139" --table "incident" --when "inserted" --recipients "admin" --subject "Test" --message "Test"
+89. mcp__servicenow-automation__snow_create_event_rule --name "Test Event v139" --eventName "incident.insert" --script "// test"
+90. mcp__servicenow-automation__snow_create_sla_definition --name "Test SLA v139" --table "incident" --condition "priority=1" --duration "1 hour"
+91. mcp__servicenow-automation__snow_create_escalation_rule --name "Test Escalation v139" --table "incident" --condition "priority=1" --escalationTime 60 --escalationScript "// test"
+92. mcp__servicenow-automation__snow_create_workflow_activity --name "Test Activity v139" --workflowName "Test Workflow" --activityType "approval"
+93. mcp__servicenow-automation__snow_test_scheduled_job --jobName "Test Job v139"
 
-### Automation - 11+ tools - DISCOVERY UITSTEKEND
-72. snow-flow swarm "Vind alle automation jobs in mijn instance"
-73. snow-flow swarm "Ontdek alle ServiceNow events"
-74. snow-flow swarm "Laat alle system schedules zien"
-75. snow-flow swarm "Create scheduled job met dynamic schedule discovery"
-76. snow-flow swarm "Create event rule met dynamic event discovery"
-77. snow-flow swarm "Create notification met template discovery"
-78. snow-flow swarm "Create SLA definition met field discovery"
-79. snow-flow swarm "Create escalation rule met escalation discovery"
-80. snow-flow swarm "Create workflow activity met workflow discovery"
-81. snow-flow swarm "Test scheduled job execution"
+### 🛡️ Security & Compliance (10 tools)
+94. mcp__servicenow-security-compliance__snow_discover_security_frameworks
+95. mcp__servicenow-security-compliance__snow_discover_security_policies
+96. mcp__servicenow-security-compliance__snow_create_security_policy --name "Test Policy v139" --type "access" --rules []
+97. mcp__servicenow-security-compliance__snow_create_compliance_rule --name "Test Compliance v139" --framework "SOX" --requirement "Test" --validation "true"
+98. mcp__servicenow-security-compliance__snow_create_audit_rule --name "Test Audit v139" --table "incident" --events ["create", "update"]
+99. mcp__servicenow-security-compliance__snow_create_access_control --name "Test ACL v139" --table "incident" --operation "read"
+100. mcp__servicenow-security-compliance__snow_create_data_policy --name "Test Data v139" --table "incident" --fields ["priority"] --classification "internal"
+101. mcp__servicenow-security-compliance__snow_create_vulnerability_scan --name "Test Scan v139" --scope "application"
+102. mcp__servicenow-security-compliance__snow_run_compliance_scan --framework "SOX"
+103. mcp__servicenow-security-compliance__snow_security_risk_assessment --scope "instance"
 
-### Security & Compliance - 12+ tools - MOGELIJK PERMISSION ISSUES
-82. snow-flow swarm "Scan mijn instance voor security policies"
-83. snow-flow swarm "Discover existing security policies en rules"
-84. snow-flow swarm "Create security policy met rule discovery"
-85. snow-flow swarm "Create compliance rule voor SOX/GDPR framework"
-86. snow-flow swarm "Create audit rule met event discovery"
-87. snow-flow swarm "Create access control met role discovery"
-88. snow-flow swarm "Create data policy met field discovery"
-89. snow-flow swarm "Create vulnerability scan met scope discovery"
-90. snow-flow swarm "Run compliance scan voor specific framework"
-91. snow-flow swarm "Analyze audit trails voor security incidents"
-92. snow-flow swarm "Perform security risk assessment"
+## Expected Results Summary
 
-### Update Set Management - 9+ tools - BASIS FUNCTIONALITEIT WERKT
-93. snow-flow swarm "Laat me de huidige update set zien"
-94. snow-flow swarm "Lijst alle update sets die in progress zijn"
-95. snow-flow swarm "Zorg voor een actieve update set session"
-96. snow-flow swarm "Create nieuwe update set voor user story"
-97. snow-flow swarm "Switch naar existing update set"
-98. snow-flow swarm "Mark update set als complete voor testing"
-99. snow-flow swarm "Track artifact in current update set session"
-100. snow-flow swarm "Preview alle changes in update set"
-101. snow-flow swarm "Export update set als XML voor backup"
+✅ Working Categories (High Success):
+- Update Set Management: 9/9 expected (100%)
+- ServiceNow Operations: 18/20 expected (90%)
+- Platform Development: 9/9 expected (100%)
+- Integration: 8/10 expected (80%)
+- Reporting & Analytics: 9/11 expected (82%)
+- Automation: 8/10 expected (80%)
 
-### Widget en Portal
-102. snow-flow swarm "maak een widget voor incidentbeheer"
-103. snow-flow swarm "creeer een portal pagina"
-104. snow-flow swarm "voeg een widget toe aan een portal pagina"
-105. snow-flow swarm "zorg ervoor dat de widget inzichten laat zien van de instance"
+⚠️ Limited Categories (Permission Issues):
+- Security & Compliance: 5/10 expected (50%)
+- Deployment Tools: 8/10 expected (80%)
 
-### BONUS: Test Recent Fixes & Edge Cases
-106. snow-flow swarm "Test de verbeterde snow_deploy tool met fallback strategies"
-107. snow-flow swarm "Test de gefixte snow_widget_test tool met coverage"
-108. snow-flow swarm "Test smart update set creation met context detection"
-109. snow-flow swarm "Test comprehensive flow testing met edge case detection"
-110. snow-flow swarm "Test permission escalation voor enterprise features"
+🔧 New/Updated:
+- Snow-Flow Swarm: 12/14 expected (86%)
+- neural_status & token_usage: Should work 100%
 
-## DETAILED RAPPORTAGE per test:
-Voor elke test, rapporteer:
-- Werkt perfect / Werkt deels / Werkt niet / Permission issue
-- Execution tijd in seconden
-- Echte data gekregen? Aantallen, namen, sys_ids
-- Specifieke error messages: 403, 404, 400, OAuth, etc.
-- MCP server response details
-- Tool coordination effectiveness
+Total Expected: ~87/103 tools working (84.5%)
 
-## VERWACHTE RESULTATEN per categorie:
-- High Success 90%+: Operations, Update Sets, Swarm Orchestration
-- Good Success 80-90%: Reporting, Automation, Platform Development  
-- Mixed Success 70-80%: Integration, Advanced Analytics
-- Permission Limited 50-70%: Security & Compliance
-- Experimental 60-80%: Graph Memory, Process Mining nieuwe features
-
-## COMPREHENSIVE FINAL SUMMARY RAPPORT:
-
-### Overall Statistics
-- Totaal getest: X tools van 110 comprehensive tests
-- Volledig werkend: X tools X%
-- Gedeeltelijk werkend: X tools permission/config issues
-- Niet werkend: X tools 
-- Snow-Flow Score: X/110 vergelijk met verwachte 85%+ = 94+ tools
-
-### Per Category Performance
-- Snow-Flow Native Swarm: X/10 expected 8-10 EIGEN IMPLEMENTATIE
-- Graph Memory: X/7 expected 4-6 nieuwe feature
-- Process Mining: X/4 expected 2-3 nieuwe feature
-- Advanced Analytics: X/6 expected 4-5
-- ServiceNow Operations: X/15 expected 13-15
-- Platform Development: X/8 expected 6-8
-- Integration: X/10 expected 7-9
-- Reporting & Analytics: X/11 expected 9-11
-- Automation: X/10 expected 8-10
-- Security & Compliance: X/11 expected 6-9 permission limited
-- Update Set Management: X/9 expected 8-9
-- XML Flow Generation: X/4 expected 2-3
-- Recent Fixes: X/5 expected 3-4
-
-### Key Findings
-- MCP Servers: 16/16 servers activated successfully (including Snow-Flow own swarm orchestration)
-- Tool Categories: X/13 categories with 70%+ success rate
-- Top performing: List best performing categories
-- Attention needed: List categories needing fixes
-- Priority fixes: Top 3 belangrijkste issues om te fixen
-
-### Snow-Flow v1.4.26 Achievement Score
-- Overall Success Rate: X% Target: 85%+
-- Server Activation: 16/16 100%
-- Killer Features: X/11 Graph Memory + Process Mining tools working
-- Production Readiness: X/110 tools production-ready
+Report format:
+- Per category: X/Y tools working
+- Note which specific tools fail
+- Highlight any 403/permission errors
+- Track actual vs expected success rate
 ```
-
----
-
-**Comprehensive testing van Snow-Flow v1.4.26 - 16 MCP servers met 100+ production-ready tools** 
-
-**TEST SCOPE: Van basis operations tot revolutionaire Graph Memory & Process Mining features**
-**VERWACHTING: 85%+ succes rate met ongekende ServiceNow intelligence capabilities**
