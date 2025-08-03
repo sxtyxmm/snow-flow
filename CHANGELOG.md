@@ -5,6 +5,31 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.42] - 2025-08-03
+
+### 🔧 MCP Configuration Fixes
+
+**Major Configuration Update**: Removed Neo4j dependency and fixed MCP server registration issues.
+
+### Fixed
+
+#### MCP Server Configuration
+- **servicenow-graph-memory** - Completely removed (Neo4j dependency eliminated)
+  - Replaced with servicenow-memory in all configuration files
+  - Updated register-mcp-servers.js to use memory server instead
+  
+- **Duplicate entries** - Fixed duplicate servicenow-memory entry in .mcp.json.template
+  
+- **Server registration** - Fixed MCP server registration with Claude Code
+  - All 10 MCP servers now properly registered
+  - Updated CLI to use servicenow-memory instead of graph-memory
+
+### Changed
+- Updated `.mcp.json.template` to remove graph-memory references
+- Updated `.claude.mcp-config.template` to include servicenow-memory
+- Modified `scripts/register-mcp-servers.js` to register memory server
+- Updated `src/cli.ts` to replace graph-memory with memory server
+
 ## [1.4.41] - 2025-08-03
 
 ### 🚀 Comprehensive Bug Fix Release
