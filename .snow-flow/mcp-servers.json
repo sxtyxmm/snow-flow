@@ -1,67 +1,134 @@
 [
   {
-    "name": "ServiceNow Deployment MCP",
+    "name": "Servicenow Deployment MCP",
     "script": "dist/mcp/servicenow-deployment-mcp.js",
     "autoStart": true,
     "env": {
-      "SNOW_INSTANCE": "dev198027.service-now.com/",
-      "SNOW_CLIENT_ID": "0664245521cf423ba1989e4c875b18de",
-      "SNOW_CLIENT_SECRET": "Welkom123"
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": "",
+      "SNOW_DEPLOYMENT_TIMEOUT": "",
+      "MCP_DEPLOYMENT_TIMEOUT": ""
     }
   },
   {
-    "name": "ServiceNow Flow Composer MCP",
-    "script": "dist/mcp/servicenow-flow-composer-mcp.js",
-    "autoStart": true
-  },
-  {
-    "name": "ServiceNow Update Set MCP",
+    "name": "Servicenow Update Set MCP",
     "script": "dist/mcp/servicenow-update-set-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Intelligent MCP",
+    "name": "Servicenow Intelligent MCP",
     "script": "dist/mcp/servicenow-intelligent-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Graph Memory MCP",
+    "name": "Servicenow Memory MCP",
+    "script": "dist/mcp/servicenow-memory-mcp.js",
+    "autoStart": true,
+    "env": {
+      "MEMORY_PATH": "",
+      "SNOW_FLOW_HOME": ""
+    }
+  },
+  {
+    "name": "Servicenow Graph Memory MCP",
     "script": "dist/mcp/servicenow-graph-memory-mcp.js",
     "autoStart": true,
     "env": {
       "NEO4J_URI": "",
       "NEO4J_USER": "",
-      "NEO4J_PASSWORD": ""
+      "NEO4J_PASSWORD": "",
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
     }
   },
   {
-    "name": "ServiceNow Operations MCP",
+    "name": "Servicenow Operations MCP",
     "script": "dist/mcp/servicenow-operations-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Platform Development MCP",
+    "name": "Servicenow Platform Development MCP",
     "script": "dist/mcp/servicenow-platform-development-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Integration MCP",
+    "name": "Servicenow Integration MCP",
     "script": "dist/mcp/servicenow-integration-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Automation MCP",
+    "name": "Servicenow Automation MCP",
     "script": "dist/mcp/servicenow-automation-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Security & Compliance MCP",
+    "name": "Servicenow Security Compliance MCP",
     "script": "dist/mcp/servicenow-security-compliance-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
   },
   {
-    "name": "ServiceNow Reporting & Analytics MCP",
+    "name": "Servicenow Reporting Analytics MCP",
     "script": "dist/mcp/servicenow-reporting-analytics-mcp.js",
-    "autoStart": true
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
+  },
+  {
+    "name": "Servicenow Flow Composer MCP",
+    "script": "dist/mcp/servicenow-flow-composer-mcp.js",
+    "autoStart": true,
+    "env": {
+      "SNOW_INSTANCE": "",
+      "SNOW_CLIENT_ID": "",
+      "SNOW_CLIENT_SECRET": ""
+    }
+  },
+  {
+    "name": "Snow Flow MCP",
+    "script": "dist/mcp/snow-flow-mcp.js",
+    "autoStart": true,
+    "env": {
+      "SNOW_FLOW_ENV": ""
+    }
   }
 ]

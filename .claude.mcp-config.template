@@ -8,18 +8,9 @@
       "env": {
         "SNOW_INSTANCE": "${SNOW_INSTANCE}",
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-      }
-    },
-    "servicenow-flow-composer": {
-      "command": "node",
-      "args": [
-        "${MCP_PATH}/servicenow-flow-composer-mcp.js"
-      ],
-      "env": {
-        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
+        "SNOW_DEPLOYMENT_TIMEOUT": "${SNOW_DEPLOYMENT_TIMEOUT}",
+        "MCP_DEPLOYMENT_TIMEOUT": "${MCP_DEPLOYMENT_TIMEOUT}"
       }
     },
     "servicenow-update-set": {
@@ -52,6 +43,20 @@
       "env": {
         "MEMORY_PATH": "${MEMORY_PATH}",
         "SNOW_FLOW_HOME": "${SNOW_FLOW_HOME}"
+      }
+    },
+    "servicenow-graph-memory": {
+      "command": "node",
+      "args": [
+        "${MCP_PATH}/servicenow-graph-memory-mcp.js"
+      ],
+      "env": {
+        "NEO4J_URI": "${NEO4J_URI}",
+        "NEO4J_USER": "${NEO4J_USER}",
+        "NEO4J_PASSWORD": "${NEO4J_PASSWORD}",
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
       }
     },
     "servicenow-operations": {
@@ -118,6 +123,26 @@
         "SNOW_INSTANCE": "${SNOW_INSTANCE}",
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-flow-composer": {
+      "command": "node",
+      "args": [
+        "${MCP_PATH}/servicenow-flow-composer-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "snow-flow": {
+      "command": "node",
+      "args": [
+        "${MCP_PATH}/snow-flow-mcp.js"
+      ],
+      "env": {
+        "SNOW_FLOW_ENV": "${SNOW_FLOW_ENV}"
       }
     }
   }

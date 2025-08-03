@@ -1,8 +1,10 @@
 {
-  "servers": {
+  "mcpServers": {
     "servicenow-deployment": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-deployment-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-deployment-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -13,7 +15,9 @@
     },
     "servicenow-update-set": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-update-set-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-update-set-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -22,7 +26,9 @@
     },
     "servicenow-intelligent": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-intelligent-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-intelligent-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -31,15 +37,33 @@
     },
     "servicenow-memory": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"
+      ],
       "env": {
         "MEMORY_PATH": "{{MEMORY_PATH}}",
         "SNOW_FLOW_HOME": "{{SNOW_FLOW_HOME}}"
       }
     },
+    "servicenow-graph-memory": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-graph-memory-mcp.js"
+      ],
+      "env": {
+        "NEO4J_URI": "{{NEO4J_URI}}",
+        "NEO4J_USER": "{{NEO4J_USER}}",
+        "NEO4J_PASSWORD": "{{NEO4J_PASSWORD}}",
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
     "servicenow-operations": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-operations-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-operations-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -48,7 +72,9 @@
     },
     "servicenow-platform-development": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-platform-development-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-platform-development-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -57,7 +83,9 @@
     },
     "servicenow-integration": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-integration-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-integration-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -66,7 +94,9 @@
     },
     "servicenow-automation": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-automation-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-automation-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -75,7 +105,9 @@
     },
     "servicenow-security-compliance": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-security-compliance-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-security-compliance-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -84,7 +116,20 @@
     },
     "servicenow-reporting-analytics": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-reporting-analytics-mcp.js"],
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-reporting-analytics-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-flow-composer": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-flow-composer-mcp.js"
+      ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -93,8 +138,12 @@
     },
     "snow-flow": {
       "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
-      "env": {}
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"
+      ],
+      "env": {
+        "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
+      }
     }
   }
 }

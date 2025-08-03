@@ -17,45 +17,83 @@ const CLAUDE_CONFIG_PATH = path.join(
 
 // Snow-Flow MCP servers configuration
 const SNOW_FLOW_SERVERS = {
-  "snow-flow-operations": {
+  "servicenow-deployment": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-operations-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-deployment-mcp.js"
+    ]
   },
-  "snow-flow-automation": {
+  "servicenow-update-set": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-automation-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-update-set-mcp.js"
+    ]
   },
-  "snow-flow-integration": {
+  "servicenow-intelligent": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-integration-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-intelligent-mcp.js"
+    ]
   },
-  "snow-flow-deployment": {
+  "servicenow-memory": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-deployment-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-memory-mcp.js"
+    ]
   },
-  "snow-flow-platform-development": {
+  "servicenow-graph-memory": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-platform-development-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-graph-memory-mcp.js"
+    ]
   },
-  "snow-flow-reporting-analytics": {
+  "servicenow-operations": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-reporting-analytics-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-operations-mcp.js"
+    ]
   },
-  "snow-flow-security-compliance": {
+  "servicenow-platform-development": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-security-compliance-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-platform-development-mcp.js"
+    ]
   },
-  "snow-flow-update-set": {
+  "servicenow-integration": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-update-set-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-integration-mcp.js"
+    ]
   },
-  "snow-flow-intelligent": {
+  "servicenow-automation": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-intelligent-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-automation-mcp.js"
+    ]
   },
-  "snow-flow-memory": {
+  "servicenow-security-compliance": {
     "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-memory-mcp.js"]
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-security-compliance-mcp.js"
+    ]
+  },
+  "servicenow-reporting-analytics": {
+    "command": "node",
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-reporting-analytics-mcp.js"
+    ]
+  },
+  "servicenow-flow-composer": {
+    "command": "node",
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/servicenow-flow-composer-mcp.js"
+    ]
+  },
+  "snow-flow": {
+    "command": "node",
+    "args": [
+      "${SNOW_FLOW_PATH}/dist/mcp/snow-flow-mcp.js"
+    ]
   }
 };
 
@@ -115,9 +153,9 @@ async function registerMCPServers() {
         fs.mkdirSync(configDir, { recursive: true });
       }
       
-      // Create new config with "servers" (not "mcpServers")
+      // Create new config with "mcpServers"
       const newConfig = {
-        servers: servers
+        mcpServers: servers
       };
       
       fs.writeFileSync(CLAUDE_CONFIG_PATH, JSON.stringify(newConfig, null, 2));
@@ -126,16 +164,16 @@ async function registerMCPServers() {
       // Read existing config
       let config = JSON.parse(fs.readFileSync(CLAUDE_CONFIG_PATH, 'utf8'));
       
-      // Initialize servers if not exists (Claude Code uses "servers" not "mcpServers")
-      if (!config.servers) {
-        config.servers = {};
+      // Initialize mcpServers if not exists
+      if (!config.mcpServers) {
+        config.mcpServers = {};
       }
       
       // Add Snow-Flow servers
       let addedCount = 0;
       Object.keys(servers).forEach(key => {
-        if (!config.servers[key]) {
-          config.servers[key] = servers[key];
+        if (!config.mcpServers[key]) {
+          config.mcpServers[key] = servers[key];
           addedCount++;
         }
       });
