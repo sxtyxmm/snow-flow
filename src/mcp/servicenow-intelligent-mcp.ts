@@ -79,18 +79,46 @@ export class ServiceNowIntelligentMCP {
     this.config = mcpConfig.getMemoryConfig();
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
     
-    // Initialize autonomous systems
-    this.memorySystem = new MemorySystem({
-      dbPath: './intelligent-mcp.db',
-      cache: { enabled: true, maxSize: 100, ttl: 3600 },
-      ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
-    });
-    this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
-    this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
-    this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
-    this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
+    // Initialize autonomous systems in background - don't block server startup
+    this.initializeSystemsInBackground();
 
     this.setupHandlers();
+  }
+
+  private async initializeSystemsInBackground() {
+    try {
+      // Initialize autonomous systems in background
+      this.memorySystem = new MemorySystem({
+        dbPath: './intelligent-mcp.db',
+        cache: { enabled: true, maxSize: 100, ttl: 3600 },
+        ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
+      });
+      
+      await this.memorySystem.initialize();
+      
+      this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
+      this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
+      this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
+      this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
+      
+      this.logger.info('All systems initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize systems:', error);
+      // Continue without these systems - don't crash the server
+    }
+  }
+
+  private async ensureSystemsInitialized() {
+    // Wait for background initialization to complete
+    let retries = 0;
+    while (!this.memorySystem && retries < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      retries++;
+    }
+    
+    if (!this.memorySystem) {
+      this.logger.warn('Systems not initialized after 5 seconds, some features may be limited');
+    }
   }
 
   private setupHandlers() {
@@ -320,6 +348,9 @@ export class ServiceNowIntelligentMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Ensure systems are initialized before handling any tool
+        await this.ensureSystemsInitialized();
+        
         switch (name) {
           case 'snow_find_artifact':
             return await this.findArtifact(args);

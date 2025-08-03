@@ -30,7 +30,10 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
       name: 'servicenow-memory',
       version: '1.0.0',
       description: 'Memory and todo management for ServiceNow multi-agent coordination',
-      requiresAuth: false // Memory server doesn't need ServiceNow authentication
+      requiresAuth: false, // Memory server doesn't need ServiceNow authentication
+      capabilities: {
+        tools: {}
+      }
     };
     
     super(config);
@@ -410,10 +413,15 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
 
 // Start the server
 const server = new ServiceNowMemoryMCP();
-// Initialize memory system before starting
-server.initialize()
-  .then(() => server.start())
+// Start server directly - initialization happens in the background
+server.start()
   .catch(error => {
     console.error('Failed to start Memory MCP server:', error);
     process.exit(1);
   });
+
+// Initialize memory system after server starts
+server.initialize().catch(error => {
+  console.error('Failed to initialize memory system:', error);
+  // Don't exit - server can still function without memory system
+});
