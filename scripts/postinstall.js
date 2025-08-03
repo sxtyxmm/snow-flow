@@ -12,7 +12,7 @@ const isGlobalInstall = process.env.npm_config_global === 'true' ||
 
 if (isGlobalInstall) {
   console.log('✅ Snow-Flow installed globally');
-  console.log('📁 Run "snow-flow init --sparc" in your project directory to initialize');
+  console.log('📁 Run "snow-flow init" in your project directory to initialize');
   
   // Create global config directory
   const globalConfigDir = path.join(os.homedir(), '.snow-flow');
@@ -23,7 +23,7 @@ if (isGlobalInstall) {
 } else {
   // Local installation - don't create directories automatically
   console.log('✅ Snow-Flow installed locally');
-  console.log('🔧 Run "snow-flow init --sparc" to initialize your project');
+  console.log('🔧 Run "snow-flow init" to initialize your project');
 }
 
 console.log('\n📚 Documentation: https://github.com/groeimetai/snow-flow#readme');

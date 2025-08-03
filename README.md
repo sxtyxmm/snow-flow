@@ -218,18 +218,24 @@ Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 special
 snow-flow swarm "Create incident dashboard widget"
 # All changes go into this Update Set
 
-# Session 2: Still using the same Update Set
-snow-flow swarm "Add charts to the dashboard"
-# Changes continue in the same Update Set
+# Same session: Want a new Update Set? Just ask!
+# Simply tell Snow-Flow: "please create a new update set for the authentication feature"
+# Snow-Flow will create a new Update Set and switch to it
 
-# To start fresh: Explicitly create a new Update Set
-snow-flow swarm "Create new update set for authentication feature"
-# Now working in a new Update Set
+# Session 2: Still using the last active Update Set
+snow-flow swarm "Add authentication to the dashboard"
+# Changes continue in the same Update Set from where you left off
 ```
+
+**Key Points:**
+- 🔄 **Same Session Flexibility**: Within the same conversation, just ask Snow-Flow to create a new Update Set
+- 💬 **Natural Language**: Say "create a new update set for [feature]" at any point
+- 📌 **Session Memory**: Snow-Flow remembers which Update Set is active across sessions
+- 🎯 **No New Command Needed**: No need to start a new swarm command
 
 **Best Practices:**
 - Let Snow-Flow manage Update Sets automatically
-- Create new Update Sets only when starting a completely new feature
+- Ask for new Update Sets when switching to different features
 - Review your current Update Set with `snow_update_set_current`
 - Export Update Sets before major deployments
 

@@ -543,7 +543,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
     hasMcpConfig = true;
     cliLogger.info('✅ Found MCP configuration in current directory');
   } catch {
-    cliLogger.warn('⚠️  No MCP configuration found. Run "snow-flow init --sparc" to set up MCP servers');
+    cliLogger.warn('⚠️  No MCP configuration found. Run "snow-flow init" to set up MCP servers');
   }
   
   const claudeArgs = hasMcpConfig 
@@ -2136,8 +2136,8 @@ program
 // Initialize Snow-Flow project
 program
   .command('init')
-  .description('Initialize a Snow-Flow project with SPARC environment')
-  .option('--sparc', 'Initialize with SPARC methodology and MCP servers (recommended)', true)
+  .description('Initialize a Snow-Flow project with full AI-powered environment')
+  .option('--sparc', '[Deprecated] SPARC is now included by default', true)
   .option('--skip-mcp', 'Skip MCP server activation prompt')
   .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
@@ -2162,18 +2162,16 @@ program
       console.log('🔐 Creating environment configuration...');
       await createEnvFile(targetDir, options.force);
       
-      // Create MCP configuration
-      if (options.sparc) {
-        console.log('🔧 Setting up MCP servers for Claude Code...');
-        await createMCPConfig(targetDir, options.force);
-        
-        // Copy CLAUDE.md file
-        console.log('📚 Creating documentation files...');
-        await copyCLAUDEmd(targetDir, options.force);
-        
-        // Create README files
-        await createReadmeFiles(targetDir, options.force);
-      }
+      // Create MCP configuration - always included now (SPARC is default)
+      console.log('🔧 Setting up MCP servers for Claude Code...');
+      await createMCPConfig(targetDir, options.force);
+      
+      // Copy CLAUDE.md file
+      console.log('📚 Creating documentation files...');
+      await copyCLAUDEmd(targetDir, options.force);
+      
+      // Create README files
+      await createReadmeFiles(targetDir, options.force);
       
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created files and directories:');
@@ -2182,36 +2180,33 @@ program
       console.log('   ✓ .snow-flow/ - Snow-Flow project data (Queen, memory, tests)');
       console.log('   ✓ memory/ - Persistent memory storage');
       console.log('   ✓ .env - ServiceNow OAuth configuration');
+      console.log('   ✓ .mcp.json - MCP server configuration');
+      console.log('   ✓ CLAUDE.md - Development documentation');
+      console.log('   ✓ README.md - Project documentation');
       
-      if (options.sparc) {
-        console.log('   ✓ .mcp.json - MCP server configuration');
-        console.log('   ✓ CLAUDE.md - Development documentation');
-        console.log('   ✓ README.md - Project documentation');
+      if (!options.skipMcp) {
+        // Start MCP servers automatically
+        console.log(chalk.yellow.bold('\n🚀 Starting MCP servers in the background...'));
         
-        if (!options.skipMcp) {
-          // Start MCP servers automatically
-          console.log(chalk.yellow.bold('\n🚀 Starting MCP servers in the background...'));
+        try {
+          const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
+          const manager = new MCPServerManager();
+          await manager.initialize();
           
-          try {
-            const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
-            const manager = new MCPServerManager();
-            await manager.initialize();
-            
-            console.log('📡 Starting all ServiceNow MCP servers...');
-            await manager.startAllServers();
-            
-            const status = manager.getServerStatus();
-            const running = status.filter((s: any) => s.status === 'running').length;
-            const total = status.length;
-            
-            console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
-            console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
-            console.log('🎯 They will be available when you run swarm commands');
-            
-          } catch (error) {
-            console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
-            console.log('📝 You can start them manually with: ' + chalk.cyan('snow-flow mcp start'));
-          }
+          console.log('📡 Starting all ServiceNow MCP servers...');
+          await manager.startAllServers();
+          
+          const status = manager.getServerStatus();
+          const running = status.filter((s: any) => s.status === 'running').length;
+          const total = status.length;
+          
+          console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
+          console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
+          console.log('🎯 They will be available when you run swarm commands');
+          
+        } catch (error) {
+          console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
+          console.log('📝 You can start them manually with: ' + chalk.cyan('snow-flow mcp start'));
         }
       }
       
@@ -2412,7 +2407,7 @@ Each server provides autonomous capabilities for different aspects of ServiceNow
 npm install -g snow-flow
 
 # Initialize Snow-Flow in your project directory
-snow-flow init --sparc
+snow-flow init
 \`\`\`
 
 #### Alternative: Install from source
@@ -2454,7 +2449,7 @@ snow-flow auth login
 Snow-Flow now includes **automatic MCP server activation** for Claude Code! During initialization, you'll be prompted to automatically start Claude Code with all 11 MCP servers pre-loaded:
 
 \`\`\`bash
-snow-flow init --sparc
+snow-flow init
 
 # You'll see:
 # 🚀 Would you like to start Claude Code with MCP servers automatically? (Y/n)
@@ -2709,7 +2704,7 @@ We welcome contributions! Please see our contributing guidelines (coming soon).
 ## 🆕 What's New in v1.1.25
 
 ### Automatic MCP Server Activation 🎯
-- **Interactive Prompt**: During \`snow-flow init --sparc\`, you're now prompted to automatically start Claude Code with all MCP servers
+- **Interactive Prompt**: During \`snow-flow init\`, you're now prompted to automatically start Claude Code with all MCP servers
 - **Zero Manual Steps**: No more manual MCP approval in Claude Code - servers load automatically using \`claude --mcp-config\`
 - **Cross-Platform Support**: Works on Mac, Linux, and Windows with platform-specific activation scripts
 - **Instant Availability**: All 11 ServiceNow MCP servers are immediately available in Claude Code after initialization
@@ -2730,7 +2725,7 @@ Built with the power of Claude AI and the ServiceNow platform. Special thanks to
 
 ---
 
-**Ready to revolutionize your ServiceNow development?** Start with \`snow-flow init --sparc\` and experience the future of ServiceNow automation! 🚀
+**Ready to revolutionize your ServiceNow development?** Start with \`snow-flow init\` and experience the future of ServiceNow automation! 🚀
 `;
 
     await fs.writeFile(readmePath, mainReadme);
@@ -3036,7 +3031,7 @@ if (deployment.failed) {
 - \`npm run typecheck\`: Run TypeScript type checking
 
 ## Snow-Flow Commands
-- \`snow-flow init --sparc\`: Initialize project with SPARC environment
+- \`snow-flow init\`: Initialize project with MCP servers and SPARC environment and SPARC environment
 - \`snow-flow auth login\`: Authenticate with ServiceNow OAuth
 - \`snow-flow swarm "<objective>"\`: Start multi-agent swarm - één command voor alles!
 - \`snow-flow sparc <mode> "<task>"\`: Run specific SPARC mode
@@ -3166,7 +3161,7 @@ snow_smart_update_set({
 \`\`\`
 
 ## 🎯 Quick Start
-1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+1. \`snow-flow init\` - Initialize project with MCP servers and SPARC environment and SPARC environment
 2. Configure ServiceNow credentials in .env file
 3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth
 4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
@@ -3216,7 +3211,7 @@ With concurrent execution and batch operations:
 This is a minimal CLAUDE.md file. The full documentation should be available in your Snow-Flow installation.
 
 ## Quick Start
-1. \`snow-flow init --sparc\` - Initialize project with SPARC environment
+1. \`snow-flow init\` - Initialize project with MCP servers and SPARC environment and SPARC environment
 2. Configure ServiceNow credentials in .env file  
 3. \`snow-flow auth login\` - Authenticate with ServiceNow OAuth
 4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
@@ -3466,7 +3461,7 @@ if (deployment.failed) {
 - \`npm run typecheck\`: Run TypeScript type checking
 
 ### Snow-Flow Commands
-- \`snow-flow init --sparc\`: Initialize project with MCP servers
+- \`snow-flow init\`: Initialize project with MCP servers and SPARC environment
 - \`snow-flow auth login\`: Authenticate with ServiceNow
 - \`snow-flow swarm "<objective>"\`: Execute multi-agent development
 - \`snow-flow mcp start\`: Start MCP servers manually
@@ -3496,7 +3491,7 @@ SNOW_CLIENT_SECRET=your_oauth_client_secret
 ❌ Don't deploy without testing  
 
 ## 🎯 Quick Start
-1. \`snow-flow init --sparc\` - Initialize project with MCP servers
+1. \`snow-flow init\` - Initialize project with MCP servers and SPARC environment
 2. Configure ServiceNow credentials in .env file  
 3. \`snow-flow auth login\` - Authenticate with ServiceNow
 4. \`snow-flow swarm "create a widget for incident management"\` - Everything automatic!
