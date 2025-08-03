@@ -69,11 +69,6 @@ export class MCPExecutionBridge extends EventEmitter {
       command: 'node',
       args: ['dist/mcp/servicenow-operations-mcp.js']
     }],
-    ['flow-composer', { 
-      name: 'servicenow-flow-composer',
-      command: 'node',
-      args: ['dist/mcp/servicenow-flow-composer-mcp.js']
-    }],
     ['update-set', { 
       name: 'servicenow-update-set',
       command: 'node',
@@ -96,10 +91,6 @@ export class MCPExecutionBridge extends EventEmitter {
     ['snow_comprehensive_search', 'intelligent'],
     ['snow_analyze_requirements', 'intelligent'],
     
-    // Flow composer tools
-    ['snow_create_flow', 'flow-composer'],
-    ['snow_analyze_flow_instruction', 'flow-composer'],
-    ['snow_discover_flow_artifacts', 'flow-composer'],
     
     // Operations tools
     ['snow_catalog_item_search', 'operations'],
@@ -247,18 +238,8 @@ export class MCPExecutionBridge extends EventEmitter {
       }
     }
 
-    // Flow-related actions
+    // Flow-related actions (testing only - creation not supported)
     if (action.includes('flow') || action.includes('workflow')) {
-      if (action.includes('create') || action.includes('build')) {
-        return {
-          server: 'flow-composer',
-          tool: 'snow_create_flow',
-          params: {
-            instruction: recommendation.params.description || recommendation.action,
-            deploy_immediately: true
-          }
-        };
-      }
       if (action.includes('test')) {
         return {
           server: 'operations',

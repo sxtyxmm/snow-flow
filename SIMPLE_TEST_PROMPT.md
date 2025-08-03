@@ -15,7 +15,7 @@ Kopieer deze prompt en plak in Claude Code:
 **PROMPT VOOR CLAUDE CODE:**
 
 ```
-Test Snow-Flow's 100+ MCP tools systematisch per categorie en rapporteer welke werken.
+Test Snow-Flow 100+ MCP tools systematisch per categorie en rapporteer welke werken.
 
 ## COMPREHENSIVE TESTING - Verwacht ~85% succes rate - 85+ van 100+ tools
 
@@ -142,11 +142,11 @@ Test Snow-Flow's 100+ MCP tools systematisch per categorie en rapporteer welke w
 100. snow-flow swarm "Preview alle changes in update set"
 101. snow-flow swarm "Export update set als XML voor backup"
 
-### XML Flow Generation - 5+ tools - ALTERNATIVE DEPLOYMENT
-102. snow-flow swarm "Create XML-first flow bypassing API limitations"
-103. snow-flow swarm "Deploy flow via direct XML deployment method"
-104. snow-flow swarm "Generate flow template voor standardized workflows"
-105. snow-flow swarm "Map natural language naar AI-powered flow design"
+### Widget en Portal
+102. snow-flow swarm "maak een widget voor incidentbeheer"
+103. snow-flow swarm "creeer een portal pagina"
+104. snow-flow swarm "voeg een widget toe aan een portal pagina"
+105. snow-flow swarm "zorg ervoor dat de widget inzichten laat zien van de instance"
 
 ### BONUS: Test Recent Fixes & Edge Cases
 106. snow-flow swarm "Test de verbeterde snow_deploy tool met fallback strategies"

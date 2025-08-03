@@ -376,16 +376,9 @@ export class ServiceNowQueen {
       };
     }
 
-    if (task.type === 'flow' && flowBuilder) {
-      return {
-        type: 'flow',
-        mcpTool: 'snow_create_flow',
-        instruction: task.objective,
-        config: {
-          deploy_immediately: true,
-          enable_intelligent__analysis: true
-        }
-      };
+    // Flow creation is no longer supported - use ServiceNow Flow Designer directly
+    if (task.type === 'flow') {
+      throw new Error('Flow creation is no longer supported in Snow-Flow. Please use ServiceNow Flow Designer directly.');
     }
 
     if (task.type === 'script' && scriptWriter) {
@@ -740,7 +733,6 @@ function($scope) {
       'snow_deploy': 'deployment',
       'snow_deploy_widget': 'deployment',
       'snow_deploy_flow': 'deployment',
-      'snow_create_flow': 'flow-composer',
       'snow_find_artifact': 'intelligent',
       'snow_update_set_create': 'update-set',
       'snow_get_by_sysid': 'intelligent',

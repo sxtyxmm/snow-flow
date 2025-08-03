@@ -24,13 +24,6 @@ const serversToMigrate: ServerMigrationConfig[] = [
     version: '2.0.0'
   },
   {
-    inputFile: 'servicenow-flow-composer-mcp.ts',
-    outputFile: 'servicenow-flow-composer-mcp-refactored.ts',
-    serverName: 'servicenow-flow-composer',
-    className: 'ServiceNowFlowComposerMCP',
-    version: '2.0.0'
-  },
-  {
     inputFile: 'servicenow-platform-development-mcp.ts',
     outputFile: 'servicenow-platform-development-mcp-refactored.ts',
     serverName: 'servicenow-platform-development',

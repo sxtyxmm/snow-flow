@@ -320,41 +320,6 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
         }
       },
       {
-        name: 'snow_test_flow_with_mock',
-        description: 'Test flows with mock data - create test users, mock catalog items, and simulate flow execution',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            flow_id: { type: 'string', description: 'Flow sys_id or name to test' },
-            create_test_user: { type: 'boolean', default: true, description: 'Create a test user for the flow' },
-            mock_catalog_items: { type: 'boolean', default: true, description: 'Create mock catalog items for testing' },
-            simulate_approvals: { type: 'boolean', default: true, description: 'Automatically approve any approval requests' },
-            cleanup_after_test: { type: 'boolean', default: true, description: 'Remove test data after testing' },
-            test_inputs: { type: 'object', description: 'Input values to test the flow with' }
-          },
-          required: ['flow_id']
-        }
-      },
-      {
-        name: 'snow_link_catalog_to_flow',
-        description: 'Link catalog items directly to flows - configure flow as fulfillment process',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            catalog_item_id: { type: 'string', description: 'Catalog item sys_id or name' },
-            flow_id: { type: 'string', description: 'Flow sys_id or name to use for fulfillment' },
-            link_type: { 
-              type: 'string', 
-              enum: ['workflow', 'flow_catalog_process', 'process_engine'],
-              default: 'flow_catalog_process',
-              description: 'Type of link to create' 
-            },
-            test_link: { type: 'boolean', default: false, description: 'Test the link by creating a sample request' }
-          },
-          required: ['catalog_item_id', 'flow_id']
-        }
-      },
-      {
         name: 'snow_cleanup_test_artifacts',
         description: 'Clean up test artifacts while preserving Update Set audit trail',
         inputSchema: {
@@ -480,10 +445,6 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
           return await this.handleCatalogItemManager(args);
         case 'snow_catalog_item_search':
           return await this.handleCatalogItemSearch(args);
-        case 'snow_test_flow_with_mock':
-          return await this.handleTestFlowWithMock(args);
-        case 'snow_link_catalog_to_flow':
-          return await this.handleLinkCatalogToFlow(args);
         case 'snow_cleanup_test_artifacts':
           return await this.handleCleanupTestArtifacts(args);
         case 'snow_create_user_group':
@@ -1205,130 +1166,7 @@ export class ServiceNowOperationsMCP extends BaseMCPServer {
         fuzzy_match_used: fuzzy_match && items.length > 0
       }
     };
-  }
-
-  private async handleTestFlowWithMock(args: any): Promise<ToolResult> {
-    const { flow_id, create_test_user, mock_catalog_items, simulate_approvals, cleanup_after_test } = args;
-
-    const testResults: any = {
-      flow_id,
-      test_start: new Date().toISOString(),
-      test_data_created: [],
-      flow_execution: {},
-      cleanup_performed: false
-    };
-
-    try {
-      // Create test user if requested
-      if (create_test_user) {
-        const testUser = await this.createTestUser();
-        testResults.test_data_created.push({
-          type: 'user',
-          sys_id: testUser.sys_id,
-          name: testUser.user_name
-        });
-      }
-
-      // Create mock catalog items if requested
-      if (mock_catalog_items) {
-        const mockItems = await this.createMockCatalogItems();
-        testResults.test_data_created.push(...mockItems);
-      }
-
-      // Simulate flow execution
-      testResults.flow_execution = {
-        status: 'simulated',
-        steps_executed: 5,
-        approvals_simulated: simulate_approvals ? 2 : 0,
-        duration_ms: 1234,
-        result: 'success'
-      };
-
-      // Cleanup if requested
-      if (cleanup_after_test) {
-        await this.cleanupTestData(testResults.test_data_created);
-        testResults.cleanup_performed = true;
-      }
-
-      testResults.test_end = new Date().toISOString();
-
-      return {
-        success: true,
-        result: testResults
-      };
-
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Test execution failed'
-        // partial_results would go here if ToolResult supported it
-      };
-    }
-  }
-
-  private async handleLinkCatalogToFlow(args: any): Promise<ToolResult> {
-    const { catalog_item_id, flow_id, link_type, test_link } = args;
-
-    // Get catalog item
-    const itemResponse = await this.client.makeRequest({
-      method: 'GET',
-      url: `/api/now/table/sc_cat_item/${catalog_item_id}`
-    });
-
-    if (!itemResponse.success || !itemResponse.result) {
-      return {
-        success: false,
-        error: 'Catalog item not found'
-      };
-    }
-
-    // Get flow
-    const flowResponse = await this.client.makeRequest({
-      method: 'GET',
-      url: `/api/now/table/sys_hub_flow/${flow_id}`
-    });
-
-    if (!flowResponse.success || !flowResponse.result) {
-      return {
-        success: false,
-        error: 'Flow not found'
-      };
-    }
-
-    // Create the link (simplified)
-    const linkData = {
-      catalog_item: catalog_item_id,
-      flow: flow_id,
-      type: link_type,
-      active: true
-    };
-
-    // In a real implementation, this would create the actual link
-    // For now, we'll simulate it
-    const result: any = {
-      catalog_item: itemResponse.result.name,
-      flow: flowResponse.result.name,
-      link_type,
-      link_created: true,
-      sys_id: generateMockSysId('catalog_flow_link')
-    };
-
-    if (test_link) {
-      // Simulate creating a test request
-      result.test_request = {
-        number: generateRequestNumber(),
-        state: 'pending',
-        flow_triggered: true
-      };
-    }
-
-    return {
-      success: true,
-      result
-    };
-  }
-
-  private async handleCleanupTestArtifacts(args: any): Promise<ToolResult> {
+  }  private async handleCleanupTestArtifacts(args: any): Promise<ToolResult> {
     const { artifact_types, dry_run, max_age_hours } = args;
 
     const cutoffTime = new Date();

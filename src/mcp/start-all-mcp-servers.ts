@@ -25,14 +25,6 @@ async function startAllServers() {
       script: 'dist/mcp/servicenow-intelligent-mcp.js'
     },
     {
-      name: 'ServiceNow Flow Composer MCP',
-      script: 'dist/mcp/servicenow-flow-composer-mcp.js'
-    },
-    {
-      name: 'ServiceNow Graph Memory MCP',
-      script: 'dist/mcp/servicenow-graph-memory-mcp.js'
-    },
-    {
       name: 'ServiceNow Update Set MCP',
       script: 'dist/mcp/servicenow-update-set-mcp.js'
     },
@@ -63,10 +55,6 @@ async function startAllServers() {
     {
       name: 'ServiceNow Integration MCP',
       script: 'dist/mcp/servicenow-integration-mcp.js'
-    },
-    {
-      name: 'ServiceNow XML Flow MCP',
-      script: 'dist/mcp/servicenow-xml-flow-mcp.js'
     },
     {
       name: 'ServiceNow Memory MCP',

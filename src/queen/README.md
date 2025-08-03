@@ -4,13 +4,13 @@
 > 
 > A single coordination point that spawns specialized agents dynamically, learns from deployments, and orchestrates complex ServiceNow tasks with elegance through simplicity.
 
-## ⚠️ IMPORTANT: Flow Creation Removed in v1.4.0 ⚠️
+## ⚠️ IMPORTANT: Flow Creation Removed in v1.4.38 ⚠️
 
-**Note**: The flow-builder agent and all flow-related functionality have been removed in v1.4.0 due to critical bugs. Flow creation examples in this documentation are no longer functional. Please use ServiceNow's native Flow Designer interface directly for flow creation. All other agent types and functionality continue to work normally.
+**Note**: All flow-related functionality has been permanently removed from Snow-Flow. Please use ServiceNow's native Flow Designer interface directly for flow creation. All other agent types and functionality continue to work normally.
 
 ## Philosophy: Claude-Flow Principles
 
-The ServiceNow Queen Agent follows claude-flow philosophy:
+The ServiceNow Queen Agent follows snow-flow philosophy:
 
 - **🎯 Single Coordination Point**: All tasks go through the Queen
 - **⚡ Dynamic Agent Spawning**: Creates agents based on task needs, not pre-defined teams  
@@ -60,14 +60,14 @@ The central intelligence that:
 
 ```typescript
 const queen = new ServiceNowQueen({
-  memoryPath: './.claude-flow/queen-memory.db',
+  memoryPath: './.snow-flow/queen-memory.db',
   maxConcurrentAgents: 8,
   learningRate: 0.1,
   debugMode: true
 });
 
 // One command does everything
-await queen.executeObjective("create approval flow for laptop requests");
+await queen.executeObjective("create incident dashboard widget with real-time updates");
 ```
 
 ### 2. Dynamic Agent Factory
@@ -77,7 +77,6 @@ Spawns specialized agents on-demand based on task analysis:
 ```typescript
 // 8 Available Agent Types
 - widget-creator     → HTML, CSS, JS, ServiceNow widgets
-- flow-builder       → Process flows, approvals, automation
 - script-writer      → Business rules, script includes, client scripts
 - app-architect      → System design, table structures, modules
 - integration-specialist → APIs, data sync, external systems
@@ -119,7 +118,7 @@ CREATE TABLE learnings (
 
 Pattern recognition that improves over time:
 
-- **Task Classification**: Widget vs Flow vs Application
+- **Task Classification**: Widget vs Script vs Application
 - **Complexity Estimation**: Based on keyword analysis and learned weights
 - **Agent Selection**: Optimal sequence based on successful patterns
 - **Success/Failure Learning**: Adjusts confidence weights dynamically
@@ -154,18 +153,18 @@ await queen.executeObjective("create incident dashboard");
 // 5. Learns from success for future widget tasks
 ```
 
-### Complex Flow with Integration
+### Complex Widget with Integration
 
 ```typescript
 await queen.executeObjective(
-  "create approval flow for equipment requests with external API integration"
+  "create equipment request dashboard with external API integration"
 );
 
 // Queen automatically:
-// 1. Classifies as 'flow' task (high complexity)
-// 2. Spawns: researcher → flow-builder → integration-specialist → tester  
+// 1. Classifies as 'widget' task (high complexity)
+// 2. Spawns: researcher → widget-creator → integration-specialist → tester  
 // 3. Coordinates sequential execution with agent communication
-// 4. Uses snow_create_flow + snow_create_rest_message
+// 4. Uses snow_deploy + snow_create_rest_message
 // 5. Learns optimal agent sequence for similar future tasks
 ```
 
@@ -178,7 +177,7 @@ await queen.executeObjective(
 
 // Queen automatically:
 // 1. Classifies as 'application' task (very high complexity)
-// 2. Spawns: researcher → app-architect → script-writer → flow-builder → tester
+// 2. Spawns: researcher → app-architect → script-writer → widget-creator → tester
 // 3. Coordinates with shared memory between agents
 // 4. Uses multiple MCP tools in optimal sequence
 // 5. Stores deployment pattern for future application tasks
@@ -323,10 +322,10 @@ The Queen uses existing MCP servers as "tools" for agents:
 - snow_preview_widget
 - snow_widget_test
 
-// Flow agents use these MCP tools:  
-- snow_create_flow
-- snow_test_flow_with_mock
-- snow_comprehensive_flow_test
+// Script agents use these MCP tools:  
+- snow_create_script_include
+- snow_create_business_rule
+- snow_create_client_script
 
 // All agents coordinate through Queen
 ```
@@ -346,7 +345,7 @@ The Queen uses existing MCP servers as "tools" for agents:
 ```typescript
 const queen = new ServiceNowQueen({
   // Memory persistence
-  memoryPath: './.claude-flow/queen/memory.db',
+  memoryPath: './.snow-flow/queen/memory.db',
   
   // Agent management
   maxConcurrentAgents: 8,
@@ -367,12 +366,12 @@ const backup = queen.exportMemory();
 fs.writeFileSync('queen-backup.json', backup);
 
 // Queen automatically creates SQLite backups
-// .claude-flow/queen/memory.db
+// .snow-flow/queen/memory.db
 ```
 
 ## Philosophy in Action
 
-The Queen embodies **claude-flow principles**:
+The Queen embodies **snow-flow principles**:
 
 ### 1. Elegance through Simplicity
 - **One entry point**: `queen.executeObjective()`
@@ -401,4 +400,4 @@ The Queen will evolve while maintaining simplicity:
 
 ---
 
-*Built with ❤️ following claude-flow philosophy: Elegance through simplicity, intelligence through learning.*
+*Built with ❤️ following snow-flow philosophy: Elegance through simplicity, intelligence through learning.*

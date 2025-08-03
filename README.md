@@ -91,7 +91,7 @@ snow-flow swarm "Create documentation for all my custom workflows"
 
 Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 specialized MCP servers**. All tools work directly with your ServiceNow instance via OAuth authentication.
 
-### 🐝 **Snow-Flow AI Swarm Orchestration** (10+ tools - REPLACES claude-flow/ruv-swarm!)
+### 🐝 **Snow-Flow AI Swarm Orchestration** (10+ tools - NATIVE IMPLEMENTATION!)
 **IMPORTANT: Snow-Flow has its own swarm orchestration - no external tools needed!**
 - ✅ `swarm_init` - Initialize AI swarm coordination topology  
 - ✅ `agent_spawn` - Create specialized AI agents for different tasks
@@ -104,14 +104,6 @@ Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 special
 - ✅ `memory_search` - Search memory with pattern matching
 - ✅ `performance_report` - Generate performance reports with metrics
 
-### 🧠 **Graph Memory & Dependency Analysis** (7 tools - KILLER FEATURES!)
-- ✅ `snow_graph_index_artifact` - Index artifacts in Neo4j with full relationship mapping
-- ✅ `snow_graph_find_related` - **Find ALL connections & dependencies of any script/artifact**
-- ✅ `snow_graph_analyze_impact` - AI-powered impact analysis before making changes
-- ✅ `snow_graph_suggest_artifacts` - Intelligent artifact suggestions based on patterns
-- ✅ `snow_graph_pattern_analysis` - Advanced pattern recognition across all code
-- ✅ `snow_graph_visualize` - Generate visual dependency graphs (Cypher/Mermaid)
-- ✅ `snow_graph_export_knowledge` - Export learned patterns and relationships
 
 ### 🔄 **Process Mining & Workflow Analysis** (4 tools - REVOLUTIONARY!)
 - ✅ `snow_discover_process` - **Real process mining from ServiceNow audit logs**
@@ -222,7 +214,7 @@ Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 special
 - **✅ Working Tools**: 85+ tools (85% success rate)
 - **⚠️ Limited Tools**: 10 tools (permission/config issues)  
 - **🔧 Available Tools**: 100+ total across 16 categories
-- **🚀 Advanced Features**: Graph Memory, Process Mining, AI Analytics
+- **🚀 Advanced Features**: Native Memory System, Process Mining, AI Analytics
 - **🏗️ Architecture**: 16 specialized MCP servers for comprehensive coverage
 
 ### 🎯 **Natural Language Examples**
@@ -246,7 +238,7 @@ snow-flow swarm "Predict impact if I modify the Priority field in incident table
 
 # 📊 VISUAL DEPENDENCY MAPPING
 snow-flow swarm "Create visual dependency graph for all my custom scripts"
-# Result: Neo4j graph with Cypher queries, Mermaid diagrams
+# Result: Intelligent memory patterns, workflow optimizations
 
 # 🔍 PATTERN DETECTION
 snow-flow swarm "Find security anti-patterns across all my ServiceNow scripts"

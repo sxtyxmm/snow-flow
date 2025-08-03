@@ -5,16 +5,40 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.39] - 2025-08-03
+
+### 🔧 Tool Optimization & Neo4j Removal
+
+**Major Changes**: Removed Neo4j graph memory from available tools, implemented missing swarm tools, and cleaned up deprecated functionality.
+
+### Added
+- Implemented `neural_status` tool - Shows neural network status with accuracy and performance metrics
+- Implemented `token_usage` tool - Analyzes token consumption with cost estimates and recommendations
+
+### Removed
+- Neo4j graph memory tools removed from available tools (implementation kept for future use)
+- Removed deprecated tools: `bottleneck_analyze`, `github_repo_analyze`, `daa_agent_create`, `workflow_create`, `sparc_mode`
+- Removed flow-related tools: `flow_wizard`, `validate_flow_definition`
+
+### Fixed
+- All TypeScript compilation errors resolved
+- Tool registry properly updated
+- Documentation synchronized with available tools
+
+### Changed
+- Updated README.md and CLAUDE.md to remove Neo4j references
+- Simplified tool offerings to focus on working implementations
+
 ## [1.4.6] - 2025-07-31
 
 ### 🔧 Documentation Fix
 
-**Critical Fix**: Restored Snow-Flow specific CLAUDE.md content that was incorrectly using generic claude-flow documentation.
+**Critical Fix**: Restored Snow-Flow specific CLAUDE.md content that was incorrectly using generic external tool documentation.
 
 ### Fixed
 - CLAUDE.md now properly contains Snow-Flow specific documentation
 - Init command generates correct MCP-first workflow documentation
-- Removed all references to generic "claude-flow" in generated files
+- Removed all references to generic external tools in generated files
 - Fixed orphaned code blocks in cli.ts causing build errors
 
 ### Changed

@@ -34,7 +34,7 @@ LINKEDIN-LAUNCH-STRATEGY.md
 *.db-*
 *.sqlite
 *.sqlite-*
-.claude-flow/
+.snow-flow/
 
 # Local data
 memory/
@@ -54,7 +54,7 @@ reports/
 
 # Exclude local settings
 .claude/settings.local.json
-claude-flow.config.json
+snow-flow.config.json
 
 # Config files
 .gitignore

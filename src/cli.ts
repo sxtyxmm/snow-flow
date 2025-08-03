@@ -2147,10 +2147,10 @@ program
     const targetDir = process.cwd();
     
     try {
-      // Check for .claude-flow migration
-      const { migrationUtil } = await import('./utils/migrate-claude-flow.js');
+      // Check for .snow-flow migration
+      const { migrationUtil } = await import('./utils/migrate-snow-flow.js');
       if (await migrationUtil.checkMigrationNeeded()) {
-        console.log('\n🔄 Detected .claude-flow directory, migrating to .snow-flow...');
+        console.log('\n🔄 Detected .snow-flow directory, migrating to .snow-flow...');
         await migrationUtil.migrate();
       }
       
@@ -3666,111 +3666,57 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     snowFlowRoot = parts[0] + 'node_modules/snow-flow';
   } else {
     // For local development or local install
-    snowFlowRoot = process.cwd();
+    // Find the snow-flow project root by looking for the parent directory with package.json
+    let currentDir = __dirname;
+    while (currentDir !== '/') {
+      try {
+        const packageJsonPath = join(currentDir, 'package.json');
+        const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+        if (packageJson.name === 'snow-flow') {
+          snowFlowRoot = currentDir;
+          break;
+        }
+      } catch {
+        // Continue searching up
+      }
+      currentDir = dirname(currentDir);
+    }
+    if (!snowFlowRoot) {
+      throw new Error('Could not find snow-flow project root');
+    }
   }
   
-  // Ensure we have the correct path to dist directory
-  const distPath = join(snowFlowRoot, 'dist');
+  // Read the template file
+  const templatePath = join(snowFlowRoot, '.mcp.json.template');
+  let templateContent: string;
   
-  // Create the correct .mcp.json file for Claude Code discovery
-  const mcpConfig = {
-    "mcpServers": {
-      "servicenow-deployment": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-deployment-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
-          "SNOW_DEPLOYMENT_TIMEOUT": "${SNOW_DEPLOYMENT_TIMEOUT}",
-          "MCP_DEPLOYMENT_TIMEOUT": "${MCP_DEPLOYMENT_TIMEOUT}"
-        }
-      },
-      "servicenow-update-set": {
-        "command": "node", 
-        "args": [join(distPath, "mcp/servicenow-update-set-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-intelligent": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-intelligent-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-graph-memory": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-graph-memory-mcp.js")],
-        "env": {
-          "NEO4J_URI": "${NEO4J_URI}",
-          "NEO4J_USER": "${NEO4J_USER}",
-          "NEO4J_PASSWORD": "${NEO4J_PASSWORD}",
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-operations": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-operations-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-platform-development": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-platform-development-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-integration": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-integration-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-automation": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-automation-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-security-compliance": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-security-compliance-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      },
-      "servicenow-reporting-analytics": {
-        "command": "node",
-        "args": [join(distPath, "mcp/servicenow-reporting-analytics-mcp.js")],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      }
-    }
+  try {
+    templateContent = await fs.readFile(templatePath, 'utf-8');
+  } catch (error) {
+    console.error('❌ Could not find .mcp.json.template file');
+    throw error;
+  }
+  
+  // Replace placeholders in template
+  const distPath = join(snowFlowRoot, 'dist');
+  const mcpConfigContent = templateContent
+    .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
+    .replace(/{{SNOW_INSTANCE}}/g, '${SNOW_INSTANCE}')
+    .replace(/{{SNOW_CLIENT_ID}}/g, '${SNOW_CLIENT_ID}')
+    .replace(/{{SNOW_CLIENT_SECRET}}/g, '${SNOW_CLIENT_SECRET}')
+    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, '${SNOW_DEPLOYMENT_TIMEOUT}')
+    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, '${MCP_DEPLOYMENT_TIMEOUT}')
+    .replace(/{{NEO4J_URI}}/g, '${NEO4J_URI}')
+    .replace(/{{NEO4J_USER}}/g, '${NEO4J_USER}')
+    .replace(/{{NEO4J_PASSWORD}}/g, '${NEO4J_PASSWORD}')
+    .replace(/{{SNOW_FLOW_ENV}}/g, '${SNOW_FLOW_ENV}');
+  
+  // Parse to ensure it's valid JSON
+  const mcpConfig = JSON.parse(mcpConfigContent);
+  
+  // Update the structure to use mcpServers instead of servers
+  const finalConfig = {
+    "mcpServers": mcpConfig.servers
   };
   
   // Create .mcp.json in project root for Claude Code discovery
@@ -3779,21 +3725,22 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     await fs.access(mcpConfigPath);
     if (force) {
       console.log('⚠️  .mcp.json already exists, overwriting with --force flag');
-      await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+      await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
     } else {
       console.log('⚠️  .mcp.json already exists, skipping (use --force to overwrite)');
     }
   } catch {
-    await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+    await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
   }
   
   // Also create legacy config in .claude for backward compatibility
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
-  await fs.writeFile(legacyConfigPath, JSON.stringify(mcpConfig, null, 2));
+  await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
   
   // Create comprehensive Claude Code settings file
   const claudeSettings = {
     "enabledMcpjsonServers": [
+      "snow-flow",
       "servicenow-deployment",
       "servicenow-update-set",
       "servicenow-intelligent",
@@ -3856,8 +3803,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "autoSaveMemory": true,
       "autoCommit": false
     },
-    "claudeFlow": {
-      "version": "1.0.72",
+    "snowFlow": {
+      "version": "1.4.35",
       "swarmDefaults": {
         "maxAgents": 10,
         "timeout": 0,

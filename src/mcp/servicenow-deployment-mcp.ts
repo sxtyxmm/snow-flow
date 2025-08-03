@@ -86,56 +86,6 @@ class ServiceNowDeploymentMCP {
           },
         },
         {
-          name: 'snow_deploy_flow',
-          description: '⚠️ DEPRECATED - Use snow_deploy instead. This tool redirects to the unified deployment system.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Flow name' },
-              description: { type: 'string', description: 'Flow description' },
-              flow_type: { type: 'string', enum: ['flow', 'subflow', 'action'], description: 'Type of flow to create (default: flow)', default: 'flow' },
-              table: { type: 'string', description: 'Target table (e.g., sc_request, incident)' },
-              trigger_type: { type: 'string', enum: ['record_created', 'record_updated', 'scheduled', 'manual'], description: 'Flow trigger type' },
-              condition: { type: 'string', description: 'Trigger condition (encoded query)' },
-              active: { type: 'boolean', description: 'Activate flow on deployment' },
-              flow_definition: { type: 'string', description: 'Flow Designer definition JSON' },
-              category: { type: 'string', description: 'Flow category (e.g., approval, automation)' },
-              validate_before_deploy: { type: 'boolean', description: 'Validate flow definition before deployment', default: true },
-            },
-            required: ['name', 'description', 'flow_definition', 'trigger_type'],
-          },
-        },
-        {
-          name: 'snow_deploy_application',
-          description: '⚠️ DEPRECATED - Use snow_deploy instead. This tool redirects to the unified deployment system.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Application name' },
-              scope: { type: 'string', description: 'Preferred scope (global/application-specific) - leave blank for intelligent selection' },
-              version: { type: 'string', description: 'Application version' },
-              short_description: { type: 'string', description: 'Short description' },
-              description: { type: 'string', description: 'Full description' },
-              vendor: { type: 'string', description: 'Vendor name' },
-              vendor_prefix: { type: 'string', description: 'Vendor prefix' },
-              active: { type: 'boolean', description: 'Activate application' },
-              scope_strategy: { 
-                type: 'string', 
-                enum: ['global', 'application', 'auto'],
-                description: 'Scope deployment strategy - auto selects optimal scope',
-                default: 'auto'
-              },
-              environment: {
-                type: 'string',
-                enum: ['development', 'testing', 'production'],
-                description: 'Deployment environment',
-                default: 'development'
-              }
-            },
-            required: ['name', 'version'],
-          },
-        },
-        {
           name: 'snow_deploy_update_set',
           description: 'Create and populate an update set for deployment',
           inputSchema: {
@@ -336,21 +286,6 @@ class ServiceNowDeploymentMCP {
           },
         },
         {
-          name: 'snow_validate_flow_definition',
-          description: 'Validate flow definition before deployment with preview and test mode',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              definition: { type: 'string', description: 'Flow definition JSON to validate' },
-              flow_type: { type: 'string', enum: ['flow', 'subflow', 'action'], default: 'flow' },
-              show_preview: { type: 'boolean', description: 'Show visual preview', default: true },
-              test_mode: { type: 'boolean', description: 'Run in test mode', default: false },
-              check_dependencies: { type: 'boolean', description: 'Check for missing dependencies', default: true },
-            },
-            required: ['definition'],
-          },
-        },
-        {
           name: 'snow_create_solution_package',
           description: 'Create a solution package grouping related artifacts with a new update set',
           inputSchema: {
@@ -372,21 +307,6 @@ class ServiceNowDeploymentMCP {
               new_update_set: { type: 'boolean', description: 'Force new update set', default: true },
             },
             required: ['name', 'artifacts'],
-          },
-        },
-        {
-          name: 'snow_flow_wizard',
-          description: 'Interactive flow creation wizard with step-by-step guidance',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Flow name' },
-              interactive: { type: 'boolean', description: 'Enable interactive mode', default: true },
-              preview_each_step: { type: 'boolean', description: 'Preview after each step', default: true },
-              test_as_you_build: { type: 'boolean', description: 'Test flow during creation', default: true },
-              flow_type: { type: 'string', enum: ['flow', 'subflow', 'action'], default: 'flow' },
-            },
-            required: ['name'],
           },
         },
         {
@@ -478,10 +398,6 @@ class ServiceNowDeploymentMCP {
             // Deprecated - redirect to unified deploy
             this.logger.warn('snow_deploy_widget is deprecated, redirecting to snow_deploy');
             return await this.handleDeprecatedWidgetDeploy(args);
-          case 'snow_deploy_flow':
-            // Deprecated - redirect to unified deploy
-            this.logger.warn('snow_deploy_flow is deprecated, redirecting to snow_deploy');
-            return await this.handleDeprecatedFlowDeploy(args);
           case 'snow_deploy_application':
             // Deprecated - redirect to unified deploy
             this.logger.warn('snow_deploy_application is deprecated, redirecting to snow_deploy');
@@ -512,12 +428,8 @@ class ServiceNowDeploymentMCP {
             return await this.testWidget(args);
           case 'snow_smart_update_set':
             return await this.smartUpdateSet(args);
-          case 'snow_validate_flow_definition':
-            return await this.validateFlowDefinition(args);
           case 'snow_create_solution_package':
             return await this.createSolutionPackage(args);
-          case 'snow_flow_wizard':
-            return await this.flowWizard(args);
           case 'snow_bulk_deploy':
             // Deprecated - redirect to unified deploy
             this.logger.warn('snow_bulk_deploy is deprecated, redirecting to snow_deploy with batch configuration');
@@ -7234,34 +7146,6 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
     
     return result;
   }
-
-  private async handleDeprecatedFlowDeploy(args: any) {
-    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
-
-🚨 **snow_deploy_flow is deprecated** - Use \`snow_deploy\` instead
-
-📋 **Automatic Redirect**: Converting to unified deployment...
-
-`;
-
-    // Convert old flow args to unified deploy format
-    const unifiedArgs = {
-      type: 'flow',
-      config: args,
-      auto_update_set: true,
-      fallback_strategy: 'manual_steps'
-    };
-
-    const result = await this.unifiedDeploy(unifiedArgs);
-    
-    // Prepend deprecation warning to the result
-    if (result.content && result.content[0]) {
-      result.content[0].text = deprecationWarning + result.content[0].text;
-    }
-    
-    return result;
-  }
-
   private async handleDeprecatedApplicationDeploy(args: any) {
     const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
 

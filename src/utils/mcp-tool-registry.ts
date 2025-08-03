@@ -71,20 +71,6 @@ export class MCPToolRegistry {
       description: 'Deploy widgets to ServiceNow'
     });
 
-    // Flow creation
-    this.registerTool({
-      canonicalName: 'create_flow',
-      aliases: [
-        'mcp__servicenow-flow-composer__snow_create_flow',
-        'snow_create_flow',
-        'create_flow',
-        'flow_create',
-        'snow_xml_flow_from_instruction'
-      ],
-      provider: 'servicenow-flow-composer',
-      actualTool: 'mcp__servicenow-flow-composer__snow_create_flow',
-      description: 'Create flows from natural language'
-    });
 
     // Update Set management
     this.registerTool({

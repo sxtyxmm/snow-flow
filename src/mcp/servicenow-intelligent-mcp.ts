@@ -206,39 +206,12 @@ export class ServiceNowIntelligentMCP {
           },
         },
         {
-          name: 'snow_discover_existing_flows',
-          description: 'SMART flow discovery - finds existing flows to prevent duplication, analyzes similarities, suggests reuse or modification instead of creating new flows.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow_purpose: { type: 'string', description: 'Description of what the new flow should do' },
-              include_inactive: { type: 'boolean', description: 'Include inactive flows in search', default: false },
-              similarity_threshold: { type: 'number', description: 'Minimum similarity score (0.0-1.0)', default: 0.7 },
-            },
-            required: ['flow_purpose'],
-          },
-        },
-        {
-          name: 'snow_test_flow_execution',
-          description: 'LIVE flow testing - executes flows in the live ServiceNow instance with test data, monitors execution, provides detailed results and performance metrics.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow_sys_id: { type: 'string', description: 'Sys ID of the flow to test' },
-              test_data: { type: 'object', description: 'Test input data for the flow' },
-              monitor_execution: { type: 'boolean', description: 'Monitor detailed execution steps', default: true },
-              timeout_seconds: { type: 'number', description: 'Test timeout in seconds', default: 300 },
-            },
-            required: ['flow_sys_id'],
-          },
-        },
-        {
           name: 'batch_deployment_validator',
           description: 'COMPREHENSIVE batch validation - validates multiple deployments simultaneously, checks dependencies, conflicts, and provides rollback recommendations.',
           inputSchema: {
             type: 'object',
             properties: {
-              artifacts: { type: 'array', items: { type: 'object', properties: { sys_id: { type: 'string' }, table: { type: 'string' }, type: { type: 'string' } } }, description: 'List of artifacts to validate' },
+              artifacts: { type: 'array', items: { type: 'object', properties: { type: { type: 'string' }, sys_id: { type: 'string' }, table: { type: 'string' } } }, description: 'List of artifacts to validate' },
               validation_level: { type: 'string', enum: ['syntax', 'dependencies', 'full'], description: 'Level of validation', default: 'full' },
               check_conflicts: { type: 'boolean', description: 'Check for conflicts between artifacts', default: true },
             },
@@ -339,218 +312,10 @@ export class ServiceNowIntelligentMCP {
             required: ['artifacts'],
           },
         },
-        {
-          name: 'snow_comprehensive_flow_test',
-          description: 'COMPREHENSIVE FLOW TESTING - Advanced flow testing with automatic test data generation, edge case detection, performance validation, and integration testing.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow_sys_id: { type: 'string', description: 'Flow sys_id to test' },
-              test_data_generation: { type: 'string', enum: ['automatic', 'manual', 'hybrid'], description: 'Test data generation method', default: 'automatic' },
-              edge_case_detection: { type: 'boolean', description: 'Enable edge case detection', default: true },
-              performance_validation: { type: 'boolean', description: 'Enable performance validation', default: true },
-              integration_testing: { type: 'boolean', description: 'Enable integration testing', default: true },
-              test_scenarios: { type: 'array', items: { type: 'object' }, description: 'Custom test scenarios' },
-            },
-            required: ['flow_sys_id'],
-          },
-        },
-        {
-          name: 'snow_verify_artifact_searchable',
-          description: '🔴 SNOW-002 FIX: Verify newly created artifact is searchable - Use immediately after creating artifacts to ensure they can be found in search',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              artifact_name: { type: 'string', description: 'Name of the artifact to verify' },
-              artifact_type: { type: 'string', description: 'Type of artifact (flow, widget, script, etc.)' },
-              expected_sys_id: { type: 'string', description: 'Expected sys_id (if known from creation)' },
-              max_wait_time: { type: 'number', description: 'Maximum wait time in seconds', default: 30 },
-            },
-            required: ['artifact_name', 'artifact_type'],
-          },
-        },
-        {
-          name: 'snow_generate_documentation',
-          description: '📚 SELF-DOCUMENTING SYSTEM - Automatically generate comprehensive documentation from code, flows, and system behavior without manual intervention.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              scope: { type: 'string', enum: ['full', 'partial', 'incremental'], default: 'full', description: 'Documentation scope' },
-              components: { type: 'array', items: { type: 'string' }, description: 'Specific components to document' },
-              format: { type: 'string', enum: ['markdown', 'html', 'pdf'], default: 'markdown', description: 'Output format' },
-              include_diagrams: { type: 'boolean', default: true, description: 'Include system diagrams' },
-              include_examples: { type: 'boolean', default: true, description: 'Include code examples' },
-            },
-          },
-        },
-        {
-          name: 'snow_documentation_suggestions',
-          description: '💡 Get intelligent documentation improvement suggestions based on current system state and best practices.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              profile_id: { type: 'string', description: 'Documentation profile ID (optional - uses latest if not provided)' },
-            },
-          },
-        },
-        {
-          name: 'snow_start_continuous_documentation',
-          description: '🔄 Start autonomous continuous documentation that monitors changes and updates documentation automatically.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              interval: { type: 'number', description: 'Update interval in milliseconds (default: 1 hour)' },
-              scope: { type: 'array', items: { type: 'string' }, description: 'Components to monitor' },
-              auto_commit: { type: 'boolean', default: false, description: 'Automatically commit documentation changes' },
-            },
-          },
-        },
-        {
-          name: 'snow_analyze_costs',
-          description: '💰 COST OPTIMIZATION ENGINE - Analyze AI usage costs and generate autonomous optimization recommendations.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              scope: { type: 'string', enum: ['all', 'service', 'agent', 'operation'], default: 'all', description: 'Analysis scope' },
-              target_reduction: { type: 'number', description: 'Target cost reduction percentage' },
-              auto_implement: { type: 'boolean', default: false, description: 'Automatically implement optimizations' },
-              testing_enabled: { type: 'boolean', default: true, description: 'Test optimizations before implementing' },
-            },
-          },
-        },
-        {
-          name: 'snow_cost_dashboard',
-          description: '📊 Get real-time cost optimization dashboard with current spending, savings, and recommendations.',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'snow_start_autonomous_cost_optimization',
-          description: '🤖 Start autonomous cost monitoring and optimization that automatically implements cost-saving strategies.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              target_savings: { type: 'number', description: 'Target savings percentage' },
-              check_interval: { type: 'number', description: 'Check interval in milliseconds' },
-              auto_implement_threshold: { type: 'number', description: 'Minimum savings to auto-implement ($)' },
-            },
-          },
-        },
-        {
-          name: 'snow_implement_cost_optimization',
-          description: '🔧 Manually implement a specific cost optimization recommendation.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              optimization_id: { type: 'string', description: 'Optimization ID to implement' },
-              test_first: { type: 'boolean', default: true, description: 'Test before implementing' },
-              rollback_on_failure: { type: 'boolean', default: true, description: 'Auto-rollback on failure' },
-            },
-            required: ['optimization_id'],
-          },
-        },
-        {
-          name: 'snow_assess_compliance',
-          description: '🔐 ADVANCED COMPLIANCE SYSTEM - Perform comprehensive compliance assessment across multiple frameworks.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              frameworks: { type: 'array', items: { type: 'string' }, description: 'Compliance frameworks to assess (SOX, GDPR, HIPAA, etc.)' },
-              scope: { type: 'string', enum: ['full', 'incremental', 'specific-controls'], default: 'full', description: 'Assessment scope' },
-              include_evidence: { type: 'boolean', default: true, description: 'Include compliance evidence' },
-              auto_remediate: { type: 'boolean', default: false, description: 'Automatically remediate violations' },
-              generate_report: { type: 'boolean', default: false, description: 'Generate compliance report' },
-            },
-          },
-        },
-        {
-          name: 'snow_compliance_dashboard',
-          description: '📊 Get real-time compliance dashboard with status, violations, and certifications.',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'snow_start_compliance_monitoring',
-          description: '🔄 Start continuous compliance monitoring with automatic violation detection and remediation.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              frameworks: { type: 'array', items: { type: 'string' }, description: 'Frameworks to monitor' },
-              check_interval: { type: 'number', description: 'Check interval in milliseconds' },
-              auto_remediate: { type: 'boolean', default: false, description: 'Enable auto-remediation' },
-              alert_threshold: { type: 'string', description: 'Alert threshold level' },
-            },
-          },
-        },
-        {
-          name: 'snow_execute_corrective_action',
-          description: '🔧 Execute a specific corrective action for compliance violations.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              action_id: { type: 'string', description: 'Corrective action ID' },
-              verify_first: { type: 'boolean', default: true, description: 'Verify safety before execution' },
-              generate_evidence: { type: 'boolean', default: true, description: 'Generate compliance evidence' },
-            },
-            required: ['action_id'],
-          },
-        },
-        {
-          name: 'snow_health_check',
-          description: '🏥 SELF-HEALING SYSTEM - Perform comprehensive system health check with autonomous error detection and healing.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              scope: { type: 'string', enum: ['full', 'incremental', 'specific-services'], default: 'full', description: 'Health check scope' },
-              services: { type: 'array', items: { type: 'string' }, description: 'Specific services to check' },
-              auto_heal: { type: 'boolean', default: false, description: 'Automatically heal detected issues' },
-              predictive: { type: 'boolean', default: true, description: 'Generate health predictions' },
-              learning: { type: 'boolean', default: true, description: 'Enable learning from patterns' },
-            },
-          },
-        },
-        {
-          name: 'snow_health_dashboard',
-          description: '📊 Get real-time system health dashboard with incidents, metrics, and predictions.',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'snow_start_autonomous_healing',
-          description: '🤖 Start autonomous self-healing that continuously monitors and repairs system issues automatically.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              check_interval: { type: 'number', description: 'Health check interval in milliseconds' },
-              healing_threshold: { type: 'number', description: 'Confidence threshold for auto-healing (0-1)' },
-              max_retries: { type: 'number', description: 'Maximum healing retry attempts' },
-              preventive: { type: 'boolean', default: true, description: 'Enable preventive healing' },
-            },
-          },
-        },
-        {
-          name: 'snow_execute_healing_action',
-          description: '💊 Manually execute a specific healing action for system recovery.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              action_id: { type: 'string', description: 'Healing action ID' },
-              verify: { type: 'boolean', default: true, description: 'Verify safety before execution' },
-              monitor: { type: 'boolean', default: true, description: 'Monitor healing progress' },
-              rollback_on_failure: { type: 'boolean', default: true, description: 'Auto-rollback on failure' },
-            },
-            required: ['action_id'],
-          },
-        },
       ],
     }));
 
+    // Register tool handlers
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
@@ -574,10 +339,6 @@ export class ServiceNowIntelligentMCP {
             return await this.syncDataConsistency(args);
           case 'snow_validate_live_connection':
             return await this.validateLiveConnection(args);
-          case 'snow_discover_existing_flows':
-            return await this.discoverExistingFlows(args);
-          case 'snow_test_flow_execution':
-            return await this.testFlowExecution(args);
           case 'batch_deployment_validator':
             return await this.batchDeploymentValidator(args);
           case 'deployment_rollback_manager':
@@ -592,8 +353,6 @@ export class ServiceNowIntelligentMCP {
             return await this.orchestrateDevelopment(args);
           case 'snow_resilient_deployment':
             return await this.resilientDeployment(args);
-          case 'snow_comprehensive_flow_test':
-            return await this.comprehensiveFlowTest(args);
           case 'snow_verify_artifact_searchable':
             return await this.verifyArtifactSearchable(args);
           case 'snow_generate_documentation':
@@ -602,8 +361,134 @@ export class ServiceNowIntelligentMCP {
             return await this.getDocumentationSuggestions(args);
           case 'snow_start_continuous_documentation':
             return await this.startContinuousDocumentation(args);
+          case 'snow_analyze_costs':
+            const costRequest: any = {
+              scope: args.scope || 'all',
+              auto_implement: args.auto_implement || false,
+              target_reduction: args.target_reduction,
+              testing_enabled: args.testing_enabled !== false
+            };
+            const costResult = await this.costOptimizationEngine.analyzeCosts(costRequest);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(costResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_cost_dashboard':
+            const dashboardResult = await this.costOptimizationEngine.getCostDashboard();
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(dashboardResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_start_autonomous_cost_optimization':
+            const startResult = await this.costOptimizationEngine.startAutonomousOptimization(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(startResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_implement_cost_optimization':
+            const implementResult = await this.costOptimizationEngine.implementOptimization(String(args.optimization_id));
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(implementResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_assess_compliance':
+            const complianceResult = await this.complianceSystem.assessCompliance(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(complianceResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_compliance_dashboard':
+            const complianceDashboard = await this.complianceSystem.getComplianceDashboard();
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(complianceDashboard, null, 2)
+                }
+              ]
+            };
+          case 'snow_start_compliance_monitoring':
+            const monitoringResult = await this.complianceSystem.startContinuousMonitoring(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: '✅ Compliance monitoring started successfully'
+                }
+              ]
+            };
+          case 'snow_execute_corrective_action':
+            const actionResult = await this.complianceSystem.executeCorrectiveAction(String(args.action_id), args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(actionResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_health_check':
+            const healthResult = await this.selfHealingSystem.performHealthCheck(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(healthResult, null, 2)
+                }
+              ]
+            };
+          case 'snow_health_dashboard':
+            const healthDashboard = await this.selfHealingSystem.getHealthDashboard();
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(healthDashboard, null, 2)
+                }
+              ]
+            };
+          case 'snow_start_autonomous_healing':
+            const healingStartResult = await this.selfHealingSystem.startAutonomousHealing(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: '✅ Autonomous healing started successfully'
+                }
+              ]
+            };
+          case 'snow_execute_healing_action':
+            const healingResult = await this.selfHealingSystem.executeHealingAction(String(args.action_id), args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(healingResult, null, 2)
+                }
+              ]
+            };
           default:
-            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+            throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
         this.logger.error(`Tool execution failed: ${name}`, error);
@@ -2856,233 +2741,7 @@ export class ServiceNowIntelligentMCP {
         text: `❌ Live Connection Validation Failed:\n${JSON.stringify(results, null, 2)}` 
       }] };
     }
-  }
-
-  private async discoverExistingFlows(args: any) {
-    const { flow_purpose, include_inactive = false, similarity_threshold = 0.7 } = args;
-    
-    try {
-      // Search for existing flows
-      const searchQuery = include_inactive ? '' : 'active=true';
-      const flows = await this.client.get('/api/now/table/wf_workflow', {
-        sysparm_query: searchQuery,
-        sysparm_fields: 'sys_id,name,description,active,sys_created_on,sys_updated_on',
-        sysparm_limit: 100
-      });
-
-      const existingFlows = flows.result || [];
-      const similarFlows = [];
-
-      // Analyze similarity using keywords and context
-      const purposeKeywords = flow_purpose.toLowerCase().split(/\s+/);
-      
-      for (const flow of existingFlows) {
-        const flowText = `${flow.name} ${flow.description || ''}`.toLowerCase();
-        const matchingKeywords = purposeKeywords.filter(keyword => 
-          flowText.includes(keyword) || keyword.includes(flowText.split(/\s+/)[0])
-        );
-        
-        const similarity = matchingKeywords.length / purposeKeywords.length;
-        
-        if (similarity >= similarity_threshold) {
-          similarFlows.push({
-            ...flow,
-            similarity_score: similarity,
-            matching_keywords: matchingKeywords,
-            recommendation: similarity > 0.9 ? 'modify_existing' : 'consider_reuse'
-          });
-        }
-      }
-
-      // Sort by similarity score
-      similarFlows.sort((a, b) => b.similarity_score - a.similarity_score);
-
-      const result = {
-        flow_purpose,
-        total_existing_flows: existingFlows.length,
-        similar_flows_found: similarFlows.length,
-        recommendations: {
-          create_new: similarFlows.length === 0,
-          modify_existing: similarFlows.some(f => f.similarity_score > 0.9),
-          consider_reuse: similarFlows.some(f => f.similarity_score > 0.7 && f.similarity_score <= 0.9)
-        },
-        similar_flows: similarFlows.slice(0, 5), // Top 5 matches
-        analysis_timestamp: new Date().toISOString()
-      };
-
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-
-    } catch (error) {
-      return { content: [{ 
-        type: 'text', 
-        text: `❌ Flow Discovery Failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      }] };
-    }
-  }
-
-  private async testFlowExecution(args: any) {
-    const { flow_sys_id, test_data = {}, monitor_execution = true, timeout_seconds = 300 } = args;
-    
-    try {
-      const executionResults: any = {
-        flow_sys_id,
-        test_initiated: new Date().toISOString(),
-        execution_status: 'unknown',
-        execution_steps: [],
-        performance_metrics: {},
-        test_data_used: test_data
-      };
-
-      // Try modern Flow Designer API first
-      let flowDetails: any;
-      let flowType = 'flow_designer';
-      
-      try {
-        // First try sys_hub_flow (modern Flow Designer)
-        flowDetails = await this.client.get(`/api/now/table/sys_hub_flow/${flow_sys_id}`, {
-          sysparm_fields: 'name,description,active,type,status,sys_id,latest_snapshot'
-        });
-        
-        if (!flowDetails.result) {
-          throw new Error('Not found in sys_hub_flow');
-        }
-      } catch (error) {
-        // Fallback to legacy workflow if not found
-        try {
-          flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`, {
-            sysparm_fields: 'name,description,active,table'
-          });
-          flowType = 'legacy_workflow';
-          
-          if (!flowDetails.result) {
-            throw new Error('Not found in wf_workflow');
-          }
-        } catch (fallbackError) {
-          // Try searching by name if sys_id fails
-          const searchResults = await this.findFlowByNameOrSysId(flow_sys_id);
-          if (searchResults) {
-            flowDetails = { result: searchResults };
-            flowType = searchResults.sys_class_name === 'sys_hub_flow' ? 'flow_designer' : 'legacy_workflow';
-          } else {
-            throw new Error(`Flow not found with identifier: ${flow_sys_id}`);
-          }
-        }
-      }
-
-      executionResults.flow_info = flowDetails.result;
-
-      // For flows that can be triggered programmatically
-      const startTime = Date.now();
-      const artifactSysId = flowDetails.result?.sys_id || 'unknown';
-      
-      try {
-        // Attempt to analyze and test the flow based on its type and trigger conditions
-        const testResult = await this.performFlowAnalysis(artifactSysId, flowType, flowDetails.result);
-        
-        let flowActivities: any;
-        
-        if (flowType === 'flow_designer') {
-          // For modern flows, get activities from flow definition
-          const flowData = flowDetails.result;
-          if (flowData.latest_snapshot) {
-            try {
-              const snapshot = JSON.parse(flowData.latest_snapshot);
-              flowActivities = {
-                result: (snapshot.activities || snapshot.steps || []).map((activity: any, index: number) => ({
-                  name: activity.name || activity.label || `Activity ${index + 1}`,
-                  order: index * 100,
-                  active: true,
-                  type: activity.activity_type || activity.type,
-                  script: activity.script || ''
-                }))
-              };
-            } catch (parseError) {
-              flowActivities = { result: [] };
-            }
-          } else {
-            flowActivities = { result: [] };
-          }
-        } else {
-          // Legacy workflow activities
-          flowActivities = await this.client.get('/api/now/table/wf_activity', {
-            sysparm_query: `workflow=${flow_sys_id}`,
-            sysparm_fields: 'name,order,active,script',
-            sysparm_orderby: 'order'
-          });
-        }
-
-        executionResults.execution_steps = flowActivities.result || [];
-        executionResults.total_steps = executionResults.execution_steps.length;
-        
-        // Simulated execution analysis
-        executionResults.execution_status = 'analysis_complete';
-        executionResults.performance_metrics = {
-          analysis_time_ms: Date.now() - startTime,
-          estimated_execution_time_ms: executionResults.total_steps * 500, // Rough estimate
-          complexity_score: this.calculateFlowComplexity(executionResults.execution_steps)
-        };
-
-        // Provide testing recommendations based on flow type
-        executionResults.testing_recommendations = [
-          `Flow Type: ${flowType === 'flow_designer' ? 'Modern Flow Designer' : 'Legacy Workflow'}`,
-          `Flow Sys ID: ${flowDetails.result.sys_id}`,
-          `Flow Name: ${flowDetails.result.name}`,
-          '',
-          '📋 Testing Steps:',
-          '1. Use snow_test_flow_with_mock for mock data testing (recommended)',
-          '2. Create test records in the target table before execution',
-          '3. Monitor execution via sys_flow_context (Flow Designer) or wf_context (Legacy)',
-          '4. Verify all conditions and approval steps work as expected',
-          '5. Test error handling and rollback scenarios',
-          '',
-          '💡 Alternative Testing Tools:',
-          '- snow_test_flow_with_mock: Test with mock users and data (always works)',
-          '- snow_comprehensive_flow_test: Advanced testing with edge cases',
-          '- Direct execution: Trigger via actual record creation/update',
-          '',
-          '🔍 Sys ID Tracking:',
-          `- Flow Sys ID: ${flowDetails.result.sys_id}`,
-          `- Table: ${flowType === 'flow_designer' ? 'sys_hub_flow' : 'wf_workflow'}`,
-          `- URL: ${process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE.replace(/\/$/, '')}.service-now.com` : ''}/${flowType === 'flow_designer' ? 'nav_to.do?uri=sys_hub_flow.do?sys_id=' : 'workflow_ide.do?sysparm_nostack=true&sysparm_sys_id='}${flowDetails.result.sys_id}`
-        ];
-
-        if (monitor_execution) {
-          executionResults.monitoring_notes = 'Full monitoring requires Flow Designer integration';
-        }
-
-      } catch (executionError) {
-        executionResults.execution_status = 'failed';
-        executionResults.error = executionError instanceof Error ? executionError.message : 'Execution failed';
-      }
-
-      return { content: [{ type: 'text', text: JSON.stringify(executionResults, null, 2) }] };
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      let helpText = `❌ Flow Testing Failed: ${errorMessage}\n\n`;
-      
-      if (errorMessage.includes('not found')) {
-        helpText += `🔍 Flow Discovery Tips:\n`;
-        helpText += `- Provided identifier: "${flow_sys_id}"\n`;
-        helpText += `- This could be a sys_id OR a flow name\n`;
-        helpText += `- Checked tables: sys_hub_flow (modern), wf_workflow (legacy)\n\n`;
-        helpText += `💡 Try these alternatives:\n`;
-        helpText += `1. Use snow_find_artifact to search for the flow:\n`;
-        helpText += `   snow_find_artifact({ query: "${flow_sys_id}", type: "flow" })\n\n`;
-        helpText += `2. Use snow_test_flow_with_mock for testing without sys_id:\n`;
-        helpText += `   snow_test_flow_with_mock({ flow_id: "${flow_sys_id}" })\n\n`;
-        helpText += `3. Search by partial name:\n`;
-        helpText += `   snow_discover_existing_flows({ flow_purpose: "${flow_sys_id}" })\n\n`;
-        helpText += `4. Get exact sys_id from ServiceNow UI:\n`;
-        helpText += `   - Flow Designer → Flows → Copy sys_id from list\n`;
-        helpText += `   - Or right-click flow → Copy sys_id\n`;
-      }
-      
-      return { content: [{ type: 'text', text: helpText }] };
-    }
-  }
-
-  private async batchDeploymentValidator(args: any) {
+  }  private async batchDeploymentValidator(args: any) {
     const { artifacts, validation_level = 'full', check_conflicts = true } = args;
     
     try {
@@ -4083,160 +3742,6 @@ export class ServiceNowIntelligentMCP {
       }] };
     }
   }
-
-  private async comprehensiveFlowTest(args: any) {
-    const { 
-      flow_sys_id,
-      test_data_generation = 'automatic',
-      edge_case_detection = true,
-      performance_validation = true,
-      integration_testing = true,
-      test_scenarios = []
-    } = args;
-
-    try {
-      // 🔧 TEST-001 FIX: Validate sys_id before proceeding
-      if (!flow_sys_id || flow_sys_id === 'id' || flow_sys_id === 'flow_id' || flow_sys_id.length < 32) {
-        return { 
-          content: [{ 
-            type: 'text', 
-            text: `❌ TEST-001 FIX: Invalid flow_sys_id provided: "${flow_sys_id}"\n\n` +
-                  `🔧 Valid ServiceNow sys_ids are 32-character hex strings.\n` + 
-                  `💡 To test a flow:\n` +
-                  `   1. First create a flow using snow_create_flow\n` +
-                  `   2. Use the returned sys_id for testing\n` +
-                  `   3. Example: snow_comprehensive_flow_test({ flow_sys_id: "actual_32_char_sys_id" })\n\n` +
-                  `🎯 Alternative: Use snow_test_flow_with_mock for mock testing without requiring a real sys_id.`
-          }] 
-        };
-      }
-      const testResults: any = {
-        flow_sys_id,
-        test_session_id: `test_${Date.now()}`,
-        started_at: new Date().toISOString(),
-        test_configuration: {
-          test_data_generation,
-          edge_case_detection,
-          performance_validation,
-          integration_testing
-        },
-        test_results: {
-          functional_tests: [],
-          edge_case_tests: [],
-          performance_tests: [],
-          integration_tests: []
-        },
-        overall_status: 'running',
-        recommendations: []
-      };
-
-      // Get flow details using improved discovery
-      let flowDetails: any;
-      let flowType = 'flow_designer';
-      
-      try {
-        // First try sys_hub_flow (modern Flow Designer)
-        flowDetails = await this.client.get(`/api/now/table/sys_hub_flow/${flow_sys_id}`, {
-          sysparm_fields: 'name,description,active,type,status,sys_id,latest_snapshot'
-        });
-        
-        if (!flowDetails.result) {
-          throw new Error('Not found in sys_hub_flow');
-        }
-      } catch (error) {
-        // Fallback to legacy workflow if not found
-        try {
-          flowDetails = await this.client.get(`/api/now/table/wf_workflow/${flow_sys_id}`, {
-            sysparm_fields: 'name,description,active,table'
-          });
-          flowType = 'legacy_workflow';
-          
-          if (!flowDetails.result) {
-            throw new Error('Not found in wf_workflow');
-          }
-        } catch (fallbackError) {
-          // Try searching by name if sys_id fails
-          const searchResults = await this.findFlowByNameOrSysId(flow_sys_id);
-          if (searchResults) {
-            flowDetails = { result: searchResults };
-            flowType = searchResults.sys_class_name === 'sys_hub_flow' ? 'flow_designer' : 'legacy_workflow';
-          } else {
-            throw new Error(`Flow not found with identifier: ${flow_sys_id}`);
-          }
-        }
-      }
-
-      testResults.flow_info = flowDetails.result;
-
-      // Generate test data automatically
-      if (test_data_generation === 'automatic') {
-        testResults.generated_test_data = await this.generateFlowTestData(flowDetails.result);
-      }
-
-      // Functional testing
-      const functionalTests = await this.runFunctionalTests(flow_sys_id, testResults.generated_test_data);
-      testResults.test_results.functional_tests = functionalTests;
-
-      // Edge case testing
-      if (edge_case_detection) {
-        const edgeCaseTests = await this.runEdgeCaseTests(flow_sys_id);
-        testResults.test_results.edge_case_tests = edgeCaseTests;
-      }
-
-      // Performance testing
-      if (performance_validation) {
-        const performanceTests = await this.runPerformanceTests(flow_sys_id);
-        testResults.test_results.performance_tests = performanceTests;
-      }
-
-      // Integration testing
-      if (integration_testing) {
-        const integrationTests = await this.runIntegrationTests(flow_sys_id);
-        testResults.test_results.integration_tests = integrationTests;
-      }
-
-      // Run custom scenarios
-      if (test_scenarios.length > 0) {
-        testResults.test_results.custom_scenarios = [];
-        for (const scenario of test_scenarios) {
-          const scenarioResult = await this.runCustomTestScenario(flow_sys_id, scenario);
-          testResults.test_results.custom_scenarios.push(scenarioResult);
-        }
-      }
-
-      // Analyze overall results
-      const allTests = [
-        ...testResults.test_results.functional_tests,
-        ...testResults.test_results.edge_case_tests,
-        ...testResults.test_results.performance_tests,
-        ...testResults.test_results.integration_tests
-      ];
-
-      const passedTests = allTests.filter(test => test.status === 'passed').length;
-      const totalTests = allTests.length;
-
-      testResults.overall_status = passedTests === totalTests ? 'passed' : 
-                                  passedTests > totalTests * 0.8 ? 'mostly_passed' : 'failed';
-      testResults.test_summary = {
-        total_tests: totalTests,
-        passed: passedTests,
-        failed: totalTests - passedTests,
-        success_rate: `${Math.round((passedTests / totalTests) * 100)}%`
-      };
-
-      // Generate recommendations
-      testResults.recommendations = this.generateTestRecommendations(testResults);
-
-      return { content: [{ type: 'text', text: JSON.stringify(testResults, null, 2) }] };
-
-    } catch (error) {
-      return { content: [{ 
-        type: 'text', 
-        text: `❌ Comprehensive Flow Testing Failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      }] };
-    }
-  }
-
   // Helper methods for the new functionality
   private inferArtifactType(component: string): string {
     if (component.includes('workflow') || component.includes('approval')) return 'flow';

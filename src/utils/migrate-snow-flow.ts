@@ -1,5 +1,5 @@
 /**
- * Migration utility to move from .claude-flow to .snow-flow directories
+ * Migration utility to move from .snow-flow to .snow-flow directories
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,21 +16,21 @@ export class ClaudeFlowMigration {
    * Check if migration is needed
    */
   async checkMigrationNeeded(): Promise<boolean> {
-    const oldDir = path.join(process.cwd(), '.claude-flow');
+    const oldDir = path.join(process.cwd(), '.snow-flow');
     const newDir = path.join(process.cwd(), '.snow-flow');
     
     return fs.existsSync(oldDir) && !fs.existsSync(newDir);
   }
 
   /**
-   * Perform migration from .claude-flow to .snow-flow
+   * Perform migration from .snow-flow to .snow-flow
    */
   async migrate(): Promise<void> {
-    const oldDir = path.join(process.cwd(), '.claude-flow');
+    const oldDir = path.join(process.cwd(), '.snow-flow');
     const newDir = path.join(process.cwd(), '.snow-flow');
     
     if (!fs.existsSync(oldDir)) {
-      this.logger.debug('No .claude-flow directory found, skipping migration');
+      this.logger.debug('No .snow-flow directory found, skipping migration');
       return;
     }
 
@@ -39,15 +39,15 @@ export class ClaudeFlowMigration {
       return;
     }
 
-    this.logger.info('🔄 Migrating from .claude-flow to .snow-flow...');
+    this.logger.info('🔄 Migrating from .snow-flow to .snow-flow...');
 
     try {
       // Create new directory structure
       await this.copyDirectory(oldDir, newDir);
       
       this.logger.info('✅ Migration completed successfully!');
-      this.logger.info('💡 Old .claude-flow directory preserved for safety');
-      this.logger.info('🔍 You can manually delete .claude-flow after verifying everything works');
+      this.logger.info('💡 Old .snow-flow directory preserved for safety');
+      this.logger.info('🔍 You can manually delete .snow-flow after verifying everything works');
     } catch (error) {
       this.logger.error('❌ Migration failed:', error);
       throw error;
@@ -82,13 +82,13 @@ export class ClaudeFlowMigration {
   }
 
   /**
-   * Clean up old .claude-flow directory (only after user confirmation)
+   * Clean up old .snow-flow directory (only after user confirmation)
    */
   async cleanup(): Promise<void> {
-    const oldDir = path.join(process.cwd(), '.claude-flow');
+    const oldDir = path.join(process.cwd(), '.snow-flow');
     
     if (fs.existsSync(oldDir)) {
-      this.logger.warn('⚠️  Removing old .claude-flow directory...');
+      this.logger.warn('⚠️  Removing old .snow-flow directory...');
       fs.rmSync(oldDir, { recursive: true, force: true });
       this.logger.info('✅ Cleanup completed');
     }

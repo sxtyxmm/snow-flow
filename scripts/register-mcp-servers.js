@@ -45,10 +45,6 @@ const SNOW_FLOW_SERVERS = {
     "command": "node",
     "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-security-compliance-mcp.js"]
   },
-  "snow-flow-flow-composer": {
-    "command": "node",
-    "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-flow-composer-mcp.js"]
-  },
   "snow-flow-update-set": {
     "command": "node",
     "args": ["${SNOW_FLOW_PATH}/dist/mcp/servicenow-update-set-mcp.js"]

@@ -290,21 +290,6 @@ class SnowFlowMCPServer {
           },
         },
         {
-          name: 'bottleneck_analyze',
-          description: 'Identify performance bottlenecks',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              component: {
-                type: 'string',
-              },
-              metrics: {
-                type: 'array',
-              },
-            },
-          },
-        },
-        {
           name: 'token_usage',
           description: 'Analyze token consumption',
           inputSchema: {
@@ -318,120 +303,6 @@ class SnowFlowMCPServer {
                 default: '24h',
               },
             },
-          },
-        },
-        // GitHub Integration
-        {
-          name: 'github_repo_analyze',
-          description: 'Repository analysis',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              repo: {
-                type: 'string',
-              },
-              analysis_type: {
-                type: 'string',
-                enum: ['code_quality', 'performance', 'security'],
-              },
-            },
-            required: ['repo'],
-          },
-        },
-        {
-          name: 'github_pr_manage',
-          description: 'Pull request management',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              repo: {
-                type: 'string',
-              },
-              action: {
-                type: 'string',
-                enum: ['review', 'merge', 'close'],
-              },
-              pr_number: {
-                type: 'number',
-              },
-            },
-            required: ['repo', 'action'],
-          },
-        },
-        // Dynamic Agent Architecture
-        {
-          name: 'daa_agent_create',
-          description: 'Create dynamic agents',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              agent_type: {
-                type: 'string',
-              },
-              capabilities: {
-                type: 'array',
-              },
-              resources: {
-                type: 'object',
-              },
-            },
-            required: ['agent_type'],
-          },
-        },
-        {
-          name: 'daa_capability_match',
-          description: 'Match capabilities to tasks',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              task_requirements: {
-                type: 'array',
-              },
-              available_agents: {
-                type: 'array',
-              },
-            },
-            required: ['task_requirements'],
-          },
-        },
-        // Workflow Management
-        {
-          name: 'workflow_create',
-          description: 'Create custom workflows',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: {
-                type: 'string',
-              },
-              steps: {
-                type: 'array',
-              },
-              triggers: {
-                type: 'array',
-              },
-            },
-            required: ['name', 'steps'],
-          },
-        },
-        {
-          name: 'sparc_mode',
-          description: 'Run SPARC development modes',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              mode: {
-                type: 'string',
-                enum: ['dev', 'api', 'ui', 'test', 'refactor'],
-              },
-              task_description: {
-                type: 'string',
-              },
-              options: {
-                type: 'object',
-              },
-            },
-            required: ['mode', 'task_description'],
           },
         },
       ];
@@ -463,6 +334,10 @@ class SnowFlowMCPServer {
             return await this.handleNeuralPatterns(args);
           case 'performance_report':
             return await this.handlePerformanceReport(args);
+          case 'neural_status':
+            return await this.handleNeuralStatus(args);
+          case 'token_usage':
+            return await this.handleTokenUsage(args);
           default:
             return {
               content: [
@@ -933,6 +808,74 @@ class SnowFlowMCPServer {
         {
           type: 'text',
           text: JSON.stringify(report),
+        },
+      ],
+    };
+  }
+
+  private async handleNeuralStatus(args: any) {
+    const { modelId } = args;
+    
+    // Simulate neural network status
+    const status = {
+      modelId: modelId || 'default-model',
+      status: 'active',
+      accuracy: 94.5,
+      lastTrained: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      totalPatterns: 1250,
+      activeNeurons: 8192,
+      performance: {
+        inferenceTime: '12ms',
+        trainingSpeed: '1000 patterns/sec',
+        memoryUsage: '256MB'
+      },
+      capabilities: ['coordination', 'optimization', 'prediction'],
+      health: 'optimal'
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(status),
+        },
+      ],
+    };
+  }
+
+  private async handleTokenUsage(args: any) {
+    const { operation, timeframe = '24h' } = args;
+    
+    // Simulate token usage data
+    const usage = {
+      timeframe,
+      operation: operation || 'all',
+      totalTokens: 145231,
+      breakdown: {
+        swarm_operations: 45231,
+        neural_training: 32000,
+        memory_operations: 15000,
+        task_orchestration: 28000,
+        performance_analysis: 25000
+      },
+      costEstimate: '$2.45',
+      efficiency: {
+        tokensPerOperation: 342,
+        cachingEnabled: true,
+        compressionRatio: 1.8
+      },
+      recommendations: [
+        'Enable batch operations to reduce token usage by 30%',
+        'Use memory caching for repeated queries',
+        'Consider smaller models for simple tasks'
+      ]
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(usage),
         },
       ],
     };

@@ -463,6 +463,9 @@ export class ServiceNowClient {
    * Validate deployment permissions and diagnose authentication issues
    */
   async validateDeploymentPermissions(): Promise<ServiceNowAPIResponse<any>> {
+    // Ensure we have credentials before running diagnostics
+    await this.ensureAuthenticated();
+    
     const diagnostics: any = {
       instance_url: this.getBaseUrl(),
       timestamp: new Date().toISOString(),

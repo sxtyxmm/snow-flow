@@ -1,7 +1,7 @@
 /**
  * ServiceNow Queen Agent - Hive-Mind Intelligence System
  * 
- * Simple, elegant coordination system following claude-flow philosophy
+ * Simple, elegant coordination system following snow-flow philosophy
  * 
  * @example
  * ```typescript

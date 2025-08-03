@@ -34,7 +34,7 @@ memory/*.db
 memory/**/*.db
 *.db
 *.db-*
-.claude-flow/
+.snow-flow/
 reports/
 
 # Sessions
@@ -81,13 +81,13 @@ servicenow/workflows/
 
 
 
-# Claude Flow generated files
+# Snow-Flow generated files
 .claude/settings.local.json
 .mcp.json
-claude-flow.config.json
+snow-flow.config.json
 .swarm/
 .hive-mind/
-memory/claude-flow-data.json
+memory/snow-flow-data.json
 memory/sessions/*
 !memory/sessions/README.md
 memory/agents/*
@@ -101,7 +101,7 @@ coordination/orchestration/*
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
-claude-flow
-claude-flow.bat
-claude-flow.ps1
+snow-flow-backup
+snow-flow-backup.bat
+snow-flow-backup.ps1
 hive-mind-prompt-*.txt

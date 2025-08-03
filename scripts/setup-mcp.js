@@ -71,7 +71,6 @@ fs.writeFileSync(mcpFilePath, mcpConfig);
 // Make all MCP server files executable
 const mcpServerFiles = [
   'servicenow-deployment-mcp.js',
-  'servicenow-flow-composer-mcp.js',
   'servicenow-update-set-mcp.js',
   'servicenow-intelligent-mcp.js',
   'servicenow-graph-memory-mcp.js',

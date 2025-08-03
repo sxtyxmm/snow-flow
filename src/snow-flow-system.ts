@@ -133,7 +133,6 @@ export class SnowFlowSystem extends EventEmitter {
       'servicenow-deployment',
       'servicenow-intelligent',
       'servicenow-operations',
-      'servicenow-flow-composer',
       'servicenow-platform-development',
       'servicenow-integration',
       'servicenow-automation',

@@ -1,11 +1,11 @@
 {
   "env": {
-    "CLAUDE_FLOW_AUTO_COMMIT": "false",
-    "CLAUDE_FLOW_AUTO_PUSH": "false",
-    "CLAUDE_FLOW_HOOKS_ENABLED": "true",
-    "CLAUDE_FLOW_TELEMETRY_ENABLED": "true",
-    "CLAUDE_FLOW_REMOTE_EXECUTION": "true",
-    "CLAUDE_FLOW_CHECKPOINTS_ENABLED": "true"
+    "SNOW_FLOW_AUTO_COMMIT": "false",
+    "SNOW_FLOW_AUTO_PUSH": "false",
+    "SNOW_FLOW_HOOKS_ENABLED": "true",
+    "SNOW_FLOW_TELEMETRY_ENABLED": "true",
+    "SNOW_FLOW_REMOTE_EXECUTION": "true",
+    "SNOW_FLOW_CHECKPOINTS_ENABLED": "true"
   },
   "permissions": {
     "allow": [

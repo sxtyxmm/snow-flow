@@ -2,7 +2,7 @@
 
 ## Overview
 
-Snow-Flow is a multi-agent system designed for ServiceNow development automation. It implements a hive-mind architecture inspired by claude-flow principles, where a Queen Agent coordinates multiple specialized worker agents to accomplish complex development tasks.
+Snow-Flow is a multi-agent system designed for ServiceNow development automation. It implements a hive-mind architecture with native orchestration principles, where a Queen Agent coordinates multiple specialized worker agents to accomplish complex development tasks.
 
 ## High-Level Architecture
 

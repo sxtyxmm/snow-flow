@@ -1158,7 +1158,6 @@ await snow_deploy({
 
   // Helper methods
 
-
   private async validateArtifact(artifact: any, context: AgentContext): Promise<any> {
     // Simplified validation logic
     const errors: string[] = [];
