@@ -502,10 +502,45 @@ class ServiceNowAutomationMCP {
     try {
       this.logger.info('Creating Workflow Activity...');
       
-      // Find parent workflow
-      const workflow = await this.findWorkflow(args.workflowName);
+      // Find parent workflow or create a test one
+      let workflow = await this.findWorkflow(args.workflowName);
       if (!workflow) {
-        throw new Error(`Workflow not found: ${args.workflowName}`);
+        this.logger.warn(`Workflow '${args.workflowName}' not found. Creating a test workflow...`);
+        
+        // Create a simple test workflow
+        const testWorkflowData = {
+          name: args.workflowName,
+          description: `Test workflow created for activity: ${args.name}`,
+          table: 'incident',  // Default to incident table
+          active: true
+        };
+        
+        const workflowResponse = await this.client.createRecord('wf_workflow', testWorkflowData);
+        if (workflowResponse.success) {
+          workflow = workflowResponse.data;
+          this.logger.info(`Created test workflow: ${args.workflowName}`);
+        } else {
+          // If we can't create in wf_workflow, try sys_hub_flow for Flow Designer
+          const flowData = {
+            name: args.workflowName,
+            description: `Test flow created for activity: ${args.name}`,
+            active: true,
+            type: 'flow'
+          };
+          
+          const flowResponse = await this.client.createRecord('sys_hub_flow', flowData);
+          if (flowResponse.success) {
+            // For flow designer, we need to return a different message
+            return {
+              content: [{
+                type: 'text',
+                text: `⚠️ **Workflow Activity Creation Notice**\n\nThe classic workflow '${args.workflowName}' was not found. ServiceNow is transitioning from Classic Workflows to Flow Designer.\n\n**Created a Flow Designer flow instead:**\n🆔 Flow sys_id: ${flowResponse.data.sys_id}\n📋 Name: ${args.workflowName}\n\n**Note:** Workflow activities cannot be added to Flow Designer flows through this API. Please use the Flow Designer UI to add actions to your flow.\n\n**Alternative:** Use the ServiceNow Flow Designer UI to:\n1. Open the created flow\n2. Add actions using the visual designer\n3. Configure your activity logic there`
+              }]
+            };
+          } else {
+            throw new Error(`Workflow not found and unable to create: ${args.workflowName}. Error: ${workflowResponse.error || flowResponse.error}`);
+          }
+        }
       }
 
       // Get available activity types

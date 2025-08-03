@@ -405,7 +405,34 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_kpi', kpiData);
+      // Try pa_indicators (Performance Analytics) for KPIs
+      let response = await this.client.createRecord('pa_indicators', {
+        name: args.name,
+        label: args.name,
+        description: args.description || '',
+        facts_table: tableInfo.name,
+        aggregate: args.aggregation,
+        field: args.metric,
+        conditions: args.conditions || '',
+        unit: args.unit || '',
+        direction: args.target ? 'minimize' : 'maximize',
+        frequency: args.frequency || 'daily',
+        active: true
+      });
+      
+      // Fallback to metric_definition if pa_indicators fails
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('pa_indicators failed, trying metric_definition table...');
+        response = await this.client.createRecord('metric_definition', {
+          name: args.name,
+          description: args.description || '',
+          table: tableInfo.name,
+          field: args.metric,
+          method: args.aggregation,
+          condition: args.conditions || '',
+          active: true
+        });
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create KPI: ${response.error}`);
@@ -447,7 +474,37 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_data_visualization', visualizationData);
+      // Try sys_report_chart for visualizations
+      let response = await this.client.createRecord('sys_report_chart', {
+        name: args.name,
+        title: args.name,
+        type: args.type,
+        table: args.dataSource,
+        x_axis_field: args.xAxis || '',
+        y_axis_field: args.yAxis || '',
+        chart_type: args.type,
+        series_config: JSON.stringify(args.series || []),
+        filter: args.filters ? JSON.stringify(args.filters) : '',
+        color_palette: JSON.stringify(args.colors || []),
+        is_real_time: args.interactive !== false,
+        active: true
+      });
+      
+      // Fallback to sys_report if chart table fails
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('sys_report_chart failed, trying sys_report table...');
+        response = await this.client.createRecord('sys_report', {
+          title: args.name,
+          description: `Chart: ${args.type}`,
+          table: args.dataSource,
+          type: 'chart',
+          chart_type: args.type,
+          field: args.yAxis || args.xAxis || '',
+          filter: args.filters ? JSON.stringify(args.filters) : '',
+          is_scheduled: false,
+          active: true
+        });
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Data Visualization: ${response.error}`);
@@ -488,7 +545,34 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_performance_analytics', analyticsData);
+      // Try pa_cubes for performance analytics
+      let response = await this.client.createRecord('pa_cubes', {
+        name: args.name,
+        label: args.name,
+        description: args.category || 'Performance Analytics',
+        facts_table: args.dataSource,
+        aggregate: 'COUNT',
+        field: '*',
+        conditions: '',
+        active: true
+      });
+      
+      // Fallback to pa_indicators if pa_cubes fails
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('pa_cubes failed, trying pa_indicators...');
+        response = await this.client.createRecord('pa_indicators', {
+          name: args.name,
+          label: args.name,
+          description: args.category || 'Performance Analytics',
+          facts_table: args.dataSource,
+          aggregate: 'COUNT',
+          field: '*',
+          unit: 'integer',
+          direction: 'maximize',
+          frequency: args.timeframe || 'daily',
+          active: true
+        });
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Performance Analytics: ${response.error}`);
@@ -531,7 +615,32 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_scheduled_report', scheduledReportData);
+      // Use sysauto_report for scheduled reports
+      let response = await this.client.createRecord('sysauto_report', {
+        name: `Scheduled: ${args.reportName}`,
+        report: sourceReport.sys_id,
+        run_as: 'user',
+        run_time: args.schedule,
+        email_to: args.recipients?.join(',') || '',
+        format: args.format?.toLowerCase() || 'pdf',
+        condition: args.conditions || '',
+        subject: args.subject || `Scheduled Report: ${args.reportName}`,
+        body: args.message || 'Please find the attached report.',
+        active: true
+      });
+      
+      // Fallback to scheduled_report if sysauto_report fails
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('sysauto_report failed, trying scheduled_report...');
+        response = await this.client.createRecord('scheduled_report', {
+          name: `Scheduled: ${args.reportName}`,
+          report: sourceReport.sys_id,
+          schedule_type: 'daily',
+          email_list: args.recipients?.join(';') || '',
+          export_format: args.format?.toLowerCase() || 'pdf',
+          active: true
+        });
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Scheduled Report: ${response.error}`);
