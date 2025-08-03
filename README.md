@@ -203,6 +203,36 @@ Snow-Flow provides **100+ real MCP tools** across 16 categories via **16 special
 - `snow_ensure_active_update_set` - Ensure active session
 - Plus 5+ additional update set tools
 
+#### 🎯 **Automatic Update Set Creation**
+
+⚠️ **IMPORTANT: Snow-Flow automatically manages Update Sets for you!**
+
+- **🆕 Automatic Creation**: When you start a session, Snow-Flow automatically creates a new Update Set
+- **📌 Session Persistence**: All changes during your session are tracked in this Update Set
+- **🔄 Continuous Work**: Snow-Flow continues using the same Update Set until you explicitly switch
+- **💾 Change Tracking**: Every ServiceNow modification is automatically captured for deployment
+
+**Example workflow:**
+```bash
+# Session 1: Snow-Flow creates "AUTO_2025-08-03_widget_development"
+snow-flow swarm "Create incident dashboard widget"
+# All changes go into this Update Set
+
+# Session 2: Still using the same Update Set
+snow-flow swarm "Add charts to the dashboard"
+# Changes continue in the same Update Set
+
+# To start fresh: Explicitly create a new Update Set
+snow-flow swarm "Create new update set for authentication feature"
+# Now working in a new Update Set
+```
+
+**Best Practices:**
+- Let Snow-Flow manage Update Sets automatically
+- Create new Update Sets only when starting a completely new feature
+- Review your current Update Set with `snow_update_set_current`
+- Export Update Sets before major deployments
+
 ### 🔄 **XML Flow Generation** (5+ tools)
 - ✅ **XML-first flow creation** - Bypass API limitations
 - ✅ **Direct XML deployment** - Alternative deployment method
