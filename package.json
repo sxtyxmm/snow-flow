@@ -18,6 +18,8 @@
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "setup-mcp": "node scripts/setup-mcp.js",
+    "reset-mcp": "node scripts/reset-mcp-servers.js",
+    "reset-mcp:restart": "node scripts/reset-mcp-servers.js --restart",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "node scripts/postinstall.js",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
