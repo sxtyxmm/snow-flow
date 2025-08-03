@@ -5,6 +5,35 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.43] - 2025-08-03
+
+### 🚀 MCP Server Startup Fixes
+
+**Critical Fix**: Fixed ServiceNow Memory and Intelligent MCP servers showing as "failed" in Claude interface.
+
+### Fixed
+
+#### MCP Server Issues
+- **ServiceNow Memory MCP** - Fixed startup blocking issues
+  - Added proper `capabilities: { tools: {} }` configuration
+  - Server now starts immediately with background initialization
+  - Memory system initialization no longer blocks server startup
+  
+- **ServiceNow Intelligent MCP** - Fixed initialization timing
+  - Heavy systems (MemorySystem, DocumentationSystem, etc.) now initialize in background
+  - Server responds to protocol requests immediately
+  - Added graceful handling when systems aren't ready yet
+
+### Changed
+- Both MCP servers now properly report their capabilities to Claude
+- Consistent non-blocking startup pattern across all MCP servers
+- Improved error handling and logging for initialization failures
+
+### Technical Details
+- MCP servers must respond to `initialize` and `tools/list` requests within 5 seconds
+- Background initialization prevents timeout failures in Claude interface
+- All servers now show: Status: ✅ connected, Capabilities: tools, Tools: X tools
+
 ## [1.4.42] - 2025-08-03
 
 ### 🔧 MCP Configuration Fixes
