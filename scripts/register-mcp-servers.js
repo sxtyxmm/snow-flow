@@ -153,9 +153,9 @@ async function registerMCPServers() {
         fs.mkdirSync(configDir, { recursive: true });
       }
       
-      // Create new config with "mcpServers"
+      // Create new config with "servers" (Claude Code expects this)
       const newConfig = {
-        mcpServers: servers
+        servers: servers
       };
       
       fs.writeFileSync(CLAUDE_CONFIG_PATH, JSON.stringify(newConfig, null, 2));
@@ -164,16 +164,16 @@ async function registerMCPServers() {
       // Read existing config
       let config = JSON.parse(fs.readFileSync(CLAUDE_CONFIG_PATH, 'utf8'));
       
-      // Initialize mcpServers if not exists
-      if (!config.mcpServers) {
-        config.mcpServers = {};
+      // Initialize servers if not exists (Claude Code uses "servers")
+      if (!config.servers) {
+        config.servers = {};
       }
       
       // Add Snow-Flow servers
       let addedCount = 0;
       Object.keys(servers).forEach(key => {
-        if (!config.mcpServers[key]) {
-          config.mcpServers[key] = servers[key];
+        if (!config.servers[key]) {
+          config.servers[key] = servers[key];
           addedCount++;
         }
       });
