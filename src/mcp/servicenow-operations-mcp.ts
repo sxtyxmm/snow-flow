@@ -3261,11 +3261,26 @@ class ServiceNowOperationsMCP {
       
       members.result.forEach((member: any, index: number) => {
         const u = member.user;
-        response += `${index + 1}. **${u.first_name} ${u.last_name}** (${u.user_name})\n`;
-        response += `   - Email: ${u.email}\n`;
-        if (u.title) response += `   - Title: ${u.title}\n`;
-        response += `   - Active: ${u.active}\n`;
-        response += `   - Sys ID: ${u.sys_id}\n\n`;
+        
+        // Defensive programming: check if user object exists and has required fields
+        if (!u || !u.user_name) {
+          logger.warn(`Group member ${index + 1} has invalid user data:`, member);
+          response += `${index + 1}. **Invalid User Data** - ${member.sys_id || 'Unknown ID'}\n\n`;
+          return;
+        }
+        
+        const firstName = u.first_name || 'N/A';
+        const lastName = u.last_name || 'N/A';
+        const email = u.email || 'N/A';
+        const title = u.title || '';
+        const active = u.active !== undefined ? u.active : 'Unknown';
+        const sysId = u.sys_id || 'N/A';
+        
+        response += `${index + 1}. **${firstName} ${lastName}** (${u.user_name})\n`;
+        response += `   - Email: ${email}\n`;
+        if (title) response += `   - Title: ${title}\n`;
+        response += `   - Active: ${active}\n`;
+        response += `   - Sys ID: ${sysId}\n\n`;
       });
       
       if (members.result.length === 100) {

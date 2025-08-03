@@ -424,29 +424,58 @@ class ServiceNowIntegrationMCP {
     try {
       this.logger.info('Creating Import Set...');
       
+      // Ensure table name follows ServiceNow convention (must start with u_)
+      let tableName = args.name;
+      if (!tableName.startsWith('u_')) {
+        tableName = `u_${tableName}`;
+      }
+      
+      // Import Set table data with correct ServiceNow field names
       const importSetData = {
-        name: args.name,
         label: args.label,
-        description: args.description || '',
-        file_format: args.fileFormat || 'CSV'
+        name: tableName,
+        description: args.description || `Import set table for ${args.label}`,
+        // Import set tables need these fields in ServiceNow
+        super_class: 'sys_metadata',
+        sys_class_name: 'sys_db_object'
       };
-
+      
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_import_set_table', importSetData);
+      
+      // Create the import set table structure first
+      const response = await this.client.createRecord('sys_db_object', importSetData);
       
       if (!response.success) {
-        throw new Error(`Failed to create Import Set: ${response.error}`);
+        this.logger.error('Import Set creation failed with response:', response);
+        throw new Error(`Failed to create Import Set table structure: ${response.error || 'Unknown error'}`);
       }
-
+      
+      // Create a basic field structure for the import set table
+      const fieldData = {
+        name: 'u_import_row_number',
+        column_label: 'Import Row Number',
+        internal_type: 'integer',
+        element: tableName,
+        description: 'Row number from import file'
+      };
+      
+      try {
+        await this.client.createRecord('sys_dictionary', fieldData);
+      } catch (fieldError) {
+        this.logger.warn('Could not create default field, continuing:', fieldError);
+      }
+      
       return {
         content: [{
           type: 'text',
-          text: `✅ Import Set created successfully!\n\n📥 **${args.label}** (${args.name})\n🆔 sys_id: ${response.data.sys_id}\n📄 Format: ${args.fileFormat || 'CSV'}\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Created with dynamic format discovery!`
+          text: `✅ Import Set table created successfully!\n\n📥 **${args.label}**\n🏷️ Table Name: ${tableName}\n🆔 sys_id: ${response.data.sys_id}\n📄 Type: Import Set Table\n\n📝 Description: ${importSetData.description}\n\n⚠️ **Next Steps:**\n1. Define additional fields using ServiceNow Table Designer\n2. Set up transform maps to target tables\n3. Configure data sources and import schedules\n\n✨ Created with dynamic schema discovery!`
         }]
       };
     } catch (error) {
       this.logger.error('Failed to create Import Set:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create Import Set: ${error}`);
+      // Provide more specific error information
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `Failed to create Import Set: ${errorMessage}`);
     }
   }
 

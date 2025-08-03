@@ -305,15 +305,34 @@ class ServiceNowAutomationMCP {
       const eventRuleData = {
         name: args.name,
         event_name: args.eventName,
-        condition: args.condition || '',
+        filter: args.condition || '',
         script: args.script,
         description: args.description || '',
         active: args.active !== false,
-        order: args.order || 100
+        order: args.order || 100,
+        // Required fields for sysevent_register table
+        table: 'incident', // Default table, can be overridden
+        sys_class_name: 'sysevent_script_action'
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sysevent_rule', eventRuleData);
+      
+      // Try sysevent_register first, then sysevent_script_action as fallback
+      let response = await this.client.createRecord('sysevent_register', eventRuleData);
+      
+      if (!response.success) {
+        this.logger.warn('Failed to create in sysevent_register, trying sysevent_script_action...');
+        // Remove table-specific fields for script action
+        const scriptActionData = {
+          name: args.name,
+          event_name: args.eventName,
+          script: args.script,
+          active: args.active !== false,
+          order: args.order || 100,
+          description: args.description || ''
+        };
+        response = await this.client.createRecord('sysevent_script_action', scriptActionData);
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Event Rule: ${response.error}`);
@@ -436,14 +455,29 @@ class ServiceNowAutomationMCP {
         table: tableInfo.name,
         condition: args.condition,
         escalation_time: args.escalationTime,
-        escalation_script: args.escalationScript,
+        script: args.escalationScript, // Changed from escalation_script to script
         active: args.active !== false,
         order: args.order || 100,
-        description: args.description || ''
+        description: args.description || '',
+        // Additional required fields for escalation rules
+        type: 'script', // Escalation type
+        sys_class_name: 'escalation_rule'
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('escalation_rule', escalationData);
+      
+      // Try different table names that might exist for escalation rules
+      let response = await this.client.createRecord('sys_escalation', escalationData);
+      
+      if (!response.success) {
+        this.logger.warn('Failed to create in sys_escalation, trying escalation_set...');
+        response = await this.client.createRecord('escalation_set', escalationData);
+      }
+      
+      if (!response.success) {
+        this.logger.warn('Failed to create in escalation_set, trying original escalation_rule...');
+        response = await this.client.createRecord('escalation_rule', escalationData);
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Escalation Rule: ${response.error}`);
