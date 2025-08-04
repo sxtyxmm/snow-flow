@@ -40,15 +40,17 @@ coverage/
 *.spec.js
 __tests__/
 
-# Local files
-memory/
-coordination/
-servicenow/
-reports/
-logs/
-config/
+# Local files (not dist/)
+./memory/
+./coordination/
+./servicenow/
+./reports/
+./logs/
+./config/
 *.db
+*.db-*
 *.sqlite
+*.sqlite-*
 *.log
 *.tmp
 
