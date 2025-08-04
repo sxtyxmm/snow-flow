@@ -94,6 +94,18 @@ This opens your browser for OAuth authentication.
 snow-flow swarm "Create an incident management dashboard with real-time updates"
 ```
 
+### 💡 Quick Examples
+```bash
+# Analyze your ServiceNow instance
+snow-flow swarm "Give me a health check of my ServiceNow instance"
+
+# Build a widget
+snow-flow swarm "Create a widget showing open incidents by priority"
+
+# Optimize performance
+snow-flow swarm "Find and fix performance issues in my incident table"
+```
+
 ### Use with Claude Code
 After setup, use Snow-Flow directly in Claude Code:
 ```bash
