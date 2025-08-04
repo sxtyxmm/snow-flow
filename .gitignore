@@ -48,6 +48,7 @@ logs/
 .roo/
 config/
 test/
+.claude-flow/
 
 # Local configuration
 .mcp.json
