@@ -113,6 +113,18 @@ After setup, use Snow-Flow directly in Claude Code:
 ```
 Then access all 100+ Snow-Flow tools in your Claude conversations.
 
+### ⚠️ Troubleshooting
+
+**OAuth Issues?**
+- Ensure your OAuth client has the necessary scopes in ServiceNow
+- Check that the redirect URI is set to `http://localhost:3000/callback`
+- Try `snow-flow auth logout` then `snow-flow auth login` again
+
+**MCP Connection Failed?**
+- Run `snow-flow init --force` to regenerate configuration
+- Restart Claude Code after configuration changes
+- Check logs with `snow-flow logs`
+
 ## 📊 Real-World Impact
 
 ### **80% Faster Development**
