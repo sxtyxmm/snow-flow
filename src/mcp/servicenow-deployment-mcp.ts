@@ -695,14 +695,51 @@ class ServiceNowDeploymentMCP {
           deploymentMethod = 'direct_api';
           deploymentSuccess = true;
           this.logger.info('✅ Direct deployment successful');
-        } catch (error) {
+        } catch (error: any) {
           directError = error;
-          this.logger.warn('⚠️ Direct widget deployment failed, trying fallback', directError);
+          this.logger.warn('⚠️ Direct widget deployment failed, checking if widget was created anyway', directError);
+          
+          // Check if this is a 403 error - widget might have been created despite the error
+          const is403Error = error?.response?.status === 403 || 
+                           error?.message?.includes('403') || 
+                           error?.message?.includes('Forbidden');
+          
+          if (is403Error) {
+            this.logger.info('403 error detected, verifying if widget was actually created...');
+            
+            try {
+              const verificationResult = await this.verifyWidgetInServiceNow(args.name);
+              
+              if (verificationResult.exists) {
+                // Widget was created successfully despite 403 error!
+                this.logger.info('🎉 Widget verification SUCCESS: Widget exists despite 403 error', {
+                  widgetName: args.name,
+                  sys_id: verificationResult.sys_id,
+                  completenessScore: verificationResult.completenessScore
+                });
+                
+                // Set result as successful with the verified data
+                result = {
+                  success: true,
+                  data: {
+                    sys_id: verificationResult.sys_id,
+                    name: args.name,
+                    title: verificationResult.title || args.title
+                  }
+                };
+                deploymentMethod = 'direct_api (with error recovery)';
+                deploymentSuccess = true;
+              }
+            } catch (verifyError) {
+              this.logger.warn('Could not verify widget existence after 403 error', verifyError);
+            }
+          }
         }
       }
       
-      // Strategy 2: Direct table record creation (fallback)
+      // Only try fallback strategies if the primary deployment failed
       if (!deploymentSuccess) {
+        // Strategy 2: Direct table record creation (fallback)
         try {
           this.logger.info('🔄 Attempting fallback: Direct table record creation');
           result = await this.client.createRecord('sp_widget', {
@@ -723,6 +760,10 @@ class ServiceNowDeploymentMCP {
             servicenow: false
           });
           deploymentMethod = 'table_record';
+          deploymentSuccess = true;
+          
+          // createRecord should already return a ServiceNowAPIResponse structure
+          // No need to wrap it again
         } catch (error) {
           tableError = error;
           this.logger.warn('Table record creation failed, trying manual step guidance', tableError);
