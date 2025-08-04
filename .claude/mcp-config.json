@@ -124,17 +124,6 @@
         "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
       }
     },
-    "servicenow-memory": {
-      "command": "node",
-      "args": [
-        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-memory-mcp.js"
-      ],
-      "env": {
-        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-      }
-    },
     "snow-flow": {
       "command": "node",
       "args": [

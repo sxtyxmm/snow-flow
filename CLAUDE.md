@@ -253,13 +253,13 @@ Every agent coordination step MUST use memory:
 mcp__snow-flow__memory_usage({
   action: "store",
   key: "swarm-{id}/agent-{name}/{step}",
-  value: {
+  value: JSON.stringify({
     timestamp: Date.now(),
     decision: "what was decided",
     implementation: "what was built",
     nextSteps: ["step1", "step2"],
     dependencies: ["dep1", "dep2"]
-  }
+  })
 })
 ```
 

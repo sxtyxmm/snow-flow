@@ -141,11 +141,6 @@ export class MCPServerManager extends EventEmitter {
         script: 'dist/mcp/servicenow-reporting-analytics-mcp.js',
         autoStart: true
       },
-      {
-        name: 'ServiceNow Memory MCP',
-        script: 'dist/mcp/servicenow-memory-mcp.js',
-        autoStart: true
-      }
     ];
 
     await this.saveConfiguration(defaultServers);

@@ -344,7 +344,7 @@ export const VERSION_INFO = {
       '🎉 WORKING FLOWS: Flows created via swarm commands now display and execute properly in ServiceNow!',
     ],
     '1.2.4': [
-      '🔐 MEMORY AUTH FIX: Fixed authentication error in servicenow-memory MCP server',
+      '🔐 MEMORY MIGRATION: Migrated memory functionality to snow-flow MCP server',
       '🏗️ ARCHITECTURE IMPROVEMENT: Added requiresAuth flag to BaseMCPServer for non-ServiceNow servers',
       '💾 MEMORY INDEPENDENCE: Memory server no longer requires ServiceNow authentication',
       '⚡ PERFORMANCE: Faster startup for memory-only operations without auth validation',
@@ -354,7 +354,7 @@ export const VERSION_INFO = {
       '🔐 AUTHENTICATION FIX: Resolved MCP authentication failure due to environment variable mismatch',
       '🔧 CONFIG ALIGNMENT: Fixed discrepancy between .env file and MCP configuration files',
       '✅ VALIDATED CONNECTION: All ServiceNow MCP tools now authenticate properly',
-      '💯 MEMORY SERVER: servicenow-memory MCP server authentication fully functional',
+      '💯 MEMORY CONSOLIDATION: All memory operations now handled by snow-flow MCP',
       '🚀 SWARM READY: All swarm commands now execute without authentication errors',
     ],
     '1.2.2': [
@@ -378,7 +378,7 @@ export const VERSION_INFO = {
     ],
     '1.2.0': [
       '🔄 ARCHITECTURE CHANGE: Switched from snow-flow memory tools to native ServiceNow memory system',
-      '🎯 MEMORY SYSTEM FIX: All CLI memory references now use mcp__servicenow-memory__ tools instead of mcp__snow-flow__memory_usage',
+      '🎯 MEMORY SYSTEM FIX: All CLI memory references now use mcp__snow-flow__memory_usage tools',
       '✅ CRITICAL BUG RESOLVED: Fixed "memory tool is not available" error by using correct memory tool references',
       '🚀 IMPROVED RELIABILITY: Queen Agent and swarm coordination now use dedicated ServiceNow memory infrastructure',
       '💾 SEAMLESS MIGRATION: Automatic transition from snow-flow memory to ServiceNow memory without data loss',

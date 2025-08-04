@@ -728,14 +728,14 @@ The Queen Agent will automatically discover and validate table schemas based on 
 **THIS MUST BE YOUR VERY FIRST ACTION - Initialize the swarm memory session:**
 \`\`\`javascript
 // 🚨 EXECUTE THIS IMMEDIATELY - DO NOT SKIP OR DELAY!
-mcp__servicenow-memory__memory_store({
+mcp__snow-flow__memory_usage({
   key: "swarm_session_${sessionId}",
   value: JSON.stringify({
     objective: "${objective}",
     status: "initializing", 
     started_at: new Date().toISOString(),
     queen_agent_id: "queen_${sessionId}",
-    task__analysis: ${JSON.stringify(taskAnalysis, null, 2)},
+    task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
     configuration: {
       strategy: "${options.strategy}",
       mode: "${options.mode}",
@@ -772,7 +772,7 @@ const existingArtifacts = await mcp__servicenow-intelligent__snow_comprehensive_
 });
 
 // Store discovery results in memory for agents
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "existing_artifacts_${sessionId}",
   value: JSON.stringify(existingArtifacts),
   namespace: "swarm_${sessionId}"
@@ -787,7 +787,7 @@ const updateSet = await mcp__servicenow-update-set__snow_update_set_create({
 });
 
 // Store Update Set info in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "update_set_${sessionId}",
   value: JSON.stringify(updateSet),
   namespace: "swarm_${sessionId}"
@@ -863,7 +863,8 @@ for (const tableName of detectedTables) {
 }
 
 // Store discovered table schemas in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
+  action: "store",
   key: "table_schemas_${sessionId}",
   value: JSON.stringify({
     discovered_at: new Date().toISOString(),
@@ -927,10 +928,10 @@ Task("${taskAnalysis.primaryAgent}", \`
   
   Instructions:
   1. FIRST: Read ALL shared context from memory:
-     - mcp__servicenow-memory__memory_get({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
   
   2. 🔍 CRITICAL: Use discovered table schemas:
      - The table_schemas contain actual field names, types, and relationships
@@ -941,7 +942,7 @@ Task("${taskAnalysis.primaryAgent}", \`
   3. Check existing_artifacts to avoid duplication - reuse or extend existing ones
   4. ALL deployments MUST use the Update Set stored in memory
   5. Begin implementing the core ${taskAnalysis.taskType} requirements
-  6. Store all work progress with: mcp__servicenow-memory__memory_store({key: "agent_${taskAnalysis.primaryAgent}_progress", value: "...", namespace: "agents_${sessionId}"})
+  6. Store all work progress with: mcp__snow-flow__memory_usage({key: "agent_${taskAnalysis.primaryAgent}_progress", value: "...", namespace: "agents_${sessionId}"})
   7. Update TodoWrite items as you complete tasks
   8. Read other agents' progress from namespace "agents_${sessionId}"
   
@@ -965,10 +966,10 @@ Task("${agent}", \`
   
   Instructions:
   1. FIRST: Read ALL shared context from memory (same as primary agent):
-     - mcp__servicenow-memory__memory_get({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__servicenow-memory__memory_get({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
+     - mcp__snow-flow__memory_usage({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
   
   2. 🔍 CRITICAL: Use discovered table schemas:
      - The table_schemas contain actual field names, types, and relationships
@@ -976,10 +977,10 @@ Task("${agent}", \`
      - Check key_fields for primary keys and references
      - If you need a table that wasn't discovered, use snow_table_schema_discovery first
   
-  3. Monitor primary agent's progress: mcp__servicenow-memory__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
+  3. Monitor primary agent's progress: mcp__snow-flow__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
   4. Wait for primary agent to establish base structure before major changes
   5. Enhance/support with your ${agent} expertise  
-  6. Store your progress: mcp__servicenow-memory__memory_store({key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
+  6. Store your progress: mcp__snow-flow__memory_usage({key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
   7. Update relevant TodoWrite items
   
   🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
@@ -1324,14 +1325,14 @@ Implement continuous memory synchronization for real-time coordination:
 // Initialize coordination heartbeat (Snow-Flow pattern)
 const coordinationInterval = setInterval(async () => {
   // Sync agent states across namespace
-  const agentStates = await mcp__servicenow-memory__memory_search({
+  const agentStates = await mcp__snow-flow__memory_search({
     pattern: "agent_*_progress",
     namespace: "agents_${sessionId}",
     limit: 50
   });
   
   // Update swarm coordination state with TTL for freshness
-  await mcp__servicenow-memory__memory_store({
+  await mcp__snow-flow__memory_usage({
     key: "swarm_coordination_${sessionId}",
     value: JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -1346,7 +1347,7 @@ const coordinationInterval = setInterval(async () => {
   
   // Detect and resolve conflicts between agents
   if (agentStates.some(s => s.includes("conflict") || s.includes("duplicate"))) {
-    await mcp__servicenow-memory__memory_store({
+    await mcp__snow-flow__memory_usage({
       key: "conflict_resolution_needed",
       value: JSON.stringify({
         agents: agentStates.filter(s => s.includes("conflict")),
@@ -1381,7 +1382,7 @@ const coordinationInterval = setInterval(async () => {
     
     // Mark as tracked
     artifact.tracked_in_update_set = true;
-    await mcp__servicenow-memory__memory_store({
+    await mcp__snow-flow__memory_usage({
       key: \`agent_\${artifact.agent}_deployed_\${artifact.sys_id}\`,
       value: JSON.stringify(artifact),
       namespace: "agents_${sessionId}"
@@ -1397,7 +1398,7 @@ const coordinationInterval = setInterval(async () => {
 }, 10000); // Every 10 seconds
 
 // Also update main session state
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "swarm_session_${sessionId}",
   value: JSON.stringify({
     status: "agents_working",
@@ -1616,7 +1617,7 @@ await snow_start_continuous_documentation({
 });
 
 // Store status in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "autonomous_documentation_${sessionId}",
   value: JSON.stringify({ 
     status: "active", 
@@ -1640,7 +1641,7 @@ await snow_start_autonomous_cost_optimization({
 });
 
 // Store status in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "autonomous_cost_optimization_${sessionId}",
   value: JSON.stringify({ 
     status: "active", 
@@ -1665,7 +1666,7 @@ await snow_start_compliance_monitoring({
 });
 
 // Store status in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "autonomous_compliance_${sessionId}",
   value: JSON.stringify({ 
     status: "active", 
@@ -1690,7 +1691,7 @@ await snow_start_autonomous_healing({
 });
 
 // Store status in memory
-await mcp__servicenow-memory__memory_store({
+await mcp__snow-flow__memory_usage({
   key: "autonomous_healing_${sessionId}",
   value: JSON.stringify({ 
     status: "active", 

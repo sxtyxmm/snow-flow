@@ -1,13 +1,12 @@
 # 🏔️ Snow-Flow: AI-Powered ServiceNow Development Platform
 
-[![npm version](https://badge.fury.io/js/snow-flow.svg)](https://badge.fury.io/js/snow-flow)
+[![npm version](https://img.shields.io/npm/v/snow-flow.svg)](https://www.npmjs.com/package/snow-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI/CD](https://github.com/groeimetai/snow-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/groeimetai/snow-flow/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/groeimetai/snow-flow/branch/main/graph/badge.svg)](https://codecov.io/gh/groeimetai/snow-flow)
 [![Downloads](https://img.shields.io/npm/dm/snow-flow.svg)](https://www.npmjs.com/package/snow-flow)
 [![Node Version](https://img.shields.io/node/v/snow-flow.svg)](https://www.npmjs.com/package/snow-flow)
+[![ServiceNow Compatible](https://img.shields.io/badge/ServiceNow-Compatible-00A1E0?logo=servicenow)](https://www.servicenow.com)
 [![GitHub Stars](https://img.shields.io/github/stars/groeimetai/snow-flow?style=social)](https://github.com/groeimetai/snow-flow)
-[![Discord](https://img.shields.io/discord/DISCORD_ID?logo=discord&label=Discord)](https://discord.gg/snow-flow)
 
 Snow-Flow revolutionizes ServiceNow development by bringing the power of AI orchestration directly to your platform. With 100+ MCP tools and intelligent multi-agent coordination, Snow-Flow transforms how developers and administrators work with ServiceNow.
 
