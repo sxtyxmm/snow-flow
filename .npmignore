@@ -1,84 +1,84 @@
-# TypeScript source maps and build info
-*.ts.map
-*.js.map
-*.tsbuildinfo
+# Source files (only dist/ is needed)
+src/
+*.ts
+!dist/**/*.d.ts
 
-# Development & test files
-.env
-.env.*
-*.log
-coverage/
-.nyc_output/
-test/
-tests/
-*.test.js
-*.spec.js
+# Development files
+.claude/
+.claude-flow/
+.roo/
+.roomodes
+.snow-flow/
+.swarm/
+.hive-mind/
+.env*
+!.env.example
 
-# Documentation (keep only essentials)
+# Build files
+tsconfig.json
+jest.config.js
+.eslintrc*
+.prettierrc*
+
+# Git and CI
+.git/
+.github/
+.gitignore
+
+# Documentation source
+docs/
 *.md
 !README.md
 !LICENSE
-!CLAUDE.md
 
-# Runtime data (NEVER publish)
-*.db
-*.db-*
-*.sqlite*
-.snow-flow/
+# Test files
+test/
+tests/
+coverage/
+*.test.js
+*.spec.js
+__tests__/
+
+# Local files
 memory/
-.swarm/
-.hive-mind/
 coordination/
 servicenow/
 reports/
+logs/
+config/
+*.db
+*.sqlite
+*.log
+*.tmp
 
-# Configuration files
-.gitignore
-.eslintrc*
-.prettierrc*
-jest.config.*
-tsconfig.json
-.husky/
-.releaserc.json
-
-# CI/CD & IDE
-.github/
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Temporary files
-*.tmp
-temp/
-tmp/
-*.tsbuildinfo
-
-# Examples
-examples/
-demo/
-docs/
-
-# Scripts (keep only essentials)
-scripts/*
-!scripts/postinstall.js
-!scripts/setup-mcp.js
-!scripts/register-mcp-servers.js
-!scripts/create-env.js
-!scripts/update-version.js
-!scripts/reset-mcp-servers.js
-
-# Templates for setup
-!.mcp.json.template
-!.env.example
-
-# Claude config (keep only templates)
-.claude/
-!.claude/*.template
-!.claude/commands/
-
-# Local files
-.mcp.json
-snow-flow.config.json
+# OS
 .DS_Store
 Thumbs.db
+
+# Build artifacts
+*.tsbuildinfo
+dist/**/*.map
+
+# Scripts (users run from npm, not directly)
+scripts/
+bin/snow-flow.js
+
+# Examples and assets (keep minimal)
+examples/
+assets/
+!assets/snow-flow-logo.svg
+
+# Backup files
+*-backup*
+*.bak
+
+# Package files
+*.tgz
+npm-debug.log*
+yarn-error.log*

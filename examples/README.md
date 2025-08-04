@@ -1,103 +1,61 @@
-# Snow-Flow Examples
+# Snow-Flow Examples 🏔️
 
-This directory contains practical examples demonstrating Snow-Flow's capabilities for ServiceNow development automation.
+This directory contains practical examples of using Snow-Flow for various ServiceNow development tasks.
 
-## Quick Start Examples
+## 📁 Directory Structure
 
-### 1. Simple Widget Creation
-```bash
-# Create a basic incident dashboard widget
-snow-flow swarm "create incident dashboard widget with charts and filters"
-```
+### Basic Examples
+- **Authentication**: Setting up OAuth and basic connections
+- **Simple Commands**: Basic snow-flow operations
+- **Configuration**: Environment setup and configuration
 
-### 2. Complex Service Portal Development
-```bash
-# Build a complete employee onboarding portal
-snow-flow swarm "build employee onboarding portal with approval workflows and form validation" --strategy development --max-agents 6
-```
+### Advanced Examples  
+- **Multi-Agent Workflows**: Complex swarm orchestration scenarios
+- **Custom Integrations**: Integrating with external systems
+- **Performance Optimization**: Advanced performance tuning
 
-### 3. Security Analysis
-```bash
-# Analyze and improve security settings
-snow-flow swarm "audit access controls and suggest security improvements" --strategy analysis
-```
+### Widget Examples
+- **Dashboard Widgets**: Creating interactive dashboards
+- **Data Visualization**: Charts and reporting widgets
+- **Form Widgets**: Custom form components
 
-## Example Projects
+### Flow Examples
+- **Approval Workflows**: Multi-step approval processes
+- **Integration Flows**: External system integrations
+- **Automation Flows**: Automated business processes
 
-Each subdirectory contains a complete example project with:
-- Project configuration
-- Step-by-step instructions
-- Expected outcomes
-- Troubleshooting tips
+### Automation Examples
+- **Scheduled Tasks**: Automated maintenance and monitoring
+- **Event-Driven Actions**: Reactive automation
+- **Bulk Operations**: Mass data operations
 
-### Available Examples
+## 🚀 Quick Start
 
-1. **basic-widget/** - Simple widget creation and deployment
-2. **service-catalog/** - Service catalog item with approval workflow
-3. **dashboard-portal/** - Executive dashboard with multiple widgets
-4. **security-audit/** - Security assessment and compliance checking
-5. **integration-api/** - REST API integration with external systems
-6. **batch-operations/** - Bulk data processing and updates
+1. **Choose an example** that matches your use case
+2. **Copy the example** to your project
+3. **Modify the configuration** for your environment
+4. **Run the example** with `snow-flow`
 
-## Running Examples
+## 📝 Example Format
 
-1. **Setup Environment**
-   ```bash
-   # Initialize Snow-Flow in the example directory
-   cd examples/basic-widget
-   snow-flow config init
-   
-   # Configure ServiceNow credentials
-   cp .env.example .env
-   # Edit .env with your ServiceNow instance details
-   ```
+Each example includes:
+- **README.md**: Description and usage instructions
+- **Configuration files**: Required setup files
+- **Sample code**: Working implementation
+- **Test data**: Sample data for testing
+- **Documentation**: Detailed explanations
 
-2. **Authenticate**
-   ```bash
-   snow-flow auth login
-   ```
+## 🤝 Contributing Examples
 
-3. **Run Example**
-   ```bash
-   # Follow the instructions in each example's README.md
-   snow-flow swarm "$(cat objective.txt)"
-   ```
+Have a great Snow-Flow use case? Share it!
 
-## Best Practices Demonstrated
+1. Create a new directory under the appropriate category
+2. Include all necessary files and documentation
+3. Test your example thoroughly
+4. Submit a pull request
 
-- **MCP-First Workflow**: All examples use ServiceNow MCP tools
-- **Update Set Management**: Proper change tracking
-- **Error Recovery**: Handling common deployment issues
-- **Testing Patterns**: Validation and rollback strategies
-- **Memory Usage**: Efficient agent coordination
+## 💡 Need Help?
 
-## Integration Examples
-
-### With Claude Code
-```bash
-# Use Claude Code's task management
-snow-flow swarm "create incident management system" --monitor
-```
-
-### With CI/CD
-```bash
-# Automated deployment pipeline
-snow-flow swarm "deploy to production" --auto-rollback
-```
-
-### With External APIs
-```bash
-# REST API integration
-snow-flow swarm "integrate with Slack for notifications"
-```
-
-## Contributing Examples
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on contributing new examples.
-
-## Support
-
-- 📖 Full Documentation: [../docs/](../docs/)
-- 🐛 Issues: [GitHub Issues](https://github.com/groeimetai/snow-flow/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/groeimetai/snow-flow/discussions)
-EOF < /dev/null
+- Check the main [README](../README.md) for setup instructions
+- Review [CONTRIBUTING](../CONTRIBUTING.md) for development guidelines
+- Join our [Discord](https://discord.gg/snow-flow) for community support
