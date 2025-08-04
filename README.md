@@ -61,29 +61,45 @@ Snow-Flow understands your intent and orchestrates the entire implementation.
 
 ## 🚀 Getting Started
 
-### Installation
+### 1. Installation
 ```bash
 npm install -g snow-flow
 ```
 
-### Quick Setup
+### 2. Initialize Snow-Flow
 ```bash
-# Initialize your project
 snow-flow init
+```
+This creates:
+- `.env` file for your credentials
+- `.mcp.json` for Claude Code integration
+- Project configuration files
 
-# Configure ServiceNow OAuth credentials
-snow-flow auth setup
+### 3. Configure OAuth Credentials
+Edit the generated `.env` file with your ServiceNow OAuth details:
+```env
+SNOW_INSTANCE=your-instance.service-now.com
+SNOW_CLIENT_ID=your-oauth-client-id
+SNOW_CLIENT_SECRET=your-oauth-client-secret
+```
 
-# Start developing!
-snow-flow swarm "Create an IT service portal with catalog items"
+### 4. Authenticate
+```bash
+snow-flow auth login
+```
+This opens your browser for OAuth authentication.
+
+### 5. Start Building!
+```bash
+snow-flow swarm "Create an incident management dashboard with real-time updates"
 ```
 
 ### Use with Claude Code
-Add to your Claude Code configuration:
+After setup, use Snow-Flow directly in Claude Code:
 ```bash
 /mcp
 ```
-Then access all Snow-Flow tools directly in your Claude conversations.
+Then access all 100+ Snow-Flow tools in your Claude conversations.
 
 ## 📊 Real-World Impact
 
