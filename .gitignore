@@ -35,6 +35,7 @@ temp/
 *.db-*
 *.sqlite
 *.sqlite-*
+intelligent-mcp.db*
 
 # Snow-Flow runtime data
 .snow-flow/

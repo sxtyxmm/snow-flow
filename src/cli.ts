@@ -2291,7 +2291,7 @@ async function createDirectoryStructure(targetDir: string, force: boolean = fals
   const directories = [
     '.claude', '.claude/commands', '.claude/commands/sparc', '.claude/configs',
     '.swarm', '.swarm/sessions', '.swarm/agents',
-    '.snow-flow', '.snow-flow/queen', '.snow-flow/memory', '.snow-flow/queen-test', '.snow-flow/queen-advanced',
+    '.snow-flow', '.snow-flow/queen', '.snow-flow/memory', '.snow-flow/data', '.snow-flow/queen-test', '.snow-flow/queen-advanced',
     'memory', 'memory/agents', 'memory/sessions',
     'coordination', 'coordination/memory_bank', 'coordination/subtasks',
     'servicenow', 'servicenow/widgets', 'servicenow/workflows', 'servicenow/scripts',

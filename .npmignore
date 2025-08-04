@@ -51,6 +51,7 @@ __tests__/
 *.db-*
 *.sqlite
 *.sqlite-*
+intelligent-mcp.db*
 *.log
 *.tmp
 
