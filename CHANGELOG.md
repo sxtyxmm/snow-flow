@@ -5,6 +5,18 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2025-01-27
+
+### Fixed
+- Fixed "table memory_store has no column named metadata" error in servicenow-memory MCP
+- Added metadata column to memory_store table schema
+- Implemented critical migration system to automatically add missing columns
+- Ensured backward compatibility for existing databases
+
+### Changed
+- Critical migrations now run automatically without requiring autoMigrate flag
+- Improved error handling for database schema updates
+
 ## [2.0.6] - 2025-01-27
 
 ### Fixed
