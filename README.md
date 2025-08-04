@@ -106,13 +106,6 @@ snow-flow swarm "Create a widget showing open incidents by priority"
 snow-flow swarm "Find and fix performance issues in my incident table"
 ```
 
-### Use with Claude Code
-After setup, use Snow-Flow directly in Claude Code:
-```bash
-/mcp
-```
-Then access all 100+ Snow-Flow tools in your Claude conversations.
-
 ### ⚠️ Troubleshooting
 
 **OAuth Issues?**
@@ -163,7 +156,7 @@ snow-flow coop export --format update-set
 
 ### **Bring Your Own LLM** 🧠
 Choose your preferred AI backend:
-- **OpenAI GPT-4**: For maximum capability
+- **OpenAI GPT**: For maximum capability
 - **Anthropic Claude**: For nuanced understanding
 - **Local Models**: For complete data privacy
 - **Custom Fine-tuned**: For organization-specific patterns
