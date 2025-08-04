@@ -2,6 +2,7 @@
 src/
 *.ts
 !dist/**/*.d.ts
+!dist/**/*.js
 
 # Development files
 .claude/
@@ -64,9 +65,12 @@ Thumbs.db
 # Build artifacts
 *.tsbuildinfo
 dist/**/*.map
+!dist/memory/
 
-# Scripts (users run from npm, not directly)
-scripts/
+# Scripts (only exclude non-essential scripts)
+scripts/*
+!scripts/postinstall.js
+!scripts/update-version.js
 bin/snow-flow.js
 
 # Examples and assets (keep minimal)
