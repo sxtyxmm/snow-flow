@@ -28,6 +28,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+.roomodes
 
 # Database files
 *.db
@@ -43,6 +44,10 @@ memory/
 coordination/
 servicenow/
 reports/
+logs/
+.roo/
+config/
+test/
 
 # Local configuration
 .mcp.json
