@@ -1,42 +1,30 @@
-# Source files (users only need compiled JS)
-src/
-*.ts
-!*.d.ts
+# TypeScript source maps and build info
+*.ts.map
+*.js.map
+*.tsbuildinfo
 
-# Development files
+# Development & test files
 .env
 .env.*
 *.log
-logs/
-.DS_Store
-
-# Test files
+coverage/
+.nyc_output/
 test/
 tests/
 *.test.js
 *.spec.js
-coverage/
-.nyc_output/
 
-# Development documentation
+# Documentation (keep only essentials)
 *.md
 !README.md
 !LICENSE
 !CLAUDE.md
-PORTAL-PAGE-ENHANCEMENT.md
-TEST-REPORT.md
-COMMERCIAL-STRATEGY.md
-LICENSE-ANALYSIS.md
-LINKEDIN-LAUNCH-STRATEGY.md
 
-# Database files - NEVER publish these!
+# Runtime data (NEVER publish)
 *.db
 *.db-*
-*.sqlite
-*.sqlite-*
+*.sqlite*
 .snow-flow/
-
-# Local data
 memory/
 .swarm/
 .hive-mind/
@@ -44,19 +32,7 @@ coordination/
 servicenow/
 reports/
 
-# Claude config (only templates needed)
-.claude/*
-!.claude/mcp-config.json
-!.claude/config.json
-!.claude/claude-settings.json
-!.claude/settings.json
-!.claude/commands/
-
-# Exclude local settings
-.claude/settings.local.json
-snow-flow.config.json
-
-# Config files
+# Configuration files
 .gitignore
 .eslintrc*
 .prettierrc*
@@ -65,12 +41,8 @@ tsconfig.json
 .husky/
 .releaserc.json
 
-# CI/CD
+# CI/CD & IDE
 .github/
-.gitlab-ci.yml
-.travis.yml
-
-# IDE
 .vscode/
 .idea/
 *.swp
@@ -80,48 +52,33 @@ tsconfig.json
 *.tmp
 temp/
 tmp/
-
-# Build artifacts that shouldn't be published
 *.tsbuildinfo
-dist/*.bak
 
-# Examples and demos
+# Examples
 examples/
 demo/
 docs/
 
-# Scripts (only keep essential ones)
+# Scripts (keep only essentials)
 scripts/*
 !scripts/postinstall.js
 !scripts/setup-mcp.js
 !scripts/register-mcp-servers.js
 !scripts/create-env.js
+!scripts/update-version.js
+!scripts/reset-mcp-servers.js
 
-# Templates needed for setup
+# Templates for setup
 !.mcp.json.template
 !.env.example
-!.claude.settings.template
-!.claude.mcp-config.template
 
-# Room modes
-.roo/
-.roomodes
+# Claude config (keep only templates)
+.claude/
+!.claude/*.template
+!.claude/commands/
 
-# Generated files
+# Local files
 .mcp.json
-manual-register-mcp.js
-mcp-wrapper.sh
-
-# Activation scripts (platform-specific)
-activate-mcp.sh
-
-# Keep only essential files:
-# - dist/ (compiled code)
-# - bin/ (CLI entry point)
-# - scripts/postinstall.js (needed after install)
-# - scripts/setup-mcp.js (needed for MCP setup)
-# - .mcp.json.template (needed for setup)
-# - package.json
-# - README.md
-# - LICENSE
-# - CLAUDE.md
+snow-flow.config.json
+.DS_Store
+Thumbs.db

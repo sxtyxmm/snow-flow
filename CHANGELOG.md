@@ -5,6 +5,51 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.49] - 2025-08-04
+
+### 🚨 Critical NPM Package Fix
+
+**Emergency Fix**: Fixed missing memory module in published npm package.
+
+### Fixed
+- **memory module missing**: The dist/memory/ directory was excluded from npm package due to .npmignore
+- Modified .npmignore to only exclude source memory files, not dist/memory
+- Both servicenow-intelligent and servicenow-memory servers now have all required dependencies
+
+### Root Cause
+- `.npmignore` contained `memory/` which excluded ALL memory directories including dist/memory
+- This caused `MODULE_NOT_FOUND` errors for both intelligent and memory MCP servers
+- Other servers worked because they didn't depend on the memory module
+
+### Impact
+- ✅ servicenow-memory server now starts correctly
+- ✅ servicenow-intelligent server now starts correctly
+- ✅ All MCP tools are fully functional in Claude Code CLI
+
+## [1.4.48] - 2025-08-03
+
+### 🔧 Critical MCP Server Fixes
+
+**Major Fix**: Resolved MCP servers showing as "failed" in Claude Code CLI interface.
+
+### Fixed
+- **servicenow-memory-mcp**: Converted from problematic BaseMCPServer to direct Server implementation
+- **servicenow-intelligent-mcp**: Removed setTimeout background initialization that interfered with MCP protocol
+- All response formats now follow proper MCP protocol specification
+- Simplified server startup to match working server patterns (automation, operations, etc.)
+- Removed complex retry logic and circuit breakers that caused Claude Code compatibility issues
+
+### Technical Details
+- BaseMCPServer caused too much complexity (retry logic, timeouts, circuit breakers) that Claude Code couldn't handle
+- Background initialization with setTimeout caused MCP handshake failures
+- Response format inconsistencies prevented proper tool communication
+- Now both servers use same simple pattern as working servers: direct Server class, simple run() method, proper MCP responses
+
+### Impact
+- Both servicenow-intelligent and servicenow-memory servers now show as "connected" in Claude Code CLI
+- All Snow-Flow MCP tools are now fully functional
+- ServiceNow artifact management, memory operations, and intelligent analysis work correctly
+
 ## [1.4.44] - 2025-08-03
 
 ### 🔄 Dynamic Version Loading

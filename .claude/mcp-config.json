@@ -1,0 +1,148 @@
+{
+  "servers": {
+    "servicenow-deployment": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-deployment-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-flow-composer": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-flow-composer-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-update-set": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-update-set-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-intelligent": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-intelligent-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-graph-memory": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-graph-memory-mcp.js"
+      ],
+      "env": {
+        "NEO4J_URI": "${NEO4J_URI}",
+        "NEO4J_USER": "${NEO4J_USER}",
+        "NEO4J_PASSWORD": "${NEO4J_PASSWORD}",
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-operations": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-operations-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-platform-development": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-platform-development-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-integration": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-integration-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-automation": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-automation-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-security-compliance": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-security-compliance-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-reporting-analytics": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-reporting-analytics-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-memory": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/servicenow-memory-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "snow-flow": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/servicenow_multiagent/dist/mcp/snow-flow-mcp.js"
+      ],
+      "env": {
+        "SNOW_FLOW_ENV": "${SNOW_FLOW_ENV}"
+      }
+    }
+  }
+}

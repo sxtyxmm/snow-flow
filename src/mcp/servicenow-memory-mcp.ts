@@ -4,8 +4,16 @@
  * Provides memory and todo management capabilities for multi-agent coordination
  */
 
-import { BaseMCPServer } from './base-mcp-server';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ErrorCode,
+  ListToolsRequestSchema,
+  McpError,
+} from '@modelcontextprotocol/sdk/types.js';
 import { MemorySystem } from '../memory/memory-system';
+import { Logger } from '../utils/logger.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -20,24 +28,26 @@ interface TodoItem {
   timestamp?: string;
 }
 
-export class ServiceNowMemoryMCP extends BaseMCPServer {
+export class ServiceNowMemoryMCP {
+  private server: Server;
   private memorySystem!: MemorySystem;
   private memoryPath: string;
-  protected config: any;
+  private logger: Logger;
 
   constructor() {
-    const config = {
-      name: 'servicenow-memory',
-      version: '1.0.0',
-      description: 'Memory and todo management for ServiceNow multi-agent coordination',
-      requiresAuth: false, // Memory server doesn't need ServiceNow authentication
-      capabilities: {
-        tools: {}
+    this.server = new Server(
+      {
+        name: 'servicenow-memory',
+        version: '1.0.0',
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
       }
-    };
-    
-    super(config);
-    this.config = config;
+    );
+
+    this.logger = new Logger('ServiceNowMemoryMCP');
 
     // Initialize memory path
     this.memoryPath = process.env.MEMORY_PATH || path.join(process.env.SNOW_FLOW_HOME || path.join(os.homedir(), '.snow-flow'), 'memory');
@@ -46,14 +56,19 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     if (!fs.existsSync(this.memoryPath)) {
       fs.mkdirSync(this.memoryPath, { recursive: true });
     }
+
+    this.setupHandlers();
   }
 
-  protected setupTools(): void {
-    // Register all tools from getTools()
-    const tools = this.getTools();
-    for (const tool of tools) {
-      this.registerTool(tool, async (args) => this.handleToolCall(tool.name, args));
-    }
+  private setupHandlers(): void {
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: this.getTools(),
+    }));
+
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      return await this.handleToolCall(name, args || {});
+    });
   }
 
   public async initialize(): Promise<void> {
@@ -256,17 +271,14 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
         case 'todo_update_status':
           return await this.handleTodoUpdateStatus(args);
         default:
-          return {
-            success: false,
-            error: `Unknown tool: ${name}`
-          };
+          throw new McpError(ErrorCode.InvalidRequest, `Unknown tool: ${name}`);
       }
     } catch (error) {
       this.logger.error(`Error in tool ${name}:`, error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      if (error instanceof McpError) {
+        throw error;
+      }
+      throw new McpError(ErrorCode.InternalError, error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
@@ -277,9 +289,12 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     await this.memorySystem.store(fullKey, value, ttl);
     
     return {
-      success: true,
-      message: `Stored data with key: ${fullKey}`,
-      key: fullKey
+      content: [
+        {
+          type: 'text',
+          text: `✅ Stored data with key: ${fullKey}`,
+        },
+      ],
     };
   }
 
@@ -291,15 +306,22 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     
     if (value === null) {
       return {
-        success: false,
-        message: `No data found for key: ${fullKey}`
+        content: [
+          {
+            type: 'text',
+            text: `❌ No data found for key: ${fullKey}`,
+          },
+        ],
       };
     }
     
     return {
-      success: true,
-      key: fullKey,
-      value
+      content: [
+        {
+          type: 'text',
+          text: `✅ Retrieved data for key: ${fullKey}\n\nValue: ${JSON.stringify(value, null, 2)}`,
+        },
+      ],
     };
   }
 
@@ -308,9 +330,12 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     
     // For now, return a simple response - actual implementation would query the database
     return {
-      success: true,
-      message: `Listing keys for namespace: ${namespace}`,
-      keys: [] // Would be populated by actual DB query
+      content: [
+        {
+          type: 'text',
+          text: `📋 Listing keys for namespace: ${namespace}\n\n⚠️ Implementation pending: Would query database for keys matching pattern: ${pattern || 'all'}`,
+        },
+      ],
     };
   }
 
@@ -322,8 +347,12 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     await this.memorySystem.store(fullKey, null);
     
     return {
-      success: true,
-      message: `Deleted key: ${fullKey}`
+      content: [
+        {
+          type: 'text',
+          text: `✅ Deleted key: ${fullKey}`,
+        },
+      ],
     };
   }
 
@@ -345,10 +374,14 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     }
     
     return {
-      success: true,
-      message: `Updated ${todos.length} todos`,
-      count: todos.length,
-      todos: timestampedTodos
+      content: [
+        {
+          type: 'text',
+          text: `✅ Updated ${todos.length} todos\n\n📋 Todo Summary:\n${timestampedTodos.map(todo => 
+            `- ${todo.content} [${todo.status}] (${todo.priority})`
+          ).join('\n')}`,
+        },
+      ],
     };
   }
 
@@ -369,9 +402,14 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     }
     
     return {
-      success: true,
-      count: todos.length,
-      todos
+      content: [
+        {
+          type: 'text',
+          text: `📋 Todo List (${todos.length} items)${status !== 'all' ? ` - Status: ${status}` : ''}${assignedAgent ? ` - Agent: ${assignedAgent}` : ''}\n\n${todos.length > 0 ? todos.map(todo => 
+            `${todo.status === 'completed' ? '✅' : todo.status === 'in_progress' ? '🔄' : '⏳'} ${todo.content} [${todo.priority}]${todo.assignedAgent ? ` - ${todo.assignedAgent}` : ''}`
+          ).join('\n') : 'No todos found.'}`,
+        },
+      ],
     };
   }
 
@@ -385,8 +423,12 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     const todoIndex = todos.findIndex((t: TodoItem) => t.id === id);
     if (todoIndex === -1) {
       return {
-        success: false,
-        message: `Todo not found: ${id}`
+        content: [
+          {
+            type: 'text',
+            text: `❌ Todo not found: ${id}`,
+          },
+        ],
       };
     }
     
@@ -397,35 +439,36 @@ export class ServiceNowMemoryMCP extends BaseMCPServer {
     await this.memorySystem.store(`todos:item:${id}`, todos[todoIndex]);
     
     return {
-      success: true,
-      message: `Updated todo ${id} status to ${status}`,
-      todo: todos[todoIndex]
+      content: [
+        {
+          type: 'text',
+          text: `✅ Updated todo "${todos[todoIndex].content}" status to ${status}\n\n🔄 Status: ${status === 'completed' ? '✅ Completed' : status === 'in_progress' ? '🔄 In Progress' : '⏳ Pending'}`,
+        },
+      ],
     };
+  }
+
+  async run() {
+    try {
+      // Initialize memory system first
+      await this.initialize();
+      
+      // Connect transport
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      this.logger.info('ServiceNow Memory MCP Server running on stdio');
+    } catch (error) {
+      this.logger.error('Failed to start Memory MCP server:', error);
+      process.exit(1);
+    }
   }
 
   async shutdown(): Promise<void> {
     if (this.memorySystem) {
       await this.memorySystem.close();
     }
-    // No need to call super.shutdown() - BaseMCPServer doesn't have this method
   }
 }
 
-// Start the server
-async function startServer() {
-  const server = new ServiceNowMemoryMCP();
-  
-  try {
-    // Initialize memory system first
-    await server.initialize();
-    
-    // Then start the server
-    await server.start();
-    
-  } catch (error) {
-    console.error('Failed to start Memory MCP server:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
+const server = new ServiceNowMemoryMCP();
+server.run().catch(console.error);

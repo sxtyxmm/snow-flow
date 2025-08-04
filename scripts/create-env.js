@@ -36,7 +36,7 @@ async function createEnvFile() {
   const neo4jPassword = await question('Neo4j password (default: password): ') || 'password';
   
   // Create .env content
-  const envContent = `# ServiceNow OAuth Configuration
+  const envContent = `# ServiceNow OAuth Configuration (recommended)
 SNOW_INSTANCE=${instance}
 SNOW_CLIENT_ID=${clientId}
 SNOW_CLIENT_SECRET=${clientSecret}
@@ -44,6 +44,11 @@ SNOW_CLIENT_SECRET=${clientSecret}
 # OAuth URLs (these are automatically generated)
 OAUTH_TOKEN_URL=https://${instance}/oauth_token.do
 OAUTH_REDIRECT_URI=http://localhost:3000/callback
+
+# Basic Auth Configuration (deprecated - use OAuth instead)
+# Uncomment these lines ONLY if you need to use basic auth:
+# SNOW_USERNAME=your_username
+# SNOW_PASSWORD=your_password
 
 # Neo4j Configuration (optional - for Graph Memory MCP)
 NEO4J_URI=${neo4jUri}

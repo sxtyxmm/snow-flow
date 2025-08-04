@@ -79,49 +79,32 @@ export class ServiceNowIntelligentMCP {
     this.config = mcpConfig.getMemoryConfig();
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
     
-    // Initialize autonomous systems in background - don't block server startup
-    this.initializeSystemsInBackground();
-
     this.setupHandlers();
   }
 
-  private async initializeSystemsInBackground() {
-    // Initialize systems in background - don't block server startup on failures
-    setTimeout(async () => {
-      try {
-        // Initialize autonomous systems in background
-        this.memorySystem = new MemorySystem({
-          dbPath: './intelligent-mcp.db',
-          cache: { enabled: true, maxSize: 100, ttl: 3600 },
-          ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
-        });
-        
-        await this.memorySystem.initialize();
-        this.logger.info('Memory system initialized');
-        
-        this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
-        this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
-        this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
-        this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
-        
-        this.logger.info('All systems initialized successfully');
-      } catch (error) {
-        this.logger.error('Failed to initialize systems:', error);
-        // Continue without these systems - don't crash the server
-      }
-    }, 100); // Small delay to ensure server starts first
-  }
-
-  private async ensureSystemsInitialized() {
-    // Wait for background initialization to complete
-    let retries = 0;
-    while (!this.memorySystem && retries < 50) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      retries++;
-    }
-    
-    if (!this.memorySystem) {
-      this.logger.warn('Systems not initialized after 5 seconds, some features may be limited');
+  private async initializeSystems(): Promise<void> {
+    try {
+      // Initialize systems synchronously during server startup
+      this.memorySystem = new MemorySystem({
+        dbPath: './intelligent-mcp.db',
+        cache: { enabled: true, maxSize: 100, ttl: 3600 },
+        ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
+      });
+      
+      await this.memorySystem.initialize();
+      this.logger.info('Memory system initialized');
+      
+      this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
+      this.costOptimizationEngine = new CostOptimizationEngine(this.client, this.memorySystem);
+      this.complianceSystem = new AdvancedComplianceSystem(this.client, this.memorySystem);
+      this.selfHealingSystem = new SelfHealingSystem(this.client, this.memorySystem);
+      
+      this.logger.info('All systems initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize systems:', error);
+      // Initialize minimal fallback systems
+      this.memorySystem = new MemorySystem({ dbPath: './intelligent-mcp.db' });
+      await this.memorySystem.initialize();
     }
   }
 
@@ -352,8 +335,11 @@ export class ServiceNowIntelligentMCP {
       const { name, arguments: args } = request.params;
 
       try {
-        // Ensure systems are initialized before handling any tool
-        await this.ensureSystemsInitialized();
+        // Authenticate if needed
+        const authResult = await mcpAuth.ensureAuthenticated();
+        if (!authResult.success) {
+          throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
+        }
         
         switch (name) {
           case 'snow_find_artifact':
@@ -4632,16 +4618,21 @@ Please check your ServiceNow connection and try again.`,
     }
   }
 
-  async start() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    this.logger.info('ServiceNow Intelligent MCP Server started');
+  async run() {
+    try {
+      // Initialize systems first
+      await this.initializeSystems();
+      
+      // Connect transport
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      this.logger.info('ServiceNow Intelligent MCP Server running on stdio');
+    } catch (error) {
+      this.logger.error('Failed to start ServiceNow Intelligent MCP:', error);
+      process.exit(1);
+    }
   }
 }
 
-// Start the server
 const server = new ServiceNowIntelligentMCP();
-server.start().catch((error) => {
-  console.error('Failed to start ServiceNow Intelligent MCP:', error);
-  process.exit(1);
-});
+server.run().catch(console.error);
