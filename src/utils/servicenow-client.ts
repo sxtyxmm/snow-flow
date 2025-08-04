@@ -1584,7 +1584,7 @@ snow_create_flow({
           ...flowResponse.data.result,
           sys_id: flowSysId,
           url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowSysId}`,
-          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowSysId}`,
+          flow_designer_url: `https://${instance}/flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowSysId}`,
           components: {
             flow_record: components.flowRecord.sys_id,
             trigger_instance: components.triggerInstance.sys_id,
@@ -1833,7 +1833,7 @@ snow_create_flow({
           ...flowRecord,
           // Enhanced response format with proper URLs
           url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${flowRecord.sys_id}`,
-          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}/flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${flowRecord.sys_id}`,
           type: flowRecord.type || flow.type || 'flow', // Ensure type is included
           activities_created: flowDefinition.activities.length,
           variables_created: (flow.inputs?.length || 0) + (flow.outputs?.length || 0),
@@ -1982,7 +1982,7 @@ snow_create_flow({
           ...subflowRecord,
           // Enhanced response format with proper URLs
           url: `https://${instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${subflowRecord.sys_id}`,
-          flow_designer_url: `https://${instance}/$flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${subflowRecord.sys_id}`,
+          flow_designer_url: `https://${instance}/flow-designer.do?sysparm_nostack=true&sysparm_sys_id=${subflowRecord.sys_id}`,
           type: 'subflow', // Ensure correct type
           activities_created: subflow.activities?.length || 0,
           inputs_defined: subflow.inputs?.length || 0,

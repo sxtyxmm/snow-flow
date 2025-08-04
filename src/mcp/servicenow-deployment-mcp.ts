@@ -1840,7 +1840,7 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
         ? (usedFallback 
            ? `https://${credentials?.instance}/sys_script.do?sys_id=${result.data.sys_id}`
            : `https://${credentials?.instance}/nav_to.do?uri=sys_hub_flow.do?sys_id=${result.data.sys_id}`)
-        : `https://${credentials?.instance}/$flow-designer.do`;
+        : `https://${credentials?.instance}/flow-designer.do`;
 
       const artifactSummary = deployedArtifacts.length > 0 
         ? `\n🔗 **Linked Artifacts Deployed:**\n${deployedArtifacts.map((a, i) => 
@@ -1917,7 +1917,7 @@ Snow-Flow automatically detected Flow Designer issues and created a functionally
 ${artifactSummary}${activitySummary}
 🔗 **Direct Links:**
 - Flow Designer: ${flowUrl}
-- Flow Designer Home: https://${credentials?.instance}/$flow-designer.do?sysparm_nostack=true
+- Flow Designer Home: https://${credentials?.instance}/flow-designer.do?sysparm_nostack=true
 
 📝 **Flow Components Created:**
 1. ✅ Trigger configured (${args.trigger_type})
@@ -2205,7 +2205,7 @@ ${deploymentResult.warnings.map(w => `- ${w}`).join('\n')}
 
 🔗 **Direct Links:**
 - Application Record: ${appUrl}
-- Studio: https://${credentials?.instance}/nav_to.do?uri=$studio.do
+- Studio: https://${credentials?.instance}/nav_to.do?uri=studio.do
 ${deploymentResult.scope === 'global' ? '- Global Applications: https://' + credentials?.instance + '/nav_to.do?uri=sys_app_list.do?sysparm_query=scope=global' : ''}
 
 📝 **Next Steps:**
@@ -6973,7 +6973,7 @@ ${updateSetSession ? '- Changes are automatically tracked in your active Update 
     switch (type) {
       case 'widget':
         return `1. **Open Service Portal Widgets**
-   🔗 URL: https://${instance}/nav_to.do?uri=%2F$sp_widget.do%3Fsys_id%3D-1%26sysparm_stack%3D$sp_widget_list.do
+   🔗 URL: https://${instance}/nav_to.do?uri=%2Fsp_widget.do%3Fsys_id%3D-1%26sysparm_stack%3Dsp_widget_list.do
    
 2. **Click "New" Button** (Top right of the page)
    📸 Look for: Blue "New" button in the header
@@ -7010,10 +7010,10 @@ ${updateSetSession ? '- Changes are automatically tracked in your active Update 
    - Note the sys_id from the URL for tracking
 
 6. **Test Your Widget**
-   🔗 Test Page URL: https://${instance}/$sp.do?id=widget_editor&sys_id=YOUR_WIDGET_SYS_ID
+   🔗 Test Page URL: https://${instance}/sp.do?id=widget_editor&sys_id=YOUR_WIDGET_SYS_ID
    
 7. **Add to Portal Page**
-   🔗 Page Designer: https://${instance}/nav_to.do?uri=%2F$sp_page.do`;
+   🔗 Page Designer: https://${instance}/nav_to.do?uri=%2Fsp_page.do`;
 
       case 'flow':
         return `1. **Open Flow Designer**
