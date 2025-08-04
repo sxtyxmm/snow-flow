@@ -5,6 +5,33 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2025-01-27
+
+### Added
+- **ServiceNow API Security Section** in README
+- Complete transparency about OAuth authentication flow
+- Network architecture diagram showing direct ServiceNow connection
+- Data privacy and security guarantees explanation
+- Clarification that all 100+ MCP tools use official ServiceNow REST APIs exclusively
+
+### Fixed
+- Updated agent count from "25+" to accurate "38 Specialized Agents"
+
+## [2.0.3] - 2025-01-27
+
+### Added
+- Complete professional open source documentation suite
+- CONTRIBUTING.md with development guidelines
+- CODE_OF_CONDUCT.md with community standards  
+- SECURITY.md with vulnerability reporting process
+- GitHub issue templates and CI/CD pipeline
+- examples/ directory with real-world use cases
+- Professional badge collection in README
+
+### Changed
+- Package size reduced from 11.3MB to 1.3MB (88% reduction) with .npmignore
+- Enhanced README with professional presentation
+
 ## [2.0.2] - 2025-01-27
 
 ### Fixed

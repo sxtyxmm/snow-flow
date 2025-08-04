@@ -22,10 +22,51 @@ Every interaction with Snow-Flow provides insights into ServiceNow best practice
 ### **Real Integration, Real Results**
 Unlike mock tools or simulations, Snow-Flow connects directly to your ServiceNow instance through secure OAuth authentication. Every operation is real, every deployment is functional, and every result is production-ready.
 
+## 🔐 ServiceNow API Integration & Security
+
+### **Direct ServiceNow API Connection**
+All 100+ MCP tools use **official ServiceNow REST APIs** exclusively:
+- **No third-party services** - Your data stays between you and ServiceNow
+- **Standard OAuth 2.0** - Industry-standard authentication protocol
+- **ServiceNow ACLs respected** - Only access what your ServiceNow user can access
+- **Real-time operations** - Direct API calls, no data caching or storage
+
+### **How OAuth Authentication Works**
+```bash
+snow-flow auth login
+# 1. Opens ServiceNow OAuth consent screen in your browser
+# 2. You authenticate with YOUR ServiceNow credentials
+# 3. ServiceNow returns OAuth token directly to Snow-Flow
+# 4. Token stored locally in ~/.snow-flow/auth.json (encrypted)
+# 5. All API calls use this token with proper ServiceNow permissions
+```
+
+### **Data Privacy & Security**
+- ✅ **Zero data collection** - Snow-Flow doesn't collect or store your ServiceNow data
+- ✅ **Local processing** - All operations happen on your machine
+- ✅ **No external servers** - Direct ServiceNow ↔ Snow-Flow communication only
+- ✅ **Audit compliance** - All actions logged in ServiceNow audit trails
+- ✅ **Role-based access** - Respects your ServiceNow user permissions exactly
+
+### **Network Architecture**
+```
+┌─────────────┐    OAuth 2.0 + REST APIs    ┌─────────────────┐
+│  Snow-Flow  │ ◄─────────────────────────► │ Your ServiceNow │
+│   (Local)   │      HTTPS Only              │    Instance     │
+└─────────────┘                              └─────────────────┘
+     ▲                                               
+     │ No external connections                       
+     ▼                                               
+┌─────────────┐                                     
+│ Claude Code │ ◄── Local AI processing only        
+│   (Local)   │                                     
+└─────────────┘                                     
+```
+
 ## ✨ Core Capabilities
 
 ### 🤖 **Intelligent Multi-Agent System**
-- **25+ Specialized Agents**: From architects to testers, each agent brings specific expertise
+- **38 Specialized Agents**: From architects to testers, each agent brings specific expertise
 - **Swarm Coordination**: Agents work together using hierarchical, mesh, or adaptive topologies
 - **Shared Memory**: Persistent knowledge base ensures consistency across all operations
 - **Neural Learning**: Pattern recognition improves suggestions and automation over time
