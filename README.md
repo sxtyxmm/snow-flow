@@ -1,4 +1,4 @@
-# Snow-Flow: AI-Powered ServiceNow Development Platform
+# 🏔️ Snow-Flow: AI-Powered ServiceNow Development Platform
 
 [![npm version](https://badge.fury.io/js/snow-flow.svg)](https://badge.fury.io/js/snow-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
