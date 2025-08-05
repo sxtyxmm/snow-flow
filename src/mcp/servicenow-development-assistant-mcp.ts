@@ -2353,8 +2353,9 @@ export class ServiceNowDevelopmentAssistantMCP {
         ...artifact
       };
 
-      // Don't wait for memory indexing - do it in background
-      // This might be causing the timeout
+      // Skip memory indexing for now - it might be causing timeouts
+      // TODO: Investigate why memory indexing causes timeouts
+      /*
       setImmediate(() => {
         this.intelligentlyIndex(artifact).then(indexed => {
           this.storeInMemory(indexed).catch(err => {
@@ -2362,21 +2363,13 @@ export class ServiceNowDevelopmentAssistantMCP {
           });
         });
       });
-
-      // Check response size to avoid MCP runtime timeouts
-      const jsonString = JSON.stringify(formattedArtifact);
-      const sizeInKB = Buffer.byteLength(jsonString) / 1024;
-      
-      // If response is large, use compact format
-      const formattedJson = sizeInKB > 50 ? 
-        JSON.stringify(formattedArtifact) : // Compact for large responses
-        JSON.stringify(formattedArtifact, null, 2); // Pretty print for small responses
+      */
 
       return {
         content: [
           {
             type: 'text',
-            text: `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n📏 Size: ${sizeInKB.toFixed(1)}KB\n\n**All Fields:**\n${formattedJson}`,
+            text: `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n\n**All Fields:**\n${JSON.stringify(formattedArtifact, null, 2)}`,
           },
         ],
       };
