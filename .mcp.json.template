@@ -24,25 +24,15 @@
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
     },
-    "servicenow-intelligent": {
+    "servicenow-development-assistant": {
       "command": "node",
       "args": [
-        "{{PROJECT_ROOT}}/dist/mcp/servicenow-intelligent-mcp.js"
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-development-assistant-mcp.js"
       ],
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
-      }
-    },
-    "servicenow-memory": {
-      "command": "node",
-      "args": [
-        "{{PROJECT_ROOT}}/dist/mcp/servicenow-memory-mcp.js"
-      ],
-      "env": {
-        "MEMORY_PATH": "{{MEMORY_PATH}}",
-        "SNOW_FLOW_HOME": "{{SNOW_FLOW_HOME}}"
       }
     },
     "servicenow-graph-memory": {
@@ -143,6 +133,17 @@
       ],
       "env": {
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
+      }
+    },
+    "servicenow-machine-learning": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-machine-learning-mcp.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
     }
   }

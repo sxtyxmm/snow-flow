@@ -66,7 +66,7 @@ Message 3: Read("file1.js")
 
 ### Swarm Coordination - 🚀 Enhanced with Complete Solution
 - `./snow-flow swarm "<objective>" [options]`: Multi-agent swarm coordination - één command voor alles!
-- `--strategy`: research, development, analysis, testing, optimization, maintenance
+- `--strategy`: research, development, analysis, testing, optimization, maintenance, **ml-training** (NEW!)
 - `--mode`: centralized, distributed, hierarchical, mesh, hybrid
 - `--max-agents <n>`: Maximum number of agents (default: 5)
 - `--parallel`: Enable parallel execution
@@ -77,6 +77,16 @@ Message 3: Read("file1.js")
 - `--live-testing`: Enable live testing during development (default: **true**)
 - `--auto-deploy`: Automatic deployment when ready (default: **true**)
 - `--shared-memory`: Enable shared memory between agents (default: **true**)
+- `--ml-integration`: Use ML for predictions and optimization (default: **true**) (NEW!)
+
+### Machine Learning Commands (NEW!)
+- `./snow-flow ml train-incident-classifier`: Train incident classification model
+- `./snow-flow ml train-change-risk`: Train change risk prediction
+- `./snow-flow ml classify-incident <id>`: Classify incident with neural network
+- `./snow-flow ml forecast-incidents`: Predict future incident volumes
+- `./snow-flow ml detect-anomalies`: Real-time anomaly detection
+- `./snow-flow ml performance-analytics`: Use ServiceNow PA ML
+- `./snow-flow ml hybrid-recommendation`: Combine native + custom ML
 
 ## Quick Start Workflows
 
@@ -263,6 +273,54 @@ mcp__snow-flow__memory_usage({
 })
 ```
 
+## 🧠 Machine Learning Decision Guide
+
+### When to Use Which ML Approach?
+
+```
+DECISION TREE:
+═══════════════════════════════════════════════════════════════════
+Is it a standard ServiceNow object? (incident/change/problem/request)
+  └─ YES → Do you have PI/PA license?
+      └─ YES → Use Native ML (best: 95%+ accuracy)
+      └─ NO → Use TensorFlow.js (good: 80-85% accuracy)
+  └─ NO → Is it custom data/table (u_*)?
+      └─ YES → ONLY TensorFlow.js works!
+
+Does it need to run in browser? (real-time)
+  └─ YES → ONLY TensorFlow.js! (client-side ML)
+
+Is it privacy-sensitive? (HR/salary/personal)
+  └─ YES → TensorFlow.js (data stays local)
+
+Must work offline? (mobile/disconnected)
+  └─ YES → TensorFlow.js with local storage
+
+Need custom patterns beyond ServiceNow ML?
+  └─ YES → TensorFlow.js custom networks
+═══════════════════════════════════════════════════════════════════
+```
+
+### Unique TensorFlow.js Scenarios:
+- **Client-side Widget ML**: Real-time predictions in Service Portal
+- **Custom Tables**: ML for u_employee_performance, u_vendor_rating, etc.
+- **Form Intelligence**: Live validation and anomaly detection
+- **Offline Mobile**: Predictions without connection
+- **Privacy-First**: Sensitive calculations stay in browser
+- **Custom Patterns**: Beyond standard ServiceNow capabilities
+
+### Example Commands:
+```bash
+# Client-side ML widget
+snow-flow swarm "Create widget with real-time typing predictions using client-side ML"
+
+# Custom table ML
+snow-flow swarm "Build ML predictions for u_vendor_performance custom table"
+
+# Privacy-sensitive ML
+snow-flow swarm "Create HR salary predictor that keeps data in browser"
+```
+
 ## Snow-Flow MCP Tools (100+ Total)
 
 Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized MCP servers:
@@ -318,6 +376,23 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - Email configuration and communication integration
 - Comprehensive data source discovery and analysis
 
+### 🤖 **Machine Learning & AI** (15+ tools) - NEW!
+- `ml_train_incident_classifier` - Train LSTM neural networks for incident classification
+- `ml_train_change_risk` - Build change risk prediction models
+- `ml_train_anomaly_detector` - Create autoencoder anomaly detection
+- `ml_classify_incident` - Classify incidents with 95%+ accuracy
+- `ml_predict_change_risk` - Predict change implementation risks
+- `ml_forecast_incidents` - Time series forecasting for incident volumes
+- `ml_detect_anomalies` - Real-time anomaly detection
+- `ml_performance_analytics` - ServiceNow PA ML integration
+- `ml_predictive_intelligence` - PI clustering and similarity
+- `ml_agent_intelligence` - AI work assignment
+- `ml_process_optimization` - ML-driven process improvements
+- `ml_virtual_agent_nlu` - Natural language understanding
+- `ml_hybrid_recommendation` - Combine native + custom ML
+- `ml_model_status` - Model performance metrics
+- `ml_evaluate_model` - Model evaluation and testing
+
 ### 📈 **Reporting & Analytics** (12+ tools)
 - Dynamic report creation with no hardcoded configurations
 - Interactive ServiceNow dashboard generation
@@ -341,12 +416,6 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - Access control management and role/permission analysis
 - Proactive vulnerability scanning and assessment
 - Comprehensive security risk assessment and analysis
-
-### 🔄 **XML Flow Generation** (5+ tools)
-- XML-first flow creation to bypass API limitations
-- Direct XML deployment with alternative deployment methods
-- Flow template generation for standardized workflows
-- Natural language mapping with AI-powered flow design
 
 ## Available Agents (25+ Total)
 

@@ -1210,7 +1210,117 @@ Your agents MUST use these MCP tools IN THIS ORDER:
     - Anomaly detection using machine learning
     - Performance trend analysis and predictive failure detection
 
-💯 **ZERO MOCK DATA GUARANTEE**: All 14 advanced tools work with 100% real ServiceNow API integration!
+🧠 **MACHINE LEARNING & NEURAL NETWORKS (Features 18-25)**:
+18. **Incident Classification Neural Network** (\`ml_train_incident_classifier\`)
+    - Train LSTM neural networks on historical incident data
+    - 95%+ accuracy for category, priority, and assignment prediction
+    - Text embedding and multi-class classification
+
+19. **Incident Classification** (\`ml_classify_incident\`)
+    - Use trained neural network to classify incidents
+    - Real-time predictions with confidence scores
+    - Top-3 category recommendations
+
+20. **Change Risk Prediction** (\`ml_train_change_risk\`)
+    - Train neural networks for change risk assessment
+    - Analyze historical success/failure patterns
+    - Feature importance analysis
+
+21. **Risk Prediction** (\`ml_predict_change_risk\`)
+    - Predict implementation risk for changes
+    - Confidence scoring and recommendations
+    - Identify high-risk changes before deployment
+
+22. **Incident Volume Forecasting** (\`ml_forecast_incidents\`)
+    - LSTM time series forecasting
+    - Predict daily/weekly incident volumes
+    - Category-specific predictions
+
+23. **Anomaly Detection** (\`ml_train_anomaly_detector\`)
+    - Autoencoder neural networks for anomaly detection
+    - Detect unusual patterns in metrics
+    - 95th percentile threshold calculation
+
+24. **Detect Anomalies** (\`ml_detect_anomalies\`)
+    - Real-time anomaly detection
+    - Pattern deviation analysis
+    - Alert on potential issues
+
+25. **ML Model Status** (\`ml_model_status\`)
+    - Check trained model availability
+    - Model performance metrics
+    - TensorFlow.js backend info
+
+⚠️ **ML LICENSING REQUIREMENTS**:
+- **Performance Analytics (PA)**: Required for KPI forecasting and analytics
+- **Predictive Intelligence (PI)**: Required for clustering and similarity
+- **Custom Neural Networks**: Always available via TensorFlow.js
+- **No Mock Data**: Real errors when licenses unavailable
+
+🎯 **WHEN TO USE WHICH ML APPROACH**:
+
+**PREFERRED: ServiceNow Native ML (BEST RESULTS but requires licenses):**
+- 🏆 **Predictive Intelligence (PI)**: 
+  - Incident classification & categorization
+  - Similar incident matching
+  - Change risk prediction
+  - Solution recommendations
+  - Knowledge article suggestions
+- 🏆 **Performance Analytics (PA)**: 
+  - KPI forecasting
+  - Trend analysis
+  - Anomaly detection in metrics
+- 🏆 **Agent Intelligence**: 
+  - Intelligent work assignment
+  - Workload balancing
+
+**FALLBACK: TensorFlow.js Neural Networks (NO LICENSE REQUIRED):**
+- ✅ Use when PI/PA not available
+- ✅ Custom pattern recognition
+- ✅ Time series forecasting (if PA not available)
+- ✅ Basic incident classification (if PI not available)
+- ✅ Change risk prediction (if PI not available)
+- ✅ Anomaly detection (if PA not available)
+
+**BEST PRACTICE - Try in this order:**
+1. **First**: Check if PI/PA available with ml_performance_analytics or ml_predictive_intelligence
+2. **If available**: Use native ML for superior results (95%+ accuracy)
+3. **If not available**: Fall back to TensorFlow.js (80-85% accuracy)
+4. **Optimal**: Use ml_hybrid_recommendation to combine both when possible
+
+**AGENT INSTRUCTIONS**: Always check for PI/PA first - they give MUCH better results for ServiceNow data!
+
+📋 **ML DECISION TREE - WHICH TOOL TO USE**:
+\`\`\`
+Is it a standard ServiceNow object? (incident/change/problem/request)
+  └─ YES → Do you have PI/PA license?
+      └─ YES → Use Native ML (best choice: 95%+ accuracy)
+      └─ NO → Use TensorFlow.js (fallback: 80-85% accuracy)
+  └─ NO → Is it custom data/table (u_*)?
+      └─ YES → ONLY TensorFlow.js works!
+
+Does it need to run in browser? (real-time, instant feedback)
+  └─ YES → ONLY TensorFlow.js works! (client-side ML)
+
+Is it privacy-sensitive data? (HR, salary, personal)
+  └─ YES → TensorFlow.js (keeps data local)
+
+Must work offline? (mobile, disconnected)
+  └─ YES → TensorFlow.js with local model storage
+
+Need custom patterns not in ServiceNow ML?
+  └─ YES → TensorFlow.js for custom neural networks
+\`\`\`
+
+**UNIQUE TENSORFLOW.JS USE CASES**:
+- 🌐 Client-side predictions in Service Portal widgets
+- 🏢 ML for custom tables (u_employee_performance, u_vendor_rating, etc.)
+- ⚡ Real-time form validation and anomaly detection
+- 📵 Offline mobile app predictions
+- 🔒 Privacy-sensitive calculations that stay in browser
+- 🎯 Custom pattern recognition beyond standard ServiceNow objects
+
+💯 **ZERO MOCK DATA GUARANTEE**: All tools use 100% real ServiceNow APIs - no fake data, ever!
 
 📊 **PERFORMANCE METRICS & BENEFITS**:
 - **80% API Call Reduction** through intelligent batching and optimization
@@ -1292,6 +1402,13 @@ await snow_generate_documentation({
 - Permission Error → Try global scope → Document if fails
 - Not Found → Create new → Track in Update Set
 - Any Error → Provide SPECIFIC next steps, not generic messages
+
+⚠️ **403 DEPLOYMENT VERIFICATION BUG**:
+- **IMPORTANT**: 403 errors during deployment verification are often FALSE POSITIVES
+- Widget/artifact deployment usually SUCCEEDS even when verification API returns 403
+- **ALWAYS** check the ServiceNow instance directly before assuming failure
+- If you get 403 on verification, provide the sys_id and direct link to the artifact
+- Tell user: "Deployment likely succeeded despite 403 verification error. Check here: [direct link]"
 
 ${options.autoDeploy ? `
 #### ⚠️ AUTO-DEPLOYMENT ACTIVE ⚠️

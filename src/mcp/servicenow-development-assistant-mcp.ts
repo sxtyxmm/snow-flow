@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * ServiceNow Intelligent MCP Server
- * Natural language processing for ServiceNow artifacts with intelligent indexing
+ * ServiceNow Development Assistant MCP Server
+ * Natural language artifact management and development orchestration for ServiceNow
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -48,7 +48,7 @@ interface IndexedArtifact {
   modificationPoints: any[];
 }
 
-export class ServiceNowIntelligentMCP {
+export class ServiceNowDevelopmentAssistantMCP {
   private server: Server;
   private client: ServiceNowClient;
   private logger: Logger;
@@ -64,7 +64,7 @@ export class ServiceNowIntelligentMCP {
   constructor() {
     this.server = new Server(
       {
-        name: 'servicenow-intelligent',
+        name: 'servicenow-development-assistant',
         version: '1.0.0',
       },
       {
@@ -75,7 +75,7 @@ export class ServiceNowIntelligentMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowIntelligentMCP');
+    this.logger = new Logger('ServiceNowDevelopmentAssistantMCP');
     this.config = mcpConfig.getMemoryConfig();
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
     
@@ -4626,7 +4626,7 @@ Please check your ServiceNow connection and try again.`,
       // Connect transport
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
-      this.logger.info('ServiceNow Intelligent MCP Server running on stdio');
+      this.logger.info('ServiceNow Development Assistant MCP Server running on stdio');
     } catch (error) {
       this.logger.error('Failed to start ServiceNow Intelligent MCP:', error);
       process.exit(1);
@@ -4634,5 +4634,5 @@ Please check your ServiceNow connection and try again.`,
   }
 }
 
-const server = new ServiceNowIntelligentMCP();
+const server = new ServiceNowDevelopmentAssistantMCP();
 server.run().catch(console.error);

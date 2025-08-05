@@ -496,6 +496,12 @@ export class AgentDetector {
 ${_analysis.requiresUpdateSet ? '- ✅ Update Set will be automatically created' : '- ⚠️ No Update Set required'}
 ${_analysis.requiresApplication ? '- ✅ New Application will be automatically created' : '- ⚠️ Using existing application context'}
 
+🤖 **ML Capabilities Available**:
+- 🧠 Neural Networks: Incident classification, change risk prediction, anomaly detection
+- 📊 Performance Analytics ML: KPI forecasting, trend analysis (when PA plugin active)
+- 🔮 Predictive Intelligence: Clustering, similarity matching (when PI plugin active)
+- 🎯 Hybrid ML: Combine ServiceNow native ML with custom TensorFlow models
+
 🤖 **Team Coordination**:
 - Primary Agent: ${_analysis.primaryAgent}
 - Supporting Agents: ${_analysis.supportingAgents.join(', ')}
@@ -520,7 +526,11 @@ ${_analysis.requiresApplication ? '- ✅ New Application will be automatically c
 - Write ServiceNow scripts, business rules, and functions
 - Ensure code quality and maintainability
 - Follow ServiceNow development best practices
-- Collaborate with testers on code validation`;
+- Collaborate with testers on code validation
+- Implement ML-powered features:
+  * mcp__servicenow-machine-learning__ml_train_incident_classifier - Train classification models
+  * mcp__servicenow-machine-learning__ml_classify_incident - Auto-classify incidents
+  * mcp__servicenow-machine-learning__ml_predictive_intelligence - Add PI capabilities`;
 
       case 'flow_designer':
         return basePrompt + `
@@ -552,7 +562,11 @@ ${_analysis.requiresApplication ? '- ✅ New Application will be automatically c
 - Analyze requirements and gather information
 - Provide insights and recommendations
 - Study existing implementations and solutions
-- Document findings and share knowledge`;
+- Document findings and share knowledge
+- Use ML for data-driven insights:
+  * mcp__servicenow-machine-learning__ml_forecast_incidents - Predict future trends
+  * mcp__servicenow-machine-learning__ml_detect_anomalies - Find unusual patterns
+  * mcp__servicenow-machine-learning__ml_performance_analytics - Analyze KPIs with ML`;
 
       case 'orchestrator':
         return basePrompt + `
@@ -560,7 +574,11 @@ ${_analysis.requiresApplication ? '- ✅ New Application will be automatically c
 - Manage task priorities and dependencies
 - Ensure project timeline and milestones
 - Facilitate communication and collaboration
-- Monitor progress and address blockers`;
+- Monitor progress and address blockers
+- Leverage ML for intelligent orchestration:
+  * mcp__servicenow-machine-learning__ml_agent_intelligence - AI work assignment
+  * mcp__servicenow-machine-learning__ml_process_optimization - Optimize workflows
+  * mcp__servicenow-machine-learning__ml_hybrid_recommendation - Combined ML insights`;
 
       default:
         return basePrompt + `
