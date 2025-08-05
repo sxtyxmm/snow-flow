@@ -74,12 +74,15 @@ export class AgentDetector {
         if (response && response.content && response.content[0]) {
           const result = JSON.parse(response.content[0].text);
           
-          // Map MCP response to TaskAnalysis interface
+          // Now discover dynamic agents based on the task analysis
+          const agentDiscoveryResponse = await this.discoverDynamicAgents(result.categorization, result.intent_analysis);
+          
+          // Map MCP response to TaskAnalysis interface with dynamic agents
           return {
-            primaryAgent: result.categorization.primary_agent,
-            supportingAgents: result.categorization.supporting_agents,
+            primaryAgent: agentDiscoveryResponse.primaryAgent || result.categorization.primary_agent,
+            supportingAgents: agentDiscoveryResponse.supportingAgents || result.categorization.supporting_agents,
             complexity: result.categorization.complexity,
-            estimatedAgentCount: result.categorization.estimated_agent_count,
+            estimatedAgentCount: agentDiscoveryResponse.agentCount || result.categorization.estimated_agent_count,
             requiresUpdateSet: result.categorization.requires_update_set,
             requiresApplication: result.categorization.requires_application,
             taskType: result.categorization.task_type,
@@ -103,6 +106,113 @@ export class AgentDetector {
     
     // Fallback to static analysis
     return this.analyzeTask(objective, userMaxAgents);
+  }
+  
+  /**
+   * Discover dynamic agents using MCP agent_discover
+   */
+  private static async discoverDynamicAgents(categorization: any, intentAnalysis: any): Promise<any> {
+    if (!this.mcpClient) {
+      return {
+        primaryAgent: categorization.primary_agent,
+        supportingAgents: categorization.supporting_agents,
+        agentCount: categorization.estimated_agent_count,
+      };
+    }
+    
+    try {
+      const response = await this.mcpClient.callTool({
+        name: 'agent_discover',
+        arguments: {
+          task_analysis: {
+            task_type: categorization.task_type,
+            complexity: categorization.complexity,
+            service_now_artifacts: categorization.service_now_artifacts,
+          },
+          required_capabilities: this.extractCapabilitiesFromIntent(intentAnalysis),
+          context: {
+            max_agents: categorization.estimated_agent_count || 8,
+            include_new_types: true,
+            learn_from_history: true,
+          },
+        },
+      });
+      
+      if (response && response.content && response.content[0]) {
+        const result = JSON.parse(response.content[0].text);
+        
+        // Map discovered agents to our format
+        const discoveredAgents = result.discovered_agents || [];
+        const primaryAgent = result.recommendations.primary_coordinator || categorization.primary_agent;
+        const supportingAgents = discoveredAgents
+          .filter((a: any) => a.type !== primaryAgent)
+          .map((a: any) => a.type);
+        
+        return {
+          primaryAgent,
+          supportingAgents,
+          agentCount: discoveredAgents.length,
+          discoveredAgents,
+          executionBatches: result.execution_batches,
+          newAgentTypes: result.new_agent_types,
+        };
+      }
+    } catch (error) {
+      console.warn('MCP agent_discover failed, using static agents:', error);
+    }
+    
+    // Fallback to original agents
+    return {
+      primaryAgent: categorization.primary_agent,
+      supportingAgents: categorization.supporting_agents,
+      agentCount: categorization.estimated_agent_count,
+    };
+  }
+  
+  /**
+   * Extract required capabilities from intent analysis
+   */
+  private static extractCapabilitiesFromIntent(intentAnalysis: any): string[] {
+    const capabilities: string[] = [];
+    
+    // Extract from action verbs
+    const verbCapabilityMap: { [key: string]: string } = {
+      'integrate': 'integration',
+      'optimize': 'performance',
+      'secure': 'security',
+      'analyze': 'analytics',
+      'visualize': 'visualization',
+      'automate': 'automation',
+      'deploy': 'devops',
+      'test': 'testing',
+      'document': 'documentation',
+    };
+    
+    for (const verb of intentAnalysis.action_verbs || []) {
+      if (verbCapabilityMap[verb]) {
+        capabilities.push(verbCapabilityMap[verb]);
+      }
+    }
+    
+    // Extract from target objects
+    const objectCapabilityMap: { [key: string]: string } = {
+      'mobile': 'mobile',
+      'chatbot': 'chatbot',
+      'ml': 'ml',
+      'ai': 'ml',
+      'blockchain': 'blockchain',
+      'iot': 'iot',
+      'compliance': 'compliance',
+      'accessibility': 'accessibility',
+    };
+    
+    for (const obj of intentAnalysis.target_objects || []) {
+      if (objectCapabilityMap[obj]) {
+        capabilities.push(objectCapabilityMap[obj]);
+      }
+    }
+    
+    return [...new Set(capabilities)]; // Remove duplicates
   }
 
   private static readonly AGENT_PATTERNS = {

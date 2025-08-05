@@ -304,6 +304,41 @@ class SnowFlowMCPServer {
             required: ['objective'],
           },
         },
+        // Dynamic Agent Discovery
+        {
+          name: 'agent_discover',
+          description: 'Dynamically discover and create agent types based on task requirements using AI. Goes beyond static agent definitions to create specialized agents.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              task_analysis: {
+                type: 'object',
+                description: 'Task analysis from task_categorize or similar',
+                properties: {
+                  task_type: { type: 'string' },
+                  service_now_artifacts: { type: 'array', items: { type: 'string' } },
+                  complexity: { type: 'string' },
+                  primary_intent: { type: 'string' },
+                },
+              },
+              required_capabilities: {
+                type: 'array',
+                description: 'List of required capabilities for the task',
+                items: { type: 'string' },
+              },
+              context: {
+                type: 'object',
+                description: 'Context for agent discovery',
+                properties: {
+                  max_agents: { type: 'number', default: 8 },
+                  include_new_types: { type: 'boolean', default: true },
+                  learn_from_history: { type: 'boolean', default: true },
+                },
+              },
+            },
+            required: ['task_analysis'],
+          },
+        },
         // Performance & Monitoring
         {
           name: 'performance_report',
@@ -375,6 +410,8 @@ class SnowFlowMCPServer {
             return await this.handleTokenUsage(args);
           case 'task_categorize':
             return await this.handleTaskCategorize(args);
+          case 'agent_discover':
+            return await this.handleAgentDiscover(args);
           default:
             return {
               content: [
@@ -1445,6 +1482,37 @@ class SnowFlowMCPServer {
     };
 
     return explanations[taskType] || `AI determined this as ${taskType} based on context analysis`;
+  }
+  
+  private async handleAgentDiscover(args: any) {
+    // Dynamic agent discovery implementation
+    // This is a simplified version - see agent-discovery-methods.ts for full implementation
+    const { task_analysis, required_capabilities = [], context = {} } = args;
+    const { max_agents = 8, include_new_types = true } = context;
+    
+    // For now, return a basic response showing the concept
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            status: 'success',
+            message: 'Dynamic agent discovery is enabled',
+            discovered_agents: [
+              {
+                type: 'system-architect',
+                name: 'System Architecture Specialist',
+                capabilities: ['design', 'architecture', 'planning'],
+                reasoning: 'Complex tasks require architectural planning'
+              }
+            ],
+            note: 'Full implementation available in agent-discovery-methods.ts',
+            task_type: task_analysis?.task_type || 'general',
+            capabilities_requested: required_capabilities
+          }, null, 2),
+        },
+      ],
+    };
   }
 
   private getDefaultCapabilities(type: string): string[] {

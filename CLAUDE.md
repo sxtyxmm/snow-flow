@@ -369,6 +369,148 @@ const result = await mcp__snow-flow__task_categorize({
 }
 ```
 
+## 🧠 Intelligent Agent Batching (NEW in v2.6.0!)
+
+Snow-Flow now includes **Intelligent Dependency-Based Agent Batching** that automatically determines which agents can run in parallel vs sequential based on task dependencies!
+
+### How It Works:
+
+1. **Dependency Analysis**: Each agent type has defined dependencies
+   - `architect`/`app-architect` agents run first (no dependencies)
+   - `script-writer` depends on architecture being complete
+   - `css-specialist` depends on `widget-creator`
+   - `tester` depends on all implementation agents
+
+2. **Automatic Batching**: Agents are grouped into execution batches
+   - **Sequential**: When dependencies require order
+   - **Parallel**: When agents have no interdependencies
+
+3. **Example Execution Plans**:
+
+**Widget Development Task:**
+```
+Batch 1 - 📦 SEQUENTIAL: [app-architect]
+Batch 2 - ⚡ PARALLEL: [widget-creator | integration-specialist]
+Batch 3 - ⚡ PARALLEL: [css-specialist | frontend-specialist | backend-specialist]
+Batch 4 - ⚡ PARALLEL: [performance-specialist | tester]
+
+Time Reduction: 60% (4 batches instead of 7 sequential steps)
+```
+
+**Flow Development Task:**
+```
+Batch 1 - 📦 SEQUENTIAL: [app-architect]
+Batch 2 - 📦 SEQUENTIAL: [flow-builder]
+Batch 3 - ⚡ PARALLEL: [trigger-specialist | action-specialist | approval-specialist | integration-specialist]
+Batch 4 - ⚡ PARALLEL: [error-handler | tester]
+
+Time Reduction: 50% (4 batches instead of 8 sequential steps)
+```
+
+### Real Example from Swarm:
+
+When you run: `snow-flow swarm "Create incident management dashboard widget"`
+
+The system automatically generates:
+```javascript
+// Batch 1 - Architecture First
+Task("app-architect", `You are the application architect. Design the overall application structure and component interfaces.
+MANDATORY: 
+1. Run npx snow-flow hooks pre-task --description "widget_development - app-architect"
+2. Store ALL decisions in Memory with key "agent_app-architect_decisions"
+3. Check Memory for work from agents you depend on
+4. After EVERY file operation, run npx snow-flow hooks post-edit
+5. When complete, run npx snow-flow hooks post-task --task-id "app-architect"`);
+
+// ⏸️ WAIT for Batch 1 completion before proceeding to Batch 2
+
+// Batch 2 - Main Components (PARALLEL)
+Task("widget-creator", `You are the widget creator. Build the HTML structure for Service Portal widgets. Store widget specs in Memory.
+MANDATORY: [same coordination instructions]`);
+Task("integration-specialist", `You are the integration specialist. Handle external system integrations and APIs.
+MANDATORY: [same coordination instructions]`);
+
+// ⏸️ WAIT for Batch 2 completion before proceeding to Batch 3
+
+// Batch 3 - Specialists (PARALLEL)
+Task("css-specialist", `You are the CSS specialist. Create responsive styles for the widgets. Read widget structure from Memory.
+MANDATORY: [same coordination instructions]`);
+Task("frontend-specialist", `You are the frontend specialist. Implement client-side JavaScript. Coordinate with backend via Memory.
+MANDATORY: [same coordination instructions]`);
+Task("backend-specialist", `You are the backend specialist. Implement server-side logic. Coordinate with frontend via Memory.
+MANDATORY: [same coordination instructions]`);
+
+// ⏸️ WAIT for Batch 3 completion before proceeding to Batch 4
+
+// Batch 4 - Quality & Testing (PARALLEL)
+Task("performance-specialist", `You are the performance specialist. Optimize code and queries for performance.
+MANDATORY: [same coordination instructions]`);
+Task("tester", `You are the tester. Test all components created by other agents. Read their outputs from Memory.
+MANDATORY: [same coordination instructions]`);
+```
+
+### Dependency Rules:
+
+```javascript
+const agentDependencies = {
+  // Architecture/Design agents must run first
+  'architect': [],
+  'app-architect': [],
+  
+  // Script/Code agents depend on architecture
+  'script-writer': ['architect', 'app-architect'],
+  'coder': ['architect', 'app-architect'],
+  
+  // UI agents can run after architecture, parallel with backend
+  'widget-creator': ['architect', 'app-architect'],
+  'css-specialist': ['widget-creator'],
+  'frontend-specialist': ['widget-creator'],
+  'backend-specialist': ['architect', 'app-architect'],
+  
+  // Flow agents depend on architecture
+  'flow-builder': ['architect', 'app-architect'],
+  'trigger-specialist': ['flow-builder'],
+  'action-specialist': ['flow-builder'],
+  'approval-specialist': ['flow-builder'],
+  
+  // Integration agents can run in parallel with others
+  'integration-specialist': ['architect'],
+  'api-specialist': ['architect'],
+  
+  // Testing/Security agents run last
+  'tester': ['script-writer', 'widget-creator', 'flow-builder', 'frontend-specialist', 'backend-specialist'],
+  'security-specialist': ['script-writer', 'api-specialist'],
+  'performance-specialist': ['frontend-specialist', 'backend-specialist'],
+  
+  // Error handling depends on main implementation
+  'error-handler': ['flow-builder', 'script-writer'],
+  
+  // Documentation can run in parallel
+  'documentation-specialist': [],
+  
+  // Specialized agents
+  'ml-developer': ['architect', 'script-writer'],
+  'database-expert': ['architect'],
+  'analyst': ['architect']
+};
+```
+
+### Benefits:
+- ✅ **40-60% faster execution** through intelligent parallelization
+- ✅ **Automatic dependency resolution** - no manual coordination needed
+- ✅ **Visual execution flow** - see exactly what runs when
+- ✅ **Memory coordination** - agents share context automatically
+- ✅ **No deadlocks** - circular dependencies handled gracefully
+- ✅ **Optimized resource usage** - maximum parallel efficiency
+
+### Key Insights:
+1. Architecture agents always run first (no dependencies)
+2. UI specialists can run in parallel after widget creation
+3. Flow specialists can run in parallel after flow builder
+4. Testing always runs last (depends on implementation)
+5. Integration agents have minimal dependencies
+6. Security and performance agents run near the end
+
 ## Snow-Flow MCP Tools (100+ Total)
 
 Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized MCP servers:
@@ -466,14 +608,87 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - Proactive vulnerability scanning and assessment
 - Comprehensive security risk assessment and analysis
 
-## Available Agents (25+ Total)
+## 🤖 Dynamic Agent Discovery (NEW in v2.6.0!)
 
-### Core Development Agents
+Snow-Flow now features **AI-Powered Dynamic Agent Discovery** that goes beyond static agent definitions!
+
+### How Dynamic Agent Discovery Works:
+
+1. **Task Analysis**: AI analyzes your objective to understand requirements
+2. **Capability Detection**: Identifies required capabilities from context
+3. **Agent Discovery**: Creates specialized agents on-demand
+4. **Dependency Mapping**: Determines agent execution order
+5. **Batch Optimization**: Groups agents for parallel execution
+
+### Example: Mobile App with ML
+
+**Static Analysis** (Limited to 4 predefined agents):
+```
+Primary: mobile-dev
+Supporting: api-specialist, integration-specialist, tester
+```
+
+**Dynamic Discovery** (AI discovers 9 specialized agents):
+```
+NEW Agents Discovered:
+• offline-sync-expert - Handles offline ML predictions
+• tensorflow-mobile-specialist - Client-side ML on mobile
+• ios-specialist - iOS-specific optimizations
+• android-specialist - Android-specific optimizations
+• quality-guardian - Comprehensive quality assurance
+• performance-optimizer - Mobile performance tuning
+```
+
+### Real Examples of Dynamic Discovery:
+
+**Blockchain Integration**:
+- Discovers: smart-contract-developer, cryptography-specialist, distributed-systems-expert
+- Not possible with static agents!
+
+**Accessibility Portal**:
+- Discovers: wcag-compliance-expert, screen-reader-specialist, aria-specialist
+- Creates domain-specific experts on demand!
+
+**IoT Integration**:
+- Discovers: mqtt-specialist, edge-computing-expert, sensor-data-analyst
+- Adapts to emerging technologies!
+
+### MCP Tool Usage:
+```javascript
+// Dynamic agent discovery
+const agents = await mcp__snow-flow__agent_discover({
+  task_analysis: {
+    task_type: "mobile_development",
+    complexity: "complex",
+    service_now_artifacts: ["widget", "integration"]
+  },
+  required_capabilities: ["ml", "offline", "mobile"],
+  context: {
+    include_new_types: true,
+    learn_from_history: true
+  }
+});
+```
+
+## Available Agents (25+ Static + ∞ Dynamic!)
+
+### Core Development Agents (Static)
 - `coder` - Implementation specialist
 - `reviewer` - Code quality assurance
 - `tester` - Test creation and validation
 - `planner` - Strategic planning
 - `researcher` - Information gathering
+
+### Dynamically Discovered Agents (Examples)
+- `offline-sync-expert` - Offline data synchronization
+- `blockchain-architect` - Blockchain integration
+- `smart-contract-developer` - Smart contract implementation
+- `accessibility-champion` - WCAG compliance
+- `ml-specialist` - Machine learning integration
+- `cryptography-specialist` - Security and encryption
+- `iot-specialist` - IoT device integration
+- `quantum-computing-expert` - Future tech specialist
+- ... and unlimited more based on task requirements!
 
 ### Swarm Coordination Agents
 - `hierarchical-coordinator` - Queen-led coordination

@@ -952,88 +952,15 @@ TodoWrite([
 ]);
 \`\`\`
 
-### 4. Spawn Specialized Agents
-Based on the task _analysis, spawn the following agents using the Task tool:
+### 4. Intelligent Agent Spawning with Dependency-Based Batching
 
-**Primary Agent**: ${taskAnalysis.primaryAgent}
-\`\`\`javascript
-// Spawn primary agent
-Task("${taskAnalysis.primaryAgent}", \`
-  You are the primary ${taskAnalysis.primaryAgent} agent for this swarm.
-  
-  Objective: ${objective}
-  Session: ${sessionId}
-  Task Type: ${taskAnalysis.taskType}
-  
-  Instructions:
-  1. FIRST: Read ALL shared context from memory:
-     - mcp__snow-flow__memory_usage({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
-  
-  2. 🔍 CRITICAL: Use discovered table schemas:
-     - The table_schemas contain actual field names, types, and relationships
-     - ALWAYS use the exact field names from the schema (e.g., 'short_description' not 'description')
-     - Check key_fields for primary keys and references
-     - If you need a table that wasn't discovered, use snow_table_schema_discovery first
-  
-  3. Check existing_artifacts to avoid duplication - reuse or extend existing ones
-  4. ALL deployments MUST use the Update Set stored in memory
-  5. Begin implementing the core ${taskAnalysis.taskType} requirements
-  6. Store all work progress with: mcp__snow-flow__memory_usage({key: "agent_${taskAnalysis.primaryAgent}_progress", value: "...", namespace: "agents_${sessionId}"})
-  7. Update TodoWrite items as you complete tasks
-  8. Read other agents' progress from namespace "agents_${sessionId}"
-  
-  🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
-  📦 UPDATE SET: Use the one from memory - DO NOT create a new one!
-  📊 TABLES: Use exact field names from discovered schemas!
-\`);
-\`\`\`
+⚡ **CRITICAL: Spawn agents in SMART BATCHES based on dependencies!**
 
-**Supporting Agents**:
-${taskAnalysis.supportingAgents.map((agent, index) => `
-Agent ${index + 2}: ${agent}
-\`\`\`javascript
-// Spawn ${agent}
-Task("${agent}", \`
-  You are a supporting ${agent} agent in this swarm.
-  
-  Role: ${agent}
-  Session: ${sessionId}
-  Primary Agent: ${taskAnalysis.primaryAgent}
-  
-  Instructions:
-  1. FIRST: Read ALL shared context from memory (same as primary agent):
-     - mcp__snow-flow__memory_usage({key: "swarm_session_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "existing_artifacts_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "update_set_${sessionId}", namespace: "swarm_${sessionId}"})
-     - mcp__snow-flow__memory_usage({key: "table_schemas_${sessionId}", namespace: "swarm_${sessionId}"})
-  
-  2. 🔍 CRITICAL: Use discovered table schemas:
-     - The table_schemas contain actual field names, types, and relationships
-     - ALWAYS use the exact field names from the schema (e.g., 'short_description' not 'description')
-     - Check key_fields for primary keys and references
-     - If you need a table that wasn't discovered, use snow_table_schema_discovery first
-  
-  3. Monitor primary agent's progress: mcp__snow-flow__memory_search({pattern: "agent_${taskAnalysis.primaryAgent}_*", namespace: "agents_${sessionId}"})
-  4. Wait for primary agent to establish base structure before major changes
-  5. Enhance/support with your ${agent} expertise  
-  6. Store your progress: mcp__snow-flow__memory_usage({key: "agent_${agent}_progress", value: "...", namespace: "agents_${sessionId}"})
-  7. Update relevant TodoWrite items
-  
-  🔐 AUTHENTICATION: Already validated by Queen. Use MCP tools directly.
-  📦 UPDATE SET: Use the one from memory - DO NOT create a new one!
-  📊 TABLES: Use exact field names from discovered schemas!
-  
-  🔐 AUTHENTICATION REQUIREMENTS:
-  - ALWAYS use MCP tools first - inherit auth status from primary agent
-  - If auth fails, contribute to the PLANNING documentation
-  - Store all plans in Memory for future deployment
-\`);
-\`\`\``).join('\n')}
+Based on the task analysis, we need to spawn ${taskAnalysis.estimatedAgentCount} agents.
 
-### 4. Memory Coordination Pattern
+${getAgentSpawnStrategy(taskAnalysis)}
+
+### 5. Memory Coordination Pattern
 All agents MUST use this memory coordination pattern:
 
 \`\`\`javascript
@@ -1937,6 +1864,211 @@ function extractName(objective: string, type: string): string {
     return words.slice(typeIndex + 1).join(' ').replace(/['"]/g, '');
   }
   return `Generated ${type}`;
+}
+
+/**
+ * Generate intelligent agent spawning strategy based on task dependencies
+ * Creates execution batches for sequential and parallel execution
+ */
+function getAgentSpawnStrategy(taskAnalysis: any): string {
+  const { primaryAgent, supportingAgents, taskType, serviceNowArtifacts } = taskAnalysis;
+  
+  // Define agent dependencies - which agents must run before others
+  const agentDependencies: { [key: string]: string[] } = {
+    // Architecture/Design agents must run first
+    'architect': [],
+    'app-architect': [],
+    
+    // Script/Code agents depend on architecture
+    'script-writer': ['architect', 'app-architect'],
+    'coder': ['architect', 'app-architect'],
+    
+    // UI agents can run after architecture, parallel with backend
+    'widget-creator': ['architect', 'app-architect'],
+    'css-specialist': ['widget-creator'],
+    'frontend-specialist': ['widget-creator'],
+    'backend-specialist': ['architect', 'app-architect'],
+    
+    // Flow agents depend on architecture
+    'flow-builder': ['architect', 'app-architect'],
+    'trigger-specialist': ['flow-builder'],
+    'action-specialist': ['flow-builder'],
+    'approval-specialist': ['flow-builder'],
+    
+    // Integration agents can run in parallel with others
+    'integration-specialist': ['architect'],
+    'api-specialist': ['architect'],
+    
+    // Testing/Security agents run last
+    'tester': ['script-writer', 'widget-creator', 'flow-builder', 'frontend-specialist', 'backend-specialist'],
+    'security-specialist': ['script-writer', 'api-specialist'],
+    'performance-specialist': ['frontend-specialist', 'backend-specialist'],
+    
+    // Error handling depends on main implementation
+    'error-handler': ['flow-builder', 'script-writer'],
+    
+    // Documentation can run in parallel
+    'documentation-specialist': [],
+    
+    // Specialized agents
+    'ml-developer': ['architect', 'script-writer'],
+    'database-expert': ['architect'],
+    'analyst': ['architect']
+  };
+  
+  // Create dependency graph
+  const allAgents = [primaryAgent, ...supportingAgents];
+  const agentBatches: string[][] = [];
+  const processedAgents = new Set<string>();
+  
+  // Helper to check if all dependencies are met
+  const canExecute = (agent: string): boolean => {
+    const deps = agentDependencies[agent] || [];
+    return deps.every(dep => processedAgents.has(dep));
+  };
+  
+  // Create batches based on dependencies
+  while (processedAgents.size < allAgents.length) {
+    const currentBatch: string[] = [];
+    
+    for (const agent of allAgents) {
+      if (!processedAgents.has(agent) && canExecute(agent)) {
+        currentBatch.push(agent);
+      }
+    }
+    
+    if (currentBatch.length === 0) {
+      // Circular dependency or missing dependency - add remaining agents
+      for (const agent of allAgents) {
+        if (!processedAgents.has(agent)) {
+          currentBatch.push(agent);
+        }
+      }
+    }
+    
+    if (currentBatch.length > 0) {
+      agentBatches.push(currentBatch);
+      currentBatch.forEach(agent => processedAgents.add(agent));
+    }
+  }
+  
+  // Generate the strategy prompt
+  let strategy = `
+**🧠 Intelligent Dependency-Based Agent Execution Plan:**
+
+`;
+  
+  // Show execution batches
+  agentBatches.forEach((batch, index) => {
+    const isParallel = batch.length > 1;
+    const executionType = isParallel ? '⚡ PARALLEL EXECUTION' : '📦 SEQUENTIAL STEP';
+    
+    strategy += `**Batch ${index + 1} - ${executionType}:**\n`;
+    
+    if (isParallel) {
+      strategy += `\`\`\`javascript
+// 🚀 Execute these ${batch.length} agents IN PARALLEL (single message, multiple Tasks)
+`;
+      batch.forEach(agent => {
+        const agentPrompt = getAgentPromptForBatch(agent, taskType);
+        strategy += `Task("${agent}", \`${agentPrompt}\`);
+`;
+      });
+      strategy += `\`\`\`\n\n`;
+    } else {
+      strategy += `\`\`\`javascript
+// 📦 Execute this agent FIRST before proceeding
+`;
+      const agent = batch[0];
+      const agentPrompt = getAgentPromptForBatch(agent, taskType);
+      strategy += `Task("${agent}", \`${agentPrompt}\`);
+`;
+      strategy += `\`\`\`\n\n`;
+    }
+    
+    // Add wait/coordination note if not the last batch
+    if (index < agentBatches.length - 1) {
+      strategy += `**⏸️ WAIT for Batch ${index + 1} completion before proceeding to Batch ${index + 2}**\n\n`;
+    }
+  });
+  
+  // Add execution summary
+  const totalBatches = agentBatches.length;
+  const parallelBatches = agentBatches.filter(b => b.length > 1).length;
+  const maxParallelAgents = Math.max(...agentBatches.map(b => b.length));
+  
+  strategy += `
+**📊 Execution Summary:**
+- Total Execution Batches: ${totalBatches}
+- Parallel Batches: ${parallelBatches}
+- Sequential Steps: ${totalBatches - parallelBatches}
+- Max Parallel Agents: ${maxParallelAgents}
+- Estimated Time Reduction: ${Math.round((1 - (totalBatches / allAgents.length)) * 100)}%
+
+**🔄 Dependency Flow:**
+`;
+  
+  // Show visual dependency flow
+  agentBatches.forEach((batch, index) => {
+    if (index === 0) {
+      strategy += `START → `;
+    }
+    
+    if (batch.length === 1) {
+      strategy += `[${batch[0]}]`;
+    } else {
+      strategy += `[${batch.join(' | ')}]`;
+    }
+    
+    if (index < agentBatches.length - 1) {
+      strategy += ` → `;
+    } else {
+      strategy += ` → COMPLETE`;
+    }
+  });
+  
+  strategy += `\n`;
+  
+  return strategy;
+}
+
+/**
+ * Generate agent-specific prompts for batch execution
+ */
+function getAgentPromptForBatch(agentType: string, taskType: string): string {
+  const basePrompts: { [key: string]: string } = {
+    'architect': 'You are the architect agent. Design the system architecture and data models. Store your design in Memory for other agents.',
+    'app-architect': 'You are the application architect. Design the overall application structure and component interfaces.',
+    'script-writer': 'You are the script writer. Implement business logic and scripts based on the architecture. Check Memory for design specs.',
+    'widget-creator': 'You are the widget creator. Build the HTML structure for Service Portal widgets. Store widget specs in Memory.',
+    'css-specialist': 'You are the CSS specialist. Create responsive styles for the widgets. Read widget structure from Memory.',
+    'frontend-specialist': 'You are the frontend specialist. Implement client-side JavaScript. Coordinate with backend via Memory.',
+    'backend-specialist': 'You are the backend specialist. Implement server-side logic. Coordinate with frontend via Memory.',
+    'flow-builder': 'You are the flow builder. Create the main flow structure. Store flow design in Memory for specialists.',
+    'trigger-specialist': 'You are the trigger specialist. Configure flow triggers based on the flow design in Memory.',
+    'action-specialist': 'You are the action specialist. Implement flow actions based on the flow design in Memory.',
+    'approval-specialist': 'You are the approval specialist. Set up approval processes in the flow.',
+    'integration-specialist': 'You are the integration specialist. Handle external system integrations and APIs.',
+    'api-specialist': 'You are the API specialist. Design and implement REST/SOAP endpoints.',
+    'tester': 'You are the tester. Test all components created by other agents. Read their outputs from Memory.',
+    'security-specialist': 'You are the security specialist. Implement security best practices and access controls.',
+    'performance-specialist': 'You are the performance specialist. Optimize code and queries for performance.',
+    'error-handler': 'You are the error handler. Implement comprehensive error handling and logging.',
+    'documentation-specialist': 'You are the documentation specialist. Create comprehensive documentation.',
+    'ml-developer': 'You are the ML developer. Implement machine learning features using ServiceNow ML tools.',
+    'database-expert': 'You are the database expert. Design and optimize database schemas and queries.',
+    'analyst': 'You are the analyst. Analyze requirements and provide insights for implementation.'
+  };
+  
+  const prompt = basePrompts[agentType] || `You are the ${agentType} agent. Perform your specialized tasks.`;
+  
+  return `${prompt}
+MANDATORY: 
+1. Run npx snow-flow hooks pre-task --description "${taskType} - ${agentType}"
+2. Store ALL decisions in Memory with key "agent_${agentType}_decisions"
+3. Check Memory for work from agents you depend on
+4. After EVERY file operation, run npx snow-flow hooks post-edit
+5. When complete, run npx snow-flow hooks post-task --task-id "${agentType}"`;
 }
 
 // Swarm status command - monitor running swarms
