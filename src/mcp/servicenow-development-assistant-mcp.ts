@@ -566,12 +566,15 @@ export class ServiceNowDevelopmentAssistantMCP {
       }
       
       // 4. Index results for future use (only if we have results)
+      // Skip indexing - causes timeouts
+      /*
       if (liveResults && liveResults.length > 0) {
         this.logger.info('Indexing found artifacts for future use...');
         for (const result of liveResults) {
           await this.intelligentlyIndex(result);
         }
       }
+      */
 
       const instanceInfo = await mcpAuth.getInstanceInfo();
       const resultText = this.formatResults(liveResults);
@@ -661,11 +664,28 @@ export class ServiceNowDevelopmentAssistantMCP {
       // Fetch complete artifact from ServiceNow
       const artifact = await this.client.getRecord(args.table, args.sys_id);
       
+      // Skip indexing - causes timeouts
+      /*
       // Perform intelligent indexing
       const indexedArtifact = await this.intelligentlyIndex(artifact);
       
       // Store in memory
       await this.storeInMemory(indexedArtifact);
+      */
+      
+      // Create minimal indexed artifact for response
+      const indexedArtifact = {
+        meta: {
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title || 'Unknown',
+          type: artifact.sys_class_name || 'unknown',
+        },
+        claudeSummary: `${artifact.name || artifact.title} is a ${artifact.sys_class_name || 'artifact'} in ServiceNow.`,
+        structure: {},
+        context: {},
+        relationships: [],
+        modificationPoints: []
+      };
 
       return {
         content: [
@@ -2271,9 +2291,15 @@ export class ServiceNowDevelopmentAssistantMCP {
   }
 
   private async updateMemoryIndex(artifact: any, modification: any) {
+    // Skip memory indexing - causes timeouts
+    /*
     // Update the memory index with the changes
     const indexed = await this.intelligentlyIndex(artifact);
     await this.storeInMemory(indexed);
+    */
+    
+    // TODO: Implement faster indexing method
+    this.logger.info('Memory indexing skipped to prevent timeouts');
   }
 
   private getArtifactUrl(artifact: any): string {
