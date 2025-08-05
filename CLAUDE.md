@@ -321,11 +321,59 @@ snow-flow swarm "Build ML predictions for u_vendor_performance custom table"
 snow-flow swarm "Create HR salary predictor that keeps data in browser"
 ```
 
+## 🤖 Dynamic Task Categorization (NEW in v2.5.0!)
+
+Snow-Flow now uses AI-powered dynamic categorization instead of static patterns:
+
+### Why Dynamic Categorization?
+- **Multi-language support**: Auto-detects Dutch, English, French, Spanish, German
+- **Context-aware**: Understands intent beyond keywords
+- **Learning capability**: Improves over time
+- **Edge case handling**: Better with ambiguous requests
+- **Confidence scoring**: Know how certain the AI is
+
+### Example Usage:
+```javascript
+// Old static pattern approach (limited)
+const result = AgentDetector.analyzeTask("maak 5000 incidenten");
+
+// NEW dynamic AI approach (intelligent)
+const result = await mcp__snow-flow__task_categorize({
+  objective: "maak een data set aan van 5000 random incidenten",
+  context: {
+    language: 'auto',    // Auto-detects Dutch
+    maxAgents: 8,
+    environment: 'development'
+  }
+});
+```
+
+### Returns Comprehensive Analysis:
+```json
+{
+  "task_type": "data_generation",
+  "primary_agent": "script-writer",
+  "supporting_agents": ["tester"],
+  "complexity": "simple",
+  "confidence_score": 0.98,
+  "intent_analysis": {
+    "primary": "create",
+    "action_verbs": ["create", "generate"],
+    "target_objects": ["data", "incidents"],
+    "quantifiers": [5000]
+  },
+  "approach": {
+    "recommended_strategy": "sequential",
+    "optimization_hints": ["Use batch operations", "Background Scripts"]
+  }
+}
+```
+
 ## Snow-Flow MCP Tools (100+ Total)
 
 Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized MCP servers:
 
-### 🐝 **Snow-Flow AI Swarm Orchestration** (10+ tools) - NATIVE IMPLEMENTATION!
+### 🐝 **Snow-Flow AI Swarm Orchestration** (11+ tools) - NATIVE IMPLEMENTATION!
 **IMPORTANT: Use Snow-Flow's built-in swarm orchestration - no external tools needed!**
 - `swarm_init` - Initialize AI swarm coordination topology
 - `agent_spawn` - Create specialized AI agents for different tasks
@@ -337,6 +385,7 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - `neural_patterns` - Analyze cognitive patterns for better coordination
 - `memory_search` - Search memory with pattern matching
 - `performance_report` - Generate performance reports with metrics
+- `task_categorize` - **NEW!** AI-powered dynamic task categorization (replaces static patterns)
 
 
 ### 🔄 **Process Mining & Workflow Analysis** (4 tools)

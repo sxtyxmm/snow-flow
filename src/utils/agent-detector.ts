@@ -1,6 +1,9 @@
 /**
  * Intelligent Agent Detection System
  * Dynamically determines which agents to spawn based on task analysis
+ * 
+ * NOTE: This system now integrates with the Snow-Flow MCP task_categorize tool
+ * for dynamic AI-based categorization instead of static patterns.
  */
 
 export interface AgentCapability {
@@ -19,9 +22,89 @@ export interface TaskAnalysis {
   requiresApplication: boolean;
   taskType: string;
   serviceNowArtifacts: string[];
+  // New fields from MCP integration
+  confidence?: number;
+  neuralConfidence?: number;
+  intentAnalysis?: {
+    primary: string;
+    secondary: string[];
+    actionVerbs: string[];
+    targetObjects: string[];
+    quantifiers: number[];
+  };
+  approach?: {
+    recommendedStrategy: string;
+    executionMode: string;
+    parallelOpportunities: string[];
+    riskFactors: string[];
+    optimizationHints: string[];
+  };
 }
 
 export class AgentDetector {
+  // MCP integration for dynamic categorization
+  private static mcpClient: any = null;
+  
+  /**
+   * Set the MCP client for dynamic categorization
+   */
+  static setMCPClient(client: any) {
+    this.mcpClient = client;
+  }
+
+  /**
+   * Analyze task using MCP dynamic categorization or fallback to static patterns
+   */
+  static async analyzeTaskDynamic(objective: string, userMaxAgents?: number): Promise<TaskAnalysis> {
+    // Try to use MCP task_categorize first
+    if (this.mcpClient) {
+      try {
+        const response = await this.mcpClient.callTool({
+          name: 'task_categorize',
+          arguments: {
+            objective,
+            context: {
+              language: 'auto',
+              maxAgents: userMaxAgents || 8,
+              environment: 'development',
+            },
+          },
+        });
+
+        if (response && response.content && response.content[0]) {
+          const result = JSON.parse(response.content[0].text);
+          
+          // Map MCP response to TaskAnalysis interface
+          return {
+            primaryAgent: result.categorization.primary_agent,
+            supportingAgents: result.categorization.supporting_agents,
+            complexity: result.categorization.complexity,
+            estimatedAgentCount: result.categorization.estimated_agent_count,
+            requiresUpdateSet: result.categorization.requires_update_set,
+            requiresApplication: result.categorization.requires_application,
+            taskType: result.categorization.task_type,
+            serviceNowArtifacts: result.categorization.service_now_artifacts,
+            confidence: result.categorization.confidence_score,
+            neuralConfidence: result.metadata.neural_confidence,
+            intentAnalysis: result.intent_analysis,
+            approach: {
+              recommendedStrategy: result.approach.recommended_strategy,
+              executionMode: result.approach.execution_mode,
+              parallelOpportunities: result.approach.parallel_opportunities,
+              riskFactors: result.approach.risk_factors,
+              optimizationHints: result.approach.optimization_hints,
+            },
+          };
+        }
+      } catch (error) {
+        console.warn('MCP task_categorize failed, falling back to static patterns:', error);
+      }
+    }
+    
+    // Fallback to static analysis
+    return this.analyzeTask(objective, userMaxAgents);
+  }
+
   private static readonly AGENT_PATTERNS = {
     // Development agents
     architect: {
