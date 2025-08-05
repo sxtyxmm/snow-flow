@@ -149,6 +149,63 @@ export class AgentDetector {
     const lowerObjective = objective.toLowerCase();
     const words = lowerObjective.split(/\s+/);
     
+    // Check for data generation FIRST - before any other analysis
+    const dataGenerationPatterns = [
+      // Pattern for "create/make X incidents/changes" with flexible word order
+      /\b(create|generate|make|maak|genereer|aanmaken)\b.*\b\d+\b.*(incident|change|request|problem|task|record|item)/i,
+      // Pattern for "data set" with numbers anywhere
+      /\bdata\s*set\b.*\b\d{3,}/i,  // data set with 3+ digit numbers
+      // Pattern for various test/mock/sample data keywords
+      /\b(test\s+data|mock\s+data|sample\s+data|training\s+data)\b/i,
+      // Pattern for populate/seed/fill operations
+      /\b(populate|seed|fill)\s+(with\s+)?(test|sample|random|mock)\s+(data|incident|change|record)/i,
+      // Pattern for seed database with numbers
+      /\b(seed|populate|fill)\s+(database|db|table)\s+with\s+\d+/i,
+      // Pattern for ML training data
+      /\b(ML|machine\s+learning|training)\b.*\bdata/i,
+      // Pattern for random/test with large numbers
+      /\b(random|test|mock|sample)\b.*\b\d{3,}\b.*(incident|change|request|problem)/i,
+      // Pattern for Dutch data set creation
+      /\bdata\s*set\s+(aan\s+)?van\s+\d+/i
+    ];
+    
+    const isDataGeneration = dataGenerationPatterns.some(pattern => pattern.test(objective));
+    if (isDataGeneration) {
+      return {
+        primaryAgent: 'script-writer',
+        supportingAgents: ['tester'], // Minimal support
+        complexity: 'simple' as const,
+        estimatedAgentCount: 2,
+        requiresUpdateSet: false, // Usually no update set needed for data generation
+        requiresApplication: false,
+        taskType: 'data_generation',
+        serviceNowArtifacts: ['script']
+      };
+    }
+    
+    // Check for simple operations
+    const simpleOperationPatterns = [
+      /\b(update|change|modify|delete|remove)\s+(the\s+)?(field|record|value|property)\b/i,
+      /\b(wijzig|verander|verwijder|pas\s+aan)\s+(het\s+)?(veld|record|waarde)\b/i
+    ];
+    
+    const isSimpleOperation = simpleOperationPatterns.some(pattern => pattern.test(objective));
+    if (isSimpleOperation) {
+      return {
+        primaryAgent: 'script-writer',
+        supportingAgents: ['tester'],
+        complexity: 'simple' as const,
+        estimatedAgentCount: 2,
+        requiresUpdateSet: false,
+        requiresApplication: false,
+        taskType: 'simple_operation',
+        serviceNowArtifacts: ['script']
+      };
+    }
+    
+    // Determine task type for other cases
+    const taskType = this.determineTaskType(lowerObjective, this.detectServiceNowArtifacts(lowerObjective));
+    
     // Detect agent capabilities
     const agentCapabilities = this.detectAgentCapabilities(lowerObjective);
     
@@ -169,9 +226,6 @@ export class AgentDetector {
     
     // Determine if new Application is required
     const requiresApplication = this.requiresApplication(lowerObjective, serviceNowArtifacts);
-    
-    // Determine task type
-    const taskType = this.determineTaskType(lowerObjective, serviceNowArtifacts);
     
     // 🚀 NEW: Accurate agent count for parallel system
     const isDevelopmentTask = ['widget-creator', 'flow-builder', 'script-writer', 'app-architect'].includes(primaryAgent) ||
@@ -232,7 +286,8 @@ export class AgentDetector {
         'database_expert': 'app-architect',
         'coder': 'script-writer',
         'architect': 'app-architect',
-        'tester': 'tester'
+        'tester': 'tester',
+        'data_generator': 'script-writer'  // Data generation uses script-writer
       };
       return mapping[detectedType] || detectedType;
     };
@@ -453,6 +508,29 @@ export class AgentDetector {
   }
 
   private static determineTaskType(objective: string, artifacts: string[]): string {
+    const lowerObjective = objective.toLowerCase();
+    
+    // FIRST: Check for data generation requests
+    const dataGenerationPatterns = [
+      /\b(create|generate|make|maak)\s+\d+\s+(random\s+)?(incident|change|request|problem|task|record|item)/i,
+      /\b(genereer|aanmaken)\s+\d+\s+(willekeurige\s+)?(incident|change|request|problem|task|record|item)/i,
+      /\bdata\s*set\s*(van|of|with)\s*\d+/i,
+      /\b(test\s+data|mock\s+data|sample\s+data|training\s+data)\b/i,
+      /\b(populate|seed|fill)\s+(with\s+)?(test|sample|random)\s+data/i
+    ];
+    
+    const isDataGeneration = dataGenerationPatterns.some(pattern => pattern.test(objective));
+    if (isDataGeneration) return 'data_generation';
+    
+    // Check for simple operations (update, delete, modify single things)
+    const simpleOperationPatterns = [
+      /\b(update|change|modify|delete|remove)\s+(the\s+)?(field|record|value|property)\b/i,
+      /\b(wijzig|verander|verwijder|pas\s+aan)\s+(het\s+)?(veld|record|waarde)\b/i
+    ];
+    
+    const isSimpleOperation = simpleOperationPatterns.some(pattern => pattern.test(objective));
+    if (isSimpleOperation) return 'simple_operation';
+    
     // Determine based on detected artifacts and keywords
     // Check flow FIRST as it's often confused with widget when both are present
     if (artifacts.includes('flow') || artifacts.includes('workflow')) return 'flow_development';
@@ -468,7 +546,7 @@ export class AgentDetector {
       'create', 'build', 'implement', 'develop', 'make', 'generate', 
       'bouw', 'maak', 'schrijf', 'implementeer', 'ontwikkel', 'codeer'
     ];
-    const hasDevelopmentKeywords = developmentKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    const hasDevelopmentKeywords = developmentKeywords.some(keyword => lowerObjective.includes(keyword));
     
     if (hasDevelopmentKeywords) return 'general_development';
     
@@ -477,7 +555,7 @@ export class AgentDetector {
       'research', 'analyze', 'investigate', 'study', 'explore',
       'onderzoek', 'analyseer', 'bestudeer', 'ontdek'
     ];
-    const hasResearchKeywords = researchKeywords.some(keyword => objective.toLowerCase().includes(keyword));
+    const hasResearchKeywords = researchKeywords.some(keyword => lowerObjective.includes(keyword));
     
     if (hasResearchKeywords) return 'research_task';
     
