@@ -2345,53 +2345,38 @@ export class ServiceNowDevelopmentAssistantMCP {
         };
       }
       
-      // Format the response with relevant fields - limit size to prevent timeouts
-      const formattedArtifact: any = {
+      // Format the response with relevant fields
+      const formattedArtifact = {
         sys_id: artifact.sys_id,
         name: artifact.name || artifact.title || 'Unknown',
         table: args.table,
-        description: artifact.description || artifact.short_description || '',
-        active: artifact.active,
-        created_on: artifact.sys_created_on,
-        updated_on: artifact.sys_updated_on,
-        created_by: artifact.sys_created_by,
-        updated_by: artifact.sys_updated_by
+        ...artifact
       };
 
-      // Add artifact-specific fields based on table type
-      if (args.table === 'sys_script_include') {
-        formattedArtifact.api_name = artifact.api_name;
-        formattedArtifact.client_callable = artifact.client_callable;
-        formattedArtifact.script_preview = artifact.script ? 
-          artifact.script.substring(0, 500) + (artifact.script.length > 500 ? '...\n\n[Script truncated - ' + artifact.script.length + ' total characters]' : '') : 
-          'No script content';
-      } else if (args.table === 'sp_widget') {
-        formattedArtifact.template_preview = artifact.template ? 
-          artifact.template.substring(0, 300) + (artifact.template.length > 300 ? '...' : '') : 
-          'No template';
-        formattedArtifact.server_script_preview = artifact.server_script ? 
-          artifact.server_script.substring(0, 300) + (artifact.server_script.length > 300 ? '...' : '') : 
-          'No server script';
-        formattedArtifact.client_script_preview = artifact.client_script ? 
-          artifact.client_script.substring(0, 300) + (artifact.client_script.length > 300 ? '...' : '') : 
-          'No client script';
-        formattedArtifact.css_preview = artifact.css ? 
-          artifact.css.substring(0, 200) + (artifact.css.length > 200 ? '...' : '') : 
-          'No CSS';
-      }
-
-      // Store the full artifact in memory for later retrieval if needed
-      this.intelligentlyIndex(artifact).then(indexed => {
-        this.storeInMemory(indexed).catch(err => {
-          this.logger.warn('Failed to store artifact in memory:', err);
+      // Don't wait for memory indexing - do it in background
+      // This might be causing the timeout
+      setImmediate(() => {
+        this.intelligentlyIndex(artifact).then(indexed => {
+          this.storeInMemory(indexed).catch(err => {
+            this.logger.warn('Failed to store artifact in memory:', err);
+          });
         });
       });
+
+      // Check response size to avoid MCP runtime timeouts
+      const jsonString = JSON.stringify(formattedArtifact);
+      const sizeInKB = Buffer.byteLength(jsonString) / 1024;
+      
+      // If response is large, use compact format
+      const formattedJson = sizeInKB > 50 ? 
+        JSON.stringify(formattedArtifact) : // Compact for large responses
+        JSON.stringify(formattedArtifact, null, 2); // Pretty print for small responses
 
       return {
         content: [
           {
             type: 'text',
-            text: `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n\n**Key Fields:**\n${JSON.stringify(formattedArtifact, null, 2)}\n\n💡 **Tip:** Full artifact stored in memory. Use snow_analyze_artifact for detailed analysis.`,
+            text: `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n📏 Size: ${sizeInKB.toFixed(1)}KB\n\n**All Fields:**\n${formattedJson}`,
           },
         ],
       };
