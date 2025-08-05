@@ -1,135 +1,219 @@
 /**
- * ServiceNow Queen Memory System
- * Simple SQLite-based persistent storage for the hive-mind
+ * ServiceNow Queen Memory System - JSON-based implementation
+ * Simple JSON file storage for the hive-mind - no more SQLite permission issues!
  */
 
-import { Database } from 'better-sqlite3';
 import { QueenMemory, DeploymentPattern, Agent, ServiceNowArtifact } from './types';
 import * as path from 'path';
 import * as fs from 'fs';
 
+interface JSONStorage {
+  patterns: DeploymentPattern[];
+  artifacts: { [key: string]: ServiceNowArtifact };
+  learnings: { [key: string]: any };
+  context: { [key: string]: any };
+  taskHistory: TaskHistoryEntry[];
+}
+
+interface TaskHistoryEntry {
+  id: string;
+  objective: string;
+  type: string;
+  agentsUsed: string[];
+  success: boolean;
+  duration: number;
+  completedAt: string;
+}
+
 export class QueenMemorySystem {
-  private db: Database;
+  private memoryDir: string;
   private memory: QueenMemory;
-  private dbPath: string;
+  private storage: JSONStorage;
+  private saveDebounceTimer?: NodeJS.Timeout;
+  private readonly SAVE_DELAY = 1000; // Debounce saves by 1 second
 
   constructor(dbPath?: string) {
-    const memoryDir = path.join(process.cwd(), '.snow-flow', 'queen');
-    if (!fs.existsSync(memoryDir)) {
-      fs.mkdirSync(memoryDir, { recursive: true });
+    // Use same directory structure but with JSON files
+    this.memoryDir = path.dirname(dbPath || path.join(process.cwd(), '.snow-flow', 'queen', 'memory'));
+    
+    // Ensure directory exists
+    if (!fs.existsSync(this.memoryDir)) {
+      fs.mkdirSync(this.memoryDir, { recursive: true });
     }
 
-    this.dbPath = dbPath || path.join(memoryDir, 'queen-memory.db');
-    this.db = new (require('better-sqlite3'))(this.dbPath);
+    // Load or initialize storage
+    this.storage = this.loadStorage();
     
-    this.initializeDatabase();
-    this.memory = this.loadMemory();
+    // Convert storage to memory format
+    this.memory = this.convertStorageToMemory();
   }
 
-  private initializeDatabase(): void {
-    // Simple schema - snow-flow philosophy: keep it minimal
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS patterns (
-        id INTEGER PRIMARY KEY,
-        task_type TEXT NOT NULL,
-        success_rate REAL NOT NULL,
-        agent_sequence TEXT NOT NULL,
-        mcp_sequence TEXT NOT NULL,
-        avg_duration INTEGER NOT NULL,
-        last_used TEXT NOT NULL,
-        use_count INTEGER DEFAULT 0
-      );
-
-      CREATE TABLE IF NOT EXISTS artifacts (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        name TEXT NOT NULL,
-        sys_id TEXT,
-        config TEXT NOT NULL,
-        dependencies TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS learnings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        confidence REAL NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS context (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS task_history (
-        id TEXT PRIMARY KEY,
-        objective TEXT NOT NULL,
-        type TEXT NOT NULL,
-        agents_used TEXT NOT NULL,
-        success BOOLEAN NOT NULL,
-        duration INTEGER NOT NULL,
-        completed_at TEXT NOT NULL
-      );
-    `);
+  private getFilePath(filename: string): string {
+    return path.join(this.memoryDir, filename);
   }
 
-  private loadMemory(): QueenMemory {
-    const patterns = this.db.prepare('SELECT * FROM patterns ORDER BY success_rate DESC, use_count DESC').all()
-      .map((row: any) => ({
-        taskType: row.task_type,
-        successRate: row.success_rate,
-        agentSequence: JSON.parse(row.agent_sequence),
-        mcpSequence: JSON.parse(row.mcp_sequence),
-        avgDuration: row.avg_duration,
-        lastUsed: new Date(row.last_used)
-      }));
+  private loadStorage(): JSONStorage {
+    const files = {
+      patterns: this.getFilePath('patterns.json'),
+      artifacts: this.getFilePath('artifacts.json'),
+      learnings: this.getFilePath('learnings.json'),
+      context: this.getFilePath('context.json'),
+      taskHistory: this.getFilePath('task-history.json')
+    };
 
-    const artifacts = new Map();
-    this.db.prepare('SELECT * FROM artifacts').all()
-      .forEach((row: any) => {
-        artifacts.set(row.id, {
-          type: row.type,
-          name: row.name,
-          sys_id: row.sys_id,
-          config: JSON.parse(row.config),
-          dependencies: JSON.parse(row.dependencies)
+    const storage: JSONStorage = {
+      patterns: [],
+      artifacts: {},
+      learnings: {},
+      context: {},
+      taskHistory: []
+    };
+
+    // Load patterns
+    if (fs.existsSync(files.patterns)) {
+      try {
+        const data = fs.readFileSync(files.patterns, 'utf-8');
+        storage.patterns = JSON.parse(data);
+        // Convert date strings back to Date objects
+        storage.patterns.forEach(p => {
+          p.lastUsed = new Date(p.lastUsed);
         });
-      });
+      } catch (error) {
+        console.warn('⚠️ Could not load patterns.json:', error);
+      }
+    }
 
-    const learnings = new Map();
-    this.db.prepare('SELECT * FROM learnings').all()
-      .forEach((row: any) => {
-        learnings.set(row.key, row.value);
-      });
+    // Load artifacts
+    if (fs.existsSync(files.artifacts)) {
+      try {
+        const data = fs.readFileSync(files.artifacts, 'utf-8');
+        storage.artifacts = JSON.parse(data);
+      } catch (error) {
+        console.warn('⚠️ Could not load artifacts.json:', error);
+      }
+    }
+
+    // Load learnings
+    if (fs.existsSync(files.learnings)) {
+      try {
+        const data = fs.readFileSync(files.learnings, 'utf-8');
+        storage.learnings = JSON.parse(data);
+      } catch (error) {
+        console.warn('⚠️ Could not load learnings.json:', error);
+      }
+    }
+
+    // Load context
+    if (fs.existsSync(files.context)) {
+      try {
+        const data = fs.readFileSync(files.context, 'utf-8');
+        storage.context = JSON.parse(data);
+      } catch (error) {
+        console.warn('⚠️ Could not load context.json:', error);
+      }
+    }
+
+    // Load task history
+    if (fs.existsSync(files.taskHistory)) {
+      try {
+        const data = fs.readFileSync(files.taskHistory, 'utf-8');
+        storage.taskHistory = JSON.parse(data);
+      } catch (error) {
+        console.warn('⚠️ Could not load task-history.json:', error);
+      }
+    }
+
+    return storage;
+  }
+
+  private convertStorageToMemory(): QueenMemory {
+    const artifacts = new Map<string, ServiceNowArtifact>();
+    Object.entries(this.storage.artifacts).forEach(([key, value]) => {
+      artifacts.set(key, value);
+    });
+
+    const learnings = new Map<string, string>();
+    Object.entries(this.storage.learnings).forEach(([key, value]) => {
+      learnings.set(key, typeof value === 'string' ? value : JSON.stringify(value));
+    });
 
     return {
-      patterns,
+      patterns: this.storage.patterns,
       artifacts,
       agentHistory: new Map(),
       learnings
     };
   }
 
+  private scheduleSave(): void {
+    // Debounce saves to avoid excessive file writes
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
+
+    this.saveDebounceTimer = setTimeout(() => {
+      this.saveAll();
+    }, this.SAVE_DELAY);
+  }
+
+  private saveAll(): void {
+    // Save patterns
+    this.saveJSON('patterns.json', this.storage.patterns);
+
+    // Save artifacts
+    this.saveJSON('artifacts.json', this.storage.artifacts);
+
+    // Save learnings
+    this.saveJSON('learnings.json', this.storage.learnings);
+
+    // Save context
+    this.saveJSON('context.json', this.storage.context);
+
+    // Save task history
+    this.saveJSON('task-history.json', this.storage.taskHistory);
+  }
+
+  private saveJSON(filename: string, data: any): void {
+    const filepath = this.getFilePath(filename);
+    try {
+      // Write to temp file first for atomicity
+      const tempPath = filepath + '.tmp';
+      fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
+      
+      // Atomic rename
+      fs.renameSync(tempPath, filepath);
+    } catch (error) {
+      console.error(`❌ Failed to save ${filename}:`, error);
+    }
+  }
+
   // Store successful deployment pattern
   storePattern(pattern: DeploymentPattern): void {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO patterns 
-      (task_type, success_rate, agent_sequence, mcp_sequence, avg_duration, last_used, use_count)
-      VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT use_count FROM patterns WHERE task_type = ?) + 1, 1))
-    `);
+    // Update or add pattern
+    const existingIndex = this.storage.patterns.findIndex(p => p.taskType === pattern.taskType);
     
-    stmt.run(
-      pattern.taskType,
-      pattern.successRate,
-      JSON.stringify(pattern.agentSequence),
-      JSON.stringify(pattern.mcpSequence),
-      pattern.avgDuration,
-      pattern.lastUsed.toISOString(),
-      pattern.taskType
-    );
+    if (existingIndex >= 0) {
+      // Update existing pattern
+      const existing = this.storage.patterns[existingIndex];
+      existing.successRate = pattern.successRate;
+      existing.agentSequence = pattern.agentSequence;
+      existing.mcpSequence = pattern.mcpSequence;
+      existing.avgDuration = pattern.avgDuration;
+      existing.lastUsed = pattern.lastUsed;
+      existing.useCount = (existing.useCount || 0) + 1;
+    } else {
+      // Add new pattern
+      this.storage.patterns.push({
+        ...pattern,
+        useCount: 1
+      });
+    }
 
-    this.memory.patterns.push(pattern);
+    // Update memory
+    this.memory.patterns = this.storage.patterns;
+    
+    // Schedule save
+    this.scheduleSave();
   }
 
   // Get best pattern for task type
@@ -140,22 +224,13 @@ export class QueenMemorySystem {
   // Store artifact information
   storeArtifact(artifact: ServiceNowArtifact): void {
     const id = `${artifact.type}_${artifact.name}`;
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO artifacts (id, type, name, sys_id, config, dependencies, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
     
-    stmt.run(
-      id,
-      artifact.type,
-      artifact.name,
-      artifact.sys_id || null,
-      JSON.stringify(artifact.config),
-      JSON.stringify(artifact.dependencies),
-      new Date().toISOString()
-    );
-
+    // Store in both storage and memory
+    this.storage.artifacts[id] = artifact;
     this.memory.artifacts.set(id, artifact);
+    
+    // Schedule save
+    this.scheduleSave();
   }
 
   // Find similar artifacts
@@ -171,14 +246,20 @@ export class QueenMemorySystem {
 
   // Store learning from task execution
   storeLearning(key: string, value: any, confidence: number = 1.0): void {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO learnings (key, value, confidence, updated_at)
-      VALUES (?, ?, ?, ?)
-    `);
-    
     const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
-    stmt.run(key, valueStr, confidence, new Date().toISOString());
+    
+    // Store with metadata
+    this.storage.learnings[key] = {
+      value: valueStr,
+      confidence,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Update memory
     this.memory.learnings.set(key, valueStr);
+    
+    // Schedule save
+    this.scheduleSave();
   }
 
   // Get learning
@@ -200,45 +281,49 @@ export class QueenMemorySystem {
 
   // Record task completion for learning
   recordTaskCompletion(taskId: string, objective: string, type: string, agentsUsed: string[], success: boolean, duration: number): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO task_history (id, objective, type, agents_used, success, duration, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    stmt.run(
-      taskId,
+    const entry: TaskHistoryEntry = {
+      id: taskId,
       objective,
       type,
-      JSON.stringify(agentsUsed),
-      success ? 1 : 0, // Convert boolean to integer for SQLite
+      agentsUsed,
+      success,
       duration,
-      new Date().toISOString()
-    );
+      completedAt: new Date().toISOString()
+    };
+    
+    // Add to history
+    this.storage.taskHistory.push(entry);
+    
+    // Keep only last 1000 entries to prevent unbounded growth
+    if (this.storage.taskHistory.length > 1000) {
+      this.storage.taskHistory = this.storage.taskHistory.slice(-1000);
+    }
+    
+    // Schedule save
+    this.scheduleSave();
   }
 
   // Get success rate for task type
   getSuccessRate(taskType: string): number {
-    const result = this.db.prepare(`
-      SELECT 
-        COUNT(CASE WHEN success = 1 THEN 1 END) as successes,
-        COUNT(*) as total
-      FROM task_history 
-      WHERE type = ?
-    `).get(taskType) as { successes: number; total: number } | undefined;
-
-    if (result && result.total > 0) {
-      return result.successes / result.total;
+    const relevantTasks = this.storage.taskHistory.filter(t => t.type === taskType);
+    
+    if (relevantTasks.length === 0) {
+      return 0.5; // Default success rate
     }
-    return 0.5; // Default success rate
+    
+    const successes = relevantTasks.filter(t => t.success).length;
+    return successes / relevantTasks.length;
   }
 
   // Export memory for backup
   exportMemory(): string {
     return JSON.stringify({
-      patterns: this.memory.patterns,
-      artifacts: Array.from(this.memory.artifacts.entries()),
-      learnings: Array.from(this.memory.learnings.entries())
-    });
+      patterns: this.storage.patterns,
+      artifacts: Object.entries(this.storage.artifacts),
+      learnings: Object.entries(this.storage.learnings),
+      context: Object.entries(this.storage.context),
+      taskHistory: this.storage.taskHistory
+    }, null, 2);
   }
 
   // Import memory from backup
@@ -246,64 +331,48 @@ export class QueenMemorySystem {
     try {
       const data = JSON.parse(memoryData);
       
-      // Clear existing data
-      this.clearMemory();
-      
       // Import patterns
       if (data.patterns) {
-        data.patterns.forEach((pattern: any) => {
-          const stmt = this.db.prepare(`
-            INSERT OR REPLACE INTO patterns 
-            (task_type, success_rate, agent_sequence, mcp_sequence, avg_duration, last_used, use_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
-          
-          stmt.run(
-            pattern.taskType,
-            pattern.successRate,
-            JSON.stringify(pattern.agentSequence),
-            JSON.stringify(pattern.mcpSequence),
-            pattern.avgDuration,
-            pattern.lastUsed,
-            1
-          );
-        });
+        this.storage.patterns = data.patterns.map((p: any) => ({
+          ...p,
+          lastUsed: new Date(p.lastUsed)
+        }));
       }
       
       // Import artifacts
       if (data.artifacts) {
-        data.artifacts.forEach(([id, artifact]: [string, any]) => {
-          const stmt = this.db.prepare(`
-            INSERT OR REPLACE INTO artifacts (id, type, name, sys_id, config, dependencies, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
-          
-          stmt.run(
-            id,
-            artifact.type,
-            artifact.name,
-            artifact.sys_id || null,
-            JSON.stringify(artifact.config),
-            JSON.stringify(artifact.dependencies),
-            new Date().toISOString()
-          );
+        this.storage.artifacts = {};
+        data.artifacts.forEach(([key, value]: [string, any]) => {
+          this.storage.artifacts[key] = value;
         });
       }
       
       // Import learnings
       if (data.learnings) {
-        data.learnings.forEach(([key, value]: [string, string]) => {
-          const stmt = this.db.prepare(`
-            INSERT OR REPLACE INTO learnings (key, value, confidence, updated_at)
-            VALUES (?, ?, ?, ?)
-          `);
-          
-          stmt.run(key, value, 1.0, new Date().toISOString());
+        this.storage.learnings = {};
+        data.learnings.forEach(([key, value]: [string, any]) => {
+          this.storage.learnings[key] = value;
         });
       }
       
-      // Reload memory from database
-      this.memory = this.loadMemory();
+      // Import context
+      if (data.context) {
+        this.storage.context = {};
+        data.context.forEach(([key, value]: [string, any]) => {
+          this.storage.context[key] = value;
+        });
+      }
+      
+      // Import task history
+      if (data.taskHistory) {
+        this.storage.taskHistory = data.taskHistory;
+      }
+      
+      // Update memory from storage
+      this.memory = this.convertStorageToMemory();
+      
+      // Save all
+      this.saveAll();
       
     } catch (error) {
       throw new Error(`Failed to import memory: ${(error as Error).message}`);
@@ -312,34 +381,36 @@ export class QueenMemorySystem {
 
   // Clear all memory (reset learning)
   clearMemory(): void {
-    // Clear database tables
-    this.db.exec(`
-      DELETE FROM patterns;
-      DELETE FROM artifacts;
-      DELETE FROM learnings;
-      DELETE FROM task_history;
-    `);
+    // Reset storage
+    this.storage = {
+      patterns: [],
+      artifacts: {},
+      learnings: {},
+      context: {},
+      taskHistory: []
+    };
     
-    // Reset in-memory storage
+    // Reset memory
     this.memory = {
       patterns: [],
       artifacts: new Map(),
       agentHistory: new Map(),
       learnings: new Map()
     };
+    
+    // Save empty state
+    this.saveAll();
   }
 
   // Store data in context (key-value store)
   storeInContext(key: string, value: any): void {
-    const stmt = this.db.prepare('INSERT OR REPLACE INTO context (key, value) VALUES (?, ?)');
-    stmt.run(key, JSON.stringify(value));
+    this.storage.context[key] = value;
+    this.scheduleSave();
   }
 
   // Get data from context
   getFromContext(key: string): any {
-    const stmt = this.db.prepare('SELECT value FROM context WHERE key = ?');
-    const row = stmt.get(key) as any;
-    return row ? JSON.parse(row.value) : null;
+    return this.storage.context[key] || null;
   }
 
   // Store generic data (alias for storeInContext for compatibility)
@@ -352,14 +423,18 @@ export class QueenMemorySystem {
     return this.getFromContext(key);
   }
 
-  // Get database path
+  // Get database path (for compatibility)
   getDbPath(): string {
-    return this.dbPath;
+    return this.memoryDir;
   }
 
-  // Close database connection
+  // Close database connection (no-op for JSON, but kept for compatibility)
   close(): void {
-    this.db.close();
+    // Save any pending changes
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveAll();
+    }
   }
 
   // Additional methods needed by other components
@@ -368,23 +443,16 @@ export class QueenMemorySystem {
    * Find similar patterns for a given task type
    */
   findSimilarPatterns(taskType: string): DeploymentPattern[] {
-    const stmt = this.db.prepare(`
-      SELECT * FROM patterns 
-      WHERE task_type LIKE ? 
-      ORDER BY success_rate DESC, use_count DESC 
-      LIMIT 5
-    `);
-    
-    const rows = stmt.all(`%${taskType}%`) as any[];
-    
-    return rows.map(row => ({
-      taskType: row.task_type,
-      successRate: row.success_rate,
-      agentSequence: JSON.parse(row.agent_sequence),
-      mcpSequence: JSON.parse(row.mcp_sequence),
-      avgDuration: row.avg_duration,
-      lastUsed: new Date(row.last_used)
-    }));
+    return this.storage.patterns
+      .filter(p => p.taskType.toLowerCase().includes(taskType.toLowerCase()))
+      .sort((a, b) => {
+        // Sort by success rate first, then by use count
+        if (b.successRate !== a.successRate) {
+          return b.successRate - a.successRate;
+        }
+        return (b.useCount || 0) - (a.useCount || 0);
+      })
+      .slice(0, 5);
   }
 
   /**
@@ -409,18 +477,24 @@ export class QueenMemorySystem {
    * Get memory statistics
    */
   getStats(): any {
-    const patternCount = this.db.prepare('SELECT COUNT(*) as count FROM patterns').get() as any;
-    const artifactCount = this.db.prepare('SELECT COUNT(*) as count FROM artifacts').get() as any;
-    const taskCount = this.db.prepare('SELECT COUNT(*) as count FROM task_history').get() as any;
-    const learningCount = this.db.prepare('SELECT COUNT(*) as count FROM learnings').get() as any;
-
-    return {
-      patterns: patternCount.count,
-      artifacts: artifactCount.count,
-      tasks: taskCount.count,
-      learnings: learningCount.count,
-      databaseSize: fs.statSync(this.dbPath).size
+    const stats = {
+      patterns: this.storage.patterns.length,
+      artifacts: Object.keys(this.storage.artifacts).length,
+      tasks: this.storage.taskHistory.length,
+      learnings: Object.keys(this.storage.learnings).length,
+      databaseSize: 0
     };
+
+    // Calculate total file sizes
+    const files = ['patterns.json', 'artifacts.json', 'learnings.json', 'context.json', 'task-history.json'];
+    for (const file of files) {
+      const filepath = this.getFilePath(file);
+      if (fs.existsSync(filepath)) {
+        stats.databaseSize += fs.statSync(filepath).size;
+      }
+    }
+
+    return stats;
   }
 
   /**
@@ -441,16 +515,7 @@ export class QueenMemorySystem {
    * Store failure pattern for learning
    */
   storeFailurePattern(pattern: any): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO learnings (key, value, confidence, updated_at) 
-      VALUES (?, ?, ?, ?)
-    `);
-    
-    stmt.run(
-      `failure_${Date.now()}`,
-      JSON.stringify(pattern),
-      0.8,
-      new Date().toISOString()
-    );
+    const key = `failure_${Date.now()}`;
+    this.storeLearning(key, pattern, 0.8);
   }
 }

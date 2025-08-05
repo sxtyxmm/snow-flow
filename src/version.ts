@@ -11,6 +11,15 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.6.6': [
+      '🚀 JSON-BASED QUEEN MEMORY: Replaced SQLite with simple JSON file storage',
+      '✅ NO MORE PERMISSION ERRORS: Fixed SQLITE_READONLY_DBMOVED database issues permanently',
+      '📁 TRANSPARENT STORAGE: All memory data in readable JSON files (.snow-flow/queen/*.json)',
+      '🔧 ATOMIC SAVES: Safe file writes with temp file + rename for data integrity',
+      '💾 DEBOUNCED PERSISTENCE: 1-second delay prevents excessive file writes',
+      '🧹 CLEANER SYSTEM: Removed better-sqlite3 dependency from Queen memory',
+      '📊 BACKWARDS COMPATIBLE: Same API, just simpler storage backend',
+    ],
     '1.4.39': [
       '🧹 NEO4J REMOVAL: Removed Neo4j graph memory from available tools (implementation preserved)',
       '✅ NEW TOOLS: Implemented neural_status and token_usage in snow-flow-mcp',

@@ -52,6 +52,7 @@ export interface DeploymentPattern {
   lastUsed: Date;
   decision?: string;
   outcome?: string;
+  useCount?: number;
 }
 
 export interface QueenMemory {
