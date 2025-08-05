@@ -2091,7 +2091,7 @@ program
         
         // Get all session keys from learnings
         const sessionKeys: string[] = [];
-        // Note: This is a simplified approach - in production, you'd query the database directly
+        // Note: This is a simplified approach - in production, you'd query the memory files directly
         cliLogger.info('💡 Use: snow-flow swarm-status <sessionId> to see details');
         cliLogger.info('💡 Session IDs are displayed when you start a swarm\n');
         return;
@@ -2600,7 +2600,7 @@ async function createBasicConfig(targetDir: string) {
     created: new Date().toISOString(),
     features: {
       swarmCoordination: true,
-      persistentMemory: true,
+      persistentMemory: true, // Queen uses JSON files, MCP tools use in-memory
       serviceNowIntegration: true,
       sparcModes: true
     }
@@ -2611,7 +2611,7 @@ async function createBasicConfig(targetDir: string) {
     topology: 'hierarchical',
     maxAgents: 8,
     memory: {
-      database: '.swarm/memory.db',
+      path: '.swarm/memory',
       namespace: 'snow-flow'
     }
   };

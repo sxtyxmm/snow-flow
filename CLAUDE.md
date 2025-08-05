@@ -521,7 +521,7 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - `agent_spawn` - Create specialized AI agents for different tasks
 - `task_orchestrate` - Orchestrate complex task workflows in parallel
 - `swarm_status` - Monitor swarm health and performance  
-- `memory_usage` - Persistent memory across sessions with namespacing
+- `memory_usage` - In-memory storage with namespacing (not persistent across restarts)
 - `neural_status` - Neural network pattern effectiveness
 - `neural_train` - Train neural patterns with WASM SIMD acceleration
 - `neural_patterns` - Analyze cognitive patterns for better coordination
@@ -717,7 +717,7 @@ const agents = await mcp__snow-flow__agent_discover({
 ## Important Notes
 - **Use TodoWrite extensively** for all complex task coordination
 - **Leverage Task tool** for parallel agent execution on independent work
-- **Store all important information in Memory** for cross-agent coordination
+- **Store all important information in Memory** for cross-agent coordination (MCP: in-memory, Queen: JSON files)
 - **Use batch file operations** whenever reading/writing multiple files
 - **All swarm operations include automatic batch tool coordination**
 - **Monitor progress** with TodoRead during long-running operations

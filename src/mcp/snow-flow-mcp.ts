@@ -224,7 +224,7 @@ class SnowFlowMCPServer {
         },
         {
           name: 'memory_usage',
-          description: 'Store/retrieve persistent memory with TTL and namespacing',
+          description: 'Store/retrieve in-memory data with TTL and namespacing (not persistent across restarts)',
           inputSchema: {
             type: 'object',
             properties: {
