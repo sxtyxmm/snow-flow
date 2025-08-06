@@ -3,6 +3,13 @@
  * Real neural networks and machine learning for ServiceNow operations
  */
 
+// CRITICAL FIX: Add performance polyfill for TensorFlow.js in Node.js environment
+// This fixes the "Cannot read properties of undefined (reading 'tick')" error
+if (typeof global !== 'undefined' && !global.performance) {
+  const { performance } = require('perf_hooks');
+  global.performance = performance;
+}
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -860,14 +867,21 @@ export class ServiceNowMachineLearningMCP {
 
       this.logger.info('Training incident classifier...');
       
-      // Train model
+      // Train model with improved error handling
       const history = await model.fit(features, labels, {
         epochs,
         validationSplit: validation_split,
         batchSize: 32,
         callbacks: {
           onEpochEnd: (epoch, logs) => {
-            this.logger.info(`Epoch ${epoch + 1}: loss = ${logs?.loss?.toFixed(4)}, accuracy = ${logs?.acc?.toFixed(4)}`);
+            try {
+              const loss = logs?.loss ? logs.loss.toFixed(4) : 'N/A';
+              const accuracy = logs?.acc ? logs.acc.toFixed(4) : 'N/A';
+              this.logger.info(`Epoch ${epoch + 1}: loss = ${loss}, accuracy = ${accuracy}`);
+            } catch (e) {
+              // Ignore callback errors to prevent training interruption
+              this.logger.warn(`Callback error in epoch ${epoch + 1}:`, e);
+            }
           }
         }
       });
@@ -955,15 +969,20 @@ export class ServiceNowMachineLearningMCP {
         metrics: ['accuracy']
       });
 
-      // Train
+      // Train with improved error handling
       const history = await model.fit(features, labels, {
         epochs: 100,
         validationSplit: 0.2,
         batchSize: 16,
         callbacks: {
           onEpochEnd: (epoch, logs) => {
-            if (epoch % 10 === 0) {
-              this.logger.info(`Epoch ${epoch}: accuracy = ${logs?.acc?.toFixed(4)}`);
+            try {
+              if (epoch % 10 === 0) {
+                const accuracy = logs?.acc ? logs.acc.toFixed(4) : 'N/A';
+                this.logger.info(`Epoch ${epoch}: accuracy = ${accuracy}`);
+              }
+            } catch (e) {
+              this.logger.warn(`Callback error in epoch ${epoch}:`, e);
             }
           }
         }
@@ -1065,15 +1084,20 @@ export class ServiceNowMachineLearningMCP {
         loss: 'meanSquaredError'
       });
 
-      // Train
+      // Train with improved error handling
       await autoencoder.fit(normalized, normalized, {
         epochs: 100,
         batchSize: 32,
         validationSplit: 0.1,
         callbacks: {
           onEpochEnd: (epoch, logs) => {
-            if (epoch % 20 === 0) {
-              this.logger.info(`Anomaly detector epoch ${epoch}: loss = ${logs?.loss?.toFixed(6)}`);
+            try {
+              if (epoch % 20 === 0) {
+                const loss = logs?.loss ? logs.loss.toFixed(6) : 'N/A';
+                this.logger.info(`Anomaly detector epoch ${epoch}: loss = ${loss}`);
+              }
+            } catch (e) {
+              this.logger.warn(`Callback error in epoch ${epoch}:`, e);
             }
           }
         }
@@ -2041,15 +2065,20 @@ export class ServiceNowMachineLearningMCP {
         featureHasher
       );
       
-      // Train on batch
+      // Train on batch with improved error handling
       await model.fit(features, labels, {
         epochs: Math.ceil(epochs / totalBatches), // Distribute epochs across batches
         batchSize: 32,
         verbose: 0,
         callbacks: {
           onBatchEnd: async (batch, logs) => {
-            if (batch % 10 === 0) {
-              this.logger.info(`Batch ${batch}: loss=${logs?.loss?.toFixed(4)}`);
+            try {
+              if (batch % 10 === 0 && logs?.loss) {
+                this.logger.info(`Batch ${batch}: loss=${logs.loss.toFixed(4)}`);
+              }
+            } catch (e) {
+              // Ignore callback errors to prevent training interruption
+              this.logger.warn(`Callback error in batch ${batch}:`, e);
             }
           }
         }
