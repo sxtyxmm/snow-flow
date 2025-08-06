@@ -368,12 +368,6 @@ export class MCPServerManager extends EventEmitter {
     await Promise.all(promises);
   }
 
-  /**
-   * Get status of all servers
-   */
-  getServerStatus(): MCPServer[] {
-    return Array.from(this.servers.values());
-  }
 
   /**
    * Get status of a specific server
@@ -440,6 +434,38 @@ export class MCPServerManager extends EventEmitter {
     }));
 
     await this.saveConfiguration(configs);
+  }
+
+  /**
+   * Get list of all servers (for monitoring/status display)
+   */
+  getServerList(): MCPServer[] {
+    return Array.from(this.servers.values());
+  }
+
+  /**
+   * Get server status by name
+   */
+  getServerStatus(name: string): MCPServer | undefined {
+    return this.servers.get(name);
+  }
+
+  /**
+   * Get overall system status
+   */
+  getSystemStatus() {
+    const servers = this.getServerList();
+    const running = servers.filter(s => s.status === 'running').length;
+    const total = servers.length;
+    
+    return {
+      total,
+      running,
+      stopped: servers.filter(s => s.status === 'stopped').length,
+      starting: servers.filter(s => s.status === 'starting').length,
+      error: servers.filter(s => s.status === 'error').length,
+      health: running === total ? 'healthy' : running > 0 ? 'partial' : 'down'
+    };
   }
 
   /**

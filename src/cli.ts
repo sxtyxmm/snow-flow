@@ -2493,7 +2493,7 @@ program
           console.log('📡 Starting all ServiceNow MCP servers...');
           await manager.startAllServers();
           
-          const status = manager.getServerStatus();
+          const status = manager.getServerList();
           const running = status.filter((s: any) => s.status === 'running').length;
           const total = status.length;
           
@@ -4214,7 +4214,7 @@ async function handleMCPStart(manager: any, options: any): Promise<void> {
     console.log('📡 Starting all configured MCP servers...');
     await manager.startAllServers();
     
-    const status = manager.getServerStatus();
+    const status = manager.getServerList();
     const running = status.filter((s: any) => s.status === 'running').length;
     const total = status.length;
     
@@ -4266,13 +4266,13 @@ async function handleMCPRestart(manager: any, options: any): Promise<void> {
     await manager.startAllServers();
     
     const running = manager.getRunningServersCount();
-    const total = manager.getServerStatus().length;
+    const total = manager.getServerList().length;
     console.log(`✅ Restarted ${running}/${total} MCP servers`);
   }
 }
 
 async function handleMCPStatus(manager: any, options: any): Promise<void> {
-  const servers = manager.getServerStatus();
+  const servers = manager.getServerList();
   
   console.log('\n📊 MCP Server Status');
   console.log('═'.repeat(80));
@@ -4352,7 +4352,7 @@ async function handleMCPLogs(manager: any, options: any): Promise<void> {
 }
 
 async function handleMCPList(manager: any, options: any): Promise<void> {
-  const servers = manager.getServerStatus();
+  const servers = manager.getServerList();
   
   console.log('\n📋 Configured MCP Servers');
   console.log('═'.repeat(80));

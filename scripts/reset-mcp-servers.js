@@ -168,25 +168,45 @@ async function verifyClean() {
 
 // Restart MCP servers if requested
 async function restartServers() {
-  logStep('4/4', 'Restarting MCP servers...');
+  logStep('4/4', 'Restarting MCP servers using proper MCPServerManager...');
   
-  const serverPath = path.join(__dirname, '..', 'dist', 'mcp', 'start-all-mcp-servers.js');
+  const properStarterPath = path.join(__dirname, 'start-mcp-proper.js');
   
-  if (!fs.existsSync(serverPath)) {
-    log('  ⚠ MCP server starter not found. Run "npm run build" first.', 'yellow');
+  if (!fs.existsSync(properStarterPath)) {
+    log('  ⚠ Proper MCP starter not found. Run "npm run build" first.', 'yellow');
     return;
   }
   
-  log('  Starting MCP servers in background...', 'cyan');
+  log('  Starting MCP servers with singleton protection...', 'cyan');
   
-  const child = spawn('node', [serverPath], {
-    detached: true,
-    stdio: 'ignore'
-  });
-  
-  child.unref();
-  
-  log('  ✓ MCP servers starting...', 'green');
+  try {
+    // Use the proper MCPServerManager approach
+    const child = spawn('node', [properStarterPath], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    
+    // Log startup messages
+    child.stdout?.on('data', (data) => {
+      log(`  ${data.toString().trim()}`, 'green');
+    });
+    
+    child.stderr?.on('data', (data) => {
+      log(`  Error: ${data.toString().trim()}`, 'red');
+    });
+    
+    child.unref();
+    
+    // Give it time to start
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    log('  ✅ MCP servers started with proper management!', 'green');
+    log('  💡 No more duplicate servers or memory issues!', 'cyan');
+    
+  } catch (error) {
+    log(`  ❌ Failed to start MCP servers: ${error.message}`, 'red');
+    log('  🔧 Try: npm run cleanup-mcp', 'yellow');
+  }
   log('\n  To view logs, check ~/.snow-flow/logs/', 'cyan');
 }
 

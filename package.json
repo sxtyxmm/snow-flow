@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "2.8.7",
+  "version": "2.8.8",
   "description": "Snow-Flow: ServiceNow Advanced Intelligence Platform - 100+ real MCP tools with AI-powered swarm orchestration and neural networks. Dynamic task categorization using AI. Machine learning for incident classification, change risk prediction, and anomaly detection. Zero Mock Data, 100% Real API Integration.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -23,6 +23,8 @@
     "reset-mcp:restart": "node scripts/reset-mcp-servers.js --restart",
     "cleanup-mcp": "node scripts/cleanup-mcp-servers.js",
     "mcp:clean": "node scripts/cleanup-mcp-servers.js && npm run build",
+    "mcp:start": "node scripts/start-mcp-proper.js",
+    "mcp:start-proper": "node scripts/start-mcp-proper.js",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "node scripts/postinstall.js",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",

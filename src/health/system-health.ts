@@ -327,7 +327,7 @@ export class SystemHealth extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const serverStatuses = this.mcpManager.getServerStatus();
+      const serverStatuses = this.mcpManager.getServerList();
       const totalServers = serverStatuses.length;
       const healthyServers = serverStatuses.filter(s => s.status === 'running').length;
       const unhealthyServers = serverStatuses.filter(s => s.status === 'error').length;
