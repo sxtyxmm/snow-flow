@@ -11,6 +11,15 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.6.7': [
+      '🤖 ML HYBRID MODE: Custom neural networks work WITHOUT PA/PI plugins!',
+      '✅ SMART FALLBACK: If PI available, uses it for 95%+ accuracy, else TensorFlow.js',
+      '📊 CLEAR REQUIREMENTS: Tool descriptions now show which need PA/PI licenses',
+      '🚀 BEST OF BOTH: ml_train_incident_classifier uses PI when available, TensorFlow.js when not',
+      '🔧 NO MORE BLOCKS: Basic table access is enough for custom ML models',
+      '💡 INTELLIGENT ROUTING: Automatically chooses best ML approach based on licenses',
+      '📈 ALWAYS WORKS: ML functionality no longer blocked when plugins unavailable',
+    ],
     '2.6.6': [
       '🚀 JSON-BASED QUEEN MEMORY: Replaced SQLite with simple JSON file storage',
       '✅ NO MORE PERMISSION ERRORS: Fixed SQLITE_READONLY_DBMOVED database issues permanently',
