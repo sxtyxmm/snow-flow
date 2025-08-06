@@ -1198,6 +1198,38 @@ export class ServiceNowClient {
   }
 
   /**
+   * Search records with offset for pagination/streaming
+   */
+  async searchRecordsWithOffset(table: string, query: string, limit: number = 10, offset: number = 0): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      await this.ensureAuthenticated();
+      
+      const response = await this.client.get(
+        `${this.getBaseUrl()}/api/now/table/${table}`,
+        {
+          params: {
+            sysparm_query: query,
+            sysparm_limit: limit,
+            sysparm_offset: offset
+          }
+        }
+      );
+      return {
+        success: true,
+        data: {
+          result: response.data.result || []
+        }
+      };
+    } catch (error) {
+      console.error(`Failed to search records in ${table} with offset ${offset}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
    * Create a record in any ServiceNow table
    */
   async createRecord(table: string, data: any): Promise<ServiceNowAPIResponse<any>> {

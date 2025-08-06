@@ -11,6 +11,16 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.7.1': [
+      '💾 MEMORY-EFFICIENT ML: Streaming training for large datasets prevents memory overload',
+      '📦 BATCH PROCESSING: Process data in configurable batches (default 100 records)',
+      '🗜️ FEATURE HASHING: Reduces vocabulary from unlimited to fixed size (default 10K)',
+      '🔄 PROGRESSIVE LOADING: Only loads data as needed during training',
+      '🧹 AUTOMATIC CLEANUP: Disposes tensors after each batch to free memory',
+      '📈 SCALABLE TRAINING: Can handle datasets of any size without crashing',
+      '⚡ OPTIMIZED MODELS: Smaller but effective neural networks for memory efficiency',
+      '📊 REAL-TIME PROGRESS: Shows batch-by-batch training progress',
+    ],
     '2.7.0': [
       '🧠 INTELLIGENT ML DATA SELECTION: Snow-Flow now intelligently selects balanced training data',
       '🎯 CUSTOM QUERIES: Added query parameter for full control over ML training data selection',

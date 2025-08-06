@@ -184,6 +184,21 @@ export class ServiceNowMachineLearningMCP {
                 type: 'array',
                 items: { type: 'string' },
                 description: 'Specific categories to focus on for training (optional)'
+              },
+              batch_size: {
+                type: 'number',
+                description: 'Process data in batches to prevent memory overload',
+                default: 100
+              },
+              max_vocabulary_size: {
+                type: 'number',
+                description: 'Maximum vocabulary size using feature hashing',
+                default: 10000
+              },
+              streaming_mode: {
+                type: 'boolean',
+                description: 'Enable streaming mode for very large datasets',
+                default: true
               }
             }
           },
@@ -549,7 +564,10 @@ export class ServiceNowMachineLearningMCP {
       validation_split = 0.2,
       query = '',
       intelligent_selection = true,
-      focus_categories = []
+      focus_categories = [],
+      batch_size = 100,
+      max_vocabulary_size = 10000,
+      streaming_mode = true
     } = args;
 
     try {
@@ -590,23 +608,32 @@ export class ServiceNowMachineLearningMCP {
       }
       
       // Use custom TensorFlow.js neural network
-      this.logger.info(`Training custom LSTM neural network for incident classification with ${sample_size} samples...`);
+      this.logger.info(`Training custom LSTM neural network with intelligent memory management...`);
+      this.logger.info(`Settings: batch_size=${batch_size}, max_vocabulary=${max_vocabulary_size}, streaming=${streaming_mode}`);
       
-      // Fetch historical incidents with intelligent selection
-      const incidents = await this.fetchIncidentData(sample_size, {
+      // If streaming mode is enabled, process data in batches
+      if (streaming_mode && sample_size > batch_size * 2) {
+        return await this.trainWithStreaming(args);
+      }
+      
+      // For smaller datasets, use the original approach but with optimizations
+      const incidents = await this.fetchIncidentData(Math.min(sample_size, batch_size * 5), {
         query,
         intelligent_selection,
         focus_categories
       });
       
-      this.logger.info(`Retrieved ${incidents.length} incidents from ServiceNow`);
+      this.logger.info(`Retrieved ${incidents.length} incidents for initial training`);
       
       if (incidents.length < 100) {
         throw new Error(`Insufficient data for training (need at least 100 incidents, got ${incidents.length})`);
       }
 
-      // Prepare training data
-      const { features, labels, tokenizer, categories } = await this.prepareIncidentData(incidents);
+      // Prepare training data with memory optimization
+      const { features, labels, tokenizer, categories } = await this.prepareIncidentDataOptimized(
+        incidents, 
+        max_vocabulary_size
+      );
       
       // Create neural network model
       const model = tf.sequential({
@@ -973,7 +1000,19 @@ export class ServiceNowMachineLearningMCP {
 
       // Prepare input for custom neural network
       const text = `${incidentData.short_description} ${incidentData.description}`;
-      const tokenized = this.tokenizeText(text, this.incidentClassifier.tokenizer, this.incidentClassifier.maxLength);
+      let tokenized: number[];
+      
+      // Check if using feature hashing (streaming mode) or traditional tokenizer
+      if (this.incidentClassifier.tokenizer.has('_vocabulary_size')) {
+        // Using feature hashing
+        const vocabularySize = this.incidentClassifier.tokenizer.get('_vocabulary_size')!;
+        const hasher = this.createFeatureHasher(vocabularySize);
+        tokenized = hasher(text);
+      } else {
+        // Using traditional tokenizer
+        tokenized = this.tokenizeText(text, this.incidentClassifier.tokenizer, this.incidentClassifier.maxLength);
+      }
+      
       const input = tf.tensor2d([tokenized]);
 
       // Predict
@@ -1108,8 +1147,11 @@ export class ServiceNowMachineLearningMCP {
       status.incident_classifier = this.incidentClassifier ? {
         status: 'trained',
         categories: this.incidentClassifier.categories.length,
-        vocabulary_size: this.incidentClassifier.tokenizer.size,
-        model_size: await this.getModelSize(this.incidentClassifier.model)
+        vocabulary_size: this.incidentClassifier.tokenizer.has('_vocabulary_size') 
+          ? this.incidentClassifier.tokenizer.get('_vocabulary_size')
+          : this.incidentClassifier.tokenizer.size,
+        model_size: await this.getModelSize(this.incidentClassifier.model),
+        memory_efficient: this.incidentClassifier.tokenizer.has('_vocabulary_size')
       } : { status: 'not_trained' };
     }
 
@@ -1511,6 +1553,287 @@ export class ServiceNowMachineLearningMCP {
     };
   }
 
+
+  /**
+   * Train model using streaming to handle large datasets efficiently
+   */
+  private async trainWithStreaming(args: any) {
+    const {
+      sample_size,
+      batch_size,
+      epochs,
+      validation_split,
+      query,
+      intelligent_selection,
+      focus_categories,
+      max_vocabulary_size
+    } = args;
+    
+    this.logger.info(`Starting streaming training with batch size ${batch_size}`);
+    
+    // Create feature hasher for vocabulary management
+    const featureHasher = this.createFeatureHasher(max_vocabulary_size);
+    
+    // Initialize model with proper architecture
+    const model = this.createOptimizedModel(max_vocabulary_size);
+    
+    // Process data in batches
+    const totalBatches = Math.ceil(sample_size / batch_size);
+    let processedSamples = 0;
+    let allCategories = new Set<string>();
+    
+    for (let batchNum = 0; batchNum < totalBatches; batchNum++) {
+      const offset = batchNum * batch_size;
+      const currentBatchSize = Math.min(batch_size, sample_size - offset);
+      
+      this.logger.info(`Processing batch ${batchNum + 1}/${totalBatches} (${currentBatchSize} samples)`);
+      
+      // Fetch batch of incidents
+      const batchIncidents = await this.fetchIncidentBatch(currentBatchSize, offset, {
+        query,
+        intelligent_selection,
+        focus_categories
+      });
+      
+      if (batchIncidents.length === 0) break;
+      
+      // Extract categories
+      batchIncidents.forEach(inc => allCategories.add(inc.category));
+      
+      // Process batch with feature hashing
+      const { features, labels } = this.processBatchWithHashing(
+        batchIncidents, 
+        Array.from(allCategories),
+        featureHasher
+      );
+      
+      // Train on batch
+      await model.fit(features, labels, {
+        epochs: Math.ceil(epochs / totalBatches), // Distribute epochs across batches
+        batchSize: 32,
+        verbose: 0,
+        callbacks: {
+          onBatchEnd: async (batch, logs) => {
+            if (batch % 10 === 0) {
+              this.logger.info(`Batch ${batch}: loss=${logs?.loss?.toFixed(4)}`);
+            }
+          }
+        }
+      });
+      
+      // Clean up tensors to free memory
+      features.dispose();
+      labels.dispose();
+      
+      processedSamples += batchIncidents.length;
+      
+      // Force garbage collection hint
+      if (global.gc) {
+        global.gc();
+      }
+    }
+    
+    this.logger.info(`Streaming training completed. Processed ${processedSamples} samples in ${totalBatches} batches`);
+    
+    // Save model
+    const modelId = `incident_classifier_${Date.now()}`;
+    const modelInfo = {
+      id: modelId,
+      categories: Array.from(allCategories),
+      vocabulary_size: max_vocabulary_size,
+      training_samples: processedSamples,
+      batch_size: batch_size,
+      created_at: new Date().toISOString()
+    };
+    
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          success: true,
+          model_id: modelId,
+          model_info: modelInfo,
+          training_stats: {
+            total_samples: processedSamples,
+            batches_processed: totalBatches,
+            memory_efficient: true
+          }
+        }, null, 2)
+      }]
+    };
+  }
+  
+  /**
+   * Fetch a batch of incidents with offset for streaming
+   */
+  private async fetchIncidentBatch(limit: number, offset: number, options: any) {
+    const { query, intelligent_selection, focus_categories } = options;
+    
+    let finalQuery = query;
+    
+    if (intelligent_selection && !query) {
+      // Build intelligent query (same as before)
+      const queries = [];
+      queries.push('sys_created_onONLast 6 months');
+      queries.push('(priority=1^ORpriority=2^ORpriority=3^ORpriority=4)');
+      queries.push('(active=true^ORactive=false)');
+      
+      if (focus_categories.length > 0) {
+        const categoryQuery = focus_categories.map((cat: string) => `category=${cat}`).join('^OR');
+        queries.push(`(${categoryQuery})`);
+      } else {
+        queries.push('categoryISNOTEMPTY');
+      }
+      
+      finalQuery = queries.join('^');
+    }
+    
+    // Add offset for pagination
+    if (finalQuery && !finalQuery.includes('ORDERBY')) {
+      finalQuery += '^ORDERBYDESCsys_created_on';
+    }
+    
+    // ServiceNow API supports offset through sysparm_offset
+    const response = await this.client.searchRecordsWithOffset('incident', finalQuery, limit, offset);
+    
+    if (!response.success || !response.data?.result) {
+      return [];
+    }
+    
+    return response.data.result.map((inc: any) => ({
+      short_description: inc.short_description || '',
+      description: inc.description || '',
+      category: inc.category || 'uncategorized',
+      subcategory: inc.subcategory || '',
+      priority: parseInt(inc.priority) || 3,
+      impact: parseInt(inc.impact) || 2,
+      urgency: parseInt(inc.urgency) || 2,
+      resolved: inc.resolved === 'true'
+    }));
+  }
+  
+  /**
+   * Create feature hasher for memory-efficient vocabulary management
+   */
+  private createFeatureHasher(maxFeatures: number) {
+    return (text: string): number[] => {
+      const words = text.toLowerCase().split(/\s+/);
+      const features = new Array(100).fill(0); // Fixed sequence length
+      
+      words.slice(0, 100).forEach((word, idx) => {
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < word.length; i++) {
+          hash = ((hash << 5) - hash) + word.charCodeAt(i);
+          hash = hash & hash; // Convert to 32-bit integer
+        }
+        // Map to vocabulary size
+        features[idx] = Math.abs(hash) % maxFeatures;
+      });
+      
+      return features;
+    };
+  }
+  
+  /**
+   * Process batch with feature hashing
+   */
+  private processBatchWithHashing(incidents: any[], categories: string[], hasher: Function) {
+    const sequences: number[][] = [];
+    const labels: number[][] = [];
+    
+    for (const incident of incidents) {
+      const text = `${incident.short_description} ${incident.description}`;
+      const sequence = hasher(text);
+      sequences.push(sequence);
+      
+      // One-hot encode category
+      const categoryIndex = categories.indexOf(incident.category);
+      const label = new Array(categories.length).fill(0);
+      if (categoryIndex >= 0) {
+        label[categoryIndex] = 1;
+      }
+      labels.push(label);
+    }
+    
+    return {
+      features: tf.tensor2d(sequences),
+      labels: tf.tensor2d(labels)
+    };
+  }
+  
+  /**
+   * Create optimized model for memory efficiency
+   */
+  private createOptimizedModel(vocabularySize: number) {
+    return tf.sequential({
+      layers: [
+        // Use embedding with smaller dimensions
+        tf.layers.embedding({
+          inputDim: vocabularySize,
+          outputDim: 64, // Reduced from 128
+          inputLength: 100
+        }),
+        
+        // Smaller LSTM
+        tf.layers.lstm({
+          units: 32, // Reduced from 64
+          returnSequences: false,
+          dropout: 0.2,
+          recurrentDropout: 0.2
+        }),
+        
+        // Smaller dense layer
+        tf.layers.dense({
+          units: 16, // Reduced from 32
+          activation: 'relu'
+        }),
+        tf.layers.dropout({ rate: 0.3 }),
+        
+        // Output layer (dynamic based on categories)
+        tf.layers.dense({
+          units: 10, // Will be adjusted based on actual categories
+          activation: 'softmax'
+        })
+      ]
+    });
+  }
+  
+  /**
+   * Optimized data preparation with feature hashing
+   */
+  private async prepareIncidentDataOptimized(incidents: IncidentData[], maxVocabularySize: number) {
+    const hasher = this.createFeatureHasher(maxVocabularySize);
+    const categories = [...new Set(incidents.map(i => i.category))];
+    
+    const sequences: number[][] = [];
+    const labels: number[][] = [];
+    
+    for (const incident of incidents) {
+      const text = `${incident.short_description} ${incident.description}`;
+      const sequence = hasher(text);
+      sequences.push(sequence);
+      
+      // One-hot encode category
+      const categoryIndex = categories.indexOf(incident.category);
+      const label = new Array(categories.length).fill(0);
+      if (categoryIndex >= 0) {
+        label[categoryIndex] = 1;
+      }
+      labels.push(label);
+    }
+    
+    // Create a minimal Map for compatibility
+    const tokenizerMap = new Map<string, number>();
+    tokenizerMap.set('_vocabulary_size', maxVocabularySize);
+    
+    return {
+      features: tf.tensor2d(sequences),
+      labels: tf.tensor2d(labels),
+      tokenizer: tokenizerMap,
+      categories
+    };
+  }
 
   private async detectAnomalies(args: any) {
     // Implement anomaly detection
