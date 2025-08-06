@@ -692,9 +692,15 @@ class ServiceNowDeploymentMCP {
             has_preview: true,
             category: args.category || 'custom',
           });
-          deploymentMethod = 'direct_api';
-          deploymentSuccess = true;
-          this.logger.info('✅ Direct deployment successful');
+          
+          // ONLY set success if the operation actually succeeded
+          if (result?.success) {
+            deploymentMethod = 'direct_api';
+            deploymentSuccess = true;
+            this.logger.info('✅ Direct deployment successful');
+          } else {
+            throw new Error(`Widget creation failed: ${result?.error || 'Unknown error'}`);
+          }
         } catch (error: any) {
           directError = error;
           this.logger.warn('⚠️ Direct widget deployment failed, checking if widget was created anyway', directError);
@@ -759,8 +765,15 @@ class ServiceNowDeploymentMCP {
             roles: '',
             servicenow: false
           });
-          deploymentMethod = 'table_record';
-          deploymentSuccess = true;
+          
+          // ONLY set success if the operation actually succeeded
+          if (result?.success) {
+            deploymentMethod = 'table_record';
+            deploymentSuccess = true;
+            this.logger.info('✅ Fallback deployment successful');
+          } else {
+            throw new Error(`Table record creation failed: ${result?.error || 'Unknown error'}`);
+          }
           
           // createRecord should already return a ServiceNowAPIResponse structure
           // No need to wrap it again

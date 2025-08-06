@@ -429,6 +429,39 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     const mcpConfigPath = join(process.cwd(), '.mcp.json');
     const hasMcpConfig = existsSync(mcpConfigPath);
     
+    // Auto-start MCP servers if they're not running
+    if (hasMcpConfig) {
+      cliLogger.info('🔧 Checking MCP server status...');
+      
+      try {
+        const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
+        const manager = new MCPServerManager();
+        await manager.initialize();
+        
+        const systemStatus = manager.getSystemStatus();
+        
+        if (systemStatus.running === 0) {
+          cliLogger.info('🚀 Starting MCP servers automatically for swarm operation...');
+          await manager.startAllServers();
+          
+          const newStatus = manager.getSystemStatus();
+          cliLogger.info(`✅ Started ${newStatus.running}/${newStatus.total} MCP servers`);
+        } else if (systemStatus.running < systemStatus.total) {
+          cliLogger.info(`⚠️  Only ${systemStatus.running}/${systemStatus.total} MCP servers running`);
+          cliLogger.info('🔄 Starting remaining servers...');
+          await manager.startAllServers();
+          
+          const newStatus = manager.getSystemStatus();
+          cliLogger.info(`✅ All ${newStatus.running}/${newStatus.total} MCP servers running`);
+        } else {
+          cliLogger.info(`✅ All ${systemStatus.running} MCP servers already running`);
+        }
+      } catch (error) {
+        cliLogger.warn('⚠️  Could not auto-start MCP servers:', error instanceof Error ? error.message : error);
+        cliLogger.info('💡 You may need to run "npm run mcp:start" manually');
+      }
+    }
+    
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
     const claudeArgs = hasMcpConfig 
       ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
