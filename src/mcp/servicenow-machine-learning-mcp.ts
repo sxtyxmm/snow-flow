@@ -568,13 +568,15 @@ export class ServiceNowMachineLearningMCP {
       }
       
       // Use custom TensorFlow.js neural network
-      this.logger.info('Training custom LSTM neural network for incident classification...');
+      this.logger.info(`Training custom LSTM neural network for incident classification with ${sample_size} samples...`);
       
       // Fetch historical incidents
       const incidents = await this.fetchIncidentData(sample_size);
       
+      this.logger.info(`Retrieved ${incidents.length} incidents from ServiceNow`);
+      
       if (incidents.length < 100) {
-        throw new Error('Insufficient data for training (need at least 100 incidents)');
+        throw new Error(`Insufficient data for training (need at least 100 incidents, got ${incidents.length})`);
       }
 
       // Prepare training data
@@ -1120,7 +1122,9 @@ export class ServiceNowMachineLearningMCP {
 
   private async fetchIncidentData(limit: number): Promise<IncidentData[]> {
     // Fetch real incidents from ServiceNow - no ML API needed!
-    const query = 'active=false^resolved=true';
+    // Include both active and resolved incidents for better training data
+    // Order by sys_created_on DESC to get most recent incidents
+    const query = 'ORDERBYDESCsys_created_on'; // Get most recent incidents, both active and resolved
     
     // Use searchRecords for proper authentication handling
     const response = await this.client.searchRecords('incident', query, limit);
@@ -1128,6 +1132,8 @@ export class ServiceNowMachineLearningMCP {
     if (!response.success || !response.data?.result) {
       throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
     }
+    
+    this.logger.info(`Fetched ${response.data.result.length} incidents for ML training (requested: ${limit})`);
 
     return response.data.result.map((inc: any) => ({
       short_description: inc.short_description || '',

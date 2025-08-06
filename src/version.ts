@@ -11,6 +11,13 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.6.9': [
+      '🔍 ML QUERY FIX: Removed restrictive filters limiting training data to only resolved incidents',
+      '📊 ALL INCIDENTS: ML training now includes both active AND resolved incidents',
+      '📈 MORE DATA: Significantly increased available training data for better ML models',
+      '🚀 BETTER LOGS: Added detailed logging for ML data fetching and training process',
+      '✅ SORTED DATA: Fetches most recent incidents first (ORDER BY sys_created_on DESC)',
+    ],
     '2.6.8': [
       '🔧 ML API FIX: Fixed incident data fetching using searchRecords instead of makeRequest',
       '✅ AUTHENTICATION: Proper authentication handling for ML training data retrieval',
