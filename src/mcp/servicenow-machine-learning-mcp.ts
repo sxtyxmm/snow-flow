@@ -1120,17 +1120,10 @@ export class ServiceNowMachineLearningMCP {
 
   private async fetchIncidentData(limit: number): Promise<IncidentData[]> {
     // Fetch real incidents from ServiceNow - no ML API needed!
-    const queryParams = {
-      sysparm_limit: limit,
-      sysparm_query: 'active=false^resolved=true',
-      sysparm_fields: 'short_description,description,category,subcategory,priority,impact,urgency,resolved,sys_created_on,resolved_at'
-    };
+    const query = 'active=false^resolved=true';
     
-    // Use client directly for basic table access
-    const response = await this.client.makeRequest({
-      url: '/api/now/table/incident',
-      params: queryParams
-    });
+    // Use searchRecords for proper authentication handling
+    const response = await this.client.searchRecords('incident', query, limit);
     
     if (!response.success || !response.data?.result) {
       throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
@@ -1372,17 +1365,8 @@ export class ServiceNowMachineLearningMCP {
       query += `^category=${category}`;
     }
     
-    const queryParams = {
-      sysparm_query: query,
-      sysparm_fields: 'sys_created_on',
-      sysparm_limit: 10000
-    };
-    
-    // Use client directly for basic table access
-    const response = await this.client.makeRequest({
-      url: '/api/now/table/incident',
-      params: queryParams
-    });
+    // Use searchRecords for proper authentication handling
+    const response = await this.client.searchRecords('incident', query, 10000);
     
     if (!response.success || !response.data?.result) {
       throw new Error(
@@ -1416,15 +1400,13 @@ export class ServiceNowMachineLearningMCP {
 
   private async fetchSingleIncident(incidentNumber: string): Promise<IncidentData> {
     // Fetch single incident from ServiceNow - no ML API needed!
-    const response = await this.client.makeRequest({
-      url: `/api/now/table/incident/${incidentNumber}`
-    });
+    const response = await this.client.getRecord('incident', incidentNumber);
     
-    if (!response.success || !response.data?.result) {
+    if (!response.success || !response.data) {
       throw new Error(`Failed to fetch incident ${incidentNumber}`);
     }
     
-    const inc = response.data.result;
+    const inc = response.data;
     return {
       short_description: inc.short_description || '',
       description: inc.description || '',

@@ -11,6 +11,13 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.6.8': [
+      '🔧 ML API FIX: Fixed incident data fetching using searchRecords instead of makeRequest',
+      '✅ AUTHENTICATION: Proper authentication handling for ML training data retrieval',
+      '📊 CONSISTENT API: ML MCP now uses same methods as operations MCP for data access',
+      '🚀 TRAINING WORKS: ml_train_incident_classifier can now fetch incidents correctly',
+      '🤖 BETTER ERRORS: Clear error messages when permissions are missing',
+    ],
     '2.6.7': [
       '🤖 ML HYBRID MODE: Custom neural networks work WITHOUT PA/PI plugins!',
       '✅ SMART FALLBACK: If PI available, uses it for 95%+ accuracy, else TensorFlow.js',
