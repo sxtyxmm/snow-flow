@@ -175,7 +175,57 @@ class ServiceNowOperationsMCP {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
-          // Core Operational Queries
+          // 🎯 UNIVERSAL TABLE QUERY - Works for ANY ServiceNow table!
+          {
+            name: 'snow_query_table',
+            description: '🚀 Universal high-performance query tool for ANY ServiceNow table - optimized for memory efficiency',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                table: {
+                  type: 'string',
+                  description: 'ServiceNow table name (e.g., incident, sc_request, problem, task, change_request, u_custom_table)',
+                  examples: ['incident', 'sc_request', 'sc_req_item', 'problem', 'change_request', 'task', 'cmdb_ci']
+                },
+                query: {
+                  type: 'string',
+                  description: 'ServiceNow encoded query or natural language description'
+                },
+                limit: {
+                  type: 'number',
+                  description: 'Maximum number of results (default: 10)',
+                  default: 10
+                },
+                include_content: {
+                  type: 'boolean',
+                  description: '🎯 Include full record data (default: false for performance, only returns count)',
+                  default: false
+                },
+                fields: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific fields to return (automatically sets include_content=true). Examples: ["number", "short_description", "state"]'
+                },
+                include_display_values: {
+                  type: 'boolean',
+                  description: 'Include display values for reference fields (e.g., show user names instead of sys_ids)',
+                  default: false
+                },
+                group_by: {
+                  type: 'string',
+                  description: 'Field to group results by (returns counts per group)'
+                },
+                order_by: {
+                  type: 'string',
+                  description: 'Field to sort by (prefix with - for descending)',
+                  examples: ['created_on', '-priority', 'number']
+                }
+              },
+              required: ['table', 'query']
+            }
+          },
+          
+          // Core Operational Queries (keeping for backwards compatibility)
           {
             name: 'snow_query_incidents',
             description: 'Advanced incident querying with filters and _analysis - optimized for performance',
@@ -795,6 +845,8 @@ class ServiceNowOperationsMCP {
 
       try {
         switch (name) {
+          case 'snow_query_table':
+            return await this.handleUniversalQuery(args);
           case 'snow_query_incidents':
             return await this.handleQueryIncidents(args);
           case 'snow_analyze_incident':
@@ -841,6 +893,141 @@ class ServiceNowOperationsMCP {
         throw new McpError(ErrorCode.InternalError, `Failed to execute ${name}: ${error}`);
       }
     });
+  }
+
+  private async handleUniversalQuery(args: any) {
+    const { 
+      table,
+      query, 
+      limit = 10, 
+      include_content = false,
+      fields,
+      include_display_values = false,
+      group_by,
+      order_by
+    } = args;
+    
+    logger.info(`Universal query on table '${table}' with: ${query} (include_content: ${include_content})`);
+    
+    try {
+      // Convert natural language to ServiceNow query if needed
+      const processedQuery = this.processNaturalLanguageQuery(query, table);
+      
+      // Build the query with order_by if specified
+      let finalQuery = processedQuery;
+      if (order_by) {
+        const orderDirection = order_by.startsWith('-') ? 'DESC' : '';
+        const orderField = order_by.replace(/^-/, '');
+        finalQuery += `^ORDERBY${orderDirection}${orderField}`;
+      }
+      
+      // Query the table
+      const records = await this.client.searchRecords(table, finalQuery, limit);
+      
+      let result: any = {
+        table: table,
+        total_results: records.success ? records.data.result.length : 0,
+        query_used: processedQuery
+      };
+      
+      // Handle group_by aggregation
+      if (group_by && records.success) {
+        const grouped: Record<string, number> = {};
+        records.data.result.forEach((record: any) => {
+          const groupValue = record[group_by] || 'undefined';
+          grouped[groupValue] = (grouped[groupValue] || 0) + 1;
+        });
+        
+        result.grouped_counts = grouped;
+        result.unique_values = Object.keys(grouped).length;
+      }
+      
+      // 🎯 SMART CONTENT DECISION: Only include full data if explicitly requested
+      if (include_content || (fields && fields.length > 0)) {
+        // Include full record data when specifically requested
+        result.records = records.success ? records.data.result : [];
+        
+        // If specific fields requested, filter them
+        if (fields && fields.length > 0 && records.success) {
+          result.records = records.data.result.map((record: any) => {
+            const filtered: any = {};
+            
+            // Always include sys_id and number/name if available
+            if (record.sys_id) filtered.sys_id = record.sys_id;
+            if (record.number) filtered.number = record.number;
+            if (record.name && !fields.includes('name')) filtered.name = record.name;
+            
+            // Add requested fields
+            fields.forEach((field: string) => {
+              if (record[field] !== undefined) {
+                filtered[field] = record[field];
+                
+                // Add display value if requested and available
+                if (include_display_values && record[`${field}_display_value`]) {
+                  filtered[`${field}_display`] = record[`${field}_display_value`];
+                }
+              }
+            });
+            return filtered;
+          });
+        }
+      } else {
+        // 🚀 PERFORMANCE MODE: Only return summary for large datasets
+        result.summary = {
+          count: records.success ? records.data.result.length : 0,
+          message: `Use include_content=true to retrieve full ${table} data`
+        };
+        
+        // Provide intelligent sample based on table type
+        if (records.success && records.data.result.length > 0) {
+          const sampleSize = Math.min(5, records.data.result.length);
+          const sample = records.data.result.slice(0, sampleSize);
+          
+          // Dynamic field detection for sample
+          const commonFields = this.detectCommonFields(table, sample);
+          result.summary.sample = {
+            record_identifiers: sample.map((r: any) => r.number || r.name || r.sys_id),
+            common_fields: commonFields
+          };
+        }
+      }
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Found ${records.success ? records.data.result.length : 0} ${table} records matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+          }
+        ]
+      };
+    } catch (error) {
+      logger.error(`Error querying ${table}:`, error);
+      throw new McpError(ErrorCode.InternalError, `Failed to query ${table}: ${error}`);
+    }
+  }
+  
+  private detectCommonFields(table: string, records: any[]): Record<string, any> {
+    const commonFields: Record<string, Set<any>> = {};
+    
+    // Fields to check based on table type
+    const fieldsToCheck = ['state', 'priority', 'category', 'type', 'status', 'active', 'stage'];
+    
+    records.forEach(record => {
+      fieldsToCheck.forEach(field => {
+        if (record[field] !== undefined && record[field] !== null) {
+          if (!commonFields[field]) commonFields[field] = new Set();
+          commonFields[field].add(record[field]);
+        }
+      });
+    });
+    
+    // Convert sets to arrays for JSON serialization
+    const result: Record<string, any> = {};
+    Object.entries(commonFields).forEach(([field, values]) => {
+      result[field] = Array.from(values);
+    });
+    
+    return result;
   }
 
   private async handleQueryIncidents(args: any) {
