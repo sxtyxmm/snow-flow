@@ -560,7 +560,69 @@ snow_query_table({
 - `order_by: "created_on"` → Oldest first (ascending)
 - `order_by: "-created_on"` → Newest first (descending)
 - `order_by: "-priority"` → Highest priority first (1 before 5)
-- `order_by: "number"` → Alphabetical by number
+
+## ⚠️ IMPORTANT: Smart Default Limits
+
+**CONTEXT-AWARE DEFAULTS (v2.9.0+):**
+The `snow_query_table` tool now uses intelligent defaults based on your use case:
+
+### 🎯 Smart Limit Logic:
+```javascript
+// 1. ML TRAINING CONTEXT → 5000 records (auto-detected)
+snow_query_table({ 
+  table: "incident", 
+  query: "category!=null",  // ML training query
+  include_content: true     // ML needs content
+})
+// Smart default: limit=5000 ⚡ Optimized for ML training!
+
+// 2. COUNT-ONLY QUERIES → 2000 records  
+snow_query_table({ 
+  table: "incident", 
+  query: "state!=7",
+  include_content: false    // Count only
+})
+// Smart default: limit=2000 ⚡ Memory-efficient counting!
+
+// 3. NORMAL CONTENT QUERIES → 1000 records
+snow_query_table({ 
+  table: "sc_request", 
+  query: "active=true",
+  include_content: true     // Normal content query
+})
+// Smart default: limit=1000 ⚡ Balanced performance!
+```
+
+### 🚨 ML Training Best Practices:
+```javascript
+// ✅ CORRECT: Explicit limits for ML training
+snow_query_table({ 
+  table: "incident", 
+  query: "category!=null^short_description!=null", 
+  include_content: true,
+  limit: 5000               // Explicit ML-optimized limit
+})
+
+// ⚠️ WARNING: If you get ML warnings, increase limit:
+snow_query_table({ 
+  table: "incident", 
+  query: "train OR ml",     // ML context detected
+  limit: 500                // Too low! Warning will be shown
+})
+// System warns: "ML Training detected with low limit (500). Consider setting limit=5000+"
+```
+
+### 📊 Memory Usage Guidelines:
+- **Count queries**: `include_content: false` → 99.9% memory savings, can handle 10000+ records
+- **ML training**: `limit: 5000+` → Sufficient data for neural networks  
+- **Normal queries**: `limit: 1000` → Balanced performance for human analysis
+- **Large datasets**: Set explicit limits up to 50000+ if needed
+
+### 💡 Pro Tips:
+1. **Let smart defaults work** - don't set limit unless you need specific amounts
+2. **ML training** - system auto-detects and uses 5000 default
+3. **Count-only analysis** - gets 2000 records for statistical accuracy  
+4. **Memory concerns** - use `fields: ["specific", "fields"]` to limit data transfer
 
 ## Snow-Flow MCP Tools (100+ Total)
 

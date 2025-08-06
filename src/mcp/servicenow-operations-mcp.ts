@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // 🎯 UNIVERSAL TABLE QUERY - Works for ANY ServiceNow table!
           {
             name: 'snow_query_table',
-            description: '🚀 Universal high-performance query tool for ANY ServiceNow table - optimized for memory efficiency',
+            description: '🚀 Universal high-performance query tool for ANY ServiceNow table - optimized for memory efficiency. SMART DEFAULTS: 1000 records (5000 for ML training contexts)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -193,8 +193,8 @@ class ServiceNowOperationsMCP {
                 },
                 limit: {
                   type: 'number',
-                  description: 'Maximum number of results (default: 10)',
-                  default: 10
+                  description: '🎯 Maximum number of results. SMART DEFAULTS: 1000 (normal queries), 5000 (ML training contexts). Set higher for large ML datasets (10000+)',
+                  default: 1000
                 },
                 include_content: {
                   type: 'boolean',
@@ -896,10 +896,33 @@ class ServiceNowOperationsMCP {
   }
 
   private async handleUniversalQuery(args: any) {
+    // 🎯 SMART DEFAULT LIMITS - Context-aware for ML training
+    const determineSmartLimit = (providedLimit: number | undefined, table: string, query: string, includeContent: boolean) => {
+      if (providedLimit !== undefined) return providedLimit; // User explicitly set limit
+      
+      // ML Training context detection
+      const isMLContext = query?.toLowerCase().includes('train') || 
+                         query?.toLowerCase().includes('ml') ||
+                         table?.toLowerCase().includes('train') ||
+                         (includeContent && table === 'incident'); // ML often needs incident content
+      
+      if (isMLContext) {
+        logger.info(`🧠 ML context detected - using ML-optimized limit: 5000`);
+        return 5000; // ML training needs more data
+      }
+      
+      // Count-only queries can handle more records efficiently  
+      if (!includeContent) {
+        return 2000; // Count queries are memory-efficient
+      }
+      
+      // Normal content queries
+      return 1000; // Balanced default for content queries
+    };
+    
     const { 
       table,
       query, 
-      limit = 10, 
       include_content = false,
       fields,
       include_display_values = false,
@@ -907,7 +930,19 @@ class ServiceNowOperationsMCP {
       order_by
     } = args;
     
-    logger.info(`Universal query on table '${table}' with: ${query} (include_content: ${include_content})`);
+    // Apply smart limit logic
+    const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields);
+    
+    // 🚨 ML Training Warning for low limits
+    const isMLTrainingContext = query?.toLowerCase().includes('train') || 
+                               query?.toLowerCase().includes('ml') ||
+                               args.limit !== undefined && args.limit < 1000;
+    
+    if (isMLTrainingContext && limit < 1000) {
+      logger.warn(`⚠️  ML Training detected with low limit (${limit}). Consider setting limit=5000+ for better training data!`);
+    }
+    
+    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit}, include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
