@@ -9,6 +9,7 @@ import { EventEmitter } from 'events';
 import os from 'os';
 import { unifiedAuthStore } from './unified-auth-store.js';
 import { getMCPSingletonLock } from './mcp-singleton-lock.js';
+import { MCPProcessManager } from './mcp-process-manager.js';
 
 export interface MCPServer {
   name: string;
@@ -176,6 +177,18 @@ export class MCPServerManager extends EventEmitter {
 
     if (server.status === 'running') {
       return true; // Already running
+    }
+    
+    // Check if we can spawn a new server
+    const processManager = MCPProcessManager.getInstance();
+    if (!processManager.canSpawnServer()) {
+      // Try cleanup first
+      processManager.cleanup();
+      
+      // Check again after cleanup
+      if (!processManager.canSpawnServer()) {
+        throw new Error('Cannot spawn server: resource limits exceeded. Too many MCP processes running.');
+      }
     }
 
     server.status = 'starting';
@@ -346,16 +359,35 @@ export class MCPServerManager extends EventEmitter {
       throw new Error('❌ MCP servers already running. Cannot start duplicate instances.');
     }
     
-    console.log('✅ Starting all MCP servers (singleton protected)...');
+    // Clean up any existing duplicates first
+    const processManager = MCPProcessManager.getInstance();
+    processManager.killDuplicates();
     
-    const promises = Array.from(this.servers.keys()).map(name => 
-      this.startServer(name).catch(error => {
+    console.log('✅ Starting all MCP servers (singleton protected with resource limits)...');
+    console.log(processManager.getResourceSummary());
+    
+    // Start servers sequentially with delay to avoid resource spikes
+    let started = 0;
+    for (const name of Array.from(this.servers.keys())) {
+      try {
+        // Check resource limits before each start
+        if (!processManager.canSpawnServer()) {
+          console.warn(`⚠️ Skipping ${name} - resource limits reached`);
+          continue;
+        }
+        
+        await this.startServer(name);
+        started++;
+        
+        // Small delay between starts to avoid CPU spike
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
         console.error(`Failed to start server '${name}':`, error);
-        return false;
-      })
-    );
-
-    await Promise.all(promises);
+      }
+    }
+    
+    console.log(`✅ Started ${started}/${this.servers.size} MCP servers`);
+    console.log(processManager.getResourceSummary());
   }
 
   /**
