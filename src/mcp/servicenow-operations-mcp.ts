@@ -850,10 +850,20 @@ class ServiceNowOperationsMCP {
       // Query incidents
       const incidents = await this.client.searchRecords('incident', processedQuery, limit);
       
-      let result = {
+      let result: any = {
         total_results: incidents.success ? incidents.data.result.length : 0,
-        incidents: incidents.success ? incidents.data.result : []
+        // 🔴 PERFORMANCE FIX: Only include full incident data if specifically requested via fields
+        incidents: (fields && fields.length > 0) ? (incidents.success ? incidents.data.result : []) : []
       };
+      
+      // Add basic summary instead of full data for performance
+      if (incidents.success && incidents.data.result.length > 0 && (!fields || fields.length === 0)) {
+        result.summary = {
+          first_incident: incidents.data.result[0].number || 'Unknown',
+          sample_categories: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.category || 'none'))],
+          sample_priorities: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.priority || 'none'))]
+        };
+      }
       
       // Add intelligent _analysis if requested
       if (include__analysis && incidents.success && incidents.data.result.length > 0) {
@@ -1217,6 +1227,12 @@ class ServiceNowOperationsMCP {
     // Convert natural language to ServiceNow encoded query
     const lowerQuery = query.toLowerCase();
     
+    // If already a ServiceNow encoded query, return as-is
+    if (query.includes('=') || query.includes('!=') || query.includes('^') || query.includes('LIKE')) {
+      logger.info(`Using raw ServiceNow query: ${query}`);
+      return query;
+    }
+    
     // Common ServiceNow query patterns
     if (lowerQuery.includes('high priority')) {
       return 'priority=1';
@@ -1229,6 +1245,9 @@ class ServiceNowOperationsMCP {
     }
     if (lowerQuery.includes('closed') || lowerQuery.includes('resolved')) {
       return 'state=6^ORstate=7';
+    }
+    if (lowerQuery.includes('all') || lowerQuery === '') {
+      return ''; // Empty query returns all records
     }
     if (lowerQuery.includes('today')) {
       return 'sys_created_onONToday@javascript:gs.daysAgoStart(0)@javascript:gs.daysAgoEnd(0)';

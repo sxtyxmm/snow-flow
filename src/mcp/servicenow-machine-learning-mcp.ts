@@ -617,7 +617,8 @@ export class ServiceNowMachineLearningMCP {
       }
       
       // For smaller datasets, use the original approach but with optimizations
-      const incidents = await this.fetchIncidentData(Math.min(sample_size, batch_size * 5), {
+      // 🔴 CRITICAL FIX: Use full sample_size, not artificially limited amount
+      const incidents = await this.fetchIncidentData(sample_size, {
         query,
         intelligent_selection,
         focus_categories
@@ -1236,7 +1237,10 @@ export class ServiceNowMachineLearningMCP {
     }
     
     // Use searchRecords for proper authentication handling
+    // 🔴 CRITICAL FIX: Use the actual limit parameter, not default of 10
     const response = await this.client.searchRecords('incident', finalQuery, limit);
+    
+    this.logger.info(`Attempting to fetch ${limit} incidents with query: ${finalQuery}`);
     
     if (!response.success || !response.data?.result) {
       throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
@@ -1694,7 +1698,10 @@ export class ServiceNowMachineLearningMCP {
     }
     
     // ServiceNow API supports offset through sysparm_offset
+    // 🔴 CRITICAL FIX: Ensure we're using the right limit for batches
     const response = await this.client.searchRecordsWithOffset('incident', finalQuery, limit, offset);
+    
+    this.logger.info(`Fetching batch: limit=${limit}, offset=${offset}, query=${finalQuery}`);
     
     if (!response.success || !response.data?.result) {
       return [];
