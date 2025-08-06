@@ -38,6 +38,7 @@ async function cleanupMCPServers() {
     console.log('🔒 Cleaning up lock files...');
     await execAsync('rm -f /tmp/mcp-*.lock').catch(() => {});
     await execAsync('rm -f ~/.claude/mcp-*.lock').catch(() => {});
+    await execAsync('rm -f ~/.claude/mcp-servers.lock').catch(() => {});
     
     // 3. Check memory usage
     const { stdout: memOutput } = await execAsync('ps aux | grep node | awk \'{sum+=$6} END {print sum/1024}\'');

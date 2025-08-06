@@ -8,6 +8,7 @@ import { join } from 'path';
 import { EventEmitter } from 'events';
 import os from 'os';
 import { unifiedAuthStore } from './unified-auth-store.js';
+import { getMCPSingletonLock } from './mcp-singleton-lock.js';
 
 export interface MCPServer {
   name: string;
@@ -334,6 +335,15 @@ export class MCPServerManager extends EventEmitter {
    * Start all configured MCP servers
    */
   async startAllServers(): Promise<void> {
+    // 🔒 SINGLETON CHECK - Prevent duplicate instances
+    const singletonLock = getMCPSingletonLock();
+    
+    if (!singletonLock.acquire()) {
+      throw new Error('❌ MCP servers already running. Cannot start duplicate instances.');
+    }
+    
+    console.log('✅ Starting all MCP servers (singleton protected)...');
+    
     const promises = Array.from(this.servers.keys()).map(name => 
       this.startServer(name).catch(error => {
         console.error(`Failed to start server '${name}':`, error);

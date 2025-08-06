@@ -1,15 +1,24 @@
 #!/usr/bin/env node
 /**
- * Start all ServiceNow MCP servers
+ * Start all ServiceNow MCP servers (WITH SINGLETON PROTECTION)
  */
 
 import { spawn } from 'child_process';
 import { Logger } from '../utils/logger.js';
+import { getMCPSingletonLock } from '../utils/mcp-singleton-lock.js';
 
 const logger = new Logger('MCPServerLauncher');
 
 async function startAllServers() {
-  logger.info('Starting all ServiceNow MCP servers...');
+  // 🔒 SINGLETON CHECK - Prevent duplicate instances
+  const singletonLock = getMCPSingletonLock();
+  
+  if (!singletonLock.acquire()) {
+    logger.error('❌ MCP servers already running. Exiting.');
+    process.exit(1);
+  }
+  
+  logger.info('✅ Starting all ServiceNow MCP servers (singleton protected)...');
 
   const servers = [
     {
