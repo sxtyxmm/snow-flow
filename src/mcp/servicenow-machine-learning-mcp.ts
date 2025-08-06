@@ -566,9 +566,11 @@ export class ServiceNowMachineLearningMCP {
       intelligent_selection = true,
       focus_categories = [],
       batch_size = 100,
-      max_vocabulary_size = 10000,
       streaming_mode = true
     } = args;
+    
+    // CRITICAL FIX: Ensure max_vocabulary_size is ALWAYS valid
+    const max_vocabulary_size = Math.max(1000, args.max_vocabulary_size || 5000);
 
     try {
       // Wait for ML API check if not complete
@@ -705,21 +707,26 @@ export class ServiceNowMachineLearningMCP {
         };
       }
       
-      // Get vocabulary size from tokenizer Map
-      const vocabularySize = tokenizer.get('_vocabulary_size') || max_vocabulary_size;
+      // Get vocabulary size from tokenizer Map - MUST match the size used in prepareIncidentDataOptimized
+      const vocabularySize = tokenizer.get('_vocabulary_size');
       
       if (!vocabularySize || vocabularySize <= 0) {
-        throw new Error('Invalid vocabulary size. Cannot create embedding layer.');
+        throw new Error(`Invalid vocabulary size from tokenizer: ${vocabularySize}. Cannot create embedding layer.`);
+      }
+      
+      // CRITICAL: Validate vocabulary size is reasonable
+      if (vocabularySize < 1000) {
+        this.logger.warn(`Vocabulary size ${vocabularySize} is very small, using minimum of 1000`);
       }
       
       this.logger.info(`Creating model with vocabulary size: ${vocabularySize}, categories: ${categories.length}`);
       
-      // Create neural network model
+      // Create neural network model with VALIDATED vocabulary size
       const model = tf.sequential({
         layers: [
-          // Embedding layer for text
+          // Embedding layer for text - inputDim MUST match the vocabulary size used in data preparation
           tf.layers.embedding({
-            inputDim: vocabularySize, // Use the actual vocabulary size
+            inputDim: vocabularySize, // Use the EXACT vocabulary size from data preparation
             outputDim: 128,
             inputLength: 100 // Max sequence length
           }),
@@ -1647,9 +1654,11 @@ export class ServiceNowMachineLearningMCP {
       validation_split,
       query,
       intelligent_selection,
-      focus_categories,
-      max_vocabulary_size
+      focus_categories
     } = args;
+    
+    // CRITICAL FIX: Ensure max_vocabulary_size is ALWAYS valid in streaming mode too
+    const max_vocabulary_size = Math.max(1000, args.max_vocabulary_size || 5000);
     
     this.logger.info(`Starting streaming training with batch size ${batch_size}`);
     
@@ -1843,8 +1852,11 @@ export class ServiceNowMachineLearningMCP {
    * Create feature hasher for memory-efficient vocabulary management
    */
   private createFeatureHasher(maxFeatures: number) {
+    // CRITICAL: Ensure maxFeatures is valid
+    const validMaxFeatures = Math.max(1000, maxFeatures || 5000);
+    
     return (text: string): number[] => {
-      const words = text.toLowerCase().split(/\s+/);
+      const words = (text || '').toLowerCase().split(/\s+/).filter(w => w.length > 0);
       const features = new Array(100).fill(0); // Fixed sequence length
       
       words.slice(0, 100).forEach((word, idx) => {
@@ -1854,8 +1866,9 @@ export class ServiceNowMachineLearningMCP {
           hash = ((hash << 5) - hash) + word.charCodeAt(i);
           hash = hash & hash; // Convert to 32-bit integer
         }
-        // Map to vocabulary size
-        features[idx] = Math.abs(hash) % maxFeatures;
+        // Map to vocabulary size - ensure within valid range [0, validMaxFeatures-1]
+        const index = Math.abs(hash) % validMaxFeatures;
+        features[idx] = Math.max(0, Math.min(validMaxFeatures - 1, index));
       });
       
       return features;
@@ -1976,19 +1989,43 @@ export class ServiceNowMachineLearningMCP {
    * Optimized data preparation with feature hashing
    */
   private async prepareIncidentDataOptimized(incidents: IncidentData[], maxVocabularySize: number) {
-    const hasher = this.createFeatureHasher(maxVocabularySize);
-    const categories = [...new Set(incidents.map(i => i.category))];
+    // Ensure we have valid data
+    if (!incidents || incidents.length === 0) {
+      throw new Error('No incidents provided for data preparation');
+    }
+    
+    // CRITICAL FIX: Ensure vocabulary size is ALWAYS valid and non-zero
+    const validVocabularySize = Math.max(1000, maxVocabularySize || 5000);
+    this.logger.info(`Using vocabulary size: ${validVocabularySize} for data preparation`);
+    
+    const hasher = this.createFeatureHasher(validVocabularySize);
+    const categories = [...new Set(incidents.map(i => i.category))].filter(c => c); // Filter out empty categories
+    
+    if (categories.length === 0) {
+      categories.push('uncategorized'); // Ensure at least one category
+    }
     
     const sequences: number[][] = [];
     const labels: number[][] = [];
     
     for (const incident of incidents) {
-      const text = `${incident.short_description} ${incident.description}`;
+      const text = `${incident.short_description || ''} ${incident.description || ''}`;
       const sequence = hasher(text);
-      sequences.push(sequence);
+      
+      // Validate sequence values are within bounds
+      const validatedSequence = sequence.map(idx => {
+        if (idx < 0 || idx >= validVocabularySize) {
+          this.logger.warn(`Index ${idx} out of bounds, clamping to valid range`);
+          return Math.max(0, Math.min(validVocabularySize - 1, idx));
+        }
+        return idx;
+      });
+      
+      sequences.push(validatedSequence);
       
       // One-hot encode category
-      const categoryIndex = categories.indexOf(incident.category);
+      const category = incident.category || 'uncategorized';
+      const categoryIndex = categories.indexOf(category);
       const label = new Array(categories.length).fill(0);
       if (categoryIndex >= 0) {
         label[categoryIndex] = 1;
@@ -1996,9 +2033,16 @@ export class ServiceNowMachineLearningMCP {
       labels.push(label);
     }
     
-    // Create a minimal Map for compatibility
+    // Validate sequences before creating tensors
+    if (sequences.length === 0 || sequences[0].length === 0) {
+      throw new Error('Failed to create valid sequences from incident data');
+    }
+    
+    // Create a minimal Map for compatibility - use the SAME vocabulary size everywhere
     const tokenizerMap = new Map<string, number>();
-    tokenizerMap.set('_vocabulary_size', maxVocabularySize);
+    tokenizerMap.set('_vocabulary_size', validVocabularySize);
+    
+    this.logger.info(`Prepared ${sequences.length} sequences with vocabulary size ${validVocabularySize}`);
     
     return {
       features: tf.tensor2d(sequences),
