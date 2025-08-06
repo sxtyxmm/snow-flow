@@ -79,6 +79,19 @@ export class MCPSingletonLock {
   }
 
   /**
+   * Release the singleton lock without blocking (for graceful shutdown)
+   */
+  releaseAsync(): Promise<void> {
+    return new Promise((resolve) => {
+      // Use setImmediate to avoid blocking
+      setImmediate(() => {
+        this.release();
+        resolve();
+      });
+    });
+  }
+
+  /**
    * Check if lock is currently held by this process
    */
   isAcquired(): boolean {
@@ -90,21 +103,37 @@ export class MCPSingletonLock {
    */
   private setupCleanupHandlers(): void {
     const cleanup = () => {
-      this.release();
+      // Use non-blocking release to prevent hanging during shutdown
+      setImmediate(() => {
+        this.release();
+      });
     };
     
-    process.on('exit', cleanup);
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
-    process.on('uncaughtException', (error) => {
+    // Remove existing handlers to prevent duplicate registrations
+    process.removeAllListeners('exit');
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGTERM');
+    
+    process.once('exit', cleanup);
+    process.once('SIGINT', () => {
+      cleanup();
+      // Allow graceful exit after cleanup
+      setTimeout(() => process.exit(0), 100);
+    });
+    process.once('SIGTERM', () => {
+      cleanup();
+      // Allow graceful exit after cleanup
+      setTimeout(() => process.exit(0), 100);
+    });
+    process.once('uncaughtException', (error) => {
       logger.error('Uncaught exception, releasing MCP lock:', error);
       cleanup();
-      process.exit(1);
+      setTimeout(() => process.exit(1), 100);
     });
-    process.on('unhandledRejection', (reason) => {
+    process.once('unhandledRejection', (reason) => {
       logger.error('Unhandled rejection, releasing MCP lock:', reason);
       cleanup();
-      process.exit(1);
+      setTimeout(() => process.exit(1), 100);
     });
   }
 

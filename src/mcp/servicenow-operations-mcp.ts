@@ -3651,9 +3651,14 @@ class ServiceNowOperationsMCP {
   }
 }
 
-// Start the server
-const server = new ServiceNowOperationsMCP();
-server.run().catch((error) => {
-  logger.error('Failed to start ServiceNow Operations MCP server:', error);
-  process.exit(1);
-});
+// Export for testing
+export { ServiceNowOperationsMCP };
+
+// Start the server only if run directly
+if (require.main === module) {
+  const server = new ServiceNowOperationsMCP();
+  server.run().catch((error) => {
+    logger.error('Failed to start ServiceNow Operations MCP server:', error);
+    process.exit(1);
+  });
+}

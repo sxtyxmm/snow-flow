@@ -301,15 +301,19 @@ export class MCPServerManager extends EventEmitter {
       // Try graceful shutdown first
       server.process.kill('SIGTERM');
       
-      // Wait for graceful shutdown
+      // Wait for graceful shutdown with shorter timeout to prevent hanging
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
           // Force kill if graceful shutdown fails
           if (server.process) {
-            server.process.kill('SIGKILL');
+            try {
+              server.process.kill('SIGKILL');
+            } catch (e) {
+              // Process might already be dead
+            }
           }
           resolve(undefined);
-        }, 5000);
+        }, 2000); // Reduced from 5000ms to 2000ms to prevent hanging
 
         server.process?.on('exit', () => {
           clearTimeout(timeout);
@@ -366,6 +370,13 @@ export class MCPServerManager extends EventEmitter {
     );
 
     await Promise.all(promises);
+    
+    // Release singleton lock after stopping all servers
+    const singletonLock = getMCPSingletonLock();
+    if (singletonLock.isAcquired()) {
+      singletonLock.release();
+      console.log('✅ Released MCP singleton lock after stopping all servers');
+    }
   }
 
 

@@ -14,6 +14,7 @@ import * as tf from '@tensorflow/tfjs-node';
 import { Logger } from '../utils/logger.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowCredentials } from '../utils/snow-oauth.js';
+import { MLDataFetcher } from '../utils/ml-data-fetcher.js';
 
 // Model types
 interface IncidentClassificationModel {
@@ -1321,47 +1322,130 @@ export class ServiceNowMachineLearningMCP {
       finalQuery = 'ORDERBYDESCsys_created_on';
     }
     
-    // Use searchRecords for proper authentication handling
-    // 🔴 CRITICAL FIX: Use the actual limit parameter, not default of 10
-    const response = await this.client.searchRecords('incident', finalQuery, limit);
+    // Use smart ML data fetcher for batched retrieval to avoid token limits
+    this.logger.info(`🤖 Using smart ML data fetcher for ${limit} incidents`);
     
-    this.logger.info(`Attempting to fetch ${limit} incidents with query: ${finalQuery}`);
-    
-    if (!response.success || !response.data?.result) {
-      throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
-    }
-    
-    this.logger.info(`Fetched ${response.data.result.length} incidents for ML training (requested: ${limit})`);
-    
-    // If intelligent selection, ensure we have a balanced dataset
-    if (intelligent_selection && response.data.result.length > 0) {
-      const categoryDistribution: Record<string, number> = {};
-      const priorityDistribution: Record<string, number> = {};
+    try {
+      // Create a delegate for the operations MCP
+      const operationsMCP = {
+        handleTool: async (toolName: string, args: any) => {
+          if (toolName === 'snow_query_table') {
+            const { table, query: q, limit: l, fields, include_content } = args;
+            
+            // Use the client to fetch data
+            const response = await this.client.searchRecords(table, q || '', l || 100);
+            
+            if (!response.success) {
+              throw new Error(`Query failed: ${response.error}`);
+            }
+            
+            const records = response.data?.result || [];
+            
+            // Filter fields if specified
+            let filteredRecords = records;
+            if (fields && fields.length > 0) {
+              filteredRecords = records.map((record: any) => {
+                const filtered: any = {};
+                for (const field of fields) {
+                  if (field in record) {
+                    filtered[field] = record[field];
+                  }
+                }
+                return filtered;
+              });
+            }
+            
+            // Format response
+            if (include_content) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify(filteredRecords, null, 2)
+                }]
+              };
+            } else {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `Found ${records.length} ${table} records matching query: "${q || 'all'}"`
+                }]
+              };
+            }
+          }
+          throw new Error(`Unknown tool: ${toolName}`);
+        }
+      };
       
-      response.data.result.forEach((inc: any) => {
-        const category = inc.category || 'uncategorized';
-        const priority = inc.priority || '3';
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-        priorityDistribution[priority] = (priorityDistribution[priority] || 0) + 1;
+      const dataFetcher = new MLDataFetcher(operationsMCP);
+      const result = await dataFetcher.smartFetch({
+        table: 'incident',
+        query: finalQuery,
+        totalSamples: limit,
+        batchSize: 50, // Small batches to avoid token limits
+        discoverFields: true,
+        includeContent: true
       });
       
-      this.logger.info('Data distribution:');
-      this.logger.info(`Categories: ${JSON.stringify(categoryDistribution)}`);
-      this.logger.info(`Priorities: ${JSON.stringify(priorityDistribution)}`);
+      this.logger.info(`🎉 Fetched ${result.totalFetched} incidents in ${result.batchesProcessed} batches`);
+      this.logger.info(`🔍 Used fields: ${result.fields.slice(0, 10).join(', ')}${result.fields.length > 10 ? '...' : ''}`);
+      
+      // If intelligent selection, log distribution
+      if (intelligent_selection && result.data.length > 0) {
+        const categoryDistribution: Record<string, number> = {};
+        const priorityDistribution: Record<string, number> = {};
+        
+        result.data.forEach((inc: any) => {
+          const category = inc.category || 'uncategorized';
+          const priority = inc.priority || '3';
+          categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+          priorityDistribution[priority] = (priorityDistribution[priority] || 0) + 1;
+        });
+        
+        this.logger.info('Data distribution:');
+        this.logger.info(`Categories: ${Object.keys(categoryDistribution).length} unique`);
+        this.logger.info(`Priorities: ${JSON.stringify(priorityDistribution)}`);
+      }
+      
+      // Map the fetched data to our IncidentData format
+      return result.data.map((inc: any) => ({
+        short_description: inc.short_description || '',
+        description: inc.description || '',
+        category: inc.category || 'uncategorized',
+        subcategory: inc.subcategory || '',
+        priority: parseInt(inc.priority) || 3,
+        impact: parseInt(inc.impact) || 2,
+        urgency: parseInt(inc.urgency) || 2,
+        resolved: inc.state === '6' || inc.state === '7' || inc.active === 'false',
+        resolution_time: inc.resolved_at && inc.sys_created_on ? 
+          (new Date(inc.resolved_at).getTime() - new Date(inc.sys_created_on).getTime()) / 1000 : undefined
+      }));
+      
+    } catch (error: any) {
+      // Fallback to direct fetch with smaller limit if smart fetcher fails
+      this.logger.warn('Smart fetcher failed, using fallback with reduced limit:', error.message);
+      
+      const fallbackLimit = Math.min(limit, 100); // Limit to 100 to avoid token issues
+      const response = await this.client.searchRecords('incident', finalQuery, fallbackLimit);
+      
+      if (!response.success || !response.data?.result) {
+        throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
+      }
+      
+      this.logger.info(`Fetched ${response.data.result.length} incidents (fallback mode, limited to ${fallbackLimit})`);
+      
+      return response.data.result.map((inc: any) => ({
+        short_description: inc.short_description || '',
+        description: inc.description || '',
+        category: inc.category || 'uncategorized',
+        subcategory: inc.subcategory || '',
+        priority: parseInt(inc.priority) || 3,
+        impact: parseInt(inc.impact) || 2,
+        urgency: parseInt(inc.urgency) || 2,
+        resolved: inc.resolved === 'true',
+        resolution_time: inc.resolved_at && inc.sys_created_on ? 
+          (new Date(inc.resolved_at).getTime() - new Date(inc.sys_created_on).getTime()) / 1000 : undefined
+      }));
     }
-
-    return response.data.result.map((inc: any) => ({
-      short_description: inc.short_description || '',
-      description: inc.description || '',
-      category: inc.category || 'uncategorized',
-      subcategory: inc.subcategory || '',
-      priority: parseInt(inc.priority) || 3,
-      impact: parseInt(inc.impact) || 2,
-      urgency: parseInt(inc.urgency) || 2,
-      resolved: inc.resolved === 'true',
-      resolution_time: inc.resolved_at && inc.sys_created_on ? 
-        (new Date(inc.resolved_at).getTime() - new Date(inc.sys_created_on).getTime()) / 1000 : undefined
-    }));
   }
 
   private async prepareIncidentData(incidents: IncidentData[]) {
@@ -1490,33 +1574,126 @@ export class ServiceNowMachineLearningMCP {
   }
 
   private async fetchChangeData(limit: number, includeFailed: boolean): Promise<ChangeData[]> {
-    // Fetch real change data from ServiceNow - NO MOCK DATA
-    const queryParams = {
-      sysparm_limit: limit,
-      sysparm_query: includeFailed ? 'state!=cancelled' : 'state=closed^close_code=successful',
-      sysparm_fields: 'number,short_description,risk,impact,category,type,state,close_code,sys_created_on,closed_at'
-    };
+    // Use smart data fetcher for change requests to avoid token limits
+    this.logger.info(`🤖 Using smart ML data fetcher for ${limit} change requests`);
     
-    const response = await this.makeServiceNowRequest('/api/now/table/change_request', queryParams);
+    const query = includeFailed ? 'state!=cancelled' : 'state=closed^close_code=successful';
     
-    if (!response || !response.result) {
-      throw new Error(
-        'Failed to fetch change data from ServiceNow. ' +
-        'Ensure you have permission to read change_request table.'
-      );
+    try {
+      // Create a delegate for the operations MCP
+      const operationsMCP = {
+        handleTool: async (toolName: string, args: any) => {
+          if (toolName === 'snow_query_table') {
+            const { table, query: q, limit: l, fields, include_content } = args;
+            
+            // Use the client to fetch data
+            const response = await this.client.searchRecords(table, q || '', l || 100);
+            
+            if (!response.success) {
+              throw new Error(`Query failed: ${response.error}`);
+            }
+            
+            const records = response.data?.result || [];
+            
+            // Filter fields if specified
+            let filteredRecords = records;
+            if (fields && fields.length > 0) {
+              filteredRecords = records.map((record: any) => {
+                const filtered: any = {};
+                for (const field of fields) {
+                  if (field in record) {
+                    filtered[field] = record[field];
+                  }
+                }
+                return filtered;
+              });
+            }
+            
+            // Format response
+            if (include_content) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify(filteredRecords, null, 2)
+                }]
+              };
+            } else {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `Found ${records.length} ${table} records matching query: "${q || 'all'}"`
+                }]
+              };
+            }
+          }
+          throw new Error(`Unknown tool: ${toolName}`);
+        }
+      };
+      
+      const dataFetcher = new MLDataFetcher(operationsMCP);
+      const result = await dataFetcher.smartFetch({
+        table: 'change_request',
+        query,
+        totalSamples: limit,
+        batchSize: 50, // Small batches to avoid token limits
+        fields: ['number', 'short_description', 'risk', 'impact', 'category', 'type', 
+                 'state', 'close_code', 'sys_created_on', 'closed_at', 'start_date', 'end_date',
+                 'assignment_group', 'approval', 'test_plan', 'backout_plan', 'rollback_tested'],
+        includeContent: true
+      });
+      
+      this.logger.info(`🎉 Fetched ${result.totalFetched} change requests in ${result.batchesProcessed} batches`);
+      
+      return result.data.map((change: any) => ({
+        short_description: change.short_description || '',
+        risk: change.risk || 'moderate',
+        category: change.category || 'standard',
+        type: change.type || 'standard',
+        planned_start: change.start_date ? new Date(change.start_date) : new Date(),
+        planned_end: change.end_date ? new Date(change.end_date) : new Date(),
+        assignment_group: change.assignment_group?.display_value || change.assignment_group || '',
+        approval_count: parseInt(change.approval) || 0,
+        test_plan: change.test_plan === 'true' || false,
+        backout_plan: change.backout_plan === 'true' || false,
+        rollback_tested: change.rollback_tested === 'true' || false,
+        implementation_success: change.close_code === 'successful'
+      }));
+      
+    } catch (error: any) {
+      // Fallback to direct API call with smaller limit
+      this.logger.warn('Smart fetcher failed, using fallback:', error.message);
+      
+      const fallbackLimit = Math.min(limit, 100);
+      const queryParams = {
+        sysparm_limit: fallbackLimit,
+        sysparm_query: query,
+        sysparm_fields: 'number,short_description,risk,impact,category,type,state,close_code,sys_created_on,closed_at'
+      };
+      
+      const response = await this.makeServiceNowRequest('/api/now/table/change_request', queryParams);
+      
+      if (!response || !response.result) {
+        throw new Error(
+          'Failed to fetch change data from ServiceNow. ' +
+          'Ensure you have permission to read change_request table.'
+        );
+      }
+      
+      return response.result.map((change: any) => ({
+        short_description: change.short_description || '',
+        risk: change.risk || 'moderate',
+        category: change.category || 'standard',
+        type: change.type || 'standard',
+        planned_start: change.start_date ? new Date(change.start_date) : new Date(),
+        planned_end: change.end_date ? new Date(change.end_date) : new Date(),
+        assignment_group: change.assignment_group?.display_value || change.assignment_group || '',
+        approval_count: parseInt(change.approval) || 0,
+        test_plan: change.test_plan === 'true' || false,
+        backout_plan: change.backout_plan === 'true' || false,
+        rollback_tested: change.rollback_tested === 'true' || false,
+        implementation_success: change.close_code === 'successful'
+      }));
     }
-    
-    return response.result.map((change: any) => ({
-      number: change.number,
-      description: change.short_description || '',
-      risk: change.risk || 'moderate',
-      impact: parseInt(change.impact) || 2,
-      category: change.category || 'standard',
-      type: change.type || 'standard',
-      successful: change.close_code === 'successful',
-      duration: change.closed_at && change.sys_created_on ?
-        (new Date(change.closed_at).getTime() - new Date(change.sys_created_on).getTime()) / 1000 : 0
-    }));
   }
 
   private async prepareChangeData(changes: ChangeData[]) {
