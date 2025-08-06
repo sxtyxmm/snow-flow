@@ -55,7 +55,6 @@ class PerformanceBenchmark {
     
     for (const table of tables) {
       const startTime = Date.now();
-      const startMemory = process.memoryUsage().heapUsed;
       
       // Count-only query
       const response = await this.client.searchRecords(table, 'active=true', 100);

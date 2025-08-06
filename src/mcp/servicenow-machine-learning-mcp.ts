@@ -1575,6 +1575,17 @@ export class ServiceNowMachineLearningMCP {
     
     this.logger.info(`Starting streaming training with batch size ${batch_size}`);
     
+    // First, validate we can fetch data
+    try {
+      const testFetch = await this.fetchIncidentData(1, { query, intelligent_selection, focus_categories });
+      if (testFetch.length === 0) {
+        throw new Error('No incidents available for training');
+      }
+    } catch (error: any) {
+      this.logger.error('Cannot access incident data:', error);
+      throw new Error(`Training failed - cannot access incident data: ${error.message}`);
+    }
+    
     // Create feature hasher for vocabulary management
     const featureHasher = this.createFeatureHasher(max_vocabulary_size);
     
@@ -1773,11 +1784,14 @@ export class ServiceNowMachineLearningMCP {
    * Create optimized model for memory efficiency
    */
   private createOptimizedModel(vocabularySize: number) {
+    // Ensure vocabulary size is valid
+    const validVocabSize = Math.max(1, vocabularySize || 5000);
+    
     return tf.sequential({
       layers: [
         // Use embedding with smaller dimensions
         tf.layers.embedding({
-          inputDim: vocabularySize,
+          inputDim: validVocabSize, // Use validated vocabulary size
           outputDim: 64, // Reduced from 128
           inputLength: 100
         }),
