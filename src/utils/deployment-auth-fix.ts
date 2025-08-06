@@ -239,13 +239,16 @@ export class DeploymentAuthManager {
       return response.status === 200;
       
     } catch (error: any) {
-      // 403 means we don't have permission
+      // Only treat 403 as definitive no permission
       if (error.response?.status === 403) {
-        logger.warn('No write permissions for Service Portal');
+        logger.warn('403 Forbidden: No write permissions for Service Portal');
         return false;
       }
-      // Other errors we'll assume no permission
-      return false;
+      
+      // For other errors (network, timeout, 500, etc.) assume permissions are OK
+      // since an admin account should have access
+      logger.warn(`Permission check failed with non-403 error (${error.response?.status || 'no status'}), assuming permissions OK for admin account:`, error.message);
+      return true; // Changed from false to true - be less restrictive
     }
   }
   

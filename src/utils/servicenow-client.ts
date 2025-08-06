@@ -659,15 +659,33 @@ export class ServiceNowClient {
     if (roleTest?.status && typeof roleTest.status === 'string' && roleTest.status.includes('PASS')) {
       const roles = roleTest.result?.roles;
       if (Array.isArray(roles)) {
+        // Debug: Log actual roles for troubleshooting
+        this.logger.info(`User roles found: ${roles.join(', ')}`);
+        
         const hasRequiredRole = roles.some((role: any) => {
           if (typeof role === 'string') {
-            return role.includes('admin') || role.includes('sp_portal');
+            const roleLower = role.toLowerCase();
+            // Check for admin roles: admin, system_administrator, etc.
+            const isAdmin = roleLower.includes('admin');
+            // Check for portal manager roles: sp_portal_manager, sp_admin, etc.
+            const isPortalManager = roleLower.includes('sp_portal_manager') || 
+                                   roleLower.includes('sp_admin') ||
+                                   roleLower.includes('portal_manager');
+            
+            if (isAdmin || isPortalManager) {
+              this.logger.info(`✅ Found qualifying role: ${role}`);
+            }
+            
+            return isAdmin || isPortalManager;
           }
           return false;
         });
         
         if (!hasRequiredRole) {
-          recommendations.push('⚠️ User lacks admin or portal management roles. Contact ServiceNow admin to assign appropriate roles');
+          this.logger.warn(`❌ No qualifying roles found in: ${roles.join(', ')}`);
+          recommendations.push(`⚠️ User roles (${roles.join(', ')}) don't include admin or portal management roles. Contact ServiceNow admin to assign appropriate roles`);
+        } else {
+          this.logger.info('✅ User has sufficient roles for deployment');
         }
       } else {
         recommendations.push('⚠️ Unable to verify user roles. Check if user has admin or portal management permissions');
