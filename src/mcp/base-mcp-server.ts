@@ -301,6 +301,10 @@ export abstract class BaseMCPServer {
     const timeoutMap: Record<string, number> = {
       'snow_create_flow': 90000,           // Flow creation: 90s
       'snow_deploy': 120000,               // Deployment: 2 minutes
+      'snow_deploy_widget': 180000,        // Widget deployment: 3 minutes (complex ML widgets)
+      'snow_create_widget': 120000,        // Widget creation: 2 minutes
+      'ml_train_incident_classifier': 300000, // ML training: 5 minutes
+      'ml_train_change_risk': 300000,      // ML training: 5 minutes
       'snow_comprehensive_search': 45000,  // Search: 45s
       'snow_find_artifact': 30000,         // Find: 30s
       'snow_validate_live_connection': 15000, // Validation: 15s
