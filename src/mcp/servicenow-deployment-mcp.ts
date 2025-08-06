@@ -19,6 +19,7 @@ import { ScopeManager, DeploymentContext } from '../managers/scope-manager.js';
 import { GlobalScopeStrategy, ScopeType } from '../strategies/global-scope-strategy.js';
 import { artifactTracker } from '../utils/artifact-tracker.js';
 import { generateServiceNowSysId } from '../utils/servicenow-id-generator.js';
+import { DeploymentAuthManager } from '../utils/deployment-auth-fix.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -29,6 +30,7 @@ class ServiceNowDeploymentMCP {
   private logger: Logger;
   private scopeManager: ScopeManager;
   private globalScopeStrategy: GlobalScopeStrategy;
+  private deploymentAuthManager: DeploymentAuthManager;
 
   constructor() {
     this.server = new Server(
@@ -46,6 +48,7 @@ class ServiceNowDeploymentMCP {
     this.client = new ServiceNowClient();
     this.oauth = new ServiceNowOAuth();
     this.logger = new Logger('ServiceNowDeploymentMCP');
+    this.deploymentAuthManager = new DeploymentAuthManager();
     
     // Initialize global scope management
     this.scopeManager = new ScopeManager({
@@ -509,6 +512,44 @@ class ServiceNowDeploymentMCP {
   }
 
   /**
+   * Create a record with automatic 403 error recovery
+   * Will attempt to refresh token and retry once if 403 error occurs
+   */
+  private async createRecordWithRetry(table: string, data: any): Promise<any> {
+    try {
+      // First attempt
+      return await this.client.createRecord(table, data);
+    } catch (error: any) {
+      // Check if it's a 403 error
+      if (error.response?.status === 403 || error.message?.includes('403')) {
+        this.logger.warn('Got 403 error, attempting token refresh and retry...');
+        
+        // Refresh token
+        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
+        if (refreshResult.success && refreshResult.accessToken) {
+          // Client will use the new token automatically from unified auth store
+          // No need to call authenticate - the client reads from auth store
+          
+          // Retry the operation
+          try {
+            this.logger.info('Retrying operation with refreshed token...');
+            return await this.client.createRecord(table, data);
+          } catch (retryError: any) {
+            this.logger.error('Retry failed after token refresh:', retryError);
+            throw retryError;
+          }
+        } else {
+          this.logger.error('Failed to refresh token for retry');
+          throw error;
+        }
+      } else {
+        // Not a 403 error, just re-throw
+        throw error;
+      }
+    }
+  }
+
+  /**
    * Ensure artifact is tracked in current Update Set
    */
   private async ensureUpdateSetTracking(artifact: any): Promise<void> {
@@ -578,17 +619,28 @@ class ServiceNowDeploymentMCP {
 
   private async deployWidget(args: any) {
     try {
-      // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+      // Enhanced authentication check with token refresh for deployment
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
+        this.logger.error('Deployment authentication failed:', authResult.error);
+        
+        // If auth failed, try to refresh token
+        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
+        if (!refreshResult.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
+        }
+      }
+      
+      // Warn if token may lack write permissions
+      if (!authResult.hasWriteScope) {
+        this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
       }
 
       this.logger.info('Deploying widget to ServiceNow', { name: args.name });
@@ -748,7 +800,7 @@ class ServiceNowDeploymentMCP {
         // Strategy 2: Direct table record creation (fallback)
         try {
           this.logger.info('🔄 Attempting fallback: Direct table record creation');
-          result = await this.client.createRecord('sp_widget', {
+          result = await this.createRecordWithRetry('sp_widget', {
             name: args.name,
             id: args.name,
             title: args.title,
@@ -1157,17 +1209,28 @@ Use \`snow_deployment_debug\` for more information about this session.`,
    */
   private async deployPortalPage(args: any) {
     try {
-      // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
-        return {
+      // Enhanced authentication check with token refresh for deployment
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
+        this.logger.error('Deployment authentication failed:', authResult.error);
+        
+        // If auth failed, try to refresh token
+        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
+        if (!refreshResult.success) {
+          return {
           content: [
             {
               type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
+        }
+      }
+      
+      // Warn if token may lack write permissions
+      if (!authResult.hasWriteScope) {
+        this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
       }
 
       this.logger.info('Deploying portal page to ServiceNow', { name: args.page_id });
@@ -1215,7 +1278,7 @@ Use \`snow_deployment_debug\` for more information about this session.`,
       let pageResult;
       try {
         // Create the page record
-        pageResult = await this.client.createRecord('sp_page', {
+        pageResult = await this.createRecordWithRetry('sp_page', {
           id: args.page_id,
           title: args.title,
           short_description: args.description || `Portal page created by Snow-Flow`,
@@ -1624,17 +1687,28 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
 
   private async deployFlow(args: any) {
     try {
-      // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
-        return {
+      // Enhanced authentication check with token refresh for deployment
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
+        this.logger.error('Deployment authentication failed:', authResult.error);
+        
+        // If auth failed, try to refresh token
+        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
+        if (!refreshResult.success) {
+          return {
           content: [
             {
               type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
+        }
+      }
+      
+      // Warn if token may lack write permissions
+      if (!authResult.hasWriteScope) {
+        this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
       }
 
       // Ensure we have a flow definition
@@ -2123,17 +2197,28 @@ ${isComposedFlow ? `
 
   private async deployApplication(args: any) {
     try {
-      // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
-        return {
+      // Enhanced authentication check with token refresh for deployment
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
+        this.logger.error('Deployment authentication failed:', authResult.error);
+        
+        // If auth failed, try to refresh token
+        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
+        if (!refreshResult.success) {
+          return {
           content: [
             {
               type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
+        }
+      }
+      
+      // Warn if token may lack write permissions
+      if (!authResult.hasWriteScope) {
+        this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
       }
 
       this.logger.info('Deploying application with intelligent scope management', { name: args.name });
@@ -3737,13 +3822,13 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
   private async previewWidget(args: any) {
     try {
       // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
         return {
           content: [
             {
               type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
@@ -3920,13 +4005,13 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
   private async testWidget(args: any) {
     try {
       // Check authentication first
-      const isAuth = await this.oauth.isAuthenticated();
-      if (!isAuth) {
+      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
+      if (!authResult.isValid) {
         return {
           content: [
             {
               type: 'text',
-              text: '❌ Not authenticated with ServiceNow.\n\nPlease run: snow-flow auth login\n\nOr configure your .env file with ServiceNow OAuth credentials.',
+              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
             },
           ],
         };
@@ -5041,7 +5126,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           
         case 'script':
         case 'script_include':
-          const scriptResult = await this.client.createRecord('sys_script_include', config);
+          const scriptResult = await this.createRecordWithRetry('sys_script_include', config);
           return {
             success: scriptResult.success,
             sys_id: scriptResult.data?.sys_id,
@@ -5049,7 +5134,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           };
           
         case 'business_rule':
-          const ruleResult = await this.client.createRecord('sys_script', config);
+          const ruleResult = await this.createRecordWithRetry('sys_script', config);
           return {
             success: ruleResult.success,
             sys_id: ruleResult.data?.sys_id,
@@ -5057,7 +5142,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           };
           
         case 'table':
-          const tableResult = await this.client.createRecord('sys_db_object', config);
+          const tableResult = await this.createRecordWithRetry('sys_db_object', config);
           return {
             success: tableResult.success,
             sys_id: tableResult.data?.sys_id,
