@@ -64,22 +64,22 @@ Message 3: Read("file1.js")
 - `./snow-flow sparc run <mode> "<task>"`: Run specific SPARC mode
 - `./snow-flow sparc tdd "<feature>"`: Test-driven development mode
 
-### Swarm Coordination - 🚀 Enhanced with Complete Solution
+### Swarm Coordination
 - `./snow-flow swarm "<objective>" [options]`: Multi-agent swarm coordination - één command voor alles!
-- `--strategy`: research, development, analysis, testing, optimization, maintenance, **ml-training** (NEW!)
+- `--strategy`: research, development, analysis, testing, optimization, maintenance, ml-training
 - `--mode`: centralized, distributed, hierarchical, mesh, hybrid
 - `--max-agents <n>`: Maximum number of agents (default: 5)
 - `--parallel`: Enable parallel execution
 - `--monitor`: Real-time monitoring
 
-**🧠 Intelligent Features (enabled by default):**
+**Intelligent Features (enabled by default):**
 - `--smart-discovery`: Smart artifact discovery and reuse (default: **true**)
 - `--live-testing`: Enable live testing during development (default: **true**)
 - `--auto-deploy`: Automatic deployment when ready (default: **true**)
 - `--shared-memory`: Enable shared memory between agents (default: **true**)
-- `--ml-integration`: Use ML for predictions and optimization (default: **true**) (NEW!)
+- `--ml-integration`: Use ML for predictions and optimization (default: **true**)
 
-### Machine Learning Commands (NEW!)
+### Machine Learning Commands
 - `./snow-flow ml train-incident-classifier`: Train incident classification model
 - `./snow-flow ml train-change-risk`: Train change risk prediction
 - `./snow-flow ml classify-incident <id>`: Classify incident with neural network
@@ -90,7 +90,7 @@ Message 3: Read("file1.js")
 
 ## Quick Start Workflows
 
-### 🚀 Intelligent Development Workflow
+### Intelligent Development Workflow
 ```bash
 # Simple usage - all intelligent features enabled by default!
 ./snow-flow swarm "Create incident management dashboard with real-time updates"
@@ -321,9 +321,9 @@ snow-flow swarm "Build ML predictions for u_vendor_performance custom table"
 snow-flow swarm "Create HR salary predictor that keeps data in browser"
 ```
 
-## 🤖 Dynamic Task Categorization (NEW in v2.5.0!)
+## 🤖 Dynamic Task Categorization
 
-Snow-Flow now uses AI-powered dynamic categorization instead of static patterns:
+Snow-Flow uses AI-powered dynamic categorization instead of static patterns:
 
 ### Why Dynamic Categorization?
 - **Multi-language support**: Auto-detects Dutch, English, French, Spanish, German
@@ -337,7 +337,7 @@ Snow-Flow now uses AI-powered dynamic categorization instead of static patterns:
 // Old static pattern approach (limited)
 const result = AgentDetector.analyzeTask("maak 5000 incidenten");
 
-// NEW dynamic AI approach (intelligent)
+// Dynamic AI approach (intelligent)
 const result = await mcp__snow-flow__task_categorize({
   objective: "maak een data set aan van 5000 random incidenten",
   context: {
@@ -369,9 +369,9 @@ const result = await mcp__snow-flow__task_categorize({
 }
 ```
 
-## 🧠 Intelligent Agent Batching (NEW in v2.6.0!)
+## 🧠 Intelligent Agent Batching
 
-Snow-Flow now includes **Intelligent Dependency-Based Agent Batching** that automatically determines which agents can run in parallel vs sequential based on task dependencies!
+Snow-Flow includes **Intelligent Dependency-Based Agent Batching** that automatically determines which agents can run in parallel vs sequential based on task dependencies.
 
 ### How It Works:
 
@@ -511,12 +511,63 @@ const agentDependencies = {
 5. Integration agents have minimal dependencies
 6. Security and performance agents run near the end
 
+## 🎯 Universal Query Tool
+
+The `snow_query_table` tool replaces ALL table-specific query tools with one intelligent universal tool:
+
+### Smart Performance Modes:
+```javascript
+// 1. Count-only (default) - 99.9% memory savings
+snow_query_table({ 
+  table: "incident", 
+  query: "state!=7",
+  limit: 2000 
+})
+// Returns: {total_results: 2000, summary: {...}} (13 bytes)
+
+// 2. Specific fields - Get only what you need
+snow_query_table({ 
+  table: "sc_request",
+  query: "active=true",
+  fields: ["number", "short_description", "requested_for"],
+  include_display_values: true  // Shows names instead of sys_ids
+})
+
+// 3. Group by aggregation - Statistics and analytics
+snow_query_table({ 
+  table: "problem",
+  query: "active=true",
+  group_by: "category",      // Groups and counts
+  order_by: "-created_on"     // - means descending (newest first)
+})
+
+// 4. Full content - When you need everything
+snow_query_table({ 
+  table: "change_request",
+  query: "type=emergency",
+  include_content: true,      // Full record data
+  limit: 5 
+})
+```
+
+### Works with ANY table:
+- Standard tables: `incident`, `problem`, `change_request`, `sc_request`, `sc_req_item`
+- CMDB tables: `cmdb_ci`, `cmdb_ci_server`, `cmdb_ci_appl`
+- Custom tables: `u_employee_data`, `u_vendor_rating`, any `u_*` table
+- System tables: `sys_user`, `sys_user_group`, `task`
+
+### Order By Examples:
+- `order_by: "created_on"` → Oldest first (ascending)
+- `order_by: "-created_on"` → Newest first (descending)
+- `order_by: "-priority"` → Highest priority first (1 before 5)
+- `order_by: "number"` → Alphabetical by number
+
 ## Snow-Flow MCP Tools (100+ Total)
 
 Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized MCP servers:
 
-### 🐝 **Snow-Flow AI Swarm Orchestration** (11+ tools) - NATIVE IMPLEMENTATION!
-**IMPORTANT: Use Snow-Flow's built-in swarm orchestration - no external tools needed!**
+### 🐝 **Snow-Flow AI Swarm Orchestration** (11+ tools)
+**Built-in swarm orchestration - no external tools needed**
 - `swarm_init` - Initialize AI swarm coordination topology
 - `agent_spawn` - Create specialized AI agents for different tasks
 - `task_orchestrate` - Orchestrate complex task workflows in parallel
@@ -527,7 +578,7 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - `neural_patterns` - Analyze cognitive patterns for better coordination
 - `memory_search` - Search memory with pattern matching
 - `performance_report` - Generate performance reports with metrics
-- `task_categorize` - **NEW!** AI-powered dynamic task categorization (replaces static patterns)
+- `task_categorize` - AI-powered dynamic task categorization (replaces static patterns)
 
 
 ### 🔄 **Process Mining & Workflow Analysis** (4 tools)
@@ -545,6 +596,10 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - `snow_generate_documentation` - Auto-generate documentation from code analysis
 
 ### 📊 **ServiceNow Operations** (15+ tools)
+- **Universal Query Tool** - `snow_query_table` works with ANY ServiceNow table
+  - Smart performance: count-only (13 bytes), specific fields, or full data
+  - Group by aggregation, order by sorting, display values
+  - Works with all tables: incident, sc_request, problem, cmdb_ci, even u_custom
 - Complete ITIL lifecycle management (Incident, Request, Problem, Change)
 - CMDB and User management with intelligent analysis
 - AI-powered incident analysis and auto-resolution capabilities
@@ -567,7 +622,7 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - Email configuration and communication integration
 - Comprehensive data source discovery and analysis
 
-### 🤖 **Machine Learning & AI** (15+ tools) - NEW!
+### 🤖 **Machine Learning & AI** (15+ tools)
 - `ml_train_incident_classifier` - Train LSTM neural networks for incident classification
 - `ml_train_change_risk` - Build change risk prediction models
 - `ml_train_anomaly_detector` - Create autoencoder anomaly detection
@@ -608,9 +663,9 @@ Snow-Flow provides comprehensive ServiceNow intelligence through 16 specialized 
 - Proactive vulnerability scanning and assessment
 - Comprehensive security risk assessment and analysis
 
-## 🤖 Dynamic Agent Discovery (NEW in v2.6.0!)
+## 🤖 Dynamic Agent Discovery
 
-Snow-Flow now features **AI-Powered Dynamic Agent Discovery** that goes beyond static agent definitions!
+Snow-Flow features **AI-Powered Dynamic Agent Discovery** that goes beyond static agent definitions.
 
 ### How Dynamic Agent Discovery Works:
 
@@ -630,7 +685,7 @@ Supporting: api-specialist, integration-specialist, tester
 
 **Dynamic Discovery** (AI discovers 9 specialized agents):
 ```
-NEW Agents Discovered:
+Agents Discovered:
 • offline-sync-expert - Handles offline ML predictions
 • tensorflow-mobile-specialist - Client-side ML on mobile
 • ios-specialist - iOS-specific optimizations

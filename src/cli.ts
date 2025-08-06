@@ -1081,6 +1081,14 @@ Your agents MUST use these MCP tools IN THIS ORDER:
 2. If auth fails, the tool provides specific instructions
 3. Continue with appropriate strategy based on auth status
 
+🎯 **Universal Query Tool** - Use for ALL table queries
+- \`snow_query_table\` - Replaces all table-specific query tools with intelligent optimization:
+  - **Count-only** (default): \`{table: "incident", query: "state!=7"}\` → 99.9% memory savings
+  - **Specific fields**: \`{table: "sc_request", fields: ["number", "state"]}\` → Only needed data
+  - **Group by**: \`{table: "problem", group_by: "category", order_by: "-priority"}\` → Analytics
+  - **Full content**: \`{table: "change_request", include_content: true}\` → When all data needed
+  - Works with ANY table: incident, sc_request, problem, cmdb_ci, even u_custom_tables!
+
 📦 **CORE DEVELOPMENT TOOLS**:
 1. **Deployment Tools** (servicenow-deployment-mcp)
    - \`snow_deploy\` - Unified deployment for all artifact types
@@ -3277,7 +3285,7 @@ snow_pattern__analysis({
 Promise.all([
   snow_find_artifact({ query: "incident widget" }),
   snow_catalog_item_search({ query: "laptop" }),
-  snow_query_incidents({ query: "priority=1" })
+  snow_query_table({ table: "incident", query: "priority=1" })  // Universal query tool
 ]);
 \`\`\`
 

@@ -71,6 +71,37 @@ snow-flow auth login
 - **Neural Learning**: Pattern recognition improves suggestions and automation over time
 
 ### 🔧 **100+ ServiceNow MCP Tools**
+
+#### 🎯 **Universal Query Tool** - One Tool for ALL Tables
+The revolutionary `snow_query_table` replaces all table-specific query tools with intelligent performance optimization:
+
+```javascript
+// Smart Performance Modes - LLM chooses the best approach:
+
+// 1. Count-only (default) - 99.9% memory savings for ML training
+snow_query_table({ table: "incident", query: "state!=7", limit: 2000 })
+// Returns: {total_results: 2000} - Only 13 bytes!
+
+// 2. Specific fields - Get exactly what you need
+snow_query_table({ 
+  table: "sc_request",
+  fields: ["number", "short_description", "requested_for"],
+  include_display_values: true  // Names instead of sys_ids
+})
+
+// 3. Group by aggregation - Analytics and statistics
+snow_query_table({ 
+  table: "problem",
+  group_by: "category",
+  order_by: "-priority"  // - means descending (highest first)
+})
+
+// 4. Full content - When complete data is needed
+snow_query_table({ table: "change_request", include_content: true })
+```
+
+Works with ANY table: `incident`, `sc_request`, `problem`, `cmdb_ci`, even `u_custom_table`!
+
 - **Operations**: Incident, Request, Problem, and Change management with AI analysis
 - **Development**: Create widgets, flows, scripts, and business rules with natural language
 - **Integration**: REST/SOAP endpoints, data transformation, and external system connectivity
@@ -85,8 +116,8 @@ Simply describe what you want to achieve:
 
 Snow-Flow understands your intent and orchestrates the entire implementation.
 
-### 🤖 **Machine Learning & Neural Networks (NEW!)**
-Snow-Flow now includes real neural network capabilities powered by TensorFlow.js:
+### 🤖 **Machine Learning & Neural Networks**
+Snow-Flow includes real neural network capabilities powered by TensorFlow.js:
 
 #### **Incident Classification & Prediction**
 Train LSTM neural networks on your historical incident data to:
