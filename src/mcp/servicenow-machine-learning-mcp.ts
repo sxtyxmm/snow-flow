@@ -618,30 +618,108 @@ export class ServiceNowMachineLearningMCP {
       
       // For smaller datasets, use the original approach but with optimizations
       // 🔴 CRITICAL FIX: Use full sample_size, not artificially limited amount
-      const incidents = await this.fetchIncidentData(sample_size, {
-        query,
-        intelligent_selection,
-        focus_categories
-      });
+      let incidents: IncidentData[] = [];
       
-      this.logger.info(`Retrieved ${incidents.length} incidents for initial training`);
+      try {
+        incidents = await this.fetchIncidentData(sample_size, {
+          query,
+          intelligent_selection,
+          focus_categories
+        });
+        
+        if (!incidents || !Array.isArray(incidents)) {
+          throw new Error('Invalid response from fetchIncidentData');
+        }
+        
+        this.logger.info(`Retrieved ${incidents.length} incidents for initial training`);
+      } catch (fetchError: any) {
+        this.logger.error('Failed to fetch incident data:', fetchError);
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'Failed to fetch incident data from ServiceNow',
+              details: fetchError.message,
+              troubleshooting: [
+                '1. Check ServiceNow OAuth authentication (snow-flow auth login)',
+                '2. Verify read access to incident table',
+                '3. Ensure incidents exist in ServiceNow (state!=7)',
+                '4. Check MCP server connection (snow-flow mcp status)',
+                '5. Try with smaller sample_size (e.g., 50)'
+              ],
+              recommendation: 'Run: snow-flow auth login && snow-flow test-incident-access'
+            }, null, 2)
+          }]
+        };
+      }
+      
+      if (incidents.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'No incidents found for training',
+              query_used: query || 'default intelligent selection',
+              troubleshooting: [
+                '1. Check if incidents exist in ServiceNow',
+                '2. Try a broader query (e.g., "active=true")',
+                '3. Verify table permissions',
+                '4. Use ServiceNow UI to confirm incident data exists'
+              ]
+            }, null, 2)
+          }]
+        };
+      }
       
       if (incidents.length < 100) {
-        throw new Error(`Insufficient data for training (need at least 100 incidents, got ${incidents.length})`);
+        this.logger.warn(`Low training data: only ${incidents.length} incidents. Proceeding with reduced dataset...`);
       }
 
       // Prepare training data with memory optimization
-      const { features, labels, tokenizer, categories } = await this.prepareIncidentDataOptimized(
-        incidents, 
-        max_vocabulary_size
-      );
+      let features, labels, tokenizer, categories;
+      
+      try {
+        const preparedData = await this.prepareIncidentDataOptimized(
+          incidents, 
+          max_vocabulary_size
+        );
+        features = preparedData.features;
+        labels = preparedData.labels;
+        tokenizer = preparedData.tokenizer;
+        categories = preparedData.categories;
+      } catch (prepError: any) {
+        this.logger.error('Failed to prepare training data:', prepError);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'Failed to prepare training data',
+              details: prepError.message,
+              incidents_count: incidents.length
+            }, null, 2)
+          }]
+        };
+      }
+      
+      // Get vocabulary size from tokenizer Map
+      const vocabularySize = tokenizer.get('_vocabulary_size') || max_vocabulary_size;
+      
+      if (!vocabularySize || vocabularySize <= 0) {
+        throw new Error('Invalid vocabulary size. Cannot create embedding layer.');
+      }
+      
+      this.logger.info(`Creating model with vocabulary size: ${vocabularySize}, categories: ${categories.length}`);
       
       // Create neural network model
       const model = tf.sequential({
         layers: [
           // Embedding layer for text
           tf.layers.embedding({
-            inputDim: tokenizer.size,
+            inputDim: vocabularySize, // Use the actual vocabulary size
             outputDim: 128,
             inputLength: 100 // Max sequence length
           }),
@@ -1575,27 +1653,58 @@ export class ServiceNowMachineLearningMCP {
     
     this.logger.info(`Starting streaming training with batch size ${batch_size}`);
     
-    // First, validate we can fetch data
+    // First, fetch initial batch to determine categories and validate data access
+    let allCategories = new Set<string>();
+    let initialBatch: IncidentData[] = [];
+    
     try {
-      const testFetch = await this.fetchIncidentData(1, { query, intelligent_selection, focus_categories });
-      if (testFetch.length === 0) {
+      const sampleSize = Math.min(100, sample_size); // Get initial sample to determine categories
+      initialBatch = await this.fetchIncidentData(sampleSize, { query, intelligent_selection, focus_categories });
+      
+      if (!initialBatch || initialBatch.length === 0) {
         throw new Error('No incidents available for training');
       }
+      
+      // Extract all categories from initial batch
+      initialBatch.forEach(inc => {
+        allCategories.add(inc.category || 'uncategorized');
+      });
+      
+      this.logger.info(`Found ${allCategories.size} categories from initial ${initialBatch.length} samples`);
     } catch (error: any) {
       this.logger.error('Cannot access incident data:', error);
-      throw new Error(`Training failed - cannot access incident data: ${error.message}`);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            status: 'error',
+            error: `Training failed - cannot access incident data: ${error.message}`,
+            troubleshooting: [
+              '1. Check ServiceNow OAuth authentication',
+              '2. Verify incident table read permissions',
+              '3. Ensure incidents exist in ServiceNow'
+            ]
+          }, null, 2)
+        }]
+      };
     }
     
     // Create feature hasher for vocabulary management
     const featureHasher = this.createFeatureHasher(max_vocabulary_size);
     
-    // Initialize model with proper architecture
-    const model = this.createOptimizedModel(max_vocabulary_size);
+    // NOW initialize model with proper architecture and correct number of categories
+    const model = this.createOptimizedModelWithCategories(max_vocabulary_size, allCategories.size);
+    
+    // Compile the model
+    model.compile({
+      optimizer: tf.train.adam(0.001),
+      loss: 'categoricalCrossentropy',
+      metrics: ['accuracy']
+    });
     
     // Process data in batches
     const totalBatches = Math.ceil(sample_size / batch_size);
     let processedSamples = 0;
-    let allCategories = new Set<string>();
     
     for (let batchNum = 0; batchNum < totalBatches; batchNum++) {
       const offset = batchNum * batch_size;
@@ -1814,6 +1923,49 @@ export class ServiceNowMachineLearningMCP {
         // Output layer (dynamic based on categories)
         tf.layers.dense({
           units: 10, // Will be adjusted based on actual categories
+          activation: 'softmax'
+        })
+      ]
+    });
+  }
+  
+  /**
+   * Create optimized model with specific number of categories
+   */
+  private createOptimizedModelWithCategories(vocabularySize: number, numCategories: number) {
+    // Ensure vocabulary size is valid
+    const validVocabSize = Math.max(1, vocabularySize || 5000);
+    const validNumCategories = Math.max(1, numCategories || 10);
+    
+    this.logger.info(`Creating model with vocab size: ${validVocabSize}, categories: ${validNumCategories}`);
+    
+    return tf.sequential({
+      layers: [
+        // Use embedding with smaller dimensions
+        tf.layers.embedding({
+          inputDim: validVocabSize,
+          outputDim: 64,
+          inputLength: 100
+        }),
+        
+        // Smaller LSTM
+        tf.layers.lstm({
+          units: 32,
+          returnSequences: false,
+          dropout: 0.2,
+          recurrentDropout: 0.2
+        }),
+        
+        // Smaller dense layer
+        tf.layers.dense({
+          units: 16,
+          activation: 'relu'
+        }),
+        tf.layers.dropout({ rate: 0.3 }),
+        
+        // Output layer with correct number of categories
+        tf.layers.dense({
+          units: validNumCategories, // Use actual number of categories
           activation: 'softmax'
         })
       ]
