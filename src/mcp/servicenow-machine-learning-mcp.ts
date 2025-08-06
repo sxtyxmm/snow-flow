@@ -1549,15 +1549,23 @@ export class ServiceNowMachineLearningMCP {
     const tokenizer = new Map<string, number>();
     let tokenIndex = 1;
 
-    // Get unique categories
-    const categories = [...new Set(incidents.map(i => i.category))];
+    // Get unique categories with fallback
+    let categories = [...new Set(incidents.map(i => i.category).filter(c => c))];
+    
+    // CRITICAL FIX: Ensure we have at least 2 categories to prevent shape (1,1) error
+    if (categories.length < 2) {
+      categories = [...categories, 'other', 'uncategorized'];
+      this.logger.warn(`Only ${categories.length - 2} unique categories found, added fallback categories`);
+    }
+    
+    this.logger.info(`Training with ${categories.length} categories: ${categories.join(', ')}`);
     
     // Tokenize all text
     const sequences: number[][] = [];
     
     for (const incident of incidents) {
-      const text = `${incident.short_description} ${incident.description}`.toLowerCase();
-      const words = text.split(/\s+/);
+      const text = `${incident.short_description || ''} ${incident.description || ''}`.toLowerCase();
+      const words = text.split(/\s+/).filter(w => w.length > 0);
       const sequence: number[] = [];
       
       for (const word of words) {
@@ -1580,12 +1588,32 @@ export class ServiceNowMachineLearningMCP {
       }
     });
 
+    // Create category indices with improved error handling
+    const categoryIndices = incidents.map(incident => {
+      const category = incident.category || 'uncategorized';
+      const index = categories.indexOf(category);
+      if (index >= 0) {
+        return index;
+      } else {
+        // Fallback to 'other' or first category
+        const otherIndex = categories.indexOf('other');
+        return otherIndex >= 0 ? otherIndex : 0;
+      }
+    });
+
+    // Validate before creating tensors
+    if (categories.length < 2) {
+      throw new Error(`Insufficient categories for classification: ${categories.length}. Need at least 2 categories.`);
+    }
+
     // Create features and labels
     const features = tf.tensor2d(paddedSequences);
     const labels = tf.oneHot(
-      tf.tensor1d(incidents.map(i => categories.indexOf(i.category)), 'int32'),
+      tf.tensor1d(categoryIndices, 'int32'),
       categories.length
     );
+
+    this.logger.info(`Prepared training data: features [${paddedSequences.length}, ${maxLength}], labels [${incidents.length}, ${categories.length}]`);
 
     return { features, labels, tokenizer, categories };
   }
@@ -2155,19 +2183,48 @@ export class ServiceNowMachineLearningMCP {
     const sequences: number[][] = [];
     const labels: number[][] = [];
     
+    // CRITICAL FIX: Ensure we have at least 2 categories to prevent shape (1,1) error
+    const validCategories = [...categories];
+    if (validCategories.length < 2) {
+      validCategories.push('other', 'uncategorized'); // Add fallback categories
+    }
+    
+    this.logger.info(`Processing batch with ${incidents.length} incidents and ${validCategories.length} categories`);
+    
     for (const incident of incidents) {
-      const text = `${incident.short_description} ${incident.description}`;
+      const text = `${incident.short_description || ''} ${incident.description || ''}`;
       const sequence = hasher(text);
       sequences.push(sequence);
       
-      // One-hot encode category
-      const categoryIndex = categories.indexOf(incident.category);
-      const label = new Array(categories.length).fill(0);
+      // One-hot encode category with improved error handling
+      const category = incident.category || 'uncategorized';
+      const categoryIndex = validCategories.indexOf(category);
+      const label = new Array(validCategories.length).fill(0);
+      
       if (categoryIndex >= 0) {
         label[categoryIndex] = 1;
+      } else {
+        // Fallback to 'other' category if not found
+        const otherIndex = validCategories.indexOf('other');
+        if (otherIndex >= 0) {
+          label[otherIndex] = 1;
+        } else {
+          label[0] = 1; // Use first category as fallback
+        }
       }
       labels.push(label);
     }
+    
+    // Validate shapes before creating tensors
+    if (sequences.length === 0 || labels.length === 0) {
+      throw new Error('No valid data for training - empty sequences or labels');
+    }
+    
+    if (labels[0].length < 2) {
+      throw new Error(`Insufficient categories for classification: ${labels[0].length}. Need at least 2 categories.`);
+    }
+    
+    this.logger.info(`Creating tensors: features [${sequences.length}, ${sequences[0]?.length}], labels [${labels.length}, ${labels[0]?.length}]`);
     
     return {
       features: tf.tensor2d(sequences),
@@ -2272,11 +2329,19 @@ export class ServiceNowMachineLearningMCP {
     this.logger.info(`Using vocabulary size: ${validVocabularySize} for data preparation`);
     
     const hasher = this.createFeatureHasher(validVocabularySize);
-    const categories = [...new Set(incidents.map(i => i.category))].filter(c => c); // Filter out empty categories
+    let categories = [...new Set(incidents.map(i => i.category))].filter(c => c); // Filter out empty categories
     
-    if (categories.length === 0) {
-      categories.push('uncategorized'); // Ensure at least one category
+    // CRITICAL FIX: Ensure we have at least 2 categories to prevent shape (1,1) error
+    if (categories.length < 2) {
+      if (categories.length === 0) {
+        categories = ['uncategorized', 'other'];
+      } else {
+        categories.push('other');
+      }
+      this.logger.warn(`Insufficient categories found, using fallback categories: ${categories.join(', ')}`);
     }
+    
+    this.logger.info(`Processing with ${categories.length} categories: ${categories.join(', ')}`);
     
     const sequences: number[][] = [];
     const labels: number[][] = [];
@@ -2296,12 +2361,21 @@ export class ServiceNowMachineLearningMCP {
       
       sequences.push(validatedSequence);
       
-      // One-hot encode category
+      // One-hot encode category with improved error handling
       const category = incident.category || 'uncategorized';
       const categoryIndex = categories.indexOf(category);
       const label = new Array(categories.length).fill(0);
+      
       if (categoryIndex >= 0) {
         label[categoryIndex] = 1;
+      } else {
+        // Fallback to 'other' category if not found
+        const otherIndex = categories.indexOf('other');
+        if (otherIndex >= 0) {
+          label[otherIndex] = 1;
+        } else {
+          label[0] = 1; // Use first category as final fallback
+        }
       }
       labels.push(label);
     }
