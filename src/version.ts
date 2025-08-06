@@ -11,6 +11,15 @@ export const VERSION_INFO = {
   name: 'Snow-Flow',
   description: 'ServiceNow Queen Agent - Hive-Mind Intelligence for ServiceNow Development',
   features: {
+    '2.7.0': [
+      '🧠 INTELLIGENT ML DATA SELECTION: Snow-Flow now intelligently selects balanced training data',
+      '🎯 CUSTOM QUERIES: Added query parameter for full control over ML training data selection',
+      '⚖️ BALANCED DATASETS: Automatic balancing across categories, priorities, and time periods',
+      '🔍 FOCUS CATEGORIES: Can now focus ML training on specific incident categories',
+      '📊 DATA DISTRIBUTION: Shows category and priority distribution for transparency',
+      '🚀 DYNAMIC CONTROL: Snow-Flow has full freedom to optimize ML data selection',
+      '✨ SMART DEFAULTS: Intelligent query building when no custom query provided',
+    ],
     '2.6.9': [
       '🔍 ML QUERY FIX: Removed restrictive filters limiting training data to only resolved incidents',
       '📊 ALL INCIDENTS: ML training now includes both active AND resolved incidents',

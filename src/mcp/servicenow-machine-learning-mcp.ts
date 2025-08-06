@@ -151,7 +151,7 @@ export class ServiceNowMachineLearningMCP {
         // Training tools
         {
           name: 'ml_train_incident_classifier',
-          description: 'Train LSTM neural network on historical incident data. Works WITHOUT PA/PI plugins - only needs incident table access!', 
+          description: 'Train LSTM neural network on historical incident data with INTELLIGENT data selection. Snow-Flow automatically selects balanced training data or accepts custom queries. Works WITHOUT PA/PI plugins - only needs incident table access!', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -169,6 +169,21 @@ export class ServiceNowMachineLearningMCP {
                 type: 'number',
                 description: 'Validation data percentage',
                 default: 0.2
+              },
+              query: {
+                type: 'string',
+                description: 'Custom ServiceNow query for selecting training data. If not provided, Snow-Flow will intelligently select data.',
+                default: ''
+              },
+              intelligent_selection: {
+                type: 'boolean',
+                description: 'Let Snow-Flow intelligently select balanced training data across categories, priorities, and time periods',
+                default: true
+              },
+              focus_categories: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Specific categories to focus on for training (optional)'
               }
             }
           },
@@ -528,7 +543,14 @@ export class ServiceNowMachineLearningMCP {
    * Uses PI if available, otherwise uses custom TensorFlow.js
    */
   private async trainIncidentClassifier(args: any) {
-    const { sample_size = 1000, epochs = 50, validation_split = 0.2 } = args;
+    const { 
+      sample_size = 1000, 
+      epochs = 50, 
+      validation_split = 0.2,
+      query = '',
+      intelligent_selection = true,
+      focus_categories = []
+    } = args;
 
     try {
       // Wait for ML API check if not complete
@@ -570,8 +592,12 @@ export class ServiceNowMachineLearningMCP {
       // Use custom TensorFlow.js neural network
       this.logger.info(`Training custom LSTM neural network for incident classification with ${sample_size} samples...`);
       
-      // Fetch historical incidents
-      const incidents = await this.fetchIncidentData(sample_size);
+      // Fetch historical incidents with intelligent selection
+      const incidents = await this.fetchIncidentData(sample_size, {
+        query,
+        intelligent_selection,
+        focus_categories
+      });
       
       this.logger.info(`Retrieved ${incidents.length} incidents from ServiceNow`);
       
@@ -1120,20 +1146,78 @@ export class ServiceNowMachineLearningMCP {
 
   // Helper methods
 
-  private async fetchIncidentData(limit: number): Promise<IncidentData[]> {
-    // Fetch real incidents from ServiceNow - no ML API needed!
-    // Include both active and resolved incidents for better training data
-    // Order by sys_created_on DESC to get most recent incidents
-    const query = 'ORDERBYDESCsys_created_on'; // Get most recent incidents, both active and resolved
+  private async fetchIncidentData(limit: number, options: {
+    query?: string,
+    intelligent_selection?: boolean,
+    focus_categories?: string[]
+  } = {}): Promise<IncidentData[]> {
+    const { query = '', intelligent_selection = true, focus_categories = [] } = options;
+    
+    let finalQuery = query;
+    
+    // If intelligent selection is enabled and no custom query provided
+    if (intelligent_selection && !query) {
+      // Build an intelligent query that gets a balanced dataset
+      const queries = [];
+      
+      // Get mix of recent and older incidents
+      queries.push('sys_created_onONLast 6 months');
+      
+      // Get mix of priorities
+      queries.push('(priority=1^ORpriority=2^ORpriority=3^ORpriority=4)');
+      
+      // Get mix of active and resolved
+      queries.push('(active=true^ORactive=false)');
+      
+      // Focus on specific categories if provided
+      if (focus_categories.length > 0) {
+        const categoryQuery = focus_categories.map(cat => `category=${cat}`).join('^OR');
+        queries.push(`(${categoryQuery})`);
+      } else {
+        // Get diverse categories
+        queries.push('categoryISNOTEMPTY');
+      }
+      
+      // Combine all queries
+      finalQuery = queries.join('^');
+      
+      this.logger.info(`Using intelligent query selection: ${finalQuery}`);
+    } else if (query) {
+      this.logger.info(`Using custom query: ${query}`);
+    }
+    
+    // Always order by sys_created_on DESC to get most recent first
+    if (finalQuery && !finalQuery.includes('ORDERBY')) {
+      finalQuery += '^ORDERBYDESCsys_created_on';
+    } else if (!finalQuery) {
+      finalQuery = 'ORDERBYDESCsys_created_on';
+    }
     
     // Use searchRecords for proper authentication handling
-    const response = await this.client.searchRecords('incident', query, limit);
+    const response = await this.client.searchRecords('incident', finalQuery, limit);
     
     if (!response.success || !response.data?.result) {
       throw new Error('Failed to fetch incident data. Ensure you have read access to the incident table.');
     }
     
     this.logger.info(`Fetched ${response.data.result.length} incidents for ML training (requested: ${limit})`);
+    
+    // If intelligent selection, ensure we have a balanced dataset
+    if (intelligent_selection && response.data.result.length > 0) {
+      const categoryDistribution: Record<string, number> = {};
+      const priorityDistribution: Record<string, number> = {};
+      
+      response.data.result.forEach((inc: any) => {
+        const category = inc.category || 'uncategorized';
+        const priority = inc.priority || '3';
+        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+        priorityDistribution[priority] = (priorityDistribution[priority] || 0) + 1;
+      });
+      
+      this.logger.info('Data distribution:');
+      this.logger.info(`Categories: ${JSON.stringify(categoryDistribution)}`);
+      this.logger.info(`Priorities: ${JSON.stringify(priorityDistribution)}`);
+    }
 
     return response.data.result.map((inc: any) => ({
       short_description: inc.short_description || '',
