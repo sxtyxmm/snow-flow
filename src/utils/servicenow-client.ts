@@ -12,6 +12,7 @@ import { snowFlowConfig } from '../config/snow-flow-config.js';
 import { widgetTemplateGenerator } from './widget-template-generator.js';
 import { Logger } from './logger';
 import { unifiedAuthStore } from './unified-auth-store.js';
+import { withRetry, OperationType, detectOperationType, getTimeoutConfig } from './timeout-manager.js';
 // Flow structure builder removed in v1.4.0
 // import { generateFlowComponents, createActionInstances, buildLogicChain, validateFlowComponents, generateFlowXML, FlowDefinition, ServiceNowFlowComponents, ACTION_TYPE_IDS } from './flow-structure-builder';
 
@@ -120,8 +121,11 @@ export class ServiceNowClient {
       minVersion: 'TLSv1.2'
     });
 
+    // Use intelligent timeout based on operation type (default to TABLE_QUERY)
+    const defaultTimeout = getTimeoutConfig(OperationType.TABLE_QUERY).baseTimeout;
+    
     this.client = axios.create({
-      timeout: snowFlowConfig.servicenow.timeout,
+      timeout: parseInt(process.env.SNOW_API_TIMEOUT || String(defaultTimeout)),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -1173,23 +1177,41 @@ export class ServiceNowClient {
     try {
       await this.ensureAuthenticated();
       
-      const response = await this.client.get(
-        `${this.getBaseUrl()}/api/now/table/${table}`,
-        {
-          params: {
-            sysparm_query: query,
-            sysparm_limit: limit
-          }
-        }
+      // Detect operation type for intelligent timeout
+      const operationType = detectOperationType({
+        action: 'query',
+        table,
+        limit
+      });
+      
+      // Use retry wrapper with intelligent timeout
+      const result = await withRetry(
+        async () => {
+          const response = await this.client.get(
+            `${this.getBaseUrl()}/api/now/table/${table}`,
+            {
+              params: {
+                sysparm_query: query,
+                sysparm_limit: limit
+              },
+              // Override timeout for this specific request
+              timeout: getTimeoutConfig(operationType).baseTimeout
+            }
+          );
+          return response;
+        },
+        operationType,
+        `Search ${table} (${limit} records)`
       );
+      
       return {
         success: true,
         data: {
-          result: response.data.result || []
+          result: result.data.result || []
         }
       };
     } catch (error) {
-      console.error(`Failed to search records in ${table}:`, error);
+      this.logger.error(`Failed to search records in ${table}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
@@ -1204,24 +1226,42 @@ export class ServiceNowClient {
     try {
       await this.ensureAuthenticated();
       
-      const response = await this.client.get(
-        `${this.getBaseUrl()}/api/now/table/${table}`,
-        {
-          params: {
-            sysparm_query: query,
-            sysparm_limit: limit,
-            sysparm_offset: offset
-          }
-        }
+      // Detect operation type for intelligent timeout
+      const operationType = detectOperationType({
+        action: 'query',
+        table,
+        limit
+      });
+      
+      // Use retry wrapper with intelligent timeout
+      const result = await withRetry(
+        async () => {
+          const response = await this.client.get(
+            `${this.getBaseUrl()}/api/now/table/${table}`,
+            {
+              params: {
+                sysparm_query: query,
+                sysparm_limit: limit,
+                sysparm_offset: offset
+              },
+              // Override timeout for this specific request
+              timeout: getTimeoutConfig(operationType).baseTimeout
+            }
+          );
+          return response;
+        },
+        operationType,
+        `Search ${table} with offset ${offset}`
       );
+      
       return {
         success: true,
         data: {
-          result: response.data.result || []
+          result: result.data.result || []
         }
       };
     } catch (error) {
-      console.error(`Failed to search records in ${table} with offset ${offset}:`, error);
+      this.logger.error(`Failed to search records in ${table} with offset ${offset}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)

@@ -5,6 +5,7 @@
  */
 
 import { Logger } from './logger.js';
+import { withRetry, OperationType } from './timeout-manager.js';
 
 const logger = new Logger('MLDataFetcher');
 
@@ -87,7 +88,7 @@ export class MLDataFetcher {
         
         // Small delay between batches to avoid overwhelming the API
         if (batch < numBatches - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200)); // Increased from 100ms to 200ms
         }
       } catch (error: any) {
         if (error.message?.includes('exceeds maximum allowed tokens')) {

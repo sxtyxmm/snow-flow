@@ -197,7 +197,7 @@ const ConfigSchema = z.object({
       password: z.string().optional(),
       authType: z.enum(['oauth', 'basic']).default('oauth'),
       apiVersion: z.string().default('now'),
-      timeout: z.number().min(5000).default(60000),
+      timeout: z.number().min(5000).default(120000), // Increased from 60s to 120s
       retryConfig: z
         .object({
           maxRetries: z.number().min(0).max(10).default(3),
