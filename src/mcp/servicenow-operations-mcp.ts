@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // Core Operational Queries
           {
             name: 'snow_query_incidents',
-            description: 'Advanced incident querying with filters and _analysis',
+            description: 'Advanced incident querying with filters and _analysis - optimized for performance',
             inputSchema: {
               type: 'object',
               properties: {
@@ -191,15 +191,20 @@ class ServiceNowOperationsMCP {
                   description: 'Maximum number of results (default: 10)',
                   default: 10
                 },
+                include_content: {
+                  type: 'boolean',
+                  description: '🎯 Include full incident data (default: false for performance, only returns count)',
+                  default: false
+                },
                 include__analysis: {
                   type: 'boolean',
-                  description: 'Include intelligent _analysis of incidents',
+                  description: 'Include intelligent _analysis of incidents (requires include_content=true)',
                   default: false
                 },
                 fields: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Specific fields to return'
+                  description: 'Specific fields to return (automatically sets include_content=true)'
                 }
               },
               required: ['query']
@@ -839,9 +844,15 @@ class ServiceNowOperationsMCP {
   }
 
   private async handleQueryIncidents(args: any) {
-    const { query, limit = 10, include__analysis = false, fields } = args;
+    const { 
+      query, 
+      limit = 10, 
+      include__analysis = false, 
+      fields,
+      include_content = false  // 🎯 NEW: Explicit control over returning full incident data
+    } = args;
     
-    logger.info(`Querying incidents with: ${query}`);
+    logger.info(`Querying incidents with: ${query} (include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
@@ -852,20 +863,43 @@ class ServiceNowOperationsMCP {
       
       let result: any = {
         total_results: incidents.success ? incidents.data.result.length : 0,
-        // 🔴 PERFORMANCE FIX: Only include full incident data if specifically requested via fields
-        incidents: (fields && fields.length > 0) ? (incidents.success ? incidents.data.result : []) : []
+        query_used: processedQuery
       };
       
-      // Add basic summary instead of full data for performance
-      if (incidents.success && incidents.data.result.length > 0 && (!fields || fields.length === 0)) {
+      // 🎯 SMART CONTENT DECISION: Only include full data if explicitly requested
+      if (include_content || (fields && fields.length > 0)) {
+        // Include full incident data when specifically requested
+        result.incidents = incidents.success ? incidents.data.result : [];
+        
+        // If specific fields requested, filter them
+        if (fields && fields.length > 0 && incidents.success) {
+          result.incidents = incidents.data.result.map((inc: any) => {
+            const filtered: any = {};
+            fields.forEach((field: string) => {
+              if (inc[field] !== undefined) filtered[field] = inc[field];
+            });
+            return filtered;
+          });
+        }
+      } else {
+        // 🚀 PERFORMANCE MODE: Only return summary for large datasets
         result.summary = {
-          first_incident: incidents.data.result[0].number || 'Unknown',
-          sample_categories: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.category || 'none'))],
-          sample_priorities: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.priority || 'none'))]
+          count: incidents.success ? incidents.data.result.length : 0,
+          message: `Use include_content=true to retrieve full incident data`
         };
+        
+        // Provide a small sample for context
+        if (incidents.success && incidents.data.result.length > 0) {
+          result.summary.sample = {
+            first_incident: incidents.data.result[0].number || 'Unknown',
+            categories: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.category || 'none'))],
+            priorities: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.priority || 'none'))],
+            states: [...new Set(incidents.data.result.slice(0, 5).map((inc: any) => inc.state || 'unknown'))]
+          };
+        }
       }
       
-      // Add intelligent _analysis if requested
+      // Add intelligent _analysis if requested (only works with content)
       if (include__analysis && incidents.success && incidents.data.result.length > 0) {
         const _analysis = await this.analyzeIncidents(incidents.data.result);
         result = { ...result, ..._analysis };
