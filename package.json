@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.8",
-  "description": "Snow-Flow v3.0.8: CLAUDE CODE INTEGRATION ENHANCED! Added API_TIMEOUT_MS=1800000 (30 minutes) to init command for seamless Claude Code compatibility. Deployment false negatives fixed + extended timeout support for long-running operations. Ultimate universal verification + intelligent deployment recovery. 100% REAL implementation with TensorFlow.js neural networks, direct ServiceNow API integration, and intelligent memory management. Includes 100+ MCP tools for operations, development, ML, analytics, and security.",
+  "version": "3.0.9",
+  "description": "Snow-Flow v3.0.9: CODESPACES & CONTAINER SUPPORT! Fixed OAuth authentication for GitHub Codespaces, Docker containers, and headless environments. Intelligent browser opening with fallback for all platforms (macOS, Windows, Linux). No more xdg-open crashes! Includes manual auth instructions for restricted environments. Plus all v3.0.8 features: Claude Code 30-min timeout, deployment fixes, universal verification. 100+ MCP tools for complete ServiceNow automation.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

@@ -4,7 +4,7 @@
  * Handles OAuth2 flow for ServiceNow integration
  */
 
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import { join } from 'path';
 import os from 'os';
 import { createServer } from 'http';
@@ -347,26 +347,65 @@ export class ServiceNowOAuth {
         console.log('⏳ Waiting for OAuth callback...');
         
         // Auto-open browser if possible
-        try {
-          const { spawn } = require('child_process');
-          const authUrl = this.generateAuthUrl(
-            this.credentials!.instance,
-            this.credentials!.clientId,
-            redirectUri
-          );
-          
-          // Try to open browser on macOS
-          if (process.platform === 'darwin') {
-            spawn('open', [authUrl]);
-          } else if (process.platform === 'win32') {
-            spawn('cmd', ['/c', 'start', authUrl]);
-          } else if (process.platform === 'linux') {
-            spawn('xdg-open', [authUrl]);
-          } else {
-            console.log('Unknown OS:', process.platform);
+        // Try to auto-open browser if not in headless environment
+        const isCodespaces = process.env.CODESPACES === 'true';
+        const isContainer = process.env.CONTAINER === 'true' || existsSync('/.dockerenv');
+        const isHeadless = isCodespaces || isContainer || process.env.CI === 'true';
+        
+        if (!isHeadless) {
+          try {
+            const { spawn } = require('child_process');
+            const authUrl = this.generateAuthUrl(
+              this.credentials!.instance,
+              this.credentials!.clientId,
+              redirectUri
+            );
+            
+            let browserProcess: any;
+            
+            // Try to open browser based on platform
+            if (process.platform === 'darwin') {
+              browserProcess = spawn('open', [authUrl], { detached: true, stdio: 'ignore' });
+            } else if (process.platform === 'win32') {
+              browserProcess = spawn('cmd', ['/c', 'start', authUrl], { detached: true, stdio: 'ignore' });
+            } else if (process.platform === 'linux') {
+              // Try multiple Linux browser openers
+              const openers = ['xdg-open', 'gnome-open', 'kde-open', 'sensible-browser'];
+              for (const opener of openers) {
+                try {
+                  browserProcess = spawn(opener, [authUrl], { detached: true, stdio: 'ignore' });
+                  break; // If successful, stop trying
+                } catch (e) {
+                  // Try next opener
+                  continue;
+                }
+              }
+            } else {
+              console.log('⚠️  Unknown OS:', process.platform);
+            }
+            
+            // Prevent the spawn from keeping the process alive
+            if (browserProcess && browserProcess.unref) {
+              browserProcess.unref();
+            }
+          } catch (err) {
+            // Silently fail - user can manually open URL
+            console.log('\n📋 Browser auto-open failed. Please manually copy and open the URL above.');
           }
-        } catch (err) {
-          console.log('⚠️  Could not auto-open browser. Please open the URL manually.');
+        } else {
+          console.log('\n🐳 Running in headless environment (Codespaces/Container/CI)');
+          console.log('📋 Please manually copy and open the authorization URL above in your browser.');
+          
+          if (isCodespaces) {
+            console.log('\n💡 TIP for GitHub Codespaces:');
+            console.log('   1. Copy the authorization URL above');
+            console.log('   2. Open it in a new browser tab');
+            console.log('   3. After authorizing, you\'ll be redirected to localhost:3005');
+            console.log('   4. Copy the FULL redirect URL from your browser');
+            console.log('   5. Open a new Codespaces terminal and run:');
+            console.log('      curl "http://localhost:3005/callback?code=YOUR_CODE&state=YOUR_STATE"');
+            console.log('   6. Or use port forwarding in Codespaces to make port 3005 accessible');
+          }
         }
       });
     });
