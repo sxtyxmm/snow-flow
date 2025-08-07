@@ -5,7 +5,7 @@ Automatically spawn and manage agents based on task requirements.
 ## Usage
 
 ```bash
-npx snow-flow auto agent [options]
+npx claude-flow auto agent [options]
 ```
 
 ## Options
@@ -21,25 +21,25 @@ npx snow-flow auto agent [options]
 ### Basic auto-spawning
 
 ```bash
-npx snow-flow auto agent --task "Build a REST API with authentication"
+npx claude-flow auto agent --task "Build a REST API with authentication"
 ```
 
 ### Constrained spawning
 
 ```bash
-npx snow-flow auto agent -t "Debug performance issue" --max-agents 3
+npx claude-flow auto agent -t "Debug performance issue" --max-agents 3
 ```
 
 ### Analysis only
 
 ```bash
-npx snow-flow auto agent -t "Refactor codebase" --no-spawn
+npx claude-flow auto agent -t "Refactor codebase" --no-spawn
 ```
 
 ### Minimal strategy
 
 ```bash
-npx snow-flow auto agent -t "Fix bug in login" -s minimal
+npx claude-flow auto agent -t "Fix bug in login" -s minimal
 ```
 
 ## How It Works
@@ -107,7 +107,7 @@ npx snow-flow auto agent -t "Fix bug in login" -s minimal
 
 ```javascript
 // In Claude Code after auto-spawning
-mcp__snow-flow__auto_agent {
+mcp__claude-flow__auto_agent {
   task: "Build authentication system",
   strategy: "balanced",
   maxAgents: 6

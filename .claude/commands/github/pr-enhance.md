@@ -4,7 +4,7 @@ AI-powered pull request enhancements.
 
 ## Usage
 ```bash
-npx snow-flow github pr-enhance [options]
+npx claude-flow github pr-enhance [options]
 ```
 
 ## Options
@@ -16,11 +16,11 @@ npx snow-flow github pr-enhance [options]
 ## Examples
 ```bash
 # Enhance PR
-npx snow-flow github pr-enhance --pr-number 123
+npx claude-flow github pr-enhance --pr-number 123
 
 # Add tests
-npx snow-flow github pr-enhance --pr-number 123 --add-tests
+npx claude-flow github pr-enhance --pr-number 123 --add-tests
 
 # Full enhancement
-npx snow-flow github pr-enhance --pr-number 123 --add-tests --improve-docs
+npx claude-flow github pr-enhance --pr-number 123 --add-tests --improve-docs
 ```

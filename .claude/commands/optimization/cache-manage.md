@@ -4,7 +4,7 @@ Manage operation cache for performance.
 
 ## Usage
 ```bash
-npx snow-flow optimization cache-manage [options]
+npx claude-flow optimization cache-manage [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow optimization cache-manage [options]
 ## Examples
 ```bash
 # View cache stats
-npx snow-flow optimization cache-manage --action view
+npx claude-flow optimization cache-manage --action view
 
 # Clear cache
-npx snow-flow optimization cache-manage --action clear
+npx claude-flow optimization cache-manage --action clear
 
 # Set limits
-npx snow-flow optimization cache-manage --max-size 100 --ttl 3600
+npx claude-flow optimization cache-manage --max-size 100 --ttl 3600
 ```

@@ -4,7 +4,7 @@ Real-time view of swarm activity.
 
 ## Usage
 ```bash
-npx snow-flow monitoring real-time-view [options]
+npx claude-flow monitoring real-time-view [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow monitoring real-time-view [options]
 ## Examples
 ```bash
 # Start real-time view
-npx snow-flow monitoring real-time-view
+npx claude-flow monitoring real-time-view
 
 # Filter errors
-npx snow-flow monitoring real-time-view --filter errors
+npx claude-flow monitoring real-time-view --filter errors
 
 # Highlight pattern
-npx snow-flow monitoring real-time-view --highlight "API"
+npx claude-flow monitoring real-time-view --highlight "API"
 ```

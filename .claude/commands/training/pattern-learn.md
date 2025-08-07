@@ -4,7 +4,7 @@ Learn patterns from successful operations.
 
 ## Usage
 ```bash
-npx snow-flow training pattern-learn [options]
+npx claude-flow training pattern-learn [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow training pattern-learn [options]
 ## Examples
 ```bash
 # Learn from all ops
-npx snow-flow training pattern-learn
+npx claude-flow training pattern-learn
 
 # High success only
-npx snow-flow training pattern-learn --threshold 0.9
+npx claude-flow training pattern-learn --threshold 0.9
 
 # Save patterns
-npx snow-flow training pattern-learn --save optimal-patterns
+npx claude-flow training pattern-learn --save optimal-patterns
 ```

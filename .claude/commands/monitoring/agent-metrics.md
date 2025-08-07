@@ -4,7 +4,7 @@ View agent performance metrics.
 
 ## Usage
 ```bash
-npx snow-flow agent metrics [options]
+npx claude-flow agent metrics [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow agent metrics [options]
 ## Examples
 ```bash
 # All agents metrics
-npx snow-flow agent metrics
+npx claude-flow agent metrics
 
 # Specific agent
-npx snow-flow agent metrics --agent-id agent-001
+npx claude-flow agent metrics --agent-id agent-001
 
 # Last hour
-npx snow-flow agent metrics --period 1h
+npx claude-flow agent metrics --period 1h
 ```

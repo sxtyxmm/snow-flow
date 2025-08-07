@@ -4,7 +4,7 @@ Export workflows for sharing.
 
 ## Usage
 ```bash
-npx snow-flow workflow export [options]
+npx claude-flow workflow export [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow workflow export [options]
 ## Examples
 ```bash
 # Export workflow
-npx snow-flow workflow export --name "deploy-api"
+npx claude-flow workflow export --name "deploy-api"
 
 # As YAML
-npx snow-flow workflow export --name "test-suite" --format yaml
+npx claude-flow workflow export --name "test-suite" --format yaml
 
 # With history
-npx snow-flow workflow export --name "deploy-api" --include-history
+npx claude-flow workflow export --name "deploy-api" --include-history
 ```

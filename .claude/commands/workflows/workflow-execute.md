@@ -4,7 +4,7 @@ Execute saved workflows.
 
 ## Usage
 ```bash
-npx snow-flow workflow execute [options]
+npx claude-flow workflow execute [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow workflow execute [options]
 ## Examples
 ```bash
 # Execute workflow
-npx snow-flow workflow execute --name "deploy-api"
+npx claude-flow workflow execute --name "deploy-api"
 
 # With parameters
-npx snow-flow workflow execute --name "test-suite" --params '{"env": "staging"}'
+npx claude-flow workflow execute --name "test-suite" --params '{"env": "staging"}'
 
 # Dry run
-npx snow-flow workflow execute --name "deploy-api" --dry-run
+npx claude-flow workflow execute --name "deploy-api" --dry-run
 ```

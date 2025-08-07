@@ -619,10 +619,50 @@ class SnowFlowMCPServer {
 
   private async handleMemoryUsage(args: any) {
     const { action, key, value, namespace = 'default' } = args;
-    const memoryKey = `${namespace}:${key}`;
+    const memoryKey = namespace && key ? `${namespace}:${key}` : key;
 
+    // Add timeout protection
+    const timeoutMs = 5000;
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`Memory operation '${action}' timed out after ${timeoutMs}ms`)), timeoutMs)
+    );
+
+    try {
+      const resultPromise = this.executeMemoryOperation(action, memoryKey, value, args);
+      const result = await Promise.race([resultPromise, timeoutPromise]);
+      return result;
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: error.message,
+              action,
+              key: memoryKey,
+              timestamp: new Date().toISOString()
+            }),
+          },
+        ],
+      };
+    }
+  }
+
+  private async executeMemoryOperation(action: string, memoryKey: string | undefined, value: any, args: any) {
+    const namespace = args.namespace || 'default';
+    
     switch (action) {
       case 'store': {
+        if (!memoryKey) throw new Error('Key is required for store operation');
+        
+        // Check size limits
+        const serialized = JSON.stringify(value);
+        const sizeMB = Buffer.byteLength(serialized) / (1024 * 1024);
+        if (sizeMB > 10) {
+          throw new Error(`Data too large (${sizeMB.toFixed(2)}MB). Maximum 10MB for in-memory storage`);
+        }
+        
         this.memory[memoryKey] = {
           value,
           timestamp: Date.now(),
@@ -635,6 +675,7 @@ class SnowFlowMCPServer {
               text: JSON.stringify({
                 action: 'stored',
                 key: memoryKey,
+                sizeKB: (Buffer.byteLength(serialized) / 1024).toFixed(2),
                 status: 'success',
               }),
             },
@@ -643,6 +684,8 @@ class SnowFlowMCPServer {
       }
 
       case 'retrieve': {
+        if (!memoryKey) throw new Error('Key is required for retrieve operation');
+        
         const data = this.memory[memoryKey];
         if (!data) {
           return {
@@ -654,11 +697,32 @@ class SnowFlowMCPServer {
                   key: memoryKey,
                   value: null,
                   status: 'not_found',
+                  message: `No data found for key: ${memoryKey}`
                 }),
               },
             ],
           };
         }
+        
+        // Check TTL expiration
+        if (data.ttl && Date.now() - data.timestamp > data.ttl) {
+          delete this.memory[memoryKey];
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  action: 'retrieve',
+                  key: memoryKey,
+                  value: null,
+                  status: 'expired',
+                  message: 'Data expired and was removed'
+                }),
+              },
+            ],
+          };
+        }
+        
         return {
           content: [
             {
@@ -677,6 +741,11 @@ class SnowFlowMCPServer {
 
       case 'list': {
         const keys = Object.keys(this.memory).filter((k) => k.startsWith(namespace));
+        const memoryInfo = keys.map(k => {
+          const size = JSON.stringify(this.memory[k]).length;
+          return { key: k, sizeBytes: size, timestamp: this.memory[k].timestamp };
+        });
+        
         return {
           content: [
             {
@@ -686,6 +755,8 @@ class SnowFlowMCPServer {
                 namespace,
                 keys,
                 count: keys.length,
+                memoryInfo,
+                totalSizeKB: (memoryInfo.reduce((sum, info) => sum + info.sizeBytes, 0) / 1024).toFixed(2),
                 status: 'success',
               }),
             },
@@ -694,7 +765,11 @@ class SnowFlowMCPServer {
       }
 
       case 'delete': {
+        if (!memoryKey) throw new Error('Key is required for delete operation');
+        
+        const existed = memoryKey in this.memory;
         delete this.memory[memoryKey];
+        
         return {
           content: [
             {
@@ -702,6 +777,26 @@ class SnowFlowMCPServer {
               text: JSON.stringify({
                 action: 'deleted',
                 key: memoryKey,
+                existed,
+                message: existed ? `Deleted key: ${memoryKey}` : `Key not found: ${memoryKey}`,
+                status: 'success',
+              }),
+            },
+          ],
+        };
+      }
+      
+      case 'clear': {
+        const oldCount = Object.keys(this.memory).length;
+        this.memory = {};
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                action: 'clear',
+                itemsCleared: oldCount,
+                message: `Memory cleared, removed ${oldCount} items`,
                 status: 'success',
               }),
             },
@@ -710,7 +805,7 @@ class SnowFlowMCPServer {
       }
 
       default:
-        throw new Error(`Unknown memory action: ${action}`);
+        throw new Error(`Unknown memory action: ${action}. Valid actions: store, retrieve, list, delete, clear`);
     }
   }
 

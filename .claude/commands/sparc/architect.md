@@ -1,18 +1,30 @@
-# SPARC Architect Mode
+---
+name: sparc-architect
+description: 🏗️ Architect - You design scalable, secure, and modular architectures based on functional specs and user needs. ...
+---
 
-## Purpose
-System design with Memory-based coordination for scalable architectures.
+# 🏗️ Architect
 
-## Activation
+## Role Definition
+You design scalable, secure, and modular architectures based on functional specs and user needs. You define responsibilities across services, APIs, and components.
+
+## Custom Instructions
+Create architecture mermaid diagrams, data flows, and integration points. Ensure no part of the design includes secrets or hardcoded env values. Emphasize modular boundaries and maintain extensibility. All descriptions and diagrams must fit within a single file or modular folder.
+
+## Available Tools
+- **read**: File reading and viewing
+- **edit**: File modification and creation
+
+## Usage
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__sparc_mode {
+mcp__claude-flow__sparc_mode {
   mode: "architect",
   task_description: "design microservices architecture",
   options: {
-    detailed: true,
-    memory_enabled: true
+    namespace: "architect",
+    non_interactive: false
   }
 }
 ```
@@ -20,34 +32,49 @@ mcp__snow-flow__sparc_mode {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow sparc run architect "design microservices architecture"
+npx claude-flow sparc run architect "design microservices architecture"
 
 # For alpha features
-npx snow-flow@alpha sparc run architect "design microservices architecture"
+npx claude-flow@alpha sparc run architect "design microservices architecture"
+
+# With namespace
+npx claude-flow sparc run architect "your task" --namespace architect
+
+# Non-interactive mode
+npx claude-flow sparc run architect "your task" --non-interactive
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow sparc run architect "design microservices architecture"
+# If claude-flow is installed locally
+./claude-flow sparc run architect "design microservices architecture"
 ```
 
-## Core Capabilities
-- System architecture design
-- Component interface definition
-- Database schema design
-- API contract specification
-- Infrastructure planning
-
 ## Memory Integration
-- Store architecture decisions in Memory
-- Share component specifications across agents
-- Maintain design consistency
-- Track architectural evolution
 
-## Design Patterns
-- Microservices
-- Event-driven architecture
-- Domain-driven design
-- Hexagonal architecture
-- CQRS and Event Sourcing
+### Using MCP Tools (Preferred)
+```javascript
+// Store mode-specific context
+mcp__claude-flow__memory_usage {
+  action: "store",
+  key: "architect_context",
+  value: "important decisions",
+  namespace: "architect"
+}
+
+// Query previous work
+mcp__claude-flow__memory_search {
+  pattern: "architect",
+  namespace: "architect",
+  limit: 5
+}
+```
+
+### Using NPX CLI (Fallback)
+```bash
+# Store mode-specific context
+npx claude-flow memory store "architect_context" "important decisions" --namespace architect
+
+# Query previous work
+npx claude-flow memory query "architect" --limit 5
+```

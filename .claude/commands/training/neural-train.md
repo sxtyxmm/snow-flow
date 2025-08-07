@@ -4,7 +4,7 @@ Train neural patterns from operations.
 
 ## Usage
 ```bash
-npx snow-flow training neural-train [options]
+npx claude-flow training neural-train [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow training neural-train [options]
 ## Examples
 ```bash
 # Train from recent ops
-npx snow-flow training neural-train --data recent
+npx claude-flow training neural-train --data recent
 
 # Specific model
-npx snow-flow training neural-train --model task-predictor
+npx claude-flow training neural-train --model task-predictor
 
 # Custom epochs
-npx snow-flow training neural-train --epochs 100
+npx claude-flow training neural-train --epochs 100
 ```

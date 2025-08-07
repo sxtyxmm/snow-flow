@@ -4,7 +4,7 @@ Deep analysis of GitHub repository with AI insights.
 
 ## Usage
 ```bash
-npx snow-flow github repo-analyze [options]
+npx claude-flow github repo-analyze [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow github repo-analyze [options]
 ## Examples
 ```bash
 # Basic analysis
-npx snow-flow github repo-analyze --repository myorg/myrepo
+npx claude-flow github repo-analyze --repository myorg/myrepo
 
 # Deep analysis
-npx snow-flow github repo-analyze --repository myorg/myrepo --deep
+npx claude-flow github repo-analyze --repository myorg/myrepo --deep
 
 # Specific areas
-npx snow-flow github repo-analyze --repository myorg/myrepo --include issues,prs
+npx claude-flow github repo-analyze --repository myorg/myrepo --include issues,prs
 ```

@@ -4,7 +4,7 @@ Create reusable workflow templates.
 
 ## Usage
 ```bash
-npx snow-flow workflow create [options]
+npx claude-flow workflow create [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow workflow create [options]
 ## Examples
 ```bash
 # Create workflow
-npx snow-flow workflow create --name "deploy-api"
+npx claude-flow workflow create --name "deploy-api"
 
 # From history
-npx snow-flow workflow create --name "test-suite" --from-history
+npx claude-flow workflow create --name "test-suite" --from-history
 
 # Interactive mode
-npx snow-flow workflow create --interactive
+npx claude-flow workflow create --interactive
 ```

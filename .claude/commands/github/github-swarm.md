@@ -5,7 +5,7 @@ Create a specialized swarm for GitHub repository management.
 ## Usage
 
 ```bash
-npx snow-flow github swarm [options]
+npx claude-flow github swarm [options]
 ```
 
 ## Options
@@ -22,25 +22,25 @@ npx snow-flow github swarm [options]
 ### Basic GitHub swarm
 
 ```bash
-npx snow-flow github swarm --repository owner/repo
+npx claude-flow github swarm --repository owner/repo
 ```
 
 ### Maintenance-focused swarm
 
 ```bash
-npx snow-flow github swarm -r owner/repo -f maintenance --issue-labels
+npx claude-flow github swarm -r owner/repo -f maintenance --issue-labels
 ```
 
 ### Development swarm with PR automation
 
 ```bash
-npx snow-flow github swarm -r owner/repo -f development --auto-pr --code-review
+npx claude-flow github swarm -r owner/repo -f development --auto-pr --code-review
 ```
 
 ### Full-featured triage swarm
 
 ```bash
-npx snow-flow github swarm -r owner/repo -a 8 -f triage --issue-labels --auto-pr
+npx claude-flow github swarm -r owner/repo -a 8 -f triage --issue-labels --auto-pr
 ```
 
 ## Agent Types
@@ -106,7 +106,7 @@ npx snow-flow github swarm -r owner/repo -a 8 -f triage --issue-labels --auto-pr
 Use in Claude Code with MCP tools:
 
 ```javascript
-mcp__snow-flow__github_swarm {
+mcp__claude-flow__github_swarm {
   repository: "owner/repo",
   agents: 6,
   focus: "maintenance"

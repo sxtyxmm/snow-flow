@@ -1,7 +1,7 @@
 #!/bin/bash
-# Setup MCP server for Snow-Flow
+# Setup MCP server for Claude Flow
 
-echo "🚀 Setting up Snow-Flow MCP server..."
+echo "🚀 Setting up Claude Flow MCP server..."
 
 # Check if claude command exists
 if ! command -v claude &> /dev/null; then
@@ -11,8 +11,8 @@ if ! command -v claude &> /dev/null; then
 fi
 
 # Add MCP server
-echo "📦 Adding Snow-Flow MCP server..."
-claude mcp add snow-flow npx snow-flow mcp start
+echo "📦 Adding Claude Flow MCP server..."
+claude mcp add claude-flow npx claude-flow mcp start
 
 echo "✅ MCP server setup complete!"
-echo "🎯 You can now use mcp__snow-flow__ tools in Claude Code"
+echo "🎯 You can now use mcp__claude-flow__ tools in Claude Code"

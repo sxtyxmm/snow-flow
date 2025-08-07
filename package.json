@@ -27,6 +27,7 @@
     "mcp:clean": "node scripts/cleanup-mcp-servers.js && npm run build",
     "mcp:start": "node scripts/start-mcp-proper.js",
     "mcp:start-proper": "node scripts/start-mcp-proper.js",
+    "test:integration": "npm run build && node dist/tests/integration-test.js",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "node scripts/postinstall.js",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
@@ -393,6 +394,7 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.15.0",
     "@modelcontextprotocol/sdk": "^1.15.1",
     "@tensorflow/tfjs-node": "^4.22.0",
     "@types/node-fetch": "^2.6.12",

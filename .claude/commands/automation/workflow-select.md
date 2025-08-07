@@ -4,7 +4,7 @@ Automatically select optimal workflow based on task type.
 
 ## Usage
 ```bash
-npx snow-flow automation workflow-select [options]
+npx claude-flow automation workflow-select [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow automation workflow-select [options]
 ## Examples
 ```bash
 # Select workflow for task
-npx snow-flow automation workflow-select --task "Deploy to production"
+npx claude-flow automation workflow-select --task "Deploy to production"
 
 # With constraints
-npx snow-flow automation workflow-select --constraints "no-downtime,rollback"
+npx claude-flow automation workflow-select --constraints "no-downtime,rollback"
 
 # Preview mode
-npx snow-flow automation workflow-select --task "Database migration" --preview
+npx claude-flow automation workflow-select --task "Database migration" --preview
 ```

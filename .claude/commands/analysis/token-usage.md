@@ -4,7 +4,7 @@ Analyze token usage patterns and optimize for efficiency.
 
 ## Usage
 ```bash
-npx snow-flow analysis token-usage [options]
+npx claude-flow analysis token-usage [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow analysis token-usage [options]
 ## Examples
 ```bash
 # Last 24 hours token usage
-npx snow-flow analysis token-usage --period 24h
+npx claude-flow analysis token-usage --period 24h
 
 # By agent breakdown
-npx snow-flow analysis token-usage --by-agent
+npx claude-flow analysis token-usage --by-agent
 
 # Export detailed report
-npx snow-flow analysis token-usage --period 7d --export tokens.csv
+npx claude-flow analysis token-usage --period 7d --export tokens.csv
 ```

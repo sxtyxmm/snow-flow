@@ -4,7 +4,7 @@ Intelligent issue classification and triage.
 
 ## Usage
 ```bash
-npx snow-flow github issue-triage [options]
+npx claude-flow github issue-triage [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow github issue-triage [options]
 ## Examples
 ```bash
 # Triage issues
-npx snow-flow github issue-triage --repository myorg/myrepo
+npx claude-flow github issue-triage --repository myorg/myrepo
 
 # With auto-labeling
-npx snow-flow github issue-triage --repository myorg/myrepo --auto-label
+npx claude-flow github issue-triage --repository myorg/myrepo --auto-label
 
 # Full automation
-npx snow-flow github issue-triage --repository myorg/myrepo --auto-label --assign
+npx claude-flow github issue-triage --repository myorg/myrepo --auto-label --assign
 ```

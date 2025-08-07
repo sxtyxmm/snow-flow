@@ -4,7 +4,7 @@ Real-time swarm monitoring.
 
 ## Usage
 ```bash
-npx snow-flow swarm monitor [options]
+npx claude-flow swarm monitor [options]
 ```
 
 ## Options
@@ -15,11 +15,11 @@ npx snow-flow swarm monitor [options]
 ## Examples
 ```bash
 # Start monitoring
-npx snow-flow swarm monitor
+npx claude-flow swarm monitor
 
 # Custom interval
-npx snow-flow swarm monitor --interval 5000
+npx claude-flow swarm monitor --interval 5000
 
 # With metrics
-npx snow-flow swarm monitor --metrics
+npx claude-flow swarm monitor --metrics
 ```
