@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.1",
-  "description": "Snow-Flow v3.0.1: Production-Ready ServiceNow Intelligence Platform - NO TIMEOUTS by default for maximum reliability. 100% REAL implementation with TensorFlow.js neural networks, direct ServiceNow API integration, and intelligent memory management. Includes 100+ MCP tools for operations, development, ML, analytics, and security. Full AI swarm orchestration with dynamic task categorization. Operations run to completion without artificial time limits.",
+  "version": "3.0.2",
+  "description": "Snow-Flow v3.0.2: Production-Ready ServiceNow Intelligence Platform - NO TIMEOUTS by default for maximum reliability. Init command now uses .env.template correctly. 100% REAL implementation with TensorFlow.js neural networks, direct ServiceNow API integration, and intelligent memory management. Includes 100+ MCP tools for operations, development, ML, analytics, and security. Full AI swarm orchestration with dynamic task categorization. Operations run to completion without artificial time limits.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

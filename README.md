@@ -21,11 +21,12 @@ Every interaction with Snow-Flow provides insights into ServiceNow best practice
 ### **Real Integration, Real Results**
 Unlike mock tools or simulations, Snow-Flow connects directly to your ServiceNow instance through secure OAuth authentication. Every operation is real, every deployment is functional, and every result is production-ready.
 
-## 🎉 Version 3.0.1 - Critical Timeout Fix
+## 🎉 Version 3.0.2 - Init Command Fixed
 
-### **Latest Fix (v3.0.1)**
+### **Latest Fix (v3.0.2)**
+- 🔧 **Init Command Fixed** - Now correctly uses .env.template with v3.0.1 timeout configuration
 - 🎯 **No Timeouts by Default** - Operations run until completion for maximum reliability
-- 🎛️ **Optional Timeout Configuration** - Set `MCP_MEMORY_TIMEOUT` only if needed
+- 🎛️ **Optional Timeout Configuration** - All timeouts commented out in generated .env file
 - 🚀 **100% Completion Rate** - No artificial timeout limitations
 
 ### **What's New in v3.0.0**

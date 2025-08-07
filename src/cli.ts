@@ -3836,43 +3836,35 @@ For full documentation, visit: https://github.com/groeimetai/snow-flow
 }
 
 async function createEnvFile(targetDir: string, force: boolean = false) {
-  const envContent = `# ServiceNow Configuration
+  // Read content from .env.template file
+  let envContent: string;
+  
+  try {
+    // Try to read from the project's .env.template file
+    const templatePath = join(__dirname, '..', '.env.template');
+    envContent = await fs.readFile(templatePath, 'utf-8');
+    console.log('📋 Using .env.template for configuration');
+  } catch (error) {
+    // If template not found, try alternative locations
+    try {
+      const alternativePath = join(process.cwd(), '.env.template');
+      envContent = await fs.readFile(alternativePath, 'utf-8');
+      console.log('📋 Using .env.template from current directory');
+    } catch (fallbackError) {
+      console.warn('⚠️  Could not find .env.template file, using embedded minimal version');
+      // Last resort: use embedded minimal version with v3.0.1 timeout config
+      envContent = `# ServiceNow Configuration
 # ===========================================
 
 # ServiceNow Instance URL (without https://)
 # Example: dev12345.service-now.com
 SNOW_INSTANCE=your-instance.service-now.com
 
-# ===========================================
-# OAuth Authentication (Required)
-# ===========================================
-# Snow-Flow uses OAuth for secure authentication to ServiceNow
-# 
-# How to set up OAuth in ServiceNow:
-# 1. Navigate to: System OAuth > Application Registry
-# 2. Click "New" > "Create an OAuth API endpoint for external clients"
-# 3. Fill in:
-#    - Name: Snow-Flow Development
-#    - Client ID: (will be auto-generated)
-#    - Client Secret: (set your own or auto-generate)
-# 4. Copy the Client ID and Secret below:
-
 # OAuth Client ID from ServiceNow Application Registry
 SNOW_CLIENT_ID=your-oauth-client-id
 
 # OAuth Client Secret from ServiceNow Application Registry
 SNOW_CLIENT_SECRET=your-oauth-client-secret
-
-# ===========================================
-# Legacy Username/Password (Not Recommended)
-# ===========================================
-# These fields are kept for backwards compatibility but are not used
-# Snow-Flow requires OAuth authentication for security
-# SNOW_USERNAME=not-used
-# SNOW_PASSWORD=not-used
-
-# Optional: Additional Configuration
-# SNOW_REDIRECT_URI=http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback
 
 # ===========================================
 # Snow-Flow Configuration
@@ -3887,44 +3879,33 @@ SNOW_FLOW_STRATEGY=development
 # Maximum number of agents
 SNOW_FLOW_MAX_AGENTS=5
 
-# Claude Code timeout configuration (in minutes)
-# Set to 0 to disable timeout (infinite execution time)
-# Default: 60 minutes
-SNOW_FLOW_TIMEOUT_MINUTES=0
-
 # ===========================================
-# Deployment Timeout Configuration
+# Timeout Configuration (v3.0.1+)
 # ===========================================
+# IMPORTANT: Snow-Flow has NO TIMEOUTS by default for maximum reliability.
+# Operations run until completion. Only set timeouts if you specifically need them.
+# All timeout values below are COMMENTED OUT - uncomment only what you need.
 
-# ServiceNow API timeout for regular operations (milliseconds)
-# Default: 60000 (60 seconds)
-SNOW_REQUEST_TIMEOUT=60000
+# Memory Operations (TodoWrite, etc.)
+# MCP_MEMORY_TIMEOUT=30000      # 30 seconds
+# MCP_MEMORY_TIMEOUT=60000      # 1 minute
+# MCP_MEMORY_TIMEOUT=120000     # 2 minutes
 
-# ServiceNow API timeout for DEPLOYMENT operations (milliseconds)
-# Deployments need more time for complex widgets
-# Default: 300000 (5 minutes)
-SNOW_DEPLOYMENT_TIMEOUT=300000
+# ServiceNow API Operations
+# SNOW_API_TIMEOUT=60000        # 1 minute - quick operations
+# SNOW_API_TIMEOUT=180000       # 3 minutes - standard operations
+# SNOW_API_TIMEOUT=300000       # 5 minutes - complex queries
 
-# MCP transport timeout for deployment operations (milliseconds)
-# Should be higher than SNOW_DEPLOYMENT_TIMEOUT
-# Default: 360000 (6 minutes)
-MCP_DEPLOYMENT_TIMEOUT=360000
+# Deployment Operations
+# SNOW_DEPLOYMENT_TIMEOUT=300000  # 5 minutes - simple deployments
+# SNOW_DEPLOYMENT_TIMEOUT=600000  # 10 minutes - complex widgets
 
-# ===========================================
-# How to Set Up ServiceNow OAuth
-# ===========================================
-# 1. Log into your ServiceNow instance as admin
-# 2. Navigate to: System OAuth > Application Registry
-# 3. Click "New" > "Create an OAuth application"
-# 4. Fill in:
-#    - Name: Snow-Flow Development
-#    - Client ID: (will be generated)
-#    - Client Secret: (will be generated)  
-#    - Redirect URL: http://\${SNOW_REDIRECT_HOST:-localhost}:\${SNOW_REDIRECT_PORT:-3000}/callback
-#    - Grant Type: Authorization Code
-# 5. Copy the Client ID and Client Secret to this file
-# 6. Run: snow-flow auth login
+# MCP transport timeout (should be higher than SNOW_DEPLOYMENT_TIMEOUT if both set)
+# MCP_DEPLOYMENT_TIMEOUT=360000   # 6 minutes
+# MCP_DEPLOYMENT_TIMEOUT=720000   # 12 minutes
 `;
+    }
+  }
 
   const envFilePath = join(targetDir, '.env');
   
