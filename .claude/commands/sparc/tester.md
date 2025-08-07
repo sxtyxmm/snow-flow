@@ -7,7 +7,7 @@ Comprehensive testing with parallel execution capabilities.
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__sparc_mode {
+mcp__claude-flow__sparc_mode {
   mode: "tester",
   task_description: "full regression suite",
   options: {
@@ -20,16 +20,16 @@ mcp__snow-flow__sparc_mode {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow sparc run tester "full regression suite"
+npx claude-flow sparc run tester "full regression suite"
 
 # For alpha features
-npx snow-flow@alpha sparc run tester "full regression suite"
+npx claude-flow@alpha sparc run tester "full regression suite"
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow sparc run tester "full regression suite"
+# If claude-flow is installed locally
+./claude-flow sparc run tester "full regression suite"
 ```
 
 ## Core Capabilities

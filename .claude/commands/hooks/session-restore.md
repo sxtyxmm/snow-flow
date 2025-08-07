@@ -5,7 +5,7 @@ Restore a previous session's context and state.
 ## Usage
 
 ```bash
-npx snow-flow hook session-restore [options]
+npx claude-flow hook session-restore [options]
 ```
 
 ## Options
@@ -21,25 +21,25 @@ npx snow-flow hook session-restore [options]
 ### Basic session restore
 
 ```bash
-npx snow-flow hook session-restore --session-id "dev-session-2024"
+npx claude-flow hook session-restore --session-id "dev-session-2024"
 ```
 
 ### Full restoration
 
 ```bash
-npx snow-flow hook session-restore -s "feature-auth" --load-memory --restore-files --resume-tasks
+npx claude-flow hook session-restore -s "feature-auth" --load-memory --restore-files --resume-tasks
 ```
 
 ### Selective restore
 
 ```bash
-npx snow-flow hook session-restore -s "bug-fix-123" --load-memory --resume-tasks
+npx claude-flow hook session-restore -s "bug-fix-123" --load-memory --resume-tasks
 ```
 
 ### Context merging
 
 ```bash
-npx snow-flow hook session-restore -s "refactor-api" --merge-context
+npx claude-flow hook session-restore -s "refactor-api" --merge-context
 ```
 
 ## Features
@@ -85,7 +85,7 @@ Manual usage in agents:
 
 ```bash
 # To restore context
-npx snow-flow hook session-restore --session-id "previous-session" --load-memory
+npx claude-flow hook session-restore --session-id "previous-session" --load-memory
 ```
 
 ## Output

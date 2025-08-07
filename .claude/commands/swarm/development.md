@@ -7,13 +7,13 @@ Coordinated development through specialized agent teams.
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__swarm_init {
+mcp__claude-flow__swarm_init {
   topology: "hierarchical",
   strategy: "development",
   maxAgents: 8
 }
 
-mcp__snow-flow__task_orchestrate {
+mcp__claude-flow__task_orchestrate {
   task: "build feature X",
   strategy: "parallel"
 }
@@ -22,16 +22,16 @@ mcp__snow-flow__task_orchestrate {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow swarm "build feature X" --strategy development
+npx claude-flow swarm "build feature X" --strategy development
 
 # For alpha features
-npx snow-flow@alpha swarm "build feature X" --strategy development
+npx claude-flow@alpha swarm "build feature X" --strategy development
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow swarm "build feature X" --strategy development
+# If claude-flow is installed locally
+./claude-flow swarm "build feature X" --strategy development
 ```
 
 ## Agent Roles

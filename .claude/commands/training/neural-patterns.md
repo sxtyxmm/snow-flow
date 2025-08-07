@@ -14,7 +14,7 @@ Every successful operation trains the neural networks:
 
 ### 2. Manual Training
 ```
-Tool: mcp__snow-flow__neural_train
+Tool: mcp__claude-flow__neural_train
 Parameters: {
   "pattern_type": "coordination",
   "training_data": "successful task patterns",
@@ -34,7 +34,7 @@ Parameters: {
 
 ### 4. Improvement Tracking
 ```
-Tool: mcp__snow-flow__neural_status
+Tool: mcp__claude-flow__neural_status
 Result: {
   "patterns": {
     "convergent": 0.92,
@@ -48,7 +48,7 @@ Result: {
 
 ## Pattern Analysis
 ```
-Tool: mcp__snow-flow__neural_patterns
+Tool: mcp__claude-flow__neural_patterns
 Parameters: {
   "action": "analyze",
   "operation": "recent_edits"
@@ -64,11 +64,11 @@ Parameters: {
 ## CLI Usage
 ```bash
 # Train neural patterns via CLI
-npx snow-flow neural train --type coordination --epochs 50
+npx claude-flow neural train --type coordination --epochs 50
 
 # Check neural status
-npx snow-flow neural status
+npx claude-flow neural status
 
 # Analyze patterns
-npx snow-flow neural patterns --analyze
+npx claude-flow neural patterns --analyze
 ```

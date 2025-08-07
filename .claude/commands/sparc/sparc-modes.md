@@ -32,11 +32,11 @@ SPARC (Specification, Planning, Architecture, Review, Code) is a comprehensive d
 ## Usage
 ```bash
 # Run a specific mode
-./snow-flow sparc run <mode> "task description"
+./claude-flow sparc run <mode> "task description"
 
 # List all modes
-./snow-flow sparc modes
+./claude-flow sparc modes
 
 # Get help for a mode
-./snow-flow sparc help <mode>
+./claude-flow sparc help <mode>
 ```

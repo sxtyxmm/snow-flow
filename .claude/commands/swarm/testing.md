@@ -7,13 +7,13 @@ Comprehensive testing through distributed execution.
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__swarm_init {
+mcp__claude-flow__swarm_init {
   topology: "distributed",
   strategy: "testing",
   maxAgents: 5
 }
 
-mcp__snow-flow__task_orchestrate {
+mcp__claude-flow__task_orchestrate {
   task: "test application",
   strategy: "parallel"
 }
@@ -22,16 +22,16 @@ mcp__snow-flow__task_orchestrate {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow swarm "test application" --strategy testing
+npx claude-flow swarm "test application" --strategy testing
 
 # For alpha features
-npx snow-flow@alpha swarm "test application" --strategy testing
+npx claude-flow@alpha swarm "test application" --strategy testing
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow swarm "test application" --strategy testing
+# If claude-flow is installed locally
+./claude-flow swarm "test application" --strategy testing
 ```
 
 ## Agent Roles

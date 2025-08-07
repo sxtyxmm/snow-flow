@@ -4,7 +4,7 @@
 
 ### Research Swarm
 ```bash
-./snow-flow swarm "research AI trends" \
+./claude-flow swarm "research AI trends" \
   --strategy research \
   --mode distributed \
   --max-agents 6 \
@@ -13,7 +13,7 @@
 
 ### Development Swarm
 ```bash
-./snow-flow swarm "build REST API" \
+./claude-flow swarm "build REST API" \
   --strategy development \
   --mode hierarchical \
   --monitor \
@@ -22,7 +22,7 @@
 
 ### Analysis Swarm
 ```bash
-./snow-flow swarm "analyze codebase" \
+./claude-flow swarm "analyze codebase" \
   --strategy analysis \
   --mode mesh \
   --parallel \

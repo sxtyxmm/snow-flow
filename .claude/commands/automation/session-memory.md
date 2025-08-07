@@ -16,21 +16,21 @@ At session end, automatically saves:
 ### 2. Session Restoration
 ```javascript
 // Using MCP tools for memory operations
-mcp__snow-flow__memory_usage({
+mcp__claude-flow__memory_usage({
   "action": "retrieve",
   "key": "session-state",
   "namespace": "sessions"
 })
 
 // Restore swarm state
-mcp__snow-flow__context_restore({
+mcp__claude-flow__context_restore({
   "snapshotId": "sess-123"
 })
 ```
 
 **Fallback with npx:**
 ```bash
-npx snow-flow hook session-restore --session-id "sess-123"
+npx claude-flow hook session-restore --session-id "sess-123"
 ```
 
 ### 3. Memory Types
@@ -56,20 +56,20 @@ npx snow-flow hook session-restore --session-id "sess-123"
 ### 4. Privacy & Control
 ```javascript
 // List memory contents
-mcp__snow-flow__memory_usage({
+mcp__claude-flow__memory_usage({
   "action": "list",
   "namespace": "sessions"
 })
 
 // Delete specific memory
-mcp__snow-flow__memory_usage({
+mcp__claude-flow__memory_usage({
   "action": "delete",
   "key": "session-123",
   "namespace": "sessions"
 })
 
 // Backup memory
-mcp__snow-flow__memory_backup({
+mcp__claude-flow__memory_backup({
   "path": "./backups/memory-backup.json"
 })
 ```
@@ -77,7 +77,7 @@ mcp__snow-flow__memory_backup({
 **Manual control:**
 ```bash
 # View stored memory
-ls .snow-flow/memory/
+ls .claude-flow/memory/
 
 # Disable memory
 export CLAUDE_FLOW_MEMORY_PERSIST=false

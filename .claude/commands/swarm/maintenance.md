@@ -7,13 +7,13 @@ System maintenance and updates through coordinated agents.
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__swarm_init {
+mcp__claude-flow__swarm_init {
   topology: "hierarchical",
   strategy: "maintenance",
   maxAgents: 5
 }
 
-mcp__snow-flow__task_orchestrate {
+mcp__claude-flow__task_orchestrate {
   task: "update dependencies",
   strategy: "sequential",
   priority: "high"
@@ -23,16 +23,16 @@ mcp__snow-flow__task_orchestrate {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow swarm "update dependencies" --strategy maintenance
+npx claude-flow swarm "update dependencies" --strategy maintenance
 
 # For alpha features
-npx snow-flow@alpha swarm "update dependencies" --strategy maintenance
+npx claude-flow@alpha swarm "update dependencies" --strategy maintenance
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow swarm "update dependencies" --strategy maintenance
+# If claude-flow is installed locally
+./claude-flow swarm "update dependencies" --strategy maintenance
 ```
 
 ## Agent Roles

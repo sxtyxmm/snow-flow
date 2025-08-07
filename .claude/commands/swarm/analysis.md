@@ -7,13 +7,13 @@ Comprehensive analysis through distributed agent coordination.
 
 ### Option 1: Using MCP Tools (Preferred in Claude Code)
 ```javascript
-mcp__snow-flow__swarm_init {
+mcp__claude-flow__swarm_init {
   topology: "mesh",
   strategy: "analysis",
   maxAgents: 6
 }
 
-mcp__snow-flow__task_orchestrate {
+mcp__claude-flow__task_orchestrate {
   task: "analyze system performance",
   strategy: "distributed"
 }
@@ -22,16 +22,16 @@ mcp__snow-flow__task_orchestrate {
 ### Option 2: Using NPX CLI (Fallback when MCP not available)
 ```bash
 # Use when running from terminal or MCP tools unavailable
-npx snow-flow swarm "analyze system performance" --strategy analysis
+npx claude-flow swarm "analyze system performance" --strategy analysis
 
 # For alpha features
-npx snow-flow@alpha swarm "analyze system performance" --strategy analysis
+npx claude-flow@alpha swarm "analyze system performance" --strategy analysis
 ```
 
 ### Option 3: Local Installation
 ```bash
-# If snow-flow is installed locally
-./snow-flow swarm "analyze system performance" --strategy analysis
+# If claude-flow is installed locally
+./claude-flow swarm "analyze system performance" --strategy analysis
 ```
 
 ## Agent Roles

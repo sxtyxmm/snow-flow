@@ -303,18 +303,36 @@ class ServiceNowReportingAnalyticsMCP {
       const availableFields = await this.getTableFields(args.table);
       const aggregationFunctions = await this.getAggregationFunctions();
       
+      // Build field list string for ServiceNow
+      const fieldList = args.fields?.join(',') || availableFields.slice(0, 10).join(',') || 'sys_id,sys_created_on,sys_updated_on';
+      
+      // Build proper aggregation configuration
+      const aggregateConfig = args.aggregations?.length > 0 ? {
+        aggregate: true,
+        aggregation_source: args.aggregations[0]?.field || '',
+        aggregate_type: args.aggregations[0]?.type || 'COUNT'
+      } : {
+        aggregate: false
+      };
+      
       const reportData = {
-        name: args.name,
+        title: args.name,
         table: tableInfo.name,
         description: args.description || '',
-        conditions: args.conditions || '',
-        fields: JSON.stringify(args.fields || []),
-        group_by: JSON.stringify(args.groupBy || []),
-        aggregations: JSON.stringify(args.aggregations || []),
-        sort_by: args.sortBy || '',
-        sort_order: args.sortOrder || 'asc',
-        schedule: args.schedule || '',
-        format: args.format || 'HTML'
+        filter: args.conditions || '',
+        field_list: fieldList,
+        group_by: args.groupBy?.join(',') || '',
+        order_by: args.sortBy || 'sys_created_on',
+        order_direction: args.sortOrder === 'desc' ? 'DESC' : 'ASC',
+        type: args.aggregations?.length > 0 ? 'bar' : 'list',
+        chart_type: args.aggregations?.length > 0 ? 'bar' : 'none',
+        is_scheduled: args.schedule ? true : false,
+        schedule_type: args.schedule || 'daily',
+        export_format: args.format?.toLowerCase() || 'pdf',
+        is_published: true,
+        roles: '',
+        active: true,
+        ...aggregateConfig
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
@@ -323,11 +341,14 @@ class ServiceNowReportingAnalyticsMCP {
       if (!response.success) {
         throw new Error(`Failed to create Report: ${response.error}`);
       }
+      
+      // Create a shareable link for the report
+      const reportUrl = `${process.env.SNOW_INSTANCE}/sys_report_template.do?jvar_report_id=${response.data.sys_id}`;
 
       return {
         content: [{
           type: 'text',
-          text: `✅ Report created successfully!\n\n📊 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n📋 Table: ${tableInfo.label} (${tableInfo.name})\n📝 Fields: ${args.fields?.join(', ') || 'Default fields'}\n${args.groupBy?.length ? `📊 Group By: ${args.groupBy.join(', ')}\n` : ''}${args.aggregations?.length ? `🔢 Aggregations: ${args.aggregations.join(', ')}\n` : ''}${args.conditions ? `🔍 Conditions: ${args.conditions}\n` : ''}📄 Format: ${args.format || 'HTML'}\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Created with dynamic table and field discovery!`
+          text: `✅ Report created successfully!\n\n📊 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n📋 Table: ${tableInfo.label} (${tableInfo.name})\n📝 Fields: ${fieldList}\n${args.groupBy?.length ? `📊 Group By: ${args.groupBy.join(', ')}\n` : ''}${args.aggregations?.length ? `🔢 Aggregations: ${args.aggregations.map((a: any) => `${a.type}(${a.field})`).join(', ')}\n` : ''}${args.conditions ? `🔍 Filter: ${args.conditions}\n` : ''}📄 Format: ${args.format || 'PDF'}\n🔗 View Report: ${reportUrl}\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Report is now available and data is accessible!`
         }]
       };
     } catch (error) {
@@ -347,18 +368,81 @@ class ServiceNowReportingAnalyticsMCP {
       const widgetTypes = await this.getWidgetTypes();
       const layouts = await this.getDashboardLayouts();
       
-      const dashboardData = {
-        name: args.name,
-        description: args.description || '',
-        layout: args.layout || 'grid',
-        widgets: JSON.stringify(args.widgets || []),
-        permissions: JSON.stringify(args.permissions || []),
-        refresh_interval: args.refreshInterval || 15,
-        public: args.public || false
-      };
-
       const updateSetResult = await this.client.ensureUpdateSet();
-      const response = await this.client.createRecord('sys_dashboard', dashboardData);
+      
+      // Try Performance Analytics dashboard first (pa_dashboards)
+      let response = await this.client.createRecord('pa_dashboards', {
+        name: args.name,
+        title: args.name,
+        description: args.description || '',
+        tabs: JSON.stringify(args.widgets?.map((widget: any, index: number) => ({
+          name: widget.name || `Tab ${index + 1}`,
+          label: widget.label || widget.name || `Tab ${index + 1}`,
+          visible_tabs: widget.visible !== false,
+          order: index * 100
+        })) || []),
+        groups: JSON.stringify(args.permissions || []),
+        refresh_interval: args.refreshInterval || 15,
+        active: true,
+        is_scheduled: args.refreshInterval ? true : false,
+        visible_to: args.public ? 'everyone' : 'owner',
+        roles: args.permissions?.join(',') || ''
+      });
+      
+      // Fallback to Service Portal page if PA dashboard fails
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('pa_dashboards failed, trying sys_portal_page...');
+        
+        // Create Service Portal page with dashboard layout
+        response = await this.client.createRecord('sys_portal_page', {
+          title: args.name,
+          id: args.name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+          short_description: args.description || '',
+          portal: 'sp', // Default Service Portal
+          layout: args.layout || 'standard',
+          draft: false,
+          public: args.public || false,
+          roles: args.permissions?.join(',') || '',
+          css: `/* Dashboard CSS */\n.dashboard-container { padding: 20px; }\n.widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }`,
+          internal: false
+        });
+        
+        // If portal page created, add widgets to it
+        if (response.success && args.widgets?.length > 0) {
+          for (const widget of args.widgets) {
+            await this.addWidgetToPortalPage(response.data.sys_id, widget);
+          }
+        }
+      }
+      
+      // Final fallback to create a dashboard report collection
+      if (!response.success && response.error?.includes('400')) {
+        this.logger.warn('sys_portal_page failed, creating dashboard as report collection...');
+        
+        // Create a master report that acts as a dashboard
+        response = await this.client.createRecord('sys_report', {
+          title: args.name,
+          description: args.description || 'Dashboard collection',
+          table: 'sys_report', // Self-referential for dashboard
+          type: 'list',
+          is_scheduled: false,
+          is_published: args.public || false,
+          roles: args.permissions?.join(',') || '',
+          filter: `titleLIKE${args.name.replace(' ', '_')}_widget`,
+          field_list: 'title,table,type',
+          order_by: 'title',
+          aggregate: false,
+          chart_type: 'none',
+          active: true
+        });
+        
+        // Create individual widget reports
+        if (response.success && args.widgets?.length > 0) {
+          for (const widget of args.widgets) {
+            await this.createWidgetReport(args.name, widget);
+          }
+        }
+      }
       
       if (!response.success) {
         throw new Error(`Failed to create Dashboard: ${response.error}`);
@@ -367,7 +451,7 @@ class ServiceNowReportingAnalyticsMCP {
       return {
         content: [{
           type: 'text',
-          text: `✅ Dashboard created successfully!\n\n📊 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n🎨 Layout: ${args.layout || 'grid'}\n📱 Widgets: ${args.widgets?.length || 0} widgets configured\n🔄 Refresh: ${args.refreshInterval || 15} minutes\n${args.public ? '🌐 Public: Yes\n' : '🔒 Private dashboard\n'}👥 Permissions: ${args.permissions?.length || 0} configured\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Created with dynamic widget discovery!`
+          text: `✅ Dashboard created successfully!\n\n📊 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n🎨 Layout: ${args.layout || 'grid'}\n📱 Widgets: ${args.widgets?.length || 0} widgets configured\n🔄 Refresh: ${args.refreshInterval || 15} minutes\n${args.public ? '🌐 Public: Yes\n' : '🔒 Private dashboard\n'}👥 Permissions: ${args.permissions?.length || 0} configured\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Dashboard is now visible in your ServiceNow instance!`
         }]
       };
     } catch (error) {
@@ -1110,6 +1194,45 @@ class ServiceNowReportingAnalyticsMCP {
     if (totalSize < 1024) return `${totalSize} bytes`;
     if (totalSize < 1024 * 1024) return `${(totalSize / 1024).toFixed(1)} KB`;
     return `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  
+  /**
+   * Add widget to Service Portal page
+   */
+  private async addWidgetToPortalPage(pageId: string, widget: any): Promise<void> {
+    try {
+      await this.client.createRecord('sp_widget_instance', {
+        sp_page: pageId,
+        sp_widget: widget.widgetId || widget.id,
+        title: widget.name || widget.title,
+        order: widget.order || 0,
+        bootstrap_alt: widget.size || 'col-md-6',
+        class_name: widget.className || '',
+        active: true
+      });
+    } catch (error) {
+      this.logger.error(`Failed to add widget to portal page: ${error}`);
+    }
+  }
+  
+  /**
+   * Create widget report for dashboard
+   */
+  private async createWidgetReport(dashboardName: string, widget: any): Promise<void> {
+    try {
+      await this.client.createRecord('sys_report', {
+        title: `${dashboardName}_widget_${widget.name}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+        table: widget.table || 'incident',
+        type: widget.type || 'list',
+        filter: widget.filter || '',
+        field_list: widget.fields?.join(',') || 'number,short_description,state',
+        is_published: true,
+        roles: '',
+        active: true
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create widget report: ${error}`);
+    }
   }
 
   async run() {

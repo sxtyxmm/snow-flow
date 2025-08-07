@@ -142,25 +142,25 @@ Chain operations with parallel execution at each stage:
 ### Full SPARC Pipeline with Batchtools
 ```bash
 # Execute complete SPARC workflow with parallel processing
-./snow-flow sparc pipeline "authentication system" --batch-optimize
+./claude-flow sparc pipeline "authentication system" --batch-optimize
 
 # Run multiple SPARC modes concurrently
-./snow-flow sparc batch architect,code,tdd "user management" --parallel
+./claude-flow sparc batch architect,code,tdd "user management" --parallel
 
 # Concurrent project analysis
-./snow-flow sparc concurrent-analyze project-requirements.json --parallel
+./claude-flow sparc concurrent-analyze project-requirements.json --parallel
 ```
 
 ### Performance Monitoring
 ```bash
 # Monitor batch operation performance
-./snow-flow batchtools monitor --real-time
+./claude-flow batchtools monitor --real-time
 
 # Analyze parallel processing metrics
-./snow-flow batchtools analyze --performance --detailed
+./claude-flow batchtools analyze --performance --detailed
 
 # Check system resource utilization
-./snow-flow batchtools resources --concurrent --verbose
+./claude-flow batchtools resources --concurrent --verbose
 ```
 
 For detailed documentation, see: https://github.com/ruvnet/claude-code-flow/docs/batchtools.md

@@ -26,25 +26,25 @@ Real-time performance monitoring and optimization tools for Claude-Flow operatio
 ### Real-time Monitoring
 ```bash
 # Monitor all system performance
-./snow-flow performance monitor --real-time --all
+./claude-flow performance monitor --real-time --all
 
 # Focus on parallel operations
-./snow-flow performance monitor --parallel --batchtools
+./claude-flow performance monitor --parallel --batchtools
 
 # Monitor specific components
-./snow-flow performance monitor --focus sparc --concurrent
+./claude-flow performance monitor --focus sparc --concurrent
 ```
 
 ### Performance Analysis
 ```bash
 # Generate performance report
-./snow-flow performance report --detailed --timeframe 24h
+./claude-flow performance report --detailed --timeframe 24h
 
 # Analyze batch operation efficiency
-./snow-flow performance analyze --batchtools --optimization
+./claude-flow performance analyze --batchtools --optimization
 
 # Compare performance across different modes
-./snow-flow performance compare --modes architect,code,tdd
+./claude-flow performance compare --modes architect,code,tdd
 ```
 
 ## Optimization Recommendations
