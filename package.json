@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.3",
-  "description": "Snow-Flow v3.0.3: Production-Ready ServiceNow Intelligence Platform - NO TIMEOUTS by default. Includes TodoWrite timeout documentation and MCP-based todo manager alternative. 100% REAL implementation with TensorFlow.js neural networks, direct ServiceNow API integration, and intelligent memory management. Includes 100+ MCP tools for operations, development, ML, analytics, and security. Full AI swarm orchestration with dynamic task categorization.",
+  "version": "3.0.4",
+  "description": "Snow-Flow v3.0.4: CRITICAL FIX - Deployment verification false negatives resolved! Enhanced widget verification with 4 fallback strategies, pre-deployment existence checks, and smart 403 error handling. NO TIMEOUTS by default. 100% REAL implementation with TensorFlow.js neural networks, direct ServiceNow API integration, and intelligent memory management. Includes 100+ MCP tools for operations, development, ML, analytics, and security.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
