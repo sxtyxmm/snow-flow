@@ -1235,6 +1235,102 @@ class ServiceNowReportingAnalyticsMCP {
     }
   }
 
+  /**
+   * Sanitize table name input
+   */
+  private sanitizeTableName(tableName: string): string {
+    if (!tableName || typeof tableName !== 'string') {
+      return '';
+    }
+    
+    // Convert common invalid formats to valid table names
+    let cleaned = tableName.toLowerCase().trim();
+    
+    // Map common user inputs to actual table names
+    const tableMapping: {[key: string]: string} = {
+      'itsm overview metrics': 'incident',
+      'itsm trend analysis': 'incident', 
+      'change request pipeline': 'change_request',
+      'incident overview': 'incident',
+      'change overview': 'change_request',
+      'problem overview': 'problem',
+      'user overview': 'sys_user',
+      'task overview': 'task',
+      'service request': 'sc_request',
+      'catalog request': 'sc_req_item',
+      'knowledge': 'kb_knowledge',
+      'configuration item': 'cmdb_ci',
+      'asset': 'alm_asset'
+    };
+    
+    // Check for direct mapping
+    if (tableMapping[cleaned]) {
+      return tableMapping[cleaned];
+    }
+    
+    // Remove spaces and special characters, convert to underscores
+    cleaned = cleaned.replace(/[\s-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+    
+    // Validate format (should be lowercase with underscores)
+    if (!/^[a-z][a-z0-9_]*$/.test(cleaned)) {
+      return '';
+    }
+    
+    return cleaned;
+  }
+  
+  /**
+   * Suggest similar table names
+   */
+  private async suggestSimilarTables(inputTable: string): Promise<Array<{name: string, label: string}>> {
+    try {
+      const searchTerm = inputTable.toLowerCase().replace(/[^a-zA-Z]/g, '%');
+      const response = await this.client.searchRecords('sys_db_object', `labelLIKE${searchTerm}`, 5);
+      
+      if (response.success && response.data?.result) {
+        return response.data.result.map((table: any) => ({
+          name: table.name,
+          label: table.label || table.name
+        }));
+      }
+      
+      return [];
+    } catch (error) {
+      this.logger.error('Failed to suggest similar tables:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Check dashboard creation permissions
+   */
+  private async checkDashboardPermissions(): Promise<{canCreate: boolean, requiredRoles: string[]}> {
+    try {
+      // Test with a simple query to pa_dashboards to check read access
+      const testQuery = await this.client.searchRecords('pa_dashboards', '', 1);
+      
+      const requiredRoles = ['pa_admin', 'pa_power_user', 'admin'];
+      
+      if (testQuery.success) {
+        return { canCreate: true, requiredRoles };
+      }
+      
+      // If we get a specific 403, it's a permission issue
+      if (testQuery.error?.includes('403') || testQuery.error?.includes('Access Denied')) {
+        return { canCreate: false, requiredRoles };
+      }
+      
+      // For other errors, assume permission issue
+      return { canCreate: false, requiredRoles };
+      
+    } catch (error) {
+      return { 
+        canCreate: false, 
+        requiredRoles: ['pa_admin', 'pa_power_user', 'admin']
+      };
+    }
+  }
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
