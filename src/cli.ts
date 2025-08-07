@@ -3880,6 +3880,13 @@ SNOW_FLOW_STRATEGY=development
 SNOW_FLOW_MAX_AGENTS=5
 
 # ===========================================
+# Claude Code API Integration (30 minutes)
+# ===========================================
+# API timeout for Claude Code integration - 30 minutes
+# This ensures Snow-Flow works smoothly with Claude Code's extended operation timeouts
+API_TIMEOUT_MS=1800000
+
+# ===========================================
 # Timeout Configuration (v3.0.1+)
 # ===========================================
 # IMPORTANT: Snow-Flow has NO TIMEOUTS by default for maximum reliability.
