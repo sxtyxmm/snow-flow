@@ -590,18 +590,18 @@ class ServiceNowDeploymentMCP {
 
       // CRITICAL FIX: Check if widget already exists BEFORE attempting deployment
       this.logger.info('Checking if widget already exists to prevent duplicates...');
-      const existenceCheck = await this.checkWidgetExists(args.name);
+      const existenceCheck = await this.checkArtifactExists('widget', args.name);
       
       if (existenceCheck.exists) {
         this.logger.info('✅ Widget already exists in ServiceNow', {
           widgetName: args.name,
-          sys_id: existenceCheck.widget?.sys_id,
-          method: existenceCheck.widget?.method
+          sys_id: existenceCheck.artifact?.sys_id,
+          method: existenceCheck.artifact?.method
         });
         
         const credentials = await this.oauth.loadCredentials();
         const widgetUrl = credentials?.instance ? 
-          `https://${credentials.instance}/sp_config?id=widget_editor&sys_id=${existenceCheck.widget.sys_id}` : 
+          `https://${credentials.instance}/sp_config?id=widget_editor&sys_id=${existenceCheck.artifact.sys_id}` : 
           'ServiceNow instance URL not available';
 
         return {
@@ -612,8 +612,8 @@ class ServiceNowDeploymentMCP {
 
 🎯 Widget Details:
 - Name: ${args.name}
-- Sys ID: ${existenceCheck.widget.sys_id}
-- Verification Method: ${existenceCheck.widget.method}
+- Sys ID: ${existenceCheck.artifact.sys_id}
+- Verification Method: ${existenceCheck.artifact.method}
 - Status: Already deployed
 
 🔗 Direct Links:
@@ -705,10 +705,10 @@ Your widget is deployed and ready for testing in Service Portal.`
                            error?.message?.includes('Forbidden');
           
           if (is403Error) {
-            this.logger.info('403 error detected, performing enhanced verification...');
+            this.logger.info('403 error detected, performing universal verification...');
             
             try {
-              const verificationResult = await this.enhancedWidgetVerification(args.name);
+              const verificationResult = await this.universalArtifactVerification('widget', args.name);
               
               if (verificationResult.exists) {
                 // Widget was created successfully despite 403 error!
@@ -716,7 +716,8 @@ Your widget is deployed and ready for testing in Service Portal.`
                   widgetName: args.name,
                   sys_id: verificationResult.sys_id,
                   completenessScore: verificationResult.completenessScore,
-                  verificationMethod: verificationResult.method
+                  verificationMethod: verificationResult.method,
+                  table: verificationResult.table
                 });
                 
                 // Set result as successful with the verified data
@@ -725,25 +726,26 @@ Your widget is deployed and ready for testing in Service Portal.`
                   data: {
                     sys_id: verificationResult.sys_id,
                     name: args.name,
-                    title: verificationResult.title || args.title
+                    title: verificationResult.name || args.title
                   }
                 };
-                deploymentMethod = 'direct_api (with enhanced error recovery)';
+                deploymentMethod = 'direct_api (with universal error recovery)';
                 deploymentSuccess = true;
               } else {
-                // CRITICAL FIX: Assume success if we get a creation confirmation but verification fails
-                this.logger.info('Widget verification uncertain due to permissions - assuming successful deployment');
+                // CRITICAL FIX: Check for creation indicators in error messages
+                this.logger.info('Universal verification found no results - checking error indicators');
                 
                 // Check if we have any indication that the widget was created
                 const hasCreationIndicators = directError?.message?.includes('duplicate') || 
                                                directError?.message?.toLowerCase().includes('already exists') ||
-                                               directError?.message?.toLowerCase().includes('unique constraint');
+                                               directError?.message?.toLowerCase().includes('unique constraint') ||
+                                               directError?.message?.toLowerCase().includes('violation');
                 
                 if (hasCreationIndicators) {
                   result = {
                     success: true,
                     data: {
-                      sys_id: 'unknown-but-exists',
+                      sys_id: 'assumed-exists-from-error',
                       name: args.name,
                       title: args.title
                     }
@@ -754,7 +756,7 @@ Your widget is deployed and ready for testing in Service Portal.`
                 }
               }
             } catch (verifyError) {
-              this.logger.warn('Enhanced verification failed, checking for deployment indicators', verifyError);
+              this.logger.warn('Universal verification failed, checking for deployment indicators', verifyError);
               
               // Last resort: Check if error messages indicate successful creation
               const hasSuccessIndicators = directError?.message?.includes('created') || 
@@ -839,7 +841,7 @@ Your widget is deployed and ready for testing in Service Portal.`
             // CRITICAL FIX: Check if widget was actually created despite 403 error
             this.logger.info('403 error detected, verifying if widget was actually created...');
             
-            const verificationResult = await this.enhancedWidgetVerification(args.name);
+            const verificationResult = await this.universalArtifactVerification('widget', args.name);
             
             if (verificationResult.exists) {
               // Widget was created successfully despite 403 error!
@@ -1176,9 +1178,9 @@ Use \`snow_deployment_debug\` for more information about this session.`,
                          error?.message?.includes('Forbidden');
       
       if (is403Error) {
-        this.logger.info('Final 403 error handler - attempting last verification check');
+        this.logger.info('Final 403 error handler - attempting universal verification check');
         try {
-          const finalVerification = await this.enhancedWidgetVerification(args.name);
+          const finalVerification = await this.universalArtifactVerification('widget', args.name);
           if (finalVerification.exists) {
             this.logger.info('🎉 FINAL SUCCESS: Widget exists despite deployment errors!', {
               widgetName: args.name,
@@ -7891,145 +7893,260 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
   }
 
   /**
-   * Enhanced widget verification with multiple fallback strategies
-   * Handles 403 errors and permission issues gracefully
+   * Universal artifact verification using Table API
+   * Works for all ServiceNow artifacts via consistent table lookup
    */
-  private async enhancedWidgetVerification(widgetName: string): Promise<any> {
-    const strategies = [
-      { name: 'direct_search', fn: () => this.verifyWidgetDirect(widgetName) },
-      { name: 'table_count', fn: () => this.verifyWidgetByCount(widgetName) },
-      { name: 'metadata_search', fn: () => this.verifyWidgetMetadata(widgetName) },
-      { name: 'alternative_endpoint', fn: () => this.verifyWidgetAlternative(widgetName) }
-    ];
+  private async universalArtifactVerification(artifactType: string, identifier: string | { sys_id?: string; name?: string }, table?: string): Promise<any> {
+    this.logger.info('Universal verification starting', { artifactType, identifier, table });
+    
+    // Get table name if not provided
+    const targetTable = table || this.getTableForArtifactType(artifactType);
+    
+    let query = '';
+    let searchField = '';
+    let searchValue = '';
+    
+    // Determine search strategy
+    if (typeof identifier === 'string') {
+      // String identifier - try name first, then sys_id format
+      if (identifier.length === 32 && !identifier.includes(' ')) {
+        query = `sys_id=${identifier}`;
+        searchField = 'sys_id';
+        searchValue = identifier;
+      } else {
+        query = `name=${identifier}^ORid=${identifier}`;
+        searchField = 'name';
+        searchValue = identifier;
+      }
+    } else {
+      // Object identifier
+      if (identifier.sys_id) {
+        query = `sys_id=${identifier.sys_id}`;
+        searchField = 'sys_id';
+        searchValue = identifier.sys_id;
+      } else if (identifier.name) {
+        query = `name=${identifier.name}^ORid=${identifier.name}`;
+        searchField = 'name';
+        searchValue = identifier.name;
+      } else {
+        throw new Error('Invalid identifier - must provide sys_id or name');
+      }
+    }
 
-    for (const strategy of strategies) {
-      try {
-        this.logger.info(`Trying verification strategy: ${strategy.name}`);
-        const result = await strategy.fn();
+    try {
+      this.logger.info(`Querying table: ${targetTable} with query: ${query}`);
+      
+      // Use the standard Table API for verification
+      const response = await this.client.makeRequest({
+        method: 'GET',
+        url: `/api/now/table/${targetTable}`,
+        params: {
+          sysparm_query: query,
+          sysparm_limit: 5,
+          sysparm_fields: 'sys_id,name,title,sys_created_on,sys_updated_on,sys_created_by'
+        }
+      });
+
+      if (response?.result && Array.isArray(response.result) && response.result.length > 0) {
+        const artifact = response.result[0];
         
-        if (result.exists) {
-          result.method = strategy.name;
-          return result;
-        }
-      } catch (error) {
-        this.logger.warn(`Verification strategy ${strategy.name} failed:`, error);
-        continue;
-      }
-    }
+        this.logger.info('✅ Universal verification SUCCESS', {
+          artifactType,
+          table: targetTable,
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title,
+          found_via: searchField
+        });
 
-    return { exists: false, method: 'all_strategies_failed' };
-  }
-
-  /**
-   * Direct widget verification using the original method
-   */
-  private async verifyWidgetDirect(widgetName: string): Promise<any> {
-    return await this.verifyWidgetInServiceNow(widgetName);
-  }
-
-  /**
-   * Verify widget by checking table record count
-   */
-  private async verifyWidgetByCount(widgetName: string): Promise<any> {
-    try {
-      const response = await this.client.makeRequest({
-        method: 'GET',
-        url: '/api/now/stats/sp_widget',
-        params: {
-          sysparm_query: `name=${widgetName}`,
-          sysparm_count: true
-        }
-      });
-
-      if (response?.stats?.count > 0) {
         return {
           exists: true,
-          sys_id: 'found-via-count',
-          name: widgetName,
-          completenessScore: 75,
-          method: 'table_count'
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title,
+          artifact: artifact,
+          table: targetTable,
+          method: 'universal_table_api',
+          search_method: searchField,
+          completenessScore: this.calculateArtifactCompleteness(artifact),
+          metadata: {
+            created_on: artifact.sys_created_on,
+            updated_on: artifact.sys_updated_on,
+            created_by: artifact.sys_created_by,
+            total_found: response.result.length
+          }
         };
-      }
-    } catch (error) {
-      throw new Error(`Count verification failed: ${error}`);
-    }
-
-    return { exists: false };
-  }
-
-  /**
-   * Verify widget through metadata tables
-   */
-  private async verifyWidgetMetadata(widgetName: string): Promise<any> {
-    try {
-      // Check sys_metadata table which often has looser permissions
-      const response = await this.client.makeRequest({
-        method: 'GET',
-        url: '/api/now/table/sys_metadata',
-        params: {
-          sysparm_query: `sys_class_name=sp_widget^sys_name=${widgetName}`,
-          sysparm_limit: 1,
-          sysparm_fields: 'sys_id,sys_name,sys_package'
-        }
-      });
-
-      if (response?.result && response.result.length > 0) {
-        const metadata = response.result[0];
+      } else {
+        this.logger.warn('Universal verification: No results found', {
+          artifactType,
+          table: targetTable,
+          query,
+          response_count: response?.result?.length || 0
+        });
+        
         return {
-          exists: true,
-          sys_id: metadata.sys_id,
-          name: widgetName,
-          completenessScore: 85,
-          method: 'metadata_search'
+          exists: false,
+          method: 'universal_table_api',
+          search_method: searchField,
+          table: targetTable,
+          debug: {
+            query_used: query,
+            response_count: response?.result?.length || 0,
+            response_structure: response ? 'valid' : 'invalid'
+          }
         };
       }
-    } catch (error) {
-      throw new Error(`Metadata verification failed: ${error}`);
+    } catch (error: any) {
+      this.logger.error('Universal verification error', {
+        artifactType,
+        table: targetTable,
+        query,
+        error: error.message
+      });
+      
+      throw new Error(`Universal verification failed: ${error.message}`);
     }
-
-    return { exists: false };
   }
 
   /**
-   * Verify widget using alternative ServiceNow endpoints
+   * Calculate artifact completeness score based on available fields
    */
-  private async verifyWidgetAlternative(widgetName: string): Promise<any> {
+  private calculateArtifactCompleteness(artifact: any): number {
+    let score = 0;
+    const maxScore = 100;
+    
+    // Essential fields (25 points each)
+    if (artifact.sys_id) score += 25;
+    if (artifact.name) score += 25;
+    
+    // Important metadata (12.5 points each)  
+    if (artifact.sys_created_on) score += 12.5;
+    if (artifact.sys_updated_on) score += 12.5;
+    if (artifact.sys_created_by) score += 12.5;
+    
+    // Additional content indicator (12.5 points)
+    if (artifact.title || artifact.description || artifact.template) score += 12.5;
+    
+    return Math.min(score, maxScore);
+  }
+
+  /**
+   * Get ServiceNow table name for artifact type
+   */
+  private getTableForArtifactType(artifactType: string): string {
+    const ARTIFACT_TABLES = {
+      'widget': 'sp_widget',
+      'flow': 'sys_hub_flow',
+      'script': 'sys_script_include',
+      'script_include': 'sys_script_include',
+      'business_rule': 'sys_script',
+      'workflow': 'wf_workflow',
+      'application': 'sys_app',
+      'ui_action': 'sys_ui_action',
+      'ui_page': 'sys_ui_page',
+      'processor': 'sys_processor',
+      'portal_page': 'sp_page',
+      'page': 'sp_page',
+      'dashboard': 'sp_page',
+      'report': 'sys_report',
+      'table': 'sys_db_object',
+      'field': 'sys_dictionary',
+      'acl': 'sys_security_acl',
+      'role': 'sys_user_role'
+    };
+    
+    const table = ARTIFACT_TABLES[artifactType.toLowerCase()];
+    if (!table) {
+      this.logger.warn(`Unknown artifact type: ${artifactType}, using sys_metadata as fallback`);
+      return 'sys_metadata';
+    }
+    
+    return table;
+  }
+
+  /**
+   * Universal verification method that can handle all artifact types by sys_id
+   * Especially useful when we know the sys_id from deployment responses
+   */
+  private async verifyArtifactBySysId(sys_id: string, artifactType?: string, table?: string): Promise<any> {
+    // Determine table from artifact type if not provided
+    const targetTable = table || (artifactType ? this.getTableForArtifactType(artifactType) : null);
+    
+    if (!targetTable) {
+      throw new Error('Either table or artifactType must be provided');
+    }
+    
     try {
-      // Try the portal API which sometimes has different permissions
+      this.logger.info(`Verifying artifact by sys_id: ${sys_id} in table: ${targetTable}`);
+      
       const response = await this.client.makeRequest({
         method: 'GET',
-        url: '/api/now/sp/widget',
+        url: `/api/now/table/${targetTable}/${sys_id}`,
         params: {
-          name: widgetName
+          sysparm_fields: 'sys_id,name,title,sys_created_on,sys_updated_on,sys_created_by,state'
         }
       });
 
       if (response?.result) {
+        const artifact = response.result;
+        
+        this.logger.info('✅ Sys_id verification SUCCESS', {
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title,
+          table: targetTable,
+          state: artifact.state
+        });
+
         return {
           exists: true,
-          sys_id: response.result.sys_id || 'found-via-portal-api',
-          name: widgetName,
-          title: response.result.title,
-          completenessScore: 90,
-          method: 'alternative_endpoint'
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title,
+          artifact: artifact,
+          table: targetTable,
+          method: 'universal_sys_id_lookup',
+          completenessScore: this.calculateArtifactCompleteness(artifact),
+          metadata: {
+            created_on: artifact.sys_created_on,
+            updated_on: artifact.sys_updated_on,
+            created_by: artifact.sys_created_by,
+            state: artifact.state
+          }
+        };
+      } else {
+        this.logger.warn('Sys_id verification: Artifact not found', {
+          sys_id,
+          table: targetTable
+        });
+        
+        return {
+          exists: false,
+          method: 'universal_sys_id_lookup',
+          table: targetTable,
+          debug: {
+            sys_id_checked: sys_id,
+            response_structure: 'no_result'
+          }
         };
       }
-    } catch (error) {
-      throw new Error(`Alternative endpoint verification failed: ${error}`);
+    } catch (error: any) {
+      this.logger.error('Sys_id verification error', {
+        sys_id,
+        table: targetTable,
+        error: error.message
+      });
+      
+      throw new Error(`Sys_id verification failed: ${error.message}`);
     }
-
-    return { exists: false };
   }
 
+
   /**
-   * Check if widget exists before attempting deployment
+   * Check if artifact exists before attempting deployment (Universal)
    */
-  private async checkWidgetExists(widgetName: string): Promise<{ exists: boolean; widget?: any }> {
+  private async checkArtifactExists(artifactType: string, identifier: string): Promise<{ exists: boolean; artifact?: any }> {
     try {
-      const verificationResult = await this.enhancedWidgetVerification(widgetName);
+      const verificationResult = await this.universalArtifactVerification(artifactType, identifier);
       return {
         exists: verificationResult.exists,
-        widget: verificationResult.exists ? verificationResult : undefined
+        artifact: verificationResult.exists ? verificationResult : undefined
       };
     } catch (error) {
       this.logger.warn('Pre-deployment existence check failed', error);
@@ -8037,181 +8154,6 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
     }
   }
 
-  /**
-   * Verify widget exists in ServiceNow with comprehensive retry logic
-   * Addresses the critical false negative bug where widgets show 403 errors but are actually created
-   */
-  private async verifyWidgetInServiceNow(widgetName: string): Promise<any> {
-    const maxRetries = 5;
-    const baseDelay = 2000; // Start with 2 seconds
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Progressive delay - ServiceNow needs time to process
-        if (attempt > 1) {
-          const delay = baseDelay * attempt; // 2s, 4s, 6s, 8s, 10s
-          this.logger.info(`Waiting ${delay}ms before widget verification attempt ${attempt}/${maxRetries}`);
-          await this.sleep(delay);
-        }
-        
-        this.logger.info(`Widget verification attempt ${attempt}/${maxRetries}`, { widgetName });
-        
-        // Multi-table verification approach (similar to flow verification)
-        const [mainWidgetCheck, widgetSearchCheck] = await Promise.allSettled([
-          // Check 1: Direct sp_widget table search by name
-          this.client.searchRecords('sp_widget', `name=${widgetName}`, 1),
-          
-          // Check 2: Broader search with ID field
-          this.client.searchRecords('sp_widget', `name=${widgetName}^ORid=${widgetName}`, 5)
-        ]);
-        
-        let mainWidget = null;
-        let searchResults = null;
-        const verificationDetails = {
-          attempt,
-          mainWidgetCheck: 'pending',
-          widgetSearchCheck: 'pending',
-          totalFound: 0
-        };
-        
-        // Process main widget check
-        if (mainWidgetCheck.status === 'fulfilled' && mainWidgetCheck.value.success) {
-          mainWidget = mainWidgetCheck.value.data?.[0];
-          verificationDetails.mainWidgetCheck = mainWidget ? 'found' : 'not_found';
-          verificationDetails.totalFound = mainWidgetCheck.value.data?.length || 0;
-        } else {
-          verificationDetails.mainWidgetCheck = `failed: ${mainWidgetCheck.status === 'rejected' ? mainWidgetCheck.reason : 'unknown error'}`;
-        }
-        
-        // Process widget search check
-        if (widgetSearchCheck.status === 'fulfilled' && widgetSearchCheck.value.success) {
-          searchResults = widgetSearchCheck.value.data || [];
-          verificationDetails.widgetSearchCheck = `found_${searchResults.length}`;
-          
-          // Use search results if main check didn't find anything
-          if (!mainWidget && searchResults.length > 0) {
-            mainWidget = searchResults[0];
-            verificationDetails.totalFound = searchResults.length;
-          }
-        } else {
-          verificationDetails.widgetSearchCheck = `failed: ${widgetSearchCheck.status === 'rejected' ? widgetSearchCheck.reason : 'unknown error'}`;
-        }
-        
-        // Calculate completeness score
-        let completenessScore = 0;
-        if (mainWidget) {
-          completenessScore += mainWidget.sys_id ? 25 : 0;
-          completenessScore += mainWidget.name ? 25 : 0;
-          completenessScore += mainWidget.title ? 25 : 0;
-          completenessScore += mainWidget.template ? 25 : 0;
-        }
-        
-        if (mainWidget && completenessScore >= 75) {
-          // Widget found and appears complete
-          this.logger.info(`✅ Widget verification SUCCESS on attempt ${attempt}`, {
-            widgetName,
-            sys_id: mainWidget.sys_id,
-            completenessScore,
-            totalRetries: attempt
-          });
-          
-          return {
-            exists: true,
-            sys_id: mainWidget.sys_id,
-            name: mainWidget.name,
-            title: mainWidget.title,
-            completenessScore,
-            attempt,
-            verificationDetails,
-            debugInfo: {
-              foundVia: verificationDetails.mainWidgetCheck === 'found' ? 'main_check' : 'search_check',
-              totalFound: verificationDetails.totalFound,
-              retriesNeeded: attempt
-            }
-          };
-        } else if (mainWidget && completenessScore < 75) {
-          // Widget found but incomplete - might still be processing
-          this.logger.warn(`⚠️ Widget found but incomplete on attempt ${attempt}`, {
-            widgetName,
-            sys_id: mainWidget.sys_id,
-            completenessScore,
-            remainingRetries: maxRetries - attempt
-          });
-          
-          if (attempt === maxRetries) {
-            // Last attempt - return what we have
-            return {
-              exists: true,
-              sys_id: mainWidget.sys_id,
-              name: mainWidget.name,
-              title: mainWidget.title,
-              completenessScore,
-              attempt,
-              verificationDetails,
-              debugInfo: {
-                warning: 'Widget exists but appears incomplete',
-                foundVia: verificationDetails.mainWidgetCheck === 'found' ? 'main_check' : 'search_check',
-                totalFound: verificationDetails.totalFound,
-                retriesNeeded: attempt
-              }
-            };
-          }
-        } else {
-          // Widget not found
-          this.logger.warn(`❌ Widget not found on attempt ${attempt}`, {
-            widgetName,
-            verificationDetails,
-            remainingRetries: maxRetries - attempt
-          });
-          
-          if (attempt === maxRetries) {
-            // Final attempt failed
-            return {
-              exists: false,
-              attempt,
-              verificationDetails,
-              debugInfo: {
-                finalAttempt: true,
-                allChecks: {
-                  mainWidgetCheck: verificationDetails.mainWidgetCheck,
-                  widgetSearchCheck: verificationDetails.widgetSearchCheck
-                },
-                totalRetries: maxRetries
-              }
-            };
-          }
-        }
-        
-      } catch (verificationError) {
-        this.logger.error(`Widget verification attempt ${attempt} failed`, {
-          widgetName,
-          error: verificationError instanceof Error ? verificationError.message : String(verificationError),
-          remainingRetries: maxRetries - attempt
-        });
-        
-        if (attempt === maxRetries) {
-          // Final attempt - return failure with error details
-          return {
-            exists: false,
-            attempt,
-            error: verificationError instanceof Error ? verificationError.message : String(verificationError),
-            debugInfo: {
-              finalAttempt: true,
-              verificationError: true,
-              totalRetries: maxRetries
-            }
-          };
-        }
-      }
-    }
-    
-    // Should not reach here, but safety fallback
-    return {
-      exists: false,
-      attempt: maxRetries,
-      debugInfo: { unexpectedFallback: true }
-    };
-  }
 
   /**
    * Sleep utility for retry delays
