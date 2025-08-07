@@ -7893,50 +7893,97 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
   }
 
   /**
-   * Universal artifact verification using Table API
-   * Works for all ServiceNow artifacts via consistent table lookup
+   * Universal artifact verification using sys_id lookup
+   * ULTIMATE SIMPLIFICATION: Use sys_metadata for universal sys_id verification
    */
   private async universalArtifactVerification(artifactType: string, identifier: string | { sys_id?: string; name?: string }, table?: string): Promise<any> {
     this.logger.info('Universal verification starting', { artifactType, identifier, table });
     
-    // Get table name if not provided
-    const targetTable = table || this.getTableForArtifactType(artifactType);
-    
-    let query = '';
-    let searchField = '';
     let searchValue = '';
+    let searchField = '';
+    let isSysIdSearch = false;
     
     // Determine search strategy
     if (typeof identifier === 'string') {
-      // String identifier - try name first, then sys_id format
+      // String identifier - detect if it's a sys_id (32 chars, no spaces)
       if (identifier.length === 32 && !identifier.includes(' ')) {
-        query = `sys_id=${identifier}`;
+        searchValue = identifier;
         searchField = 'sys_id';
-        searchValue = identifier;
+        isSysIdSearch = true;
       } else {
-        query = `name=${identifier}^ORid=${identifier}`;
-        searchField = 'name';
         searchValue = identifier;
+        searchField = 'name';
       }
     } else {
       // Object identifier
       if (identifier.sys_id) {
-        query = `sys_id=${identifier.sys_id}`;
-        searchField = 'sys_id';
         searchValue = identifier.sys_id;
+        searchField = 'sys_id';
+        isSysIdSearch = true;
       } else if (identifier.name) {
-        query = `name=${identifier.name}^ORid=${identifier.name}`;
-        searchField = 'name';
         searchValue = identifier.name;
+        searchField = 'name';
       } else {
         throw new Error('Invalid identifier - must provide sys_id or name');
       }
     }
 
+    // STRATEGY 1: Universal sys_id lookup via sys_metadata (fastest and most universal)
+    if (isSysIdSearch) {
+      try {
+        this.logger.info(`Universal sys_id verification: ${searchValue}`);
+        
+        const metadataResponse = await this.client.makeRequest({
+          method: 'GET',
+          url: '/api/now/table/sys_metadata',
+          params: {
+            sysparm_query: `sys_id=${searchValue}`,
+            sysparm_limit: 1,
+            sysparm_fields: 'sys_id,sys_class_name,sys_name,sys_package,sys_created_on,sys_updated_on,sys_created_by'
+          }
+        });
+
+        if (metadataResponse?.result && metadataResponse.result.length > 0) {
+          const metadata = metadataResponse.result[0];
+          
+          this.logger.info('✅ Universal sys_id verification SUCCESS', {
+            sys_id: metadata.sys_id,
+            class_name: metadata.sys_class_name,
+            name: metadata.sys_name,
+            method: 'universal_sys_id_metadata'
+          });
+
+          return {
+            exists: true,
+            sys_id: metadata.sys_id,
+            name: metadata.sys_name,
+            artifact: metadata,
+            table: 'sys_metadata',
+            class_name: metadata.sys_class_name,
+            method: 'universal_sys_id_metadata',
+            search_method: 'sys_id',
+            completenessScore: 90, // High score for sys_id match
+            metadata: {
+              created_on: metadata.sys_created_on,
+              updated_on: metadata.sys_updated_on,
+              created_by: metadata.sys_created_by,
+              class_name: metadata.sys_class_name,
+              package: metadata.sys_package
+            }
+          };
+        }
+      } catch (metadataError: any) {
+        this.logger.warn('sys_metadata lookup failed, trying fallback', metadataError);
+      }
+    }
+
+    // STRATEGY 2: Fallback to specific table lookup (for name searches or sys_metadata failures)
+    const targetTable = table || this.getTableForArtifactType(artifactType);
+    const query = searchField === 'sys_id' ? `sys_id=${searchValue}` : `name=${searchValue}^ORid=${searchValue}`;
+
     try {
-      this.logger.info(`Querying table: ${targetTable} with query: ${query}`);
+      this.logger.info(`Fallback verification - table: ${targetTable}, query: ${query}`);
       
-      // Use the standard Table API for verification
       const response = await this.client.makeRequest({
         method: 'GET',
         url: `/api/now/table/${targetTable}`,
@@ -7950,7 +7997,7 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
       if (response?.result && Array.isArray(response.result) && response.result.length > 0) {
         const artifact = response.result[0];
         
-        this.logger.info('✅ Universal verification SUCCESS', {
+        this.logger.info('✅ Fallback verification SUCCESS', {
           artifactType,
           table: targetTable,
           sys_id: artifact.sys_id,
@@ -7964,7 +8011,7 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
           name: artifact.name || artifact.title,
           artifact: artifact,
           table: targetTable,
-          method: 'universal_table_api',
+          method: 'fallback_table_api',
           search_method: searchField,
           completenessScore: this.calculateArtifactCompleteness(artifact),
           metadata: {
@@ -7975,27 +8022,29 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
           }
         };
       } else {
-        this.logger.warn('Universal verification: No results found', {
+        this.logger.warn('Universal verification: No results found in any method', {
           artifactType,
           table: targetTable,
           query,
+          searchValue,
           response_count: response?.result?.length || 0
         });
         
         return {
           exists: false,
-          method: 'universal_table_api',
+          method: 'all_methods_failed',
           search_method: searchField,
           table: targetTable,
           debug: {
+            searched_sys_metadata: isSysIdSearch,
+            searched_specific_table: true,
             query_used: query,
-            response_count: response?.result?.length || 0,
-            response_structure: response ? 'valid' : 'invalid'
+            response_count: response?.result?.length || 0
           }
         };
       }
     } catch (error: any) {
-      this.logger.error('Universal verification error', {
+      this.logger.error('Universal verification completely failed', {
         artifactType,
         table: targetTable,
         query,
