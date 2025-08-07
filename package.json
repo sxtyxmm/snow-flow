@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.10",
-  "description": "Snow-Flow v3.0.10: REPORTING & DASHBOARD FIXES! Complete overhaul of reporting and dashboard MCPs. Fixed dashboard visibility in ServiceNow (now uses pa_dashboards, sys_portal_page with intelligent fallback). Reports now properly fetch data with correct field configuration. KPIs and Performance Analytics work correctly. All dashboard and report creation tools now functional with proper ServiceNow API integration. Plus all previous features: Codespaces support, Claude Code integration, 100+ MCP tools.",
+  "version": "3.0.12",
+  "description": "Snow-Flow v3.0.12: INTELLIGENT REPORTING REVOLUTION! New AI-powered table discovery system replaces hardcoded mappings. Input any description like 'ITSM Overview Metrics' or 'Change Request Pipeline' and it intelligently discovers the right ServiceNow tables using real API calls. Features semantic matching, record count validation, and smart field selection. No more 'Invalid table name' errors! Plus all previous fixes: dashboard creation, permission handling, 100+ MCP tools.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
