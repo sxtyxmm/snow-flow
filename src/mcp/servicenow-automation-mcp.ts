@@ -62,7 +62,7 @@ class ServiceNowAutomationMCP {
       tools: [
         {
           name: 'snow_create_scheduled_job',
-          description: 'Create Scheduled Job with dynamic schedule discovery - NO hardcoded values',
+          description: 'Creates scheduled jobs for automated task execution. Supports cron patterns, time zones, and run-as user configuration.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -79,7 +79,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_event_rule',
-          description: 'Create Event Rule with dynamic event discovery - NO hardcoded values',
+          description: 'Creates event-driven automation rules. Triggers scripts based on system events with conditional logic.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -96,7 +96,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_notification',
-          description: 'Create Notification with dynamic template discovery - NO hardcoded values',
+          description: 'Creates email notifications for record changes. Configures triggers, recipients, and message templates.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -114,7 +114,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_sla_definition',
-          description: 'Create SLA Definition with dynamic field discovery - NO hardcoded values',
+          description: 'Creates Service Level Agreement definitions. Sets duration targets, business schedules, and breach conditions.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -132,7 +132,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_escalation_rule',
-          description: 'Create Escalation Rule with dynamic escalation discovery - NO hardcoded values',
+          description: 'Creates escalation rules for time-based actions. Defines escalation timing, conditions, and automated responses.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -150,7 +150,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_workflow_activity',
-          description: 'Create Workflow Activity with dynamic workflow discovery - NO hardcoded values',
+          description: 'Creates workflow activities within existing workflows. Configures activity types, conditions, and execution order.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -167,7 +167,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_discover_schedules',
-          description: 'Discover all available schedules dynamically',
+          description: 'Discovers available schedules in the instance for business hours, maintenance windows, and SLA calculations.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -177,7 +177,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_discover_events',
-          description: 'Discover all available events dynamically',
+          description: 'Discovers system events available for automation triggers. Filters by table and event type.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -187,7 +187,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_discover_automation_jobs',
-          description: 'Discover all automation jobs dynamically',
+          description: 'Lists all automation jobs in the instance with status filtering for active, inactive, or all jobs.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -197,7 +197,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_test_scheduled_job',
-          description: 'Test scheduled job execution',
+          description: 'Tests scheduled job execution without waiting for the schedule. Validates script logic and permissions.',
           inputSchema: {
             type: 'object',
             properties: {

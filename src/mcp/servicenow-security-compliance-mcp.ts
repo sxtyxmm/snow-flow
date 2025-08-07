@@ -65,7 +65,7 @@ class ServiceNowSecurityComplianceMCP {
       tools: [
         {
           name: 'snow_create_security_policy',
-          description: 'Create Security Policy with dynamic rule discovery - NO hardcoded values',
+          description: 'Creates security policies for access control and data protection. Configures enforcement levels, scope, and rule sets.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -82,7 +82,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_create_compliance_rule',
-          description: 'Create Compliance Rule with dynamic framework discovery',
+          description: 'Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -99,7 +99,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_create_audit_rule',
-          description: 'Create Audit Rule with dynamic event discovery',
+          description: 'Creates audit rules for tracking data changes. Configures monitored events, fields, and retention periods.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -116,7 +116,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_create_access_control',
-          description: 'Create Access Control with dynamic role discovery',
+          description: 'Creates access control rules for table and field security. Manages role-based permissions and conditional access.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -133,7 +133,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_create_data_policy',
-          description: 'Create Data Policy with dynamic field discovery',
+          description: 'Creates data classification and protection policies. Configures encryption, masking, and retention requirements.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -151,7 +151,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_create_vulnerability_scan',
-          description: 'Create Vulnerability Scan with dynamic discovery',
+          description: 'Creates vulnerability scanning configurations. Schedules scans, sets severity thresholds, and enables auto-remediation.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -168,7 +168,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_discover_security_frameworks',
-          description: 'Discover available security and compliance frameworks',
+          description: 'Discovers security and compliance frameworks available in the instance for policy creation and auditing.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -178,7 +178,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_discover_security_policies',
-          description: 'Discover existing security policies and rules',
+          description: 'Lists existing security policies and rules with filtering by category and active status.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -189,7 +189,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_run_compliance_scan',
-          description: 'Run compliance scan with dynamic rule discovery',
+          description: 'Executes compliance scans against selected frameworks. Generates reports and identifies violations.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -202,7 +202,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_audit_trail__analysis',
-          description: 'Analyze audit trails for security incidents',
+          description: 'Analyzes audit logs for security incidents and anomalies. Supports filtering by time, user, and table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -216,7 +216,7 @@ class ServiceNowSecurityComplianceMCP {
         },
         {
           name: 'snow_security_risk_assessment',
-          description: 'Perform security risk assessment',
+          description: 'Performs comprehensive security risk assessments with mitigation recommendations and risk scoring.',
           inputSchema: {
             type: 'object',
             properties: {

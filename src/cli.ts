@@ -15,7 +15,7 @@ import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
 import { getNotificationTemplateSysId } from './utils/servicenow-id-generator.js';
 import { VERSION } from './version.js';
-import { integrateSnowFlowCommands } from './cli/snow-flow-cli-integration.js';
+// Snow-Flow CLI integration removed - using direct swarm command implementation
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
@@ -4775,7 +4775,7 @@ program
 // - Configuration management
 // - Performance analytics
 // Comment out the line below to disable the integrated commands
-// integrateSnowFlowCommands(program);
+// CLI integration removed - swarm command is implemented directly above
 
 program.parse(process.argv);
 

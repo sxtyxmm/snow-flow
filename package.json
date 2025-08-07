@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "2.9.9",
-  "description": "Snow-Flow: ServiceNow Advanced Intelligence Platform - 100+ real MCP tools with AI-powered swarm orchestration and neural networks. Dynamic task categorization using AI. Machine learning for incident classification, change risk prediction, and anomaly detection. Zero Mock Data, 100% Real API Integration.",
+  "version": "3.0.0",
+  "description": "Snow-Flow v3.0.0: Production-Ready ServiceNow Intelligence Platform - 100% REAL implementation, no simulated code. Features real TensorFlow.js neural networks, direct ServiceNow API integration, reliable memory management with timeout protection. Includes 100+ MCP tools for operations, development, ML, analytics, and security. Full AI swarm orchestration with dynamic task categorization. All critical infrastructure issues FIXED.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

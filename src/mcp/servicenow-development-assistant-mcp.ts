@@ -113,7 +113,7 @@ export class ServiceNowDevelopmentAssistantMCP {
       tools: [
         {
           name: 'snow_find_artifact',
-          description: 'AUTONOMOUS artifact discovery - finds ServiceNow artifacts using natural language, searches memory first, then ServiceNow. NO MANUAL SEARCH NEEDED.',
+          description: 'Finds ServiceNow artifacts using natural language queries. Searches cached memory first for performance, then queries ServiceNow directly if needed.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -125,7 +125,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_edit_artifact',
-          description: 'AUTONOMOUS artifact modification - edits ServiceNow artifacts using natural language, handles errors automatically, retries on failure. DIRECT MODIFICATION.',
+          description: 'Modifies ServiceNow artifacts using natural language instructions. Includes automatic error handling, retry logic, and validation of changes.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -136,7 +136,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_get_by_sysid',
-          description: 'DIRECT sys_id lookup - get artifact by exact sys_id, much faster and more reliable than text search',
+          description: 'Retrieves artifacts by sys_id for precise, fast lookups. More reliable than text-based searches when sys_id is known.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -148,7 +148,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_edit_by_sysid',
-          description: 'DIRECT sys_id edit - update specific fields of artifact by sys_id, much more reliable than text-based search',
+          description: 'Updates specific fields of an artifact using sys_id. Provides direct field-level modifications with validation.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -162,7 +162,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_analyze_artifact',
-          description: 'AUTONOMOUS deep _analysis - intelligently indexes artifacts for optimal Claude understanding, stores in memory for future use. SELF-LEARNING SYSTEM.',
+          description: 'Performs comprehensive analysis of artifacts including dependencies, usage patterns, and optimization opportunities. Caches results for improved performance.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -174,7 +174,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_memory_search',
-          description: 'Search indexed ServiceNow artifacts in memory',
+          description: 'Searches cached ServiceNow artifacts in local memory for instant results without API calls.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -186,7 +186,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_comprehensive_search',
-          description: 'COMPREHENSIVE multi-table search - searches across all relevant ServiceNow tables for artifacts. Perfect for finding hard-to-locate items.',
+          description: 'Searches across multiple ServiceNow tables simultaneously to find artifacts. Includes inactive records and cross-table relationships.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -198,7 +198,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_sync_data_consistency',
-          description: 'AUTONOMOUS data synchronization - fixes data consistency issues by refreshing cache, re-indexing artifacts, and validating sys_id mappings. AUTO-HEALING.',
+          description: 'Synchronizes cached data with ServiceNow, validates sys_id mappings, and repairs consistency issues. Includes automatic cache refresh and reindexing.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -211,7 +211,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_validate_live_connection',
-          description: 'REAL-TIME connection validation - validates live ServiceNow connection, authentication, and permissions. Returns actual instance status and capabilities.',
+          description: 'Validates ServiceNow connection status, authentication tokens, and user permissions. Returns detailed diagnostics with response times.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -222,7 +222,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'batch_deployment_validator',
-          description: 'COMPREHENSIVE batch validation - validates multiple deployments simultaneously, checks dependencies, conflicts, and provides rollback recommendations.',
+          description: 'Validates multiple artifacts before deployment. Checks dependencies, identifies conflicts, and provides remediation recommendations.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -234,22 +234,8 @@ export class ServiceNowDevelopmentAssistantMCP {
           },
         },
         {
-          name: 'deployment_rollback_manager',
-          description: 'AUTOMATIC rollback management - monitors deployments, detects failures, and provides automatic rollback capabilities with detailed recovery steps.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              update_set_id: { type: 'string', description: 'Update Set sys_id to monitor/rollback' },
-              action: { type: 'string', enum: ['monitor', 'rollback', 'validate_rollback'], description: 'Action to perform' },
-              rollback_reason: { type: 'string', description: 'Reason for rollback (required for rollback action)' },
-              create_backup: { type: 'boolean', description: 'Create backup before rollback', default: true },
-            },
-            required: ['update_set_id', 'action'],
-          },
-        },
-        {
           name: 'snow_escalate_permissions',
-          description: 'PERMISSION ESCALATION - Request temporary elevated permissions for complex development workflows. Handles admin role requirements automatically.',
+          description: 'Requests temporary elevated permissions for development operations. Manages role requirements and provides audit trail.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -263,7 +249,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_analyze_requirements',
-          description: 'INTELLIGENT REQUIREMENT ANALYSIS - Auto-discovers dependencies, suggests existing components, creates dependency maps for complex objectives.',
+          description: 'Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -277,24 +263,8 @@ export class ServiceNowDevelopmentAssistantMCP {
           },
         },
         {
-          name: 'snow_smart_update_set',
-          description: 'SMART UPDATE SET MANAGEMENT - Automatic artifact tracking, conflict detection, dependency validation, and rollback points.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              action: { type: 'string', enum: ['create', 'track', 'validate', 'conflict_check'], description: 'Update Set management action' },
-              auto_track_related_artifacts: { type: 'boolean', description: 'Automatically track related artifacts', default: true },
-              conflict_detection: { type: 'boolean', description: 'Enable conflict detection', default: true },
-              dependency_validation: { type: 'boolean', description: 'Validate dependencies', default: true },
-              rollback_points: { type: 'boolean', description: 'Create rollback points', default: true },
-              update_set_name: { type: 'string', description: 'Name for new Update Set (required for create action)' },
-            },
-            required: ['action'],
-          },
-        },
-        {
           name: 'snow_orchestrate_development',
-          description: 'UNIFIED DEVELOPMENT ORCHESTRATION - Single command for complex workflows with auto-spawning agents, shared memory, and progress monitoring.',
+          description: 'Orchestrates complex development workflows with intelligent agent coordination, shared memory, and real-time progress tracking.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -309,22 +279,6 @@ export class ServiceNowDevelopmentAssistantMCP {
               auto_deploy: { type: 'boolean', description: 'Automatic deployment when ready', default: false },
             },
             required: ['objective'],
-          },
-        },
-        {
-          name: 'snow_resilient_deployment',
-          description: 'RESILIENT DEPLOYMENT - Advanced error recovery with retry mechanisms, fallback strategies, checkpoints, and graceful degradation.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              artifacts: { type: 'array', items: { type: 'object' }, description: 'Artifacts to deploy' },
-              retry_on_failure: { type: 'boolean', description: 'Enable automatic retry on failure', default: true },
-              fallback_strategies: { type: 'array', items: { type: 'string', enum: ['global_scope', 'manual_approval', 'staged_deployment'] }, description: 'Fallback strategies' },
-              checkpoint_restoration: { type: 'boolean', description: 'Enable checkpoint restoration', default: true },
-              graceful_degradation: { type: 'boolean', description: 'Enable graceful degradation', default: true },
-              max_retries: { type: 'number', description: 'Maximum retry attempts', default: 3 },
-            },
-            required: ['artifacts'],
           },
         },
       ],
@@ -362,18 +316,12 @@ export class ServiceNowDevelopmentAssistantMCP {
             return await this.validateLiveConnection(args);
           case 'batch_deployment_validator':
             return await this.batchDeploymentValidator(args);
-          case 'deployment_rollback_manager':
-            return await this.deploymentRollbackManager(args);
           case 'snow_escalate_permissions':
             return await this.escalatePermissions(args);
           case 'snow_analyze_requirements':
             return await this.analyzeRequirements(args);
-          case 'snow_smart_update_set':
-            return await this.smartUpdateSet(args);
           case 'snow_orchestrate_development':
             return await this.orchestrateDevelopment(args);
-          case 'snow_resilient_deployment':
-            return await this.resilientDeployment(args);
           case 'snow_verify_artifact_searchable':
             return await this.verifyArtifactSearchable(args);
           case 'snow_generate_documentation':

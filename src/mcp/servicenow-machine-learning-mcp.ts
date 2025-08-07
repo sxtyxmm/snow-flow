@@ -159,7 +159,7 @@ export class ServiceNowMachineLearningMCP {
         // Training tools
         {
           name: 'ml_train_incident_classifier',
-          description: 'Train LSTM neural network on historical incident data with INTELLIGENT data selection. Snow-Flow automatically detects available data and uses the optimal amount (up to 5000) for best accuracy. Works WITHOUT PA/PI plugins - only needs incident table access!', 
+          description: 'Trains LSTM neural networks on historical incident data with intelligent data selection. Automatically optimizes dataset size up to 5000 records for best accuracy. Works without PA/PI licenses.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -217,7 +217,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_train_change_risk',
-          description: 'Train neural network to predict change implementation risks. Works WITHOUT PA/PI plugins - only needs change_request table access!',
+          description: 'Trains neural networks to predict change implementation risks based on historical change data. Works without PA/PI licenses.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -234,7 +234,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_train_anomaly_detector',
-          description: 'Train autoencoder for anomaly detection in metrics. Works WITHOUT PA/PI plugins - uses standard table data!',
+          description: 'Trains autoencoder neural networks for anomaly detection in system metrics. Works without PA/PI licenses using standard table data.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -254,7 +254,7 @@ export class ServiceNowMachineLearningMCP {
         // Prediction tools
         {
           name: 'ml_classify_incident',
-          description: 'Use neural network to classify and predict incident properties',
+          description: 'Classifies incidents and predicts properties using trained neural networks. Returns category, priority, and assignment recommendations.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -275,7 +275,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_predict_change_risk',
-          description: 'Predict change risk using neural network',
+          description: 'Predicts implementation risk for change requests using trained neural networks. Provides risk scores and mitigation suggestions.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -291,7 +291,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_forecast_incidents',
-          description: 'Forecast incident volume using LSTM neural network',
+          description: 'Forecasts future incident volumes using LSTM time series models. Supports category-specific predictions.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -308,7 +308,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_detect_anomalies',
-          description: 'Detect anomalies using autoencoder neural network',
+          description: 'Detects anomalies in incident patterns, user behavior, or system performance using autoencoder models.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -328,7 +328,7 @@ export class ServiceNowMachineLearningMCP {
         // Model management
         {
           name: 'ml_model_status',
-          description: 'Get status and performance metrics of ML models',
+          description: 'Retrieves status and performance metrics for all trained ML models including accuracy, loss, and usage statistics.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -341,7 +341,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_evaluate_model',
-          description: 'Evaluate model performance on test data',
+          description: 'Evaluates model performance using test datasets. Returns accuracy, precision, recall, and F1 scores.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -360,7 +360,7 @@ export class ServiceNowMachineLearningMCP {
         // ServiceNow Native ML Integration
         {
           name: 'ml_performance_analytics',
-          description: 'Access ServiceNow PA ML for KPI forecasting. REQUIRES Performance Analytics plugin license!', 
+          description: 'Accesses ServiceNow Performance Analytics ML for KPI forecasting. Requires Performance Analytics plugin license.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -382,7 +382,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_predictive_intelligence',
-          description: 'Use ServiceNow PI for 95%+ accuracy incident classification. REQUIRES Predictive Intelligence plugin license!', 
+          description: 'Uses ServiceNow Predictive Intelligence for high-accuracy incident classification. Requires Predictive Intelligence plugin license.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -408,7 +408,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_agent_intelligence',
-          description: 'Use Agent Intelligence for work assignment. REQUIRES Agent Intelligence plugin license!', 
+          description: 'Uses Agent Intelligence for automated work assignment and routing. Requires Agent Intelligence plugin license.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -433,7 +433,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_process_optimization',
-          description: 'ML-driven process optimization. REQUIRES Performance Analytics plugin license!', 
+          description: 'Performs ML-driven process optimization and bottleneck analysis. Requires Performance Analytics plugin license.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -455,7 +455,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_virtual_agent_nlu',
-          description: 'Virtual Agent NLU for intent/entity extraction. REQUIRES Virtual Agent plugin license!', 
+          description: 'Provides Natural Language Understanding for intent and entity extraction. Requires Virtual Agent plugin license.', 
           inputSchema: {
             type: 'object',
             properties: {
@@ -477,7 +477,7 @@ export class ServiceNowMachineLearningMCP {
         },
         {
           name: 'ml_hybrid_recommendation',
-          description: 'AUTO-SELECTS: Native ML (if licensed) OR TensorFlow.js. Works with or without plugins!', 
+          description: 'Hybrid ML approach that automatically selects between native ServiceNow ML (if licensed) or TensorFlow.js for optimal results.', 
           inputSchema: {
             type: 'object',
             properties: {

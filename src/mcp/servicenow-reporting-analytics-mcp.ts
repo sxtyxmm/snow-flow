@@ -66,7 +66,7 @@ class ServiceNowReportingAnalyticsMCP {
       tools: [
         {
           name: 'snow_create_report',
-          description: 'Create Report with dynamic table and field discovery - NO hardcoded values',
+          description: 'Creates reports with filtering, grouping, and aggregation capabilities. Supports multiple output formats and scheduling.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -87,7 +87,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_dashboard',
-          description: 'Create Dashboard with dynamic widget discovery',
+          description: 'Creates interactive dashboards with configurable widgets, layouts, and refresh intervals.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -104,7 +104,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_kpi',
-          description: 'Create KPI with dynamic metric discovery',
+          description: 'Creates Key Performance Indicators with targets, thresholds, and automated tracking.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -124,7 +124,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_data_visualization',
-          description: 'Create Data Visualization with dynamic chart discovery',
+          description: 'Creates data visualizations including charts, graphs, and interactive displays.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -143,7 +143,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_performance_analytics',
-          description: 'Create Performance Analytics with dynamic metric discovery',
+          description: 'Creates performance analytics configurations for tracking metrics, dimensions, and benchmarks.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -161,7 +161,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_scheduled_report',
-          description: 'Create Scheduled Report with dynamic delivery discovery',
+          description: 'Creates scheduled reports with automated email delivery in multiple formats.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -178,7 +178,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_discover_reporting_tables',
-          description: 'Discover all tables available for reporting',
+          description: 'Discovers tables available for reporting with filtering by category and data availability.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -189,7 +189,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_discover_report_fields',
-          description: 'Discover available fields for reporting on a table',
+          description: 'Retrieves reportable fields from tables with type filtering and metadata.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -201,7 +201,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_analyze_data_quality',
-          description: 'Analyze data quality for reporting',
+          description: 'Analyzes data quality including completeness, consistency, and accuracy metrics.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -216,7 +216,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_generate_insights',
-          description: 'Generate data insights and recommendations',
+          description: 'Generates analytical insights including trends, patterns, anomalies, and actionable recommendations.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -230,7 +230,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_export_report_data',
-          description: 'Export report data in various formats',
+          description: 'Exports report data to CSV, Excel, JSON, or XML formats with configurable row limits.',
           inputSchema: {
             type: 'object',
             properties: {

@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // 🎯 UNIVERSAL TABLE QUERY - Works for ANY ServiceNow table!
           {
             name: 'snow_query_table',
-            description: '🚀 Universal high-performance query tool for ANY ServiceNow table - optimized for memory efficiency. SMART DEFAULTS: 1000 records (5000 for ML training contexts)',
+            description: 'Universal query tool for any ServiceNow table. Optimized for performance with smart defaults: 1000 records normally, 5000 for ML training contexts. Supports count-only mode for memory efficiency.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -193,12 +193,12 @@ class ServiceNowOperationsMCP {
                 },
                 limit: {
                   type: 'number',
-                  description: '🎯 Maximum number of results. SMART DEFAULTS: 1000 (normal queries), 5000 (ML training contexts). Set higher for large ML datasets (10000+)',
+                  description: 'Maximum number of results. Smart defaults: 1000 (normal queries), 5000 (ML training). Can be set higher for large datasets.',
                   default: 1000
                 },
                 include_content: {
                   type: 'boolean',
-                  description: '🎯 Include full record data (default: false for performance, only returns count)',
+                  description: 'Include full record data. Default false for performance, returns count only. Set true for detailed results.',
                   default: false
                 },
                 fields: {
@@ -228,7 +228,7 @@ class ServiceNowOperationsMCP {
           // Core Operational Queries (keeping for backwards compatibility)
           {
             name: 'snow_query_incidents',
-            description: 'Advanced incident querying with filters and _analysis - optimized for performance',
+            description: 'Query incidents with advanced filtering and analysis capabilities. Optimized for performance with optional content inclusion.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -243,7 +243,7 @@ class ServiceNowOperationsMCP {
                 },
                 include_content: {
                   type: 'boolean',
-                  description: '🎯 Include full incident data (default: false for performance, only returns count)',
+                  description: 'Include full incident data. Default false for performance, returns count only.',
                   default: false
                 },
                 include__analysis: {
@@ -263,7 +263,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_analyze_incident',
-            description: 'Intelligent _analysis of a specific incident with auto-resolution suggestions',
+            description: 'Analyzes specific incidents with pattern recognition, similar incident matching, and automated resolution suggestions.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -288,7 +288,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_auto_resolve_incident',
-            description: 'Attempt automated resolution of technical incidents',
+            description: 'Attempts automated resolution of technical incidents based on known patterns and previous solutions. Includes dry-run mode for safety.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -308,7 +308,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_query_requests',
-            description: 'Query and analyze service requests',
+            description: 'Queries service requests with optional inclusion of request items and fulfillment details.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -333,7 +333,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_query_problems',
-            description: 'Query and analyze problems with root cause _analysis',
+            description: 'Queries problem records with root cause analysis and optional inclusion of related incidents.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -358,7 +358,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_cmdb_search',
-            description: 'Search and analyze Configuration Items (CMDB)',
+            description: 'Searches Configuration Management Database (CMDB) for configuration items with relationship mapping.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -388,7 +388,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_user_lookup',
-            description: 'Lookup and analyze user information',
+            description: 'Retrieves user information including roles, groups, and permissions. Supports lookup by ID, email, or name.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -413,7 +413,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_operational_metrics',
-            description: 'Get operational metrics and analytics',
+            description: 'Provides operational metrics and analytics including incident trends, resolution times, and performance indicators.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -434,7 +434,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_pattern__analysis',
-            description: 'Analyze patterns in incidents, requests, and problems',
+            description: 'Analyzes patterns across incidents, requests, and problems to identify trends, common issues, and improvement opportunities.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -456,7 +456,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_knowledge_search',
-            description: 'Search knowledge base articles with intelligent matching',
+            description: 'Searches knowledge base articles using intelligent matching algorithms. Links articles to incidents for resolution guidance.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -480,7 +480,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_predictive__analysis',
-            description: 'Predictive _analysis for potential issues and trends',
+            description: 'Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -503,7 +503,7 @@ class ServiceNowOperationsMCP {
           // Service Catalog Management
           {
             name: 'snow_catalog_item_manager',
-            description: 'Manage service catalog items - create, update, configure variables and workflows',
+            description: 'Comprehensive service catalog management including item creation, variable configuration, workflow attachment, and lifecycle management.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -599,7 +599,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_catalog_item_search',
-            description: 'Search for catalog items with intelligent matching and discovery',
+            description: 'Searches service catalog items with fuzzy matching and category filtering. Returns items with full variable and pricing details.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -638,7 +638,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_cleanup_test_artifacts',
-            description: 'Clean up test artifacts while preserving Update Set audit trail',
+            description: 'Removes test artifacts (Test*, Mock*, Demo*) from ServiceNow while preserving Update Set history for audit compliance.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -683,7 +683,7 @@ class ServiceNowOperationsMCP {
           // User and Group Management Tools
           {
             name: 'snow_create_user_group',
-            description: 'Create a new user group in ServiceNow',
+            description: 'Creates user groups in ServiceNow with configurable hierarchy, managers, and types for access control and assignment management.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -724,7 +724,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_create_user',
-            description: 'Create a new user in ServiceNow',
+            description: 'Creates new users in ServiceNow with complete profile information including department, manager, and initial credentials.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -780,7 +780,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_assign_user_to_group',
-            description: 'Add a user to a group in ServiceNow',
+            description: 'Assigns users to groups for role-based access control and workflow assignments. Supports lookup by sys_id or username.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -799,7 +799,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_remove_user_from_group',
-            description: 'Remove a user from a group in ServiceNow',
+            description: 'Removes users from groups to revoke access and update role assignments. Maintains audit trail of membership changes.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -818,7 +818,7 @@ class ServiceNowOperationsMCP {
           
           {
             name: 'snow_list_group_members',
-            description: 'List all members of a group',
+            description: 'Lists all members of a specified group with filtering for active/inactive users. Returns user details and roles.',
             inputSchema: {
               type: 'object',
               properties: {

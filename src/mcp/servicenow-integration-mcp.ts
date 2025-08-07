@@ -68,7 +68,7 @@ class ServiceNowIntegrationMCP {
       tools: [
         {
           name: 'snow_create_rest_message',
-          description: 'Create REST Message endpoints with dynamic discovery - NO hardcoded values',
+          description: 'Creates REST message endpoints for external API integrations. Supports various authentication types and profiles.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -83,7 +83,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_rest_method',
-          description: 'Create REST Method with dynamic parameter discovery',
+          description: 'Creates REST methods for API operations. Configures HTTP methods, endpoints, headers, and request bodies.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -99,7 +99,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_transform_map',
-          description: 'Create Transform Map with dynamic field discovery',
+          description: 'Creates transform maps for data migration between tables. Defines field mappings and transformation rules.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -115,7 +115,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_field_map',
-          description: 'Create Field Map with dynamic field discovery',
+          description: 'Creates field mappings within transform maps. Supports data transformation, coalescing, and default values.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -131,7 +131,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_import_set',
-          description: 'Create Import Set table with dynamic schema discovery',
+          description: 'Creates import set tables for staging external data. Supports CSV, XML, JSON, and Excel formats.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -145,7 +145,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_web_service',
-          description: 'Create Web Service with dynamic WSDL discovery',
+          description: 'Creates SOAP web service integrations from WSDL definitions. Configures authentication and namespace settings.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -160,7 +160,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_create_email_config',
-          description: 'Create Email Configuration with dynamic server discovery',
+          description: 'Creates email server configurations for SMTP, POP3, or IMAP. Configures ports, encryption, and authentication.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -177,7 +177,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_discover_integration_endpoints',
-          description: 'Discover all existing integration endpoints dynamically',
+          description: 'Discovers existing integration endpoints in the instance. Filters by type: REST, SOAP, LDAP, or EMAIL.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -187,7 +187,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_test_integration',
-          description: 'Test integration endpoint with dynamic validation',
+          description: 'Tests integration endpoints with sample data. Validates connectivity, authentication, and data transformation.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -199,7 +199,7 @@ class ServiceNowIntegrationMCP {
         },
         {
           name: 'snow_discover_data_sources',
-          description: 'Discover available data sources dynamically',
+          description: 'Discovers available data sources for integration. Identifies import sets, REST endpoints, and external databases.',
           inputSchema: {
             type: 'object',
             properties: {

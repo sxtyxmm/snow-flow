@@ -100,7 +100,7 @@ class ServiceNowUpdateSetMCP {
       tools: [
         {
           name: 'snow_update_set_create',
-          description: 'Create a new Update Set for a user story or feature - ALWAYS use this before making changes',
+          description: 'Creates a new Update Set for tracking changes related to a user story or feature. Essential for ServiceNow change management and deployment tracking.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -131,7 +131,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_switch',
-          description: 'Switch to an existing Update Set - use this to continue work on a story',
+          description: 'Switches the active Update Set context to an existing set. Ensures all subsequent changes are tracked in the specified Update Set.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -145,7 +145,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_current',
-          description: 'Get the current active Update Set session',
+          description: 'Retrieves information about the currently active Update Set including ID, name, state, and tracked artifacts.',
           inputSchema: {
             type: 'object',
             properties: {}
@@ -153,7 +153,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_list',
-          description: 'List all Update Sets (in progress and recent)',
+          description: 'Lists Update Sets filtered by state (in_progress, complete, released). Provides overview of recent changes and deployment readiness.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -171,7 +171,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_complete',
-          description: 'Mark Update Set as complete and ready for testing',
+          description: 'Marks an Update Set as complete, preventing further changes. Prepares the set for testing, review, and migration to other instances.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -188,7 +188,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_add_artifact',
-          description: 'Track an artifact in the current Update Set session',
+          description: 'Registers an artifact (widget, flow, script) in the active Update Set for tracking. Maintains comprehensive change history for deployments.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -210,7 +210,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_preview',
-          description: 'Preview all changes in an Update Set',
+          description: 'Generates a detailed preview of all changes contained in an Update Set. Shows modified tables, fields, and potential deployment impacts.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -223,7 +223,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_update_set_export',
-          description: 'Export Update Set as XML for backup or migration',
+          description: 'Exports Update Set to XML format for backup, version control, or manual migration between instances. Preserves all change records and metadata.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -240,7 +240,7 @@ class ServiceNowUpdateSetMCP {
         },
         {
           name: 'snow_ensure_active_update_set',
-          description: 'Ensure there is an active Update Set session - creates one automatically if needed',
+          description: 'Ensures an active Update Set is available for tracking changes. Automatically creates a contextual Update Set if none exists, preventing untracked modifications.',
           inputSchema: {
             type: 'object',
             properties: {

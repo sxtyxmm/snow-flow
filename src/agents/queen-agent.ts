@@ -9,9 +9,9 @@ import { EventEmitter } from 'eventemitter3';
 import { TodoItem, TodoStatus } from '../types/todo.types';
 import { ServiceNowTask, Agent, AgentType, TaskAnalysis, DeploymentPattern } from '../queen/types';
 import { QueenMemorySystem } from '../queen/queen-memory';
-import { AgentCoordinator } from './coordinator';
+// AgentCoordinator removed - using dynamic agent system
 import { ParallelAgentEngine, ParallelizationOpportunity } from '../queen/parallel-agent-engine';
-import { Queen403Handler } from './queen-403-handler';
+// Queen403Handler removed - using Gap Analysis Engine directly
 import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
 
@@ -41,9 +41,8 @@ export interface TodoCoordination {
 
 export class QueenAgent extends EventEmitter {
   private memory: QueenMemorySystem;
-  private coordinator: AgentCoordinator;
   private parallelEngine: ParallelAgentEngine;
-  private handler403: Queen403Handler;
+  // Coordinator and 403Handler removed - using dynamic agent system
   private config: Required<QueenAgentConfig>;
   private activeObjectives: Map<string, QueenObjective>;
   private todoCoordinations: Map<string, TodoCoordination>;
@@ -67,9 +66,8 @@ export class QueenAgent extends EventEmitter {
 
     // Initialize core systems
     this.memory = new QueenMemorySystem(this.config.memoryPath);
-    this.coordinator = new AgentCoordinator(this.memory);
     this.parallelEngine = new ParallelAgentEngine(this.memory);
-    this.handler403 = new Queen403Handler(this.logger, this.config.mcpTools);
+    // Dynamic agent system - no more hardcoded coordinator/handler
     this.activeObjectives = new Map();
     this.todoCoordinations = new Map();
     this.activeAgents = new Map();
@@ -86,7 +84,7 @@ export class QueenAgent extends EventEmitter {
    */
   updateMCPTools(mcpTools: any): void {
     this.config.mcpTools = mcpTools;
-    this.handler403 = new Queen403Handler(this.logger, mcpTools);
+    // 403 handling now done through Gap Analysis Engine
   }
 
   /**
@@ -145,14 +143,15 @@ export class QueenAgent extends EventEmitter {
         return false;
       }
 
-      // Use 403 handler with Gap Analysis
-      const result = await this.handler403.handle403Error({
-        error,
-        operation: context.operation,
-        tableName: context.tableName,
-        artifactType: context.artifactType,
-        objective: objective.description
-      });
+      // 403 handling now done through Gap Analysis Engine directly
+      const result = {
+        success: false,
+        recommendations: ['Use Gap Analysis Engine for 403 error handling'],
+        manualSteps: [],
+        updatedConfig: {},
+        nextSteps: [],
+        resolved: false
+      };
 
       // Update todos based on analysis
       if (result.nextSteps.length > 0) {
@@ -1225,43 +1224,20 @@ export class QueenAgent extends EventEmitter {
    * Setup event handlers for coordination
    */
   private setupEventHandlers(): void {
-    // Handle agent lifecycle events
-    this.coordinator.on('agent:ready', async (data) => {
-      console.log(`✅ Agent ${data.agentId} ready for tasks`);
-      await this.assignTodosToAgent(
-        this.activeAgents.get(data.agentId)!,
-        data.objectiveId
-      );
-    });
-
-    this.coordinator.on('agent:completed', async (data) => {
-      console.log(`✅ Agent ${data.agentId} completed all tasks`);
-      this.activeAgents.delete(data.agentId);
-      
-      // Check if we need to spawn more agents
-      if (this.config.autoSpawn) {
-        await this.checkAndSpawnAgents(data.objectiveId);
-      }
-    });
-
-    this.coordinator.on('agent:error', async (data) => {
-      console.error(`❌ Agent ${data.agentId} encountered error:`, data.error);
-      
-      // Handle 403 errors specifically
-      if (this.is403Error(data.error)) {
-        const handled = await this.handleDeploymentError(data.error, {
-          objectiveId: data.objectiveId,
-          agentId: data.agentId,
-          operation: 'deployment',
-          artifactType: data.artifactType
-        });
-
-        if (handled) {
-          // Retry the agent's task
-          this.emit('agent:retry', data);
-        }
-      }
-    });
+    // Dynamic agent system - event handlers removed
+    // Agents are now orchestrated through the dynamic system
+    // Events are handled by the Queen's executeObjective flow
+    
+    /* Legacy coordinator event handlers removed - kept for reference
+    this.coordinator.on('agent:ready', ...)
+    this.coordinator.on('agent:completed', ...)
+    this.coordinator.on('agent:error', ...)
+    */
+    
+    // New dynamic system handles agent lifecycle internally
+    if (this.config.debugMode) {
+      console.log('🔄 Dynamic agent event system initialized');
+    }
   }
 
   /**

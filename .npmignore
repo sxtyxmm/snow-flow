@@ -4,6 +4,12 @@ src/
 !dist/**/*.d.ts
 !dist/**/*.js
 
+# CRITICAL: Include templates and schemas for Snow-Flow functionality
+!src/templates/
+!src/templates/**/*.json
+!src/schemas/
+!src/schemas/**/*.json
+
 # Development files
 .claude/
 .claude-flow/

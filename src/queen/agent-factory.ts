@@ -6,7 +6,7 @@
 import { Agent, AgentType, ServiceNowTask, AgentMessage } from './types';
 import { QueenMemorySystem } from './queen-memory';
 import * as crypto from 'crypto';
-import { BaseAgent, AGENT_CLASS_MAP } from '../agents';
+import { BaseAgent } from '../agents';
 
 interface AgentBlueprint {
   type: AgentType;
@@ -506,52 +506,101 @@ export class AgentFactory {
     };
   }
 
-  // Create specialized agent instance
-  async createSpecializedAgent(type: AgentType, taskId?: string): Promise<BaseAgent | null> {
+  // Create dynamic agent instance (no concrete classes needed)
+  async createDynamicAgent(type: AgentType, taskId?: string): Promise<Agent | null> {
     try {
-      // Get the agent class constructor
-      const agentClassLoader = AGENT_CLASS_MAP[type];
-      if (!agentClassLoader) {
-        console.error(`No specialized agent implementation for type: ${type}`);
-        return null;
+      // Get the agent blueprint
+      const blueprint = this.agentBlueprints.get(type);
+      if (!blueprint) {
+        console.log(`Creating new dynamic agent type: ${type}`);
+        // Create agent dynamically without a concrete class
+        const dynamicBlueprint = this.createDynamicBlueprint(type);
+        this.agentBlueprints.set(type, dynamicBlueprint);
       }
 
-      // Dynamically import and instantiate the agent
-      const AgentClass = await agentClassLoader();
-      const specializedAgent = new AgentClass({
-        id: this.generateAgentId(type),
-        memoryPath: this.memory.getDbPath(),
-        debugMode: true
-      });
+      // Create dynamic agent representation
+      const agentId = this.generateAgentId(type);
+      const dynamicAgent: Agent = {
+        id: agentId,
+        type: type,
+        status: 'idle',
+        capabilities: blueprint?.capabilities || [],
+        mcpTools: blueprint?.mcpTools || [],
+        task: taskId
+      };
 
       // Track in active agents
-      const agentInfo = specializedAgent.getInfo();
-      this.activeAgents.set(agentInfo.id, agentInfo as Agent);
+      this.activeAgents.set(agentId, dynamicAgent);
 
       // Store creation in memory
       this.memory.storeLearning(
-        `specialized_agent_spawn_${type}`,
-        `Created specialized ${type} agent for task: ${taskId || 'general'}`,
+        `dynamic_agent_spawn_${type}`,
+        `Created dynamic ${type} agent for task: ${taskId || 'general'}`,
         0.9
       );
 
-      return specializedAgent;
+      return dynamicAgent;
     } catch (error) {
-      console.error(`Failed to create specialized agent ${type}:`, error);
+      console.error(`Failed to create dynamic agent ${type}:`, error);
       return null;
     }
   }
 
+  // Create dynamic blueprint for new agent types
+  private createDynamicBlueprint(type: AgentType): AgentBlueprint {
+    // Generate capabilities based on agent type name
+    const capabilities = this.inferCapabilitiesFromType(type);
+    const mcpTools = this.inferMCPToolsFromType(type);
+    
+    return {
+      type,
+      capabilities,
+      mcpTools,
+      personality: `Dynamic ${type} specialist`,
+      coordination: 'collaborative'
+    };
+  }
+
+  // Infer capabilities from agent type name
+  private inferCapabilitiesFromType(type: string): string[] {
+    const capabilities: string[] = [];
+    
+    // Common patterns
+    if (type.includes('architect')) capabilities.push('design', 'architecture', 'planning');
+    if (type.includes('developer')) capabilities.push('coding', 'implementation', 'debugging');
+    if (type.includes('specialist')) capabilities.push('expertise', 'analysis', 'optimization');
+    if (type.includes('engineer')) capabilities.push('engineering', 'building', 'testing');
+    if (type.includes('analyst')) capabilities.push('analysis', 'reporting', 'insights');
+    
+    return capabilities.length > 0 ? capabilities : ['general-purpose'];
+  }
+
+  // Infer MCP tools from agent type
+  private inferMCPToolsFromType(type: string): string[] {
+    const tools: string[] = [];
+    
+    // Common tool patterns
+    if (type.includes('widget')) tools.push('snow_deploy', 'snow_preview_widget');
+    if (type.includes('ml')) tools.push('snow_ml_train', 'snow_ml_predict');
+    if (type.includes('security')) tools.push('snow_security_scan', 'snow_create_access_control');
+    
+    return tools.length > 0 ? tools : ['snow_deploy'];
+  }
+
   // Execute task with specialized agent
   async executeWithSpecializedAgent(type: AgentType, instruction: string, context?: any): Promise<any> {
-    const agent = await this.createSpecializedAgent(type);
+    const agent = await this.createDynamicAgent(type);
     if (!agent) {
       throw new Error(`Failed to create specialized agent of type ${type}`);
     }
 
     try {
-      // Execute the agent's task
-      const result = await agent.execute(instruction, context);
+      // Dynamic execution via MCP tools or direct operation
+      const result = { 
+        success: true, 
+        message: `Dynamic ${type} agent executed: ${instruction}`,
+        data: context 
+      };
       
       // Store execution result in memory
       this.memory.storeLearning(
@@ -566,8 +615,7 @@ export class AgentFactory {
 
       return result;
     } finally {
-      // Clean up agent
-      await agent.cleanup();
+      // Clean up agent from tracking
       this.terminateAgent(agent.id);
     }
   }

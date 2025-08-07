@@ -71,7 +71,7 @@ class ServiceNowPlatformDevelopmentMCP {
       tools: [
         {
           name: 'snow_create_ui_page',
-          description: 'Create UI Pages dynamically with full field discovery - NO hardcoded values',
+          description: 'Creates UI pages with HTML, JavaScript, and CSS. Supports server-side processing scripts and client-side interactions.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -88,7 +88,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_create_script_include',
-          description: 'Create Script Includes with dynamic table discovery - NO hardcoded values',
+          description: 'Creates reusable Script Includes for server-side logic. Supports client-callable scripts and API exposure.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -103,7 +103,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_create_business_rule',
-          description: 'Create Business Rules with dynamic table and field discovery - NO hardcoded values',
+          description: 'Creates business rules for automated data processing. Configurable timing (before/after/async) and conditional execution.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -119,7 +119,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_create_client_script',
-          description: 'Create Client Scripts with dynamic form discovery - NO hardcoded values',
+          description: 'Creates client-side scripts for form interactions. Supports onLoad, onChange, onSubmit, and onCellEdit events.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -136,7 +136,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_create_ui_policy',
-          description: 'Create UI Policies with dynamic field discovery - NO hardcoded values',
+          description: 'Creates UI policies to control field behavior and visibility. Supports conditional logic and reversible actions.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -152,7 +152,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_create_ui_action',
-          description: 'Create UI Actions with dynamic form discovery - NO hardcoded values',
+          description: 'Creates custom buttons and menu items for forms and lists. Includes conditional visibility and action scripts.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -170,7 +170,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_discover_platform_tables',
-          description: 'Discover all available platform development tables dynamically',
+          description: 'Discovers platform development tables categorized by type (UI, script, policy, security, system).',
           inputSchema: {
             type: 'object',
             properties: {
@@ -180,7 +180,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_discover_table_fields',
-          description: 'Discover all fields for a specific table dynamically',
+          description: 'Retrieves complete field information for any ServiceNow table including types, labels, and constraints.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -191,7 +191,7 @@ class ServiceNowPlatformDevelopmentMCP {
         },
         {
           name: 'snow_table_schema_discovery',
-          description: 'Comprehensive table schema discovery - structure, relationships, indexes, constraints',
+          description: 'Performs comprehensive table schema analysis including structure, relationships, indexes, and inheritance hierarchy.',
           inputSchema: {
             type: 'object',
             properties: {
