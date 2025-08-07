@@ -116,7 +116,7 @@ class IntelligentReportingMCP {
       const discoveredTables = await this.discoverRelevantTables(args.description);
       
       if (discoveredTables.length === 0) {
-        throw new Error(`❌ Could not find relevant ServiceNow tables for: "${args.description}"\n\n🔍 Try being more specific, like:\n- "incident metrics" → incident table\n- "change requests" → change_request table\n- "user statistics" → sys_user table`);
+        throw new Error(`Could not find relevant ServiceNow tables for: "${args.description}". Try being more specific, like: "incident metrics", "change requests", or "user statistics".`);
       }
 
       // Step 2: Use the best matching table
@@ -155,7 +155,25 @@ class IntelligentReportingMCP {
       return {
         content: [{
           type: 'text',
-          text: `✅ Intelligent Report Created!\n\n📊 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n\n🔍 **Discovery Results:**\n📋 Found Table: ${primaryTable.label} (${primaryTable.name})\n📈 Records Available: ${primaryTable.recordCount:,}\n📝 Fields Used: ${reportData.field_list}\n\n🎯 **Report Details:**\n${args.conditions ? `🔍 Custom Filter: ${args.conditions}\n` : `🤖 Smart Filter: ${reportData.filter}\n`}📄 Format: ${args.format || 'HTML'}\n🔗 View Report: ${reportUrl}\n\n${insights ? `📊 **Data Insights:**\n${insights}\n\n` : ''}🚀 Report ready with real ServiceNow data!`
+          text: `✅ Intelligent Report Created!
+
+📊 **${args.name}**
+🆔 sys_id: ${response.data.sys_id}
+
+🔍 **Discovery Results:**
+📋 Found Table: ${primaryTable.label} (${primaryTable.name})
+📈 Records Available: ${primaryTable.recordCount}
+📝 Fields Used: ${reportData.field_list}
+
+🎯 **Report Details:**
+${args.conditions ? `🔍 Custom Filter: ${args.conditions}` : `🤖 Smart Filter: ${reportData.filter}`}
+📄 Format: ${args.format || 'HTML'}
+🔗 View Report: ${reportUrl}
+
+${insights ? `📊 **Data Insights:**
+${insights}
+
+` : ''}🚀 Report ready with real ServiceNow data!`
         }]
       };
 
@@ -384,17 +402,17 @@ class IntelligentReportingMCP {
    */
   private async generateDataInsights(table: DiscoveredTable): Promise<string> {
     if (!table.sampleData || table.sampleData.length === 0) {
-      return 'ℹ️ No sample data available for insights';
+      return 'No sample data available for insights';
     }
 
     const insights = [];
-    insights.push(`📊 Sample shows ${table.sampleData.length} records from ${table.label}`);
+    insights.push(`Sample shows ${table.sampleData.length} records from ${table.label}`);
     
     // Analyze common patterns
     const sample = table.sampleData[0];
-    if (sample.state) insights.push(`🔄 Records have state tracking`);
-    if (sample.priority) insights.push(`⭐ Priority levels available`);
-    if (sample.assigned_to) insights.push(`👥 Assignment tracking enabled`);
+    if (sample.state) insights.push(`Records have state tracking`);
+    if (sample.priority) insights.push(`Priority levels available`);
+    if (sample.assigned_to) insights.push(`Assignment tracking enabled`);
     
     return insights.join('\n');
   }
@@ -408,7 +426,7 @@ class IntelligentReportingMCP {
     return {
       content: [{
         type: 'text',
-        text: `🚧 Intelligent Dashboard creation coming soon!\n\nFor now, use snow_intelligent_report to create reports with intelligent table discovery.`
+        text: `Intelligent Dashboard creation coming soon! For now, use snow_intelligent_report to create reports with intelligent table discovery.`
       }]
     };
   }
