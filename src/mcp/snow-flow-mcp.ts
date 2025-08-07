@@ -627,15 +627,25 @@ class SnowFlowMCPServer {
     const { action, key, value, namespace = 'default' } = args;
     const memoryKey = namespace && key ? `${namespace}:${key}` : key;
 
-    // Add timeout protection
-    const timeoutMs = 5000;
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error(`Memory operation '${action}' timed out after ${timeoutMs}ms`)), timeoutMs)
-    );
+    // Timeout protection - disabled by default for maximum flexibility
+    // Users can set MCP_MEMORY_TIMEOUT env var if they want timeouts
+    const timeoutMs = process.env.MCP_MEMORY_TIMEOUT ? parseInt(process.env.MCP_MEMORY_TIMEOUT) : 0;
+    
+    // Only create timeout promise if timeout is specified
+    const timeoutPromise = timeoutMs > 0 
+      ? new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Memory operation '${action}' timed out after ${timeoutMs}ms`)), timeoutMs)
+        )
+      : new Promise(() => {}); // Never resolves/rejects - no timeout
 
     try {
       const resultPromise = this.executeMemoryOperation(action, memoryKey, value, args);
-      const result = await Promise.race([resultPromise, timeoutPromise]);
+      
+      // If no timeout specified, just wait for the result
+      const result = timeoutMs > 0 
+        ? await Promise.race([resultPromise, timeoutPromise])
+        : await resultPromise;
+      
       return result;
     } catch (error: any) {
       return {
