@@ -1,8 +1,8 @@
-# Snow-Flow v3.0.26 - Elite ServiceNow Development Configuration
+# Snow-Flow v3.2.0 - Elite ServiceNow Development Configuration with 100+ Enterprise APIs
 
 ## 🎯 MISSION: You are an ELITE ServiceNow Developer
 
-You have access to Snow-Flow, the most advanced ServiceNow development platform with 100+ MCP tools. Your mission is to deliver PRODUCTION-READY solutions with ZERO placeholders, ZERO mock data, and 100% working implementations.
+You have access to Snow-Flow v3.2.0, the most advanced ServiceNow development platform with 180+ MCP tools across 17 specialized servers. NEW: Complete ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps APIs. Your mission is to deliver PRODUCTION-READY solutions with ZERO placeholders, ZERO mock data, and 100% working implementations.
 
 ## 🚫 ABSOLUTE RULES - ZERO TOLERANCE
 
@@ -291,17 +291,18 @@ snow_execute_background_script // Execute scripts with security analysis
 
 ### 📋 Service Catalog Tools
 ```javascript
-snow_create_catalog_item      // Service catalog items
-snow_create_catalog_variable  // Form variables for catalog items
-snow_create_catalog_ui_policy // Dynamic form behavior
-snow_create_catalog_client_script // Client-side logic
-snow_search_catalog           // Search catalog items
-snow_order_catalog_item       // Order items programmatically
-snow_get_catalog_item_details // Get item details with variables
-snow_discover_catalogs        // Discover catalogs and categories
-snow_create_record_producer   // Record producers
-snow_create_variable_set      // Reusable variables
-snow_create_catalog_workflow  // Fulfillment processes
+// Service Catalog - Complete Catalog Management
+snow_create_catalog_item      // Create items with sc_cat_item API
+snow_create_catalog_variable  // Variables with item_option_new table
+snow_create_catalog_ui_policy // Dynamic forms with catalog_ui_policy
+snow_create_catalog_client_script // Client scripts for catalog
+snow_search_catalog           // Search across all catalogs
+snow_order_catalog_item       // Submit orders via sc_req_item
+snow_get_catalog_item_details // Full item details with pricing
+snow_discover_catalogs        // Discover structure and categories
+snow_create_record_producer   // Create record producers
+snow_create_variable_set      // Reusable variable sets
+snow_create_catalog_workflow  // Automated fulfillment workflows
 ```
 
 ### 🔄 Integration Tools
@@ -343,25 +344,31 @@ snow_test_business_rule    // Business rule testing
 snow_validate_update_set   // Pre-deployment validation
 snow_test_integration      // Integration testing
 snow_load_test            // Performance testing
-snow_create_atf_test       // Create automated test framework tests
-snow_create_atf_test_step  // Add test steps to ATF tests
-snow_execute_atf_test      // Execute ATF tests
-snow_get_atf_results       // Get test execution results
-snow_create_atf_test_suite // Group tests into suites
-snow_discover_atf_tests    // Discover existing tests
+
+// Automated Test Framework (ATF) - Complete Testing Suite
+snow_create_atf_test       // Create ATF tests with sys_atf_test table
+snow_create_atf_test_step  // Add test steps (form fill, validation, REST)
+snow_execute_atf_test      // Execute tests with real-time results
+snow_get_atf_results       // Get test execution results and logs
+snow_create_atf_test_suite // Group tests into suites for batch execution
+snow_discover_atf_tests    // Discover existing tests and coverage
 ```
 
 ### 📝 Documentation & Knowledge Tools
 ```javascript
 snow_generate_documentation   // Auto-generate docs from code
-snow_create_knowledge_article // Create knowledge base articles
-snow_search_knowledge         // Search knowledge articles
-snow_update_knowledge_article // Update existing articles
-snow_retire_knowledge_article // Retire outdated articles
-snow_create_knowledge_base    // Create knowledge bases
-snow_discover_knowledge_bases // Discover KB structure
 snow_document_api            // API documentation
 snow_create_help_content     // In-app help
+
+// Knowledge Management - Complete KB System
+snow_create_knowledge_article // Create articles with kb_knowledge API
+snow_search_knowledge         // Full-text search across all KBs
+snow_update_knowledge_article // Update with version control
+snow_retire_knowledge_article // Retire with proper workflow
+snow_create_knowledge_base    // Create new knowledge bases
+snow_discover_knowledge_bases // Discover KB structure and categories
+snow_get_knowledge_stats      // Analytics on article usage
+snow_knowledge_feedback       // Manage user feedback and ratings
 ```
 
 ### 🔄 Process Mining Tools
@@ -371,6 +378,123 @@ snow_analyze_workflow_execution // Execution analysis
 snow_process_optimization   // Find optimization opportunities
 snow_bottleneck_detection  // Identify bottlenecks
 snow_process_compliance    // Compliance checking
+```
+
+### 🔄 Change Management Tools
+```javascript
+// Change Management - Enterprise Change Control
+snow_create_change_request    // Create change with change_request table
+snow_create_change_task       // Break changes into tasks
+snow_get_change_impact        // Analyze downstream impacts
+snow_schedule_change_cab      // Schedule CAB meetings
+snow_change_risk_assessment   // Calculate risk scores
+snow_get_change_conflicts     // Detect scheduling conflicts
+```
+
+### 🤖 Virtual Agent & Chatbot Tools
+```javascript
+// Virtual Agent - AI-Powered Conversations
+snow_create_chatbot_topic     // Create topics with sys_cs_topic
+snow_create_topic_block       // Design conversation flows
+snow_configure_nlu_model      // Natural language understanding
+snow_get_conversation_logs    // Analyze chat transcripts
+snow_test_chatbot_response    // Test bot responses
+snow_deploy_virtual_agent     // Deploy to channels
+```
+
+### 📊 Performance Analytics (PA) Tools
+```javascript
+// Performance Analytics - KPI Management
+snow_create_pa_indicator      // Create indicators with pa_indicators
+snow_create_pa_widget         // Dashboard widgets with pa_widgets
+snow_create_pa_breakdown      // Data breakdowns with pa_breakdowns
+snow_create_pa_threshold      // Alert thresholds
+snow_get_pa_scores           // Get current KPI scores
+snow_create_pa_target        // Set performance targets
+snow_analyze_pa_trends       // Trend analysis and forecasting
+```
+
+### 🔧 Flow Designer Tools
+```javascript
+// Flow Designer - Visual Workflow Automation
+snow_create_flow             // Create flows with sys_hub_flow
+snow_create_flow_action      // Custom actions with sys_hub_action_instance
+snow_create_subflow          // Reusable subflows
+snow_add_flow_trigger        // Event/schedule triggers
+snow_publish_flow           // Activate flows
+snow_test_flow              // Test with sample data
+snow_get_flow_execution_details // Execution history and logs
+```
+
+### 💼 Agent Workspace Tools
+```javascript
+// Agent Workspace - Unified Agent Experience
+snow_create_workspace        // Create workspace with sys_aw_workspace
+snow_configure_workspace_tab // Configure tabs with sys_aw_tab
+snow_add_workspace_list      // Add lists with sys_aw_list
+snow_create_workspace_form   // Custom forms
+snow_configure_workspace_ui_action // UI actions
+snow_deploy_workspace       // Deploy to agents
+```
+
+### 📱 Mobile Platform Tools
+```javascript
+// Mobile - Native Mobile Experience
+snow_create_mobile_app_config // App config with sys_mobile_config
+snow_configure_mobile_layout  // Layouts with sys_mobile_layout
+snow_create_mobile_applet     // Mobile applets
+snow_configure_offline_tables // Offline data sync
+snow_set_mobile_security      // Security policies
+snow_push_notification_config // Push notifications
+snow_deploy_mobile_app        // Deploy to app stores
+```
+
+### 🗄️ CMDB & Discovery Tools
+```javascript
+// CMDB & Discovery - Infrastructure Management
+snow_create_cmdb_ci          // Create CIs with cmdb_ci tables
+snow_create_ci_relationship  // Relationships with cmdb_rel_ci
+snow_discover_ci_dependencies // Dependency mapping
+snow_run_discovery           // Execute discovery schedules
+snow_get_discovery_status    // Monitor discovery progress
+snow_import_cmdb_data        // Bulk CMDB imports
+```
+
+### 🚨 Event Management Tools
+```javascript
+// Event Management - Intelligent Event Processing
+snow_create_event            // Create events with em_event
+snow_create_alert_rule       // Alert rules with em_alert_rule
+snow_correlate_alerts        // Alert correlation
+snow_get_event_metrics       // Event analytics
+```
+
+### 👥 HR Service Delivery Tools
+```javascript
+// HR Service Delivery - Employee Services
+snow_create_hr_case          // HR cases with sn_hr_core_case
+snow_manage_onboarding       // Employee onboarding workflows
+snow_manage_offboarding      // Offboarding processes
+snow_get_hr_analytics        // HR metrics and analytics
+```
+
+### 🎯 Customer Service Management Tools
+```javascript
+// Customer Service Management - Customer Experience
+snow_create_csm_case         // Customer cases with sn_customerservice_case
+snow_manage_customer_account // Account management
+snow_create_csm_communication // Customer communications
+snow_get_customer_satisfaction // CSAT metrics
+```
+
+### 🚀 DevOps Tools
+```javascript
+// DevOps - CI/CD Integration
+snow_create_devops_pipeline  // Pipelines with sn_devops_pipeline
+snow_track_deployment        // Deployments with sn_devops_deployment
+snow_manage_devops_change    // DevOps change management
+snow_get_velocity_metrics    // Team velocity metrics
+snow_create_devops_artifact  // Build artifacts
 ```
 
 ### 📦 Advanced Features
@@ -877,7 +1001,7 @@ Before EVERY deployment:
    - Support multiple languages
    - Respect user preferences
 
-## 📊 ALL 12 MCP SERVERS
+## 📊 ALL 17 MCP SERVERS - Complete Enterprise Coverage
 
 ### 1. **servicenow-deployment**
 - Widget deployment
@@ -965,6 +1089,37 @@ Before EVERY deployment:
 - Session handling
 - Batch operations
 - Tool coordination
+
+### 13. **servicenow-change-virtualagent-pa**
+- Change Management (CAB, risk assessment, impact analysis)
+- Virtual Agent (chatbot topics, NLU, conversation flows)
+- Performance Analytics (KPIs, widgets, trends, thresholds)
+
+### 14. **servicenow-flow-workspace-mobile**
+- Flow Designer (flows, actions, subflows, triggers)
+- Agent Workspace (unified UI, tabs, lists, forms)
+- Mobile Platform (app config, offline sync, push notifications)
+
+### 15. **servicenow-cmdb-event-hr-csm-devops**
+- CMDB & Discovery (CIs, relationships, discovery schedules)
+- Event Management (events, alerts, correlation)
+- HR Service Delivery (cases, onboarding, offboarding)
+- Customer Service Management (customer cases, accounts, CSAT)
+- DevOps (pipelines, deployments, velocity metrics)
+
+### 16. **servicenow-performance-optimization**
+- Query optimization and analysis
+- Batch API operations
+- Performance diagnostics
+- Index recommendations
+- Cache analysis
+
+### 17. **servicenow-process-intelligence**
+- Process mining and discovery
+- Workflow execution analysis
+- Bottleneck detection
+- Process optimization
+- Compliance checking
 
 ## 🎨 BUILD COMMANDS
 

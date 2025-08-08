@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.1.3",
-  "description": "Snow-Flow v3.1.3: ATF Testing, Knowledge Management & Service Catalog APIs. Create and execute Automated Test Framework tests with sys_atf_test tables. Manage knowledge articles with kb_knowledge API. Full Service Catalog automation with sc_cat_item, variables, and ordering. All using official ServiceNow REST APIs.",
+  "version": "3.2.0",
+  "description": "Snow-Flow v3.2.0: Complete ServiceNow Enterprise Suite with 180+ MCP Tools. ATF Testing, Knowledge Management, Service Catalog, Change Management with CAB scheduling, Virtual Agent chatbots with NLU, Performance Analytics KPIs, Flow Designer automation, Agent Workspace configuration, Mobile app deployment, CMDB/Discovery, Event Management correlation, HR Service Delivery onboarding, Customer Service Management, DevOps CI/CD integration. All using official ServiceNow REST APIs across 17 specialized MCP servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
