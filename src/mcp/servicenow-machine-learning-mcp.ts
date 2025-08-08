@@ -3,11 +3,39 @@
  * Real neural networks and machine learning for ServiceNow operations
  */
 
-// CRITICAL FIX: Add performance polyfill for TensorFlow.js in Node.js environment
+// CRITICAL FIX: Add comprehensive performance polyfill for TensorFlow.js in Node.js environment
 // This fixes the "Cannot read properties of undefined (reading 'tick')" error
-if (typeof global !== 'undefined' && !global.performance) {
-  const { performance } = require('perf_hooks');
-  global.performance = performance;
+if (typeof global !== 'undefined') {
+  // Import perf_hooks
+  const { performance: perfHooksPerformance } = require('perf_hooks');
+  
+  // Create comprehensive performance object with type casting
+  if (!global.performance || !global.performance.now) {
+    (global as any).performance = {
+      now: perfHooksPerformance.now.bind(perfHooksPerformance),
+      mark: perfHooksPerformance.mark ? perfHooksPerformance.mark.bind(perfHooksPerformance) : () => {},
+      measure: perfHooksPerformance.measure ? perfHooksPerformance.measure.bind(perfHooksPerformance) : () => {},
+      getEntriesByName: perfHooksPerformance.getEntriesByName ? perfHooksPerformance.getEntriesByName.bind(perfHooksPerformance) : () => [],
+      getEntriesByType: perfHooksPerformance.getEntriesByType ? perfHooksPerformance.getEntriesByType.bind(perfHooksPerformance) : () => [],
+      clearMarks: perfHooksPerformance.clearMarks ? perfHooksPerformance.clearMarks.bind(perfHooksPerformance) : () => {},
+      clearMeasures: perfHooksPerformance.clearMeasures ? perfHooksPerformance.clearMeasures.bind(perfHooksPerformance) : () => {},
+      // Add tick method that TensorFlow.js might be looking for
+      tick: perfHooksPerformance.now ? perfHooksPerformance.now.bind(perfHooksPerformance) : () => Date.now(),
+      timeOrigin: perfHooksPerformance.timeOrigin || Date.now()
+    };
+  }
+  
+  // Additional Node.js specific fixes for TensorFlow.js
+  if (typeof (global as any).window === 'undefined') {
+    // Mock minimal window object for TensorFlow.js
+    (global as any).window = global;
+  }
+  
+  // Ensure process.hrtime is available for high-resolution timing
+  if (!global.process || !global.process.hrtime) {
+    global.process = global.process || {} as any;
+    (global as any).process.hrtime = process.hrtime;
+  }
 }
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -826,65 +854,170 @@ export class ServiceNowMachineLearningMCP {
       this.logger.info(`Creating model with vocabulary size: ${vocabularySize}, categories: ${categories.length}`);
       
       // Create neural network model with VALIDATED vocabulary size
-      const model = tf.sequential({
-        layers: [
-          // Embedding layer for text - inputDim MUST match the vocabulary size used in data preparation
-          tf.layers.embedding({
-            inputDim: vocabularySize, // Use the EXACT vocabulary size from data preparation
-            outputDim: 128,
-            inputLength: 100 // Max sequence length
-          }),
-          
-          // LSTM for sequence processing
-          tf.layers.lstm({
-            units: 64,
-            returnSequences: false,
-            dropout: 0.2,
-            recurrentDropout: 0.2
-          }),
-          
-          // Dense layers
-          tf.layers.dense({
-            units: 32,
-            activation: 'relu'
-          }),
-          tf.layers.dropout({ rate: 0.3 }),
-          
-          // Output layer
-          tf.layers.dense({
-            units: categories.length,
-            activation: 'softmax'
-          })
-        ]
-      });
+      let model;
+      try {
+        this.logger.info('Creating TensorFlow.js model...');
+        
+        // Additional validation before model creation
+        if (typeof tf === 'undefined' || !tf.sequential) {
+          throw new Error('TensorFlow.js not properly loaded');
+        }
+        
+        if (!global.performance || typeof global.performance.tick !== 'function') {
+          throw new Error('Performance API not available - TensorFlow.js requires timing functions');
+        }
+        
+        model = tf.sequential({
+          layers: [
+            // Embedding layer for text - inputDim MUST match the vocabulary size used in data preparation
+            tf.layers.embedding({
+              inputDim: vocabularySize, // Use the EXACT vocabulary size from data preparation
+              outputDim: 128,
+              inputLength: 100 // Max sequence length
+            }),
+            
+            // LSTM for sequence processing
+            tf.layers.lstm({
+              units: 64,
+              returnSequences: false,
+              dropout: 0.2,
+              recurrentDropout: 0.2
+            }),
+            
+            // Dense layers
+            tf.layers.dense({
+              units: 32,
+              activation: 'relu'
+            }),
+            tf.layers.dropout({ rate: 0.3 }),
+            
+            // Output layer
+            tf.layers.dense({
+              units: categories.length,
+              activation: 'softmax'
+            })
+          ]
+        });
+        
+        this.logger.info('✅ Model created successfully');
+      } catch (modelError: any) {
+        this.logger.error('Failed to create TensorFlow.js model:', modelError);
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'Failed to create neural network model',
+              details: modelError.message,
+              troubleshooting: [
+                '1. TensorFlow.js initialization issue detected',
+                '2. Try restarting the MCP server',
+                '3. Check Node.js version compatibility',
+                '4. Performance API polyfill may need adjustment'
+              ],
+              technical_details: {
+                vocabulary_size: vocabularySize,
+                categories_count: categories.length,
+                tensorflow_available: typeof tf !== 'undefined',
+                performance_available: typeof global.performance !== 'undefined',
+                tick_available: typeof global.performance?.tick === 'function'
+              }
+            }, null, 2)
+          }]
+        };
+      }
 
       // Compile model
-      model.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy']
-      });
+      try {
+        this.logger.info('Compiling TensorFlow.js model...');
+        model.compile({
+          optimizer: tf.train.adam(0.001),
+          loss: 'categoricalCrossentropy',
+          metrics: ['accuracy']
+        });
+        this.logger.info('✅ Model compiled successfully');
+      } catch (compileError: any) {
+        this.logger.error('Failed to compile TensorFlow.js model:', compileError);
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'Failed to compile neural network model',
+              details: compileError.message,
+              troubleshooting: [
+                '1. Model architecture validation failed',
+                '2. Check TensorFlow.js optimizer availability',
+                '3. Verify model layers are compatible',
+                '4. Try with simpler model configuration'
+              ]
+            }, null, 2)
+          }]
+        };
+      }
 
       this.logger.info('Training incident classifier...');
       
       // Train model with improved error handling
-      const history = await model.fit(features, labels, {
-        epochs,
-        validationSplit: validation_split,
-        batchSize: 32,
-        callbacks: {
-          onEpochEnd: (epoch, logs) => {
-            try {
-              const loss = logs?.loss ? logs.loss.toFixed(4) : 'N/A';
-              const accuracy = logs?.acc ? logs.acc.toFixed(4) : 'N/A';
-              this.logger.info(`Epoch ${epoch + 1}: loss = ${loss}, accuracy = ${accuracy}`);
-            } catch (e) {
-              // Ignore callback errors to prevent training interruption
-              this.logger.warn(`Callback error in epoch ${epoch + 1}:`, e);
+      let history;
+      try {
+        this.logger.info(`Starting training with ${epochs} epochs, batch size 32...`);
+        history = await model.fit(features, labels, {
+          epochs,
+          validationSplit: validation_split,
+          batchSize: 32,
+          callbacks: {
+            onEpochEnd: (epoch, logs) => {
+              try {
+                const loss = logs?.loss ? logs.loss.toFixed(4) : 'N/A';
+                const accuracy = logs?.acc ? logs.acc.toFixed(4) : 'N/A';
+                this.logger.info(`Epoch ${epoch + 1}: loss = ${loss}, accuracy = ${accuracy}`);
+              } catch (e) {
+                // Ignore callback errors to prevent training interruption
+                this.logger.warn(`Callback error in epoch ${epoch + 1}:`, e);
+              }
             }
           }
+        });
+        this.logger.info('✅ Training completed successfully');
+      } catch (trainingError: any) {
+        this.logger.error('Model training failed:', trainingError);
+        
+        // Clean up tensors before returning error
+        try {
+          features.dispose();
+          labels.dispose();
+          model.dispose();
+        } catch (cleanupError) {
+          this.logger.warn('Cleanup error:', cleanupError);
         }
-      });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'error',
+              error: 'Neural network training failed',
+              details: trainingError.message,
+              troubleshooting: [
+                '1. TensorFlow.js training process encountered an error',
+                '2. Try reducing epochs or batch_size',
+                '3. Check data quality and size',
+                '4. Restart MCP server if persistent',
+                '5. Verify sufficient system memory'
+              ],
+              training_parameters: {
+                epochs,
+                validation_split,
+                batch_size: 32,
+                samples: incidents.length
+              }
+            }, null, 2)
+          }]
+        };
+      }
 
       // Save model
       this.incidentClassifier = {
