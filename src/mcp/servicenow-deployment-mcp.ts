@@ -547,7 +547,79 @@ class ServiceNowDeploymentMCP {
         this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
       }
 
-      this.logger.info('Deploying widget to ServiceNow', { name: args.name });
+      this.logger.info('Deploying widget to ServiceNow', { name: args.name, sys_id: args.sys_id });
+
+      // CHECK: If sys_id is provided, this is an UPDATE not a CREATE
+      if (args.sys_id) {
+        this.logger.info('🔄 UPDATE mode detected - updating existing widget', { sys_id: args.sys_id });
+        
+        try {
+          // Update the existing widget
+          const updateResult = await this.client.updateRecord('sp_widget', args.sys_id, {
+            name: args.name || undefined,
+            title: args.title || undefined,
+            template: args.template || undefined,
+            css: args.css || undefined,
+            client_script: args.client_script || undefined,
+            server_script: args.server_script || undefined,
+            option_schema: args.option_schema || undefined,
+            demo_data: args.demo_data || undefined,
+            data: args.data || undefined,
+            description: args.description || undefined
+          });
+          
+          if (updateResult.success) {
+            const credentials = await this.oauth.loadCredentials();
+            const widgetUrl = credentials?.instance ? 
+              `https://${credentials.instance}/sp_config?id=widget_editor&sys_id=${args.sys_id}` : 
+              'ServiceNow instance URL not available';
+            
+            return {
+              success: true,
+              sys_id: args.sys_id,
+              name: args.name,
+              content: [
+                {
+                  type: 'text',
+                  text: `✅ Widget updated successfully!
+                  
+🎯 Widget Details:
+- Sys ID: ${args.sys_id}
+- Name: ${args.name || 'Unchanged'}
+- Deployment Context: ${args.config?.deployment_context || args.deployment_context || 'Widget update'}
+- Method: Direct update via API
+
+🔗 Direct Links:
+- Widget Editor: ${widgetUrl}
+- Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
+
+⚡ **Widget Updated**
+Your changes have been applied to the existing widget.`
+                }
+              ]
+            };
+          } else {
+            return {
+              success: false,
+              error: updateResult.error || 'Failed to update widget',
+              content: [{
+                type: 'text',
+                text: `❌ Failed to update widget: ${updateResult.error || 'Unknown error'}`
+              }]
+            };
+          }
+        } catch (updateError: any) {
+          this.logger.error('Widget update failed', updateError);
+          return {
+            success: false,
+            error: updateError.message || 'Update failed',
+            content: [{
+              type: 'text',
+              text: `❌ Widget update failed: ${updateError.message || 'Unknown error'}`
+            }]
+          };
+        }
+      }
 
       // ENHANCED: Mandatory Update Set management with auto-activation
       try {
