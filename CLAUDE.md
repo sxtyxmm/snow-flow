@@ -62,10 +62,10 @@ await snow_table_schema_discovery({ table: "incident" })
 
 ### ❌ NEVER Do This (Token Waste):
 ```javascript
-// WRONG: Trying to analyze all users but hitting token limits
+// WRONG: Trying to analyze all users but using a limit
 snow_query_table({ 
   table: "sys_user", 
-  limit: 500,  // ❌ Only gets partial data!
+  limit: 500,  // ❌ Only gets partial data for analytics!
   include_content: true,  // ❌ Wastes tokens!
   fields: ["sys_created_on","first_name","last_name","user_name","department","active"]  // ❌ Too many fields!
 })

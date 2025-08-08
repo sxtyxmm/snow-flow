@@ -958,7 +958,7 @@ class ServiceNowOperationsMCP {
     const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields, fields);
     
     // For analytics, we want NO limit at all
-    const effectiveLimit = limit === undefined ? 999999 : limit; // ServiceNow max is usually 10000 per call
+    const effectiveLimit = limit === undefined ? 999999 : limit; // ServiceNow theoretical max (actual varies by instance)
     
     // 🚨 ML Training Warning for low limits
     const isMLTrainingContext = query?.toLowerCase().includes('train') || 

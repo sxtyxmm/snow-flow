@@ -100,28 +100,36 @@ snow-flow auth login
 The revolutionary `snow_query_table` replaces all table-specific query tools with intelligent performance optimization:
 
 ```javascript
-// Smart Performance Modes - LLM chooses the best approach:
+// Smart Performance Modes - System auto-detects the best approach:
 
-// 1. Count-only (default) - 99.9% memory savings for ML training
-snow_query_table({ table: "incident", query: "state!=7", limit: 2000 })
-// Returns: {total_results: 2000} - Only 13 bytes!
+// 1. Analytics mode - OMIT limit for ALL records with minimal fields
+snow_query_table({ 
+  table: "incident", 
+  query: "state!=7",
+  fields: ["sys_created_on", "priority"]  // Get ALL records, minimal data
+})
+// Auto-detects analytics context and returns ALL records!
 
-// 2. Specific fields - Get exactly what you need
+// 2. Count-only mode - Ultra efficient for large datasets
 snow_query_table({ 
   table: "sc_request",
-  fields: ["number", "short_description", "requested_for"],
-  include_display_values: true  // Names instead of sys_ids
+  include_content: false  // Just counts, no data
 })
+// Returns: {total_results: 15234} - Maximum efficiency!
 
-// 3. Group by aggregation - Analytics and statistics
+// 3. Display mode - Limited records with full details
 snow_query_table({ 
   table: "problem",
-  group_by: "category",
-  order_by: "-priority"  // - means descending (highest first)
+  limit: 50,  // Explicitly limit for display
+  include_display_values: true
 })
 
-// 4. Full content - When complete data is needed
-snow_query_table({ table: "change_request", include_content: true })
+// 4. Group by aggregation - Server-side analytics
+snow_query_table({ 
+  table: "change_request",
+  group_by: "risk",
+  order_by: "-count"  // Sorted by frequency
+})
 ```
 
 Works with ANY table: `incident`, `sc_request`, `problem`, `cmdb_ci`, even `u_custom_table`!
