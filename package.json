@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "3.0.24",
+  "version": "3.0.25",
   "description": "Snow-Flow v3.0.18: DIRECT API VERIFICATION! 🚀 Replaced unreliable searchRecords with direct API calls (snow_query_table style) for widget verification. All null/403 error recovery now uses GET /api/now/table/sp_widget with precise queries. NO MORE FALSE NEGATIVES - verification works consistently every time!",
   "main": "dist/index.js",
   "type": "commonjs",
