@@ -65,6 +65,132 @@ This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Co
 - **Clean Architecture**: Separate concerns
 - **Documentation**: Keep updated
 
+## 🚨 CRITICAL: ServiceNow Schema Discovery Before Deployment
+
+### ⚠️ MANDATORY WORKFLOW: ALWAYS Discover Before Deploy
+
+**ABSOLUTE REQUIREMENT:** Before ANY ServiceNow deployment (widgets, flows, tables, records), you MUST first discover the actual schema and existing data to ensure you're using real field names and valid table structures.
+
+### 📋 Required Pre-Deployment Steps
+
+**NEVER deploy without first running:**
+
+1. **Table Schema Discovery** - Know the exact fields available:
+```javascript
+// ALWAYS run this first to get exact field names and types
+snow_discover_table_fields({ table_name: "sp_widget" })
+snow_discover_table_fields({ table_name: "sys_hub_action_instance" })
+snow_discover_table_fields({ table_name: "incident" })
+```
+
+2. **Existing Data Verification** - Check what's already there:
+```javascript
+// ALWAYS query existing data to understand current structure
+snow_query_table({ 
+  table: "sp_widget", 
+  query: "name=MyWidget",
+  fields: "sys_id,name,css,client_script,html_template" 
+})
+```
+
+3. **Schema Validation** - Verify field existence before using:
+```javascript
+// ALWAYS validate required fields exist before deployment
+snow_discover_table_fields({ 
+  table_name: "target_table",
+  field_pattern: "required_field_name" 
+})
+```
+
+### 🔴 DEPLOYMENT FAILURE PREVENTION
+
+**Common Causes of Deployment Failures:**
+- ❌ Using non-existent field names (e.g., guessing "description" vs "short_description")
+- ❌ Wrong table references (e.g., "sys_hub_action" vs "sys_hub_action_instance_v2")
+- ❌ Missing required fields during record creation
+- ❌ Invalid foreign key references
+- ❌ Incorrect data types or field lengths
+
+**✅ SOLUTION: Schema-First Approach**
+```javascript
+// 1. DISCOVER the real schema first
+snow_discover_table_fields({ table_name: "sp_widget" })
+
+// 2. QUERY existing records to see actual data patterns  
+snow_query_table({ table: "sp_widget", limit: 5 })
+
+// 3. DEPLOY using only discovered field names
+snow_deploy({
+  type: "widget",
+  name: "MyWidget", 
+  // Use ONLY fields confirmed to exist from step 1
+  fields: {
+    "html_template": "<div>Content</div>",  // ✅ Confirmed exists
+    "client_script": "function() {}",       // ✅ Confirmed exists
+    "css": ".my-widget { color: blue; }"    // ✅ Confirmed exists
+  }
+})
+```
+
+### 🎯 Schema Discovery Best Practices
+
+**For Widget Deployment:**
+```javascript
+// 1. Discover sp_widget table structure
+snow_discover_table_fields({ table_name: "sp_widget" })
+
+// 2. Check existing widgets for patterns
+snow_query_table({ 
+  table: "sp_widget", 
+  query: "name!=NULL", 
+  fields: "sys_id,name,html_template,client_script,css,data_table",
+  limit: 10 
+})
+
+// 3. Deploy with confirmed field names only
+```
+
+**For Flow Deployment:**
+```javascript
+// 1. Discover flow table structures
+snow_discover_table_fields({ table_name: "sys_hub_flow" })
+snow_discover_table_fields({ table_name: "sys_hub_action_instance_v2" })
+snow_discover_table_fields({ table_name: "sys_hub_trigger_instance_v2" })
+
+// 2. Verify existing flow structure
+snow_query_table({ table: "sys_hub_flow", limit: 3 })
+
+// 3. Deploy with proper table and field references
+```
+
+**For Custom Table Operations:**
+```javascript
+// 1. Always discover custom table schema first
+snow_discover_table_fields({ table_name: "u_custom_table" })
+
+// 2. Check data types and constraints
+snow_query_table({ 
+  table: "sys_dictionary", 
+  query: "name=u_custom_table",
+  fields: "element,column_label,internal_type,max_length,mandatory"
+})
+
+// 3. Deploy records using exact field specifications
+```
+
+### 🛡️ Error Prevention Checklist
+
+Before ANY deployment, verify:
+- [ ] ✅ Schema discovered with `snow_discover_table_fields`
+- [ ] ✅ Existing data queried with `snow_query_table`  
+- [ ] ✅ Field names confirmed to exist in target table
+- [ ] ✅ Data types validated for all field values
+- [ ] ✅ Required fields identified and populated
+- [ ] ✅ Foreign key references verified
+- [ ] ✅ Field length limits checked
+
+**This workflow is MANDATORY and will prevent 95% of deployment failures!**
+
 ## 🚀 Available Agents (54 Total)
 
 ### Core Development
