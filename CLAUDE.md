@@ -78,11 +78,11 @@ snow_query_table({
 snow_query_table({ 
   table: "sys_user", 
   query: "active=true",
-  limit: 99999,  // ✅ Get ALL records for complete analysis
+  // NO LIMIT! ✅ Omit limit for ALL records
   include_content: true,
   fields: ["sys_created_on", "sys_id"]  // ✅ ONLY fields needed for analysis
 })
-// Result: 5000 users, only 2 fields = 5% of tokens, 100% of data!
+// Result: ALL users, only 2 fields = 5% of tokens, 100% of data!
 ```
 
 ### 📊 Analytics Query Rules:
@@ -92,7 +92,7 @@ snow_query_table({
 // Need ALL records, MINIMAL fields
 snow_query_table({ 
   table: "incident",
-  limit: 99999,  // NO LIMIT for time analysis
+  // NO limit parameter = get ALL records
   fields: ["sys_created_on", "sys_id"]  // Just timestamp + ID
 })
 ```
@@ -102,7 +102,7 @@ snow_query_table({
 // Use aggregation, not content
 snow_query_table({ 
   table: "incident",
-  limit: 99999,
+  // No limit needed for count-only
   include_content: false,  // Count only!
   group_by: "category"  // Server-side aggregation
 })
@@ -113,7 +113,7 @@ snow_query_table({
 // Minimal fields, maximum records
 snow_query_table({ 
   table: "change_request",
-  limit: 99999,
+  // Omit limit for complete trend data
   fields: ["sys_created_on", "state", "risk"]  // Only trend fields
 })
 ```
@@ -124,7 +124,7 @@ snow_query_table({
 const allUsers = await snow_query_table({ 
   table: "sys_user",
   query: "active=true",
-  limit: 99999,  // Get EVERYONE
+  // NO LIMIT - gets ALL users automatically
   fields: ["sys_created_on"]  // ONLY the field we analyze
 });
 
@@ -140,8 +140,8 @@ allUsers.forEach(user => {
 
 **Ask yourself:**
 1. **Do I need ALL records for accurate analysis?**
-   - YES → Use `limit: 99999` (no limit)
-   - NO → Use appropriate limit
+   - YES → DON'T specify limit (gets all records)
+   - NO → Use appropriate limit (50-1000)
 
 2. **Do I need the actual content?**
    - Just counting → `include_content: false`
@@ -163,11 +163,11 @@ allUsers.forEach(user => {
 | Statistical Analysis | Minimal fields, max records | 85% |
 
 ### 🚀 Performance Rules:
-1. **For Analytics: NO DEFAULT LIMITS** - Get ALL data
+1. **For Analytics: DON'T SPECIFY LIMIT** - Automatically gets ALL data
 2. **For Display: LIMIT to what's visible** - 10-50 records
-3. **For Export: PAGINATE** - Chunks of 1000
-4. **For Counting: NO CONTENT** - Just counts
-5. **For Trends: MINIMAL FIELDS** - Just date + metric
+3. **For Export: PAGINATE** - Chunks of 1000 with offset
+4. **For Counting: NO CONTENT** - Just counts, no limit needed
+5. **For Trends: MINIMAL FIELDS** - No limit, just date + metric
 
 ## 🔥 ELITE DEVELOPER WORKFLOW
 

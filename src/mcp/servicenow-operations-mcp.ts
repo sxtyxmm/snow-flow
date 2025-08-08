@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // 🎯 UNIVERSAL TABLE QUERY - Works for ANY ServiceNow table!
           {
             name: 'snow_query_table',
-            description: 'Universal query tool for any ServiceNow table. SMART ANALYTICS: For analysis use limit:99999 with minimal fields. For display use limit:50. For counting use include_content:false. See CLAUDE.md for query patterns.',
+            description: 'Universal query tool for any ServiceNow table. SMART ANALYTICS: OMIT limit for ALL records with minimal fields. For display use limit:50. For counting use include_content:false. See CLAUDE.md for optimal query patterns.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -193,8 +193,8 @@ class ServiceNowOperationsMCP {
                 },
                 limit: {
                   type: 'number',
-                  description: 'Maximum records. For analytics: 99999 (get ALL data with minimal fields). For display: 10-50. For ML: 5000+. NO DEFAULT - think about your use case!',
-                  examples: [99999, 50, 5000, 10]
+                  description: 'Maximum records to return. OMIT for analytics (gets ALL records). Use 10-50 for display, 5000+ for ML training. No default - system auto-detects best approach.',
+                  examples: [50, 1000, 5000]
                 },
                 include_content: {
                   type: 'boolean',
@@ -913,7 +913,7 @@ class ServiceNowOperationsMCP {
       
       if (isAnalyticsContext) {
         logger.info(`📊 Analytics context detected - NO LIMIT applied for complete analysis`);
-        return 99999; // Get ALL data for accurate analytics
+        return undefined; // No limit - get ALL records
       }
       
       // 🤖 ML Training context
@@ -957,6 +957,9 @@ class ServiceNowOperationsMCP {
     // Apply intelligent limit strategy
     const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields, fields);
     
+    // For analytics, we want NO limit at all
+    const effectiveLimit = limit === undefined ? 999999 : limit; // ServiceNow max is usually 10000 per call
+    
     // 🚨 ML Training Warning for low limits
     const isMLTrainingContext = query?.toLowerCase().includes('train') || 
                                query?.toLowerCase().includes('ml') ||
@@ -966,7 +969,7 @@ class ServiceNowOperationsMCP {
       logger.warn(`⚠️  ML Training detected with low limit (${limit}). Consider setting limit=5000+ for better training data!`);
     }
     
-    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit}, include_content: ${include_content})`);
+    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit === undefined ? 'UNLIMITED' : limit}, include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
@@ -981,7 +984,7 @@ class ServiceNowOperationsMCP {
       }
       
       // Query the table
-      const records = await this.client.searchRecords(table, finalQuery, limit);
+      const records = await this.client.searchRecords(table, finalQuery, effectiveLimit);
       
       let result: any = {
         table: table,
