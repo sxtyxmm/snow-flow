@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.14",
-  "description": "Snow-Flow v3.0.14: WRITE PERMISSIONS FIX! 🔧 Fixed 'this.client.create is not a function' error that was blocking all deployments. Corrected API method calls to use createRecord/deleteRecord. Write permissions diagnostic now works correctly. Plus all features: Zero Mock Data Guarantee, race condition fixes, intelligent reporting, and 100+ MCP tools.",
+  "version": "3.0.15",
+  "description": "Snow-Flow v3.0.15: FLOW/WORKFLOW DEPRECATION 🚫 Flows, workflows, and subflows have been officially deprecated and are no longer supported. Focus is now entirely on widgets, applications, and direct ServiceNow development. All flow-related features have been marked as deprecated. Use widgets and applications for UI development instead.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

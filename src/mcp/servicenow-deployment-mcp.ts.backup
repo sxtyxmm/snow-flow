@@ -74,7 +74,7 @@ class ServiceNowDeploymentMCP {
           inputSchema: {
             type: 'object',
             properties: {
-              type: { type: 'string', enum: ['widget', 'application'] }, // removed 'workflow' - deprecated
+              type: { type: 'string', enum: ['widget', 'workflow', 'application'] },
               artifact: { type: 'object', description: 'The artifact to validate' },
             },
             required: ['type', 'artifact'],
@@ -104,11 +104,11 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_export_artifact',
-          description: 'Exports ServiceNow artifacts (widgets, applications) to JSON/XML format for backup, version control, or migration purposes.', // removed workflows
+          description: 'Exports ServiceNow artifacts (widgets, workflows, applications) to JSON/XML format for backup, version control, or migration purposes.',
           inputSchema: {
             type: 'object',
             properties: {
-              type: { type: 'string', enum: ['widget', 'application'] }, // removed 'workflow' - deprecated
+              type: { type: 'string', enum: ['widget', 'workflow', 'application'] },
               sys_id: { type: 'string', description: 'Sys ID of the artifact' },
               format: { type: 'string', enum: ['json', 'xml', 'update_set'], default: 'json' },
             },
@@ -121,7 +121,7 @@ class ServiceNowDeploymentMCP {
           inputSchema: {
             type: 'object',
             properties: {
-              type: { type: 'string', enum: ['widget', 'application'] }, // removed 'workflow' - deprecated
+              type: { type: 'string', enum: ['widget', 'workflow', 'application'] },
               file_path: { type: 'string', description: 'Path to the artifact file' },
               format: { type: 'string', enum: ['json', 'xml', 'update_set'], default: 'json' },
             },
@@ -136,7 +136,7 @@ class ServiceNowDeploymentMCP {
             properties: {
               source_instance: { type: 'string', description: 'Source instance URL' },
               target_instance: { type: 'string', description: 'Target instance URL' },
-              type: { type: 'string', enum: ['widget', 'application'] }, // removed 'workflow' - deprecated
+              type: { type: 'string', enum: ['widget', 'workflow', 'application'] },
               sys_id: { type: 'string', description: 'Sys ID of the artifact to clone' },
             },
             required: ['source_instance', 'target_instance', 'type', 'sys_id'],
@@ -501,11 +501,11 @@ class ServiceNowDeploymentMCP {
    */
   private getTableForType(type: string): string {
     const tableMap: { [key: string]: string } = {
-      // 'flow': 'sys_hub_flow', // REMOVED - flows deprecated
+      'flow': 'sys_hub_flow',
       'widget': 'sp_widget',
       'script': 'sys_script_include',
       'business_rule': 'sys_script',
-      // 'workflow': 'wf_workflow', // REMOVED - workflows deprecated
+      'workflow': 'wf_workflow',
       'application': 'sys_app',
       'ui_action': 'sys_ui_action',
       'ui_page': 'sys_ui_page',
@@ -1807,35 +1807,8 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
     return css;
   }
 
-  // DEPRECATED: Flow deployment is no longer supported - flows, workflows, and subflows have been removed
-  /* private async deployFlow(args: any) {
-    try {
-      // Enhanced authentication check with token refresh for deployment
-      const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
-      if (!authResult.isValid) {
-        this.logger.error('Deployment authentication failed:', authResult.error);
-        
-        // If auth failed, try to refresh token
-        const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
-        if (!refreshResult.success) {
-          return {
-          content: [
-            {
-              type: 'text',
-              text: `❌ Deployment authentication failed.\n\nError: ${authResult.error || 'Unable to authenticate'}\n\nRecommendations:\n${(authResult.recommendations || ['Run: snow-flow auth login']).map(r => `• ${r}`).join('\n')}\n\nNote: Deployment requires valid OAuth tokens with write permissions.`,
-            },
-          ],
-        };
-        }
-      }
-      
-      // Warn if token may lack write permissions
-      if (!authResult.hasWriteScope) {
-        this.logger.warn('⚠️ Token may lack write permissions, deployment might fail with 403');
-      }
-
-      // Ensure we have a flow definition
-      if (!args.flow_definition) {
+  // REMOVED: deployFlow method - flows/workflows/subflows are no longer supported
+  // Lines 1810-2227 removed as flow deployment is deprecated
         return {
           content: [
             {
@@ -2225,17 +2198,17 @@ ${isComposedFlow ? `
 📚 Documentation: See CLAUDE.md for Flow Development Guidelines`;
       throw new Error(enhancedError);
     }
-  } */
+  }
 
   /**
-   * Deploy a linked artifact (script include, business rule, etc.) - DEPRECATED
+   * Deploy a linked artifact (script include, business rule, etc.)
    */
-  /* private async deployLinkedArtifact(artifact: any): Promise<any> {
+  private async deployLinkedArtifact(artifact: any): Promise<any> {
     this.logger.info('Deploying linked artifact', { type: artifact.type, name: artifact.name });
 
     switch (artifact.type) {
       case 'script_include':
-        throw new Error('Script includes via flow deployment are deprecated. Use direct artifact creation instead.');
+        return await this.deployScriptInclude(artifact);
       
       case 'business_rule':
         return await this.deployBusinessRule(artifact);
@@ -2246,12 +2219,12 @@ ${isComposedFlow ? `
       default:
         throw new Error(`Unknown artifact type: ${artifact.type}`);
     }
-  } */
+  }
 
   /**
-   * Deploy a script include artifact - DEPRECATED
+   * Deploy a script include artifact
    */
-  /* private async deployScriptInclude(artifact: any): Promise<any> {
+  private async deployScriptInclude(artifact: any): Promise<any> {
     const scriptIncludeData = {
       name: artifact.name,
       api_name: artifact.api_name || artifact.name,
@@ -5973,13 +5946,13 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           let result;
           switch (artifact.type) {
             case 'flow':
-              throw new Error('Flow deployment is deprecated. Flows, workflows, and subflows are no longer supported. Use widgets or applications instead.');
+              result = await this.deployFlow(artifact.create);
               break;
             case 'widget':
               result = await this.deployWidget(artifact.create);
               break;
             case 'script_include':
-              result = await this.client.createScriptInclude(artifact.create);
+              result = await this.deployScriptInclude(artifact.create);
               break;
             case 'business_rule':
               result = await this.deployBusinessRule(artifact.create);
@@ -6309,7 +6282,12 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
           }
           
         case 'flow':
-          throw new Error('Flow deployment is deprecated. Use widgets or applications instead.');
+          const flowResult = await this.deployFlow(config);
+          return {
+            success: flowResult.content[0].text.includes('✅'),
+            sys_id: flowResult.content[0].text.match(/sys_id: ([a-f0-9]+)/)?.[1],
+            message: 'Flow deployed'
+          };
           
         case 'script':
         case 'script_include':
@@ -6418,7 +6396,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
   private async rollbackArtifact(artifact: {type: string, sys_id: string}): Promise<void> {
     const tableMap: Record<string, string> = {
       'widget': 'sp_widget',
-      // 'flow': 'sys_hub_flow', // REMOVED - flows deprecated
+      'flow': 'sys_hub_flow',
       'script': 'sys_script_include',
       'script_include': 'sys_script_include',
       'business_rule': 'sys_script',
@@ -8173,11 +8151,11 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
   private getTableForArtifactType(artifactType: string): string {
     const ARTIFACT_TABLES = {
       'widget': 'sp_widget',
-      // 'flow': 'sys_hub_flow', // REMOVED - flows deprecated
+      'flow': 'sys_hub_flow',
       'script': 'sys_script_include',
       'script_include': 'sys_script_include',
       'business_rule': 'sys_script',
-      // 'workflow': 'wf_workflow', // REMOVED - workflows deprecated
+      'workflow': 'wf_workflow',
       'application': 'sys_app',
       'ui_action': 'sys_ui_action',
       'ui_page': 'sys_ui_page',
