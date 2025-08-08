@@ -3655,15 +3655,37 @@ Use ServiceNow's official deployment process:
         );
       }
 
-      // Validate the artifact exists
-      const isValid = await artifactTracker.validateArtifact(args.sys_id);
-      
-      // Get the artifact details if valid
+      // Use direct API query (snow_query_table approach) for validation
+      let isValid = false;
       let artifactDetails = null;
-      if (isValid) {
-        const response = await this.client.getRecord(args.table, args.sys_id);
-        if (response.success && response.data) {
-          artifactDetails = response.data;
+      
+      try {
+        // Direct API call using query parameter with sys_id
+        const apiResponse = await this.client.get(`/api/now/table/${args.table}`, {
+          sysparm_query: `sys_id=${args.sys_id}`,
+          sysparm_limit: 1,
+          sysparm_fields: 'sys_id,name,title,active,sys_created_on,sys_updated_on,sys_created_by,sys_updated_by'
+        });
+        
+        if (apiResponse?.result && apiResponse.result.length > 0) {
+          isValid = true;
+          artifactDetails = apiResponse.result[0];
+          this.logger.info(`✅ Artifact found via direct API: ${artifactDetails.sys_id}`);
+        } else {
+          this.logger.info(`❌ Artifact not found: ${args.sys_id} in table ${args.table}`);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to query artifact: ${error}`);
+        // Try alternative method as fallback
+        try {
+          const response = await this.client.getRecord(args.table, args.sys_id);
+          if (response.success && response.data) {
+            isValid = true;
+            artifactDetails = response.data;
+            this.logger.info(`✅ Artifact found via getRecord fallback: ${args.sys_id}`);
+          }
+        } catch (fallbackError) {
+          this.logger.error(`Both validation methods failed: ${fallbackError}`);
         }
       }
 
@@ -3683,14 +3705,16 @@ Use ServiceNow's official deployment process:
 - Expected Name: ${args.name || 'Not specified'}
 - Expected Type: ${args.type || 'Not specified'}
 
-**Validation Status:** ${isValid ? '✅ Valid' : '❌ Invalid'}
+**Validation Status:** ${isValid ? '✅ Valid - Artifact exists' : '❌ Not Found - Artifact does not exist in this table'}
 
 ${artifactDetails ? `**Actual Artifact Details:**
 - Name: ${artifactDetails.name || artifactDetails.title || 'Unknown'}
-- Active: ${artifactDetails.active}
-- Created: ${artifactDetails.sys_created_on}
-- Updated: ${artifactDetails.sys_updated_on}
-` : ''}
+- Active: ${artifactDetails.active !== undefined ? artifactDetails.active : 'N/A'}
+- Created: ${artifactDetails.sys_created_on || 'N/A'}
+- Updated: ${artifactDetails.sys_updated_on || 'N/A'}
+- Created By: ${artifactDetails.sys_created_by || 'N/A'}
+- Updated By: ${artifactDetails.sys_updated_by || 'N/A'}
+` : '**Artifact not found in ServiceNow**'}
 
 ${trackedArtifact ? `**Tracking Info:**
 - Status: ${trackedArtifact.status}
