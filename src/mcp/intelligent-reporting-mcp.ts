@@ -15,6 +15,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { Logger } from '../utils/logger.js';
+import { validateRealData } from '../utils/anti-mock-data-validator.js';
 
 interface DiscoveredTable {
   name: string;
@@ -52,7 +53,7 @@ class IntelligentReportingMCP {
       tools: [
         {
           name: 'snow_intelligent_report',
-          description: 'Creates reports with intelligent table discovery. Input any description like "ITSM Overview Metrics" or "Change Request Pipeline" and it will find the right ServiceNow table and create a meaningful report.',
+          description: '🔥 REAL DATA ONLY: Creates reports with intelligent table discovery using LIVE ServiceNow data. Input any description and it finds the right table with REAL data from your instance. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -67,7 +68,7 @@ class IntelligentReportingMCP {
         },
         {
           name: 'snow_intelligent_dashboard',
-          description: 'Creates dashboards with intelligent data discovery. Analyzes user requirements and finds relevant ServiceNow data automatically.',
+          description: '🔥 REAL DATA ONLY: Creates dashboards with intelligent discovery using LIVE ServiceNow data. Automatically finds relevant data from your actual instance. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -123,7 +124,7 @@ class IntelligentReportingMCP {
       const primaryTable = discoveredTables[0];
       this.logger.info(`✅ Using table: ${primaryTable.name} (${primaryTable.recordCount} records)`);
 
-      // Step 3: Get sample data to understand the structure
+      // Step 3: Get real data sample to understand the structure
       await this.enrichTableWithSampleData(primaryTable);
 
       // Step 4: Create the actual report
@@ -304,10 +305,13 @@ ${insights}
         : tableName;
 
       // Get record count and sample fields
-      const query = await this.client.searchRecords(tableName, '', 5); // Small sample
+      const query = await this.client.searchRecords(tableName, '', 20); // Real data sample (increased for better analysis)
       
       if (query.success && query.data?.result) {
         const records = query.data.result;
+        
+        // 🔥 ENFORCE ZERO MOCK DATA TOLERANCE
+        validateRealData(records, `Table Discovery for ${tableName}`);
         const fields = records.length > 0 ? Object.keys(records[0]) : [];
         
         // Get total count (this is a bit hacky, but ServiceNow doesn't have a direct count API)
@@ -329,8 +333,10 @@ ${insights}
    */
   private async enrichTableWithSampleData(table: DiscoveredTable): Promise<void> {
     try {
-      const sampleQuery = await this.client.searchRecords(table.name, '', 3);
+      const sampleQuery = await this.client.searchRecords(table.name, '', 10); // Real data sample (increased)
       if (sampleQuery.success && sampleQuery.data?.result) {
+        // 🔥 ENFORCE ZERO MOCK DATA TOLERANCE
+        validateRealData(sampleQuery.data.result, `Sample Data for ${table.name}`);
         table.sampleData = sampleQuery.data.result;
       }
     } catch (error) {

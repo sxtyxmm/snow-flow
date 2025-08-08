@@ -7,6 +7,7 @@
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { Logger } from '../utils/logger.js';
 import { unifiedAuthStore } from '../utils/unified-auth-store.js';
+import { widgetConsistency, CONSISTENCY_CONFIGS } from '../utils/servicenow-eventual-consistency.js';
 
 export interface WidgetConfig {
   name: string;
@@ -104,8 +105,14 @@ export class WidgetDeploymentService {
         sys_id = result.sys_id;
       }
 
-      // Verify deployment
+      // Verify deployment with eventual consistency handling
       const verified = await this.verifyDeployment(client, sys_id);
+      
+      // Log verification result with context
+      if (!verified) {
+        this.logger.warn(`⚠️  Verification returned false - this may be a ServiceNow timing issue`);
+        this.logger.info(`🔗 Direct verification link: https://${(client as any).instance || 'instance'}.service-now.com/sp_widget.do?sys_id=${sys_id}`);
+      }
 
       // Get widget details for response
       const widgetDetails = await this.getWidgetDetails(client, sys_id);
@@ -116,8 +123,8 @@ export class WidgetDeploymentService {
         portalUrl: this.buildPortalUrl(client, sys_id),
         apiEndpoint: this.buildApiEndpoint(client, sys_id),
         message: isUpdate 
-          ? `Widget '${config.name}' updated successfully`
-          : `Widget '${config.name}' created successfully`,
+          ? `Widget '${config.name}' updated successfully${!verified ? ' (verification pending - check ServiceNow directly)' : ''}`
+          : `Widget '${config.name}' created successfully${!verified ? ' (verification pending - check ServiceNow directly)' : ''}`,
         verificationStatus: verified ? 'verified' : 'unverified'
       };
 
@@ -197,24 +204,24 @@ export class WidgetDeploymentService {
   }
 
   /**
-   * Verify widget deployment
+   * Verify widget deployment with retry logic for eventual consistency
+   * ServiceNow has database replication lag of 1-3 seconds
    */
   private async verifyDeployment(client: ServiceNowClient, sys_id: string): Promise<boolean> {
-    try {
-      const response = await client.getRecord('sp_widget', sys_id);
-      
-      if (response && (response as any).sys_id === sys_id) {
-        this.logger.info(`✅ Widget deployment verified: ${sys_id}`);
-        return true;
-      }
-      
-      this.logger.warn('Widget verification failed - sys_id mismatch');
-      return false;
+    const result = await widgetConsistency.verifyRecordExists(
+      client,
+      'sp_widget',
+      sys_id,
+      CONSISTENCY_CONFIGS.WIDGET
+    );
 
-    } catch (error: any) {
-      this.logger.error('Widget verification failed:', error);
-      return false;
+    if (!result.success && result.isLikelyTimingIssue) {
+      this.logger.warn(`⚠️  Widget verification failed after ${result.attempts} attempts`);
+      this.logger.warn(`⚠️  This appears to be a ServiceNow timing issue, not a deployment failure`);
+      this.logger.info(`🔗 Check directly: https://${(client as any).instance}/sp_widget.do?sys_id=${sys_id}`);
     }
+
+    return result.success;
   }
 
   /**

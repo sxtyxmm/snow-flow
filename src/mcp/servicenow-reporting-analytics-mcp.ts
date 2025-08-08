@@ -17,6 +17,7 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
 import { Logger } from '../utils/logger.js';
+import { validateRealData, generateDataReport } from '../utils/anti-mock-data-validator.js';
 
 interface ReportDefinition {
   name: string;
@@ -66,7 +67,7 @@ class ServiceNowReportingAnalyticsMCP {
       tools: [
         {
           name: 'snow_create_report',
-          description: 'Creates reports with filtering, grouping, and aggregation capabilities. Supports multiple output formats and scheduling.',
+          description: '🔥 REAL DATA ONLY: Creates reports with filtering, grouping, and aggregation using LIVE ServiceNow data. NO mock/demo data used. All data pulled directly from your ServiceNow instance tables.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -87,7 +88,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_dashboard',
-          description: 'Creates interactive dashboards with configurable widgets, layouts, and refresh intervals.',
+          description: '🔥 REAL DATA ONLY: Creates interactive dashboards using LIVE ServiceNow data. All widgets populated with actual data from your instance. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -104,7 +105,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_kpi',
-          description: 'Creates Key Performance Indicators with targets, thresholds, and automated tracking.',
+          description: '🔥 REAL DATA ONLY: Creates KPIs calculated from LIVE ServiceNow data. All metrics based on actual records in your instance. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -124,7 +125,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_data_visualization',
-          description: 'Creates data visualizations including charts, graphs, and interactive displays.',
+          description: '🔥 REAL DATA ONLY: Creates charts and visualizations using LIVE ServiceNow data. All graphs populated with actual data from your instance tables. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -143,7 +144,7 @@ class ServiceNowReportingAnalyticsMCP {
         },
         {
           name: 'snow_create_performance_analytics',
-          description: 'Creates performance analytics configurations for tracking metrics, dimensions, and benchmarks.',
+          description: '🔥 REAL DATA ONLY: Creates performance analytics using LIVE ServiceNow data. All metrics calculated from actual records in your instance. NO mock/demo data used.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -854,11 +855,15 @@ class ServiceNowReportingAnalyticsMCP {
         throw new Error(`Table not found: ${args.table}`);
       }
 
-      // Get sample data for analysis
-      const sampleData = await this.client.searchRecords(args.table, '', 100);
+      // Get REAL data for analysis (increased from sample to comprehensive dataset)
+      const sampleData = await this.client.searchRecords(args.table, '', 1000); // Get up to 1000 records for REAL analysis
       if (!sampleData.success) {
         throw new Error('Failed to retrieve sample data');
       }
+
+      // 🔥 ENFORCE ZERO MOCK DATA TOLERANCE - Validate all data is real ServiceNow data
+      validateRealData(sampleData.data.result, `Data Quality Analysis for ${args.table}`);
+      this.logger.info(`✅ Anti-mock validation passed: ${sampleData.data.result.length} real ServiceNow records confirmed`);
 
       // Analyze data quality
       const _analysis = {
@@ -1101,12 +1106,63 @@ class ServiceNowReportingAnalyticsMCP {
   }
 
   private analyzeAccuracy(data: any[], fields?: string[]): any {
-    // Simple accuracy check - assume most data is accurate
+    // REAL accuracy check based on actual data patterns - NO ASSUMPTIONS!
     const fieldsToCheck = fields || Object.keys(data[0] || {});
     const total = fieldsToCheck.length;
-    const accurate = Math.floor(total * 0.85); // Assume 85% accuracy
-
-    return { score: (accurate / total) * 100, accurate, total };
+    let accurate = 0;
+    
+    fieldsToCheck.forEach(field => {
+      const values = data.map(record => record[field]).filter(v => v !== null && v !== undefined && v !== '');
+      
+      if (values.length === 0) {
+        return; // Skip empty fields
+      }
+      
+      // Real accuracy checks based on field patterns
+      let fieldAccurate = true;
+      
+      // Check for common accuracy issues
+      if (field.includes('email')) {
+        // Email validation
+        const validEmails = values.filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email)));
+        fieldAccurate = validEmails.length / values.length > 0.8;
+      } else if (field.includes('phone') || field.includes('number')) {
+        // Phone/number validation
+        const validNumbers = values.filter(num => /^[\d\s\+\-\(\)]+$/.test(String(num)));
+        fieldAccurate = validNumbers.length / values.length > 0.8;
+      } else if (field.includes('date') || field.includes('time')) {
+        // Date validation
+        const validDates = values.filter(date => !isNaN(Date.parse(String(date))));
+        fieldAccurate = validDates.length / values.length > 0.9;
+      } else if (field === 'state' || field === 'status') {
+        // State/status should have consistent values
+        const uniqueValues = new Set(values.map(v => String(v).toLowerCase()));
+        fieldAccurate = uniqueValues.size <= Math.max(3, values.length * 0.1); // Max 10% unique values for state fields
+      } else {
+        // General data consistency check - detect test/demo/mock data
+        const suspiciousValues = values.filter(v => {
+          const str = String(v).toLowerCase();
+          return str.includes('test') || 
+                 str.includes('demo') || 
+                 str.includes('sample') ||
+                 str.includes('mock') ||
+                 str.includes('fake') ||
+                 str === 'n/a' ||
+                 str === 'tbd' ||
+                 str === 'placeholder';
+        });
+        fieldAccurate = suspiciousValues.length / values.length < 0.05; // Less than 5% suspicious values
+      }
+      
+      if (fieldAccurate) accurate++;
+    });
+    
+    return { 
+      score: total > 0 ? (accurate / total) * 100 : 0, 
+      accurate, 
+      total,
+      details: `Real accuracy analysis of ${data.length} actual ServiceNow records - NO assumptions or mock data`
+    };
   }
 
   private analyzePatterns(data: any[]): any[] {

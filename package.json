@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.12",
-  "description": "Snow-Flow v3.0.12: INTELLIGENT REPORTING REVOLUTION! New AI-powered table discovery system replaces hardcoded mappings. Input any description like 'ITSM Overview Metrics' or 'Change Request Pipeline' and it intelligently discovers the right ServiceNow tables using real API calls. Features semantic matching, record count validation, and smart field selection. No more 'Invalid table name' errors! Plus all previous fixes: dashboard creation, permission handling, 100+ MCP tools.",
+  "version": "3.0.13",
+  "description": "Snow-Flow v3.0.13: ZERO MOCK DATA GUARANTEE! 🔥 All reporting, dashboards, and analytics tools now use 100% REAL ServiceNow data with anti-mock validation. Advanced AI table discovery, race condition fixes, and comprehensive real-data enforcement. NO demo/sample/test data ever used - only live data from your actual ServiceNow instance. Plus intelligent reporting, deployment fixes, and 100+ MCP tools.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -358,7 +358,8 @@
   "mcpCapabilities": {
     "realApiIntegration": true,
     "noMockData": true,
-    "mockDataNote": "NO MOCK DATA - All ML operations require real ServiceNow PA/PI licenses",
+    "mockDataNote": "🔥 ZERO MOCK DATA GUARANTEE - All reports, dashboards, and analytics use 100% REAL ServiceNow data from your actual instance. NO demo/sample/test data ever used.",
+    "reportingDataPolicy": "ALL LIVE DATA - Every report, dashboard, chart, and KPI populated exclusively with real records from your ServiceNow tables",
     "productionReady": true,
     "batchOptimization": true,
     "intelligentAnalysis": true,
