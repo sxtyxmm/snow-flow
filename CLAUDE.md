@@ -65,6 +65,78 @@ This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Co
 - **Clean Architecture**: Separate concerns
 - **Documentation**: Keep updated
 
+## 🚫 ABSOLUTELY FORBIDDEN: NO Mock/Fake/Demo Data or Placeholder Code
+
+### ❌ NEVER Use:
+- **NO mock data**: Never use fake, demo, sample, or test data
+- **NO placeholder code**: Never use TODO, FIXME, placeholder, or stub implementations
+- **NO simulated responses**: Always use REAL ServiceNow API calls
+- **NO hardcoded examples**: Always fetch REAL data from the instance
+- **NO dummy values**: Every value must come from actual ServiceNow records
+
+### ✅ ALWAYS Use:
+- **REAL API calls**: Use `snow_query_table` to get actual data
+- **REAL field discovery**: Use `snow_discover_table_fields` for real schemas
+- **REAL record creation**: Create actual records in ServiceNow
+- **REAL data validation**: Verify against live ServiceNow instance
+- **COMPLETE implementations**: Every function must be fully working
+
+### 🔴 Code Quality Requirements:
+
+**UNACCEPTABLE:**
+```javascript
+// ❌ NEVER DO THIS
+const mockData = {
+  incident: { number: "INC0001234", state: "New" }  // FAKE DATA
+};
+
+// ❌ NEVER DO THIS
+function processIncident() {
+  // TODO: Implement this later
+  return "placeholder result";
+}
+
+// ❌ NEVER DO THIS
+const demoResponse = {
+  status: "success",
+  data: ["sample1", "sample2", "sample3"]  // DEMO DATA
+};
+```
+
+**REQUIRED:**
+```javascript
+// ✅ ALWAYS DO THIS
+const realData = await snow_query_table({
+  table: "incident",
+  query: "active=true",
+  limit: 10
+});
+
+// ✅ ALWAYS DO THIS
+function processIncident(incidentData) {
+  // Complete, working implementation
+  const processed = incidentData.map(inc => ({
+    number: inc.number,
+    state: inc.state,
+    priority: inc.priority
+  }));
+  return processed;
+}
+
+// ✅ ALWAYS DO THIS
+const liveResponse = await snow_deploy({
+  type: "widget",
+  name: "RealWidget",
+  // Using discovered fields only
+});
+```
+
+### 🎯 Zero Tolerance Policy:
+- **ANY mock/fake/demo data = IMMEDIATE REJECTION**
+- **ANY TODO/placeholder code = IMMEDIATE REJECTION**
+- **ANY incomplete implementation = IMMEDIATE REJECTION**
+- **100% REAL DATA GUARANTEE** - Every single data point must be from ServiceNow
+
 ## 🚨 CRITICAL: ServiceNow Schema Discovery Before Deployment
 
 ### ⚠️ MANDATORY WORKFLOW: ALWAYS Discover Before Deploy
