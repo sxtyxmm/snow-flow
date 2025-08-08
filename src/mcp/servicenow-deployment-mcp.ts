@@ -1984,7 +1984,7 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
         switch (flowType) {
           case 'flow':
             // Create workflow record in ServiceNow
-            result = await (this.client as any).create('wf_workflow', {
+            result = await (this.client as any).createRecord('wf_workflow', {
               name: flowData.name || `flow_${Date.now()}`,
               description: flowData.description || 'Created by Snow-Flow',
               table: flowData.table || 'incident',
@@ -1996,7 +1996,7 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
             break;
           case 'subflow':
             // Create subflow as a workflow activity
-            result = await (this.client as any).create('wf_workflow', {
+            result = await (this.client as any).createRecord('wf_workflow', {
               name: flowData.name || `subflow_${Date.now()}`,
               description: `${flowData.description || 'Subflow created by Snow-Flow'} [SUBFLOW]`,
               table: flowData.table || 'incident',
@@ -2011,7 +2011,7 @@ ${args.widgets && args.widgets.length > 0 ? args.widgets.map((w: any, i: number)
             if (!flowData.workflow_id) {
               throw new Error('workflow_id is required for flow actions');
             }
-            result = await (this.client as any).create('wf_activity', {
+            result = await (this.client as any).createRecord('wf_activity', {
               workflow: flowData.workflow_id,
               name: flowData.name || `action_${Date.now()}`,
               script: flowData.script || '// Action script here',
@@ -2842,7 +2842,7 @@ ${hasErrors ? '❌ Validation failed - fix errors before deployment' : '✅ Vali
       let rollbackResult: any;
       try {
         // Set update set to ignore state (ServiceNow's way of "rolling back")
-        rollbackResult = await (this.client as any).update(`sys_update_set/${update_set_id}`, {
+        rollbackResult = await (this.client as any).updateRecord(`sys_update_set/${update_set_id}`, {
           state: 'ignore',
           description: `${updateSet.description || ''} - ROLLED BACK: ${reason}`
         });
@@ -3319,11 +3319,11 @@ ${deploymentList || 'No recent deployments found in the last 7 days'}
       if (existingArtifact) {
         // Update existing artifact
         const { sys_id, ...updateData } = artifact;
-        result = await (this.client as any).update(`${tableName}/${sys_id}`, updateData);
+        result = await (this.client as any).updateRecord(`${tableName}/${sys_id}`, updateData);
         action = 'updated';
       } else {
         // Create new artifact
-        result = await (this.client as any).create(tableName, artifact);
+        result = await (this.client as any).createRecord(tableName, artifact);
         action = 'created';
       }
 
@@ -4144,24 +4144,38 @@ This will use your .env credentials to start the OAuth flow and generate access 
               description: 'Temporary test widget created by Snow-Flow MCP diagnostics'
             };
             
-            const createResult = await (this.client as any).create('sp_widget', testWidget);
+            const createResult = await (this.client as any).createRecord('sp_widget', testWidget);
             
-            if (createResult?.result?.sys_id) {
+            if (createResult?.success && createResult?.data?.sys_id) {
               // Immediately delete the test widget
               try {
-                await (this.client as any).delete(`sp_widget/${createResult.result.sys_id}`);
+                await (this.client as any).deleteRecord('sp_widget', createResult.data.sys_id);
                 realApiTests.writePermissions = {
                   status: '✅ Full Access',
                   description: 'Can create and delete artifacts - full deployment capability',
-                  details: `Successfully created and cleaned up test widget ${createResult.result.sys_id}`
+                  details: `Successfully created and cleaned up test widget ${createResult.data.sys_id}`
                 };
               } catch (deleteError) {
                 realApiTests.writePermissions = {
                   status: '⚠️ Partial',
                   description: 'Can create but cannot delete - cleanup may be needed',
-                  details: `Created test widget ${createResult.result.sys_id} but failed to delete: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`
+                  details: `Created test widget ${createResult.data.sys_id} but failed to delete: ${deleteError instanceof Error ? deleteError.message : String(deleteError)}`
                 };
               }
+            } else {
+              // Log what we got for debugging
+              this.logger.warn('Create succeeded but unexpected response structure:', {
+                success: createResult?.success,
+                hasData: !!createResult?.data,
+                hasSysId: !!createResult?.data?.sys_id,
+                dataKeys: createResult?.data ? Object.keys(createResult.data) : []
+              });
+              
+              realApiTests.writePermissions = {
+                status: '⚠️ Partial',
+                description: 'Created widget but response structure unexpected',
+                details: `Response structure: ${JSON.stringify(createResult?.data || {})}`
+              };
             }
           } catch (writeError) {
             realApiTests.writePermissions = {
