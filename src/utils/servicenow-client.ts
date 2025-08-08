@@ -61,6 +61,7 @@ export interface ServiceNowAPIResponse<T> {
   data?: T;
   error?: string;
   result?: T[];
+  details?: any; // Additional error details for debugging
 }
 
 export class ServiceNowClient {
@@ -802,22 +803,28 @@ export class ServiceNowClient {
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
       
+      // Log the request details for debugging
+      const widgetData = {
+        name: widget.name,
+        id: widget.id || widget.name, // Ensure id is set
+        title: widget.title,
+        description: widget.description || '',
+        template: widget.template,
+        css: widget.css || '',
+        client_script: widget.client_script || '',
+        script: widget.server_script || '', // Service Portal uses 'script' not 'server_script'
+        option_schema: widget.option_schema || '[]',
+        demo_data: widget.demo_data || '{}',
+        has_preview: widget.has_preview !== false, // Default to true
+        category: widget.category || 'custom',
+        active: true // Ensure widget is active
+      };
+      
+      this.logger.info('Widget data to be sent:', widgetData);
+      
       const response = await this.client.post(
         `${this.getBaseUrl()}/api/now/table/sp_widget`,
-        {
-          name: widget.name,
-          id: widget.id,
-          title: widget.title,
-          description: widget.description,
-          template: widget.template,
-          css: widget.css,
-          client_script: widget.client_script,
-          script: widget.server_script, // Service Portal uses 'script' not 'server_script'
-          option_schema: widget.option_schema || '[]',
-          demo_data: widget.demo_data || '{}',
-          has_preview: widget.has_preview || false,
-          category: widget.category || 'custom'
-        },
+        widgetData,
         {
           timeout: this.deploymentTimeout, // Use deployment-specific timeout
           headers: {
@@ -827,20 +834,70 @@ export class ServiceNowClient {
       );
       
       this.logger.info('✅ Widget created successfully!');
-      this.logger.info(`🆔 Widget ID: ${response.data.result.sys_id}`);
+      
+      // Handle different response structures from ServiceNow
+      const widgetResult = response.data.result || response.data;
+      const sysId = widgetResult.sys_id;
+      
+      if (!sysId) {
+        this.logger.warn('⚠️ Widget created but no sys_id returned. Response:', response.data);
+        throw new Error('Widget creation succeeded but no sys_id was returned');
+      }
+      
+      this.logger.info(`🆔 Widget ID: ${sysId}`);
       
       // Add post-deployment verification
-      await this.verifyDeployment(response.data.result.sys_id, 'widget');
+      await this.verifyDeployment(sysId, 'widget');
       
       return {
         success: true,
-        data: response.data.result
+        data: widgetResult
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to create widget:', error);
+      
+      // Better error handling for axios errors
+      let errorMessage = 'Unknown error';
+      let errorDetails: any = {};
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = `HTTP ${error.response.status}: ${error.response.statusText || 'Request failed'}`;
+        errorDetails = {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        };
+        
+        // Extract ServiceNow specific error message if available
+        if (error.response.data?.error?.message) {
+          errorMessage = `ServiceNow Error: ${error.response.data.error.message}`;
+        } else if (error.response.data?.error) {
+          errorMessage = `ServiceNow Error: ${JSON.stringify(error.response.data.error)}`;
+        } else if (error.response.status === 401) {
+          errorMessage = 'Authentication failed: Invalid or expired token. Run: snow-flow auth login';
+        } else if (error.response.status === 403) {
+          errorMessage = 'Permission denied: User lacks sp_admin role or widget creation permissions';
+        } else if (error.response.status === 404) {
+          errorMessage = 'API endpoint not found: ServiceNow instance may not have Service Portal installed';
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response from ServiceNow - check network connection and instance URL';
+        errorDetails = { request: error.config?.url };
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = error.message || String(error);
+      }
+      
+      this.logger.error('Widget creation error details:', errorDetails);
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage,
+        details: errorDetails
       };
     }
   }

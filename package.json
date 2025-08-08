@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.15",
-  "description": "Snow-Flow v3.0.15: FLOW/WORKFLOW DEPRECATION 🚫 Flows, workflows, and subflows have been officially deprecated and are no longer supported. Focus is now entirely on widgets, applications, and direct ServiceNow development. All flow-related features have been marked as deprecated. Use widgets and applications for UI development instead.",
+  "version": "3.0.16",
+  "description": "Snow-Flow v3.0.16: WIDGET DEPLOYMENT ERROR FIX! 🔧 Fixed 'error: null' issue in widget deployment. Enhanced error reporting for failed POST requests to /api/now/table/sp_widget. Now provides detailed HTTP status codes, ServiceNow-specific error messages, and better debugging information. Widget deployment failures now show exact cause (401 auth, 403 permissions, 404 endpoint, etc).",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

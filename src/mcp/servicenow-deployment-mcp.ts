@@ -693,7 +693,9 @@ Your widget is deployed and ready for testing in Service Portal.`
             deploymentSuccess = true;
             this.logger.info('✅ Direct deployment successful');
           } else {
-            throw new Error(`Widget creation failed: ${result?.error || 'Unknown error'}`);
+            // Include detailed error information
+            const errorDetails = (result as any)?.details ? JSON.stringify((result as any).details, null, 2) : '';
+            throw new Error(`Widget creation failed: ${result?.error || 'Unknown error'}${errorDetails ? '\nDetails: ' + errorDetails : ''}`);
           }
         } catch (error: any) {
           directError = error;
