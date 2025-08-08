@@ -530,6 +530,8 @@ class ServiceNowDeploymentMCP {
         const refreshResult = await this.deploymentAuthManager.forceTokenRefresh();
         if (!refreshResult.success) {
           return {
+            success: false,
+            error: authResult.error || 'Unable to authenticate',
             content: [
               {
                 type: 'text',
@@ -605,6 +607,9 @@ class ServiceNowDeploymentMCP {
           'ServiceNow instance URL not available';
 
         return {
+          success: true,
+          sys_id: existenceCheck.artifact.sys_id,
+          name: args.name,
           content: [
             {
               type: 'text',
@@ -631,7 +636,14 @@ Your widget is deployed and ready for testing in Service Portal.`
 
       // Validate widget structure
       if (!args.template || !args.name || !args.title) {
-        throw new Error('Widget must have name, title, and template');
+        return {
+          success: false,
+          error: 'Widget must have name, title, and template',
+          content: [{
+            type: 'text',
+            text: '❌ Widget validation failed: Widget must have name, title, and template'
+          }]
+        };
       }
 
       // IMPROVED: Softer Service Portal permissions check with graceful fallback
@@ -924,6 +936,8 @@ Your widget is deployed and ready for testing in Service Portal.`
             }
 
             return {
+              success: false,
+              error: directError?.message || tableError?.message || 'Deployment failed',
               content: [
                 {
                   type: 'text',
@@ -1082,7 +1096,11 @@ Use \`snow_deployment_debug\` for more information about this session.`,
           ? `\n\n⚠️ Sys_ID Inconsistencies Detected:\n${inconsistencies.map(inc => `- ${inc.issue}`).join('\n')}`
           : '';
 
+        // Return both MCP response format AND success properties for attemptDirectDeployment
         return {
+          success: true,
+          sys_id: result.data.sys_id,
+          name: args.name,
           content: [
             {
               type: 'text',
@@ -1145,7 +1163,14 @@ Use \`snow_deployment_debug\` for more information about this session.`,
 • Check dependencies with check_dependencies: true
 
 📚 Documentation: See CLAUDE.md for Widget Deployment Guidelines`;
-        throw new Error(enhancedError);
+        return {
+          success: false,
+          error: result.error || 'Unknown deployment error',
+          content: [{
+            type: 'text',
+            text: enhancedError
+          }]
+        };
       }
     } catch (error: any) {
       this.logger.error('Widget deployment caught in final error handler', error);
@@ -1176,6 +1201,9 @@ Use \`snow_deployment_debug\` for more information about this session.`,
               'ServiceNow instance URL not available';
 
             return {
+              success: true,
+              sys_id: createdWidget.sys_id,
+              name: args.name,
               content: [{
                 type: 'text',
                 text: `✅ Widget deployed successfully! (Error Recovery)
@@ -1224,7 +1252,14 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
 • Use snow_widget_test() for validation
 
 📚 **Important**: If you see "403" or "Forbidden" errors, the widget may still have been created successfully. Check ServiceNow directly.`;
-      throw new Error(enhancedError);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        content: [{
+          type: 'text',
+          text: enhancedError
+        }]
+      };
     }
   }
 
