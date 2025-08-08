@@ -58,6 +58,117 @@ await snow_query_table({ table: "incident", limit: 5 })
 await snow_table_schema_discovery({ table: "incident" })
 ```
 
+## 🧠 CRITICAL: Smart Query Patterns - THINK BEFORE QUERYING!
+
+### ❌ NEVER Do This (Token Waste):
+```javascript
+// WRONG: Trying to analyze all users but hitting token limits
+snow_query_table({ 
+  table: "sys_user", 
+  limit: 500,  // ❌ Only gets partial data!
+  include_content: true,  // ❌ Wastes tokens!
+  fields: ["sys_created_on","first_name","last_name","user_name","department","active"]  // ❌ Too many fields!
+})
+// Result: 92,477 tokens! Exceeds limit! Only 500 of 5000+ users analyzed!
+```
+
+### ✅ ALWAYS Do This (Smart Analytics):
+```javascript
+// CORRECT: Get ALL data with MINIMAL fields for analytics
+snow_query_table({ 
+  table: "sys_user", 
+  query: "active=true",
+  limit: 99999,  // ✅ Get ALL records for complete analysis
+  include_content: true,
+  fields: ["sys_created_on", "sys_id"]  // ✅ ONLY fields needed for analysis
+})
+// Result: 5000 users, only 2 fields = 5% of tokens, 100% of data!
+```
+
+### 📊 Analytics Query Rules:
+
+**1. TIME ANALYSIS (When did X happen?):**
+```javascript
+// Need ALL records, MINIMAL fields
+snow_query_table({ 
+  table: "incident",
+  limit: 99999,  // NO LIMIT for time analysis
+  fields: ["sys_created_on", "sys_id"]  // Just timestamp + ID
+})
+```
+
+**2. DISTRIBUTION ANALYSIS (Count by category):**
+```javascript
+// Use aggregation, not content
+snow_query_table({ 
+  table: "incident",
+  limit: 99999,
+  include_content: false,  // Count only!
+  group_by: "category"  // Server-side aggregation
+})
+```
+
+**3. TREND ANALYSIS (Patterns over time):**
+```javascript
+// Minimal fields, maximum records
+snow_query_table({ 
+  table: "change_request",
+  limit: 99999,
+  fields: ["sys_created_on", "state", "risk"]  // Only trend fields
+})
+```
+
+**4. USER ONBOARDING ANALYSIS:**
+```javascript
+// SMART: Get ALL users with ONLY needed field
+const allUsers = await snow_query_table({ 
+  table: "sys_user",
+  query: "active=true",
+  limit: 99999,  // Get EVERYONE
+  fields: ["sys_created_on"]  // ONLY the field we analyze
+});
+
+// Now analyze when most onboarding happened
+const onboardingByMonth = {};
+allUsers.forEach(user => {
+  const month = user.sys_created_on.substring(0, 7);
+  onboardingByMonth[month] = (onboardingByMonth[month] || 0) + 1;
+});
+```
+
+### 🎯 Query Decision Tree:
+
+**Ask yourself:**
+1. **Do I need ALL records for accurate analysis?**
+   - YES → Use `limit: 99999` (no limit)
+   - NO → Use appropriate limit
+
+2. **Do I need the actual content?**
+   - Just counting → `include_content: false`
+   - Need specific fields → `fields: ["only", "what", "needed"]`
+   - Need everything → Consider pagination
+
+3. **Can the server do the aggregation?**
+   - Counting by group → Use `group_by`
+   - Just need totals → Use `include_content: false`
+
+### 📈 Token Optimization Strategies:
+
+| Query Type | Strategy | Token Savings |
+|------------|----------|---------------|
+| Time Analysis | `fields: ["sys_created_on", "sys_id"]` | 95% |
+| Count by Category | `include_content: false, group_by: "field"` | 99% |
+| Trend Analysis | `fields: ["date", "metric"]` only | 90% |
+| Full Export | Paginate with `offset` | Manageable chunks |
+| Statistical Analysis | Minimal fields, max records | 85% |
+
+### 🚀 Performance Rules:
+1. **For Analytics: NO DEFAULT LIMITS** - Get ALL data
+2. **For Display: LIMIT to what's visible** - 10-50 records
+3. **For Export: PAGINATE** - Chunks of 1000
+4. **For Counting: NO CONTENT** - Just counts
+5. **For Trends: MINIMAL FIELDS** - Just date + metric
+
 ## 🔥 ELITE DEVELOPER WORKFLOW
 
 ### Complete Development Pattern

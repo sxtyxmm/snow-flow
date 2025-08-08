@@ -178,7 +178,7 @@ class ServiceNowOperationsMCP {
           // 🎯 UNIVERSAL TABLE QUERY - Works for ANY ServiceNow table!
           {
             name: 'snow_query_table',
-            description: 'Universal query tool for any ServiceNow table. Optimized for performance with smart defaults: 1000 records normally, 5000 for ML training contexts. Supports count-only mode for memory efficiency.',
+            description: 'Universal query tool for any ServiceNow table. SMART ANALYTICS: For analysis use limit:99999 with minimal fields. For display use limit:50. For counting use include_content:false. See CLAUDE.md for query patterns.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -193,8 +193,8 @@ class ServiceNowOperationsMCP {
                 },
                 limit: {
                   type: 'number',
-                  description: 'Maximum number of results. Smart defaults: 1000 (normal queries), 5000 (ML training). Can be set higher for large datasets.',
-                  default: 1000
+                  description: 'Maximum records. For analytics: 99999 (get ALL data with minimal fields). For display: 10-50. For ML: 5000+. NO DEFAULT - think about your use case!',
+                  examples: [99999, 50, 5000, 10]
                 },
                 include_content: {
                   type: 'boolean',
@@ -896,28 +896,52 @@ class ServiceNowOperationsMCP {
   }
 
   private async handleUniversalQuery(args: any) {
-    // 🎯 SMART DEFAULT LIMITS - Context-aware for ML training
-    const determineSmartLimit = (providedLimit: number | undefined, table: string, query: string, includeContent: boolean) => {
-      if (providedLimit !== undefined) return providedLimit; // User explicitly set limit
+    // 🧠 INTELLIGENT LIMIT STRATEGY - Think about the use case!
+    const determineSmartLimit = (providedLimit: number | undefined, table: string, query: string, includeContent: boolean, fields: string[] | undefined) => {
+      // User explicitly set limit - respect it
+      if (providedLimit !== undefined) return providedLimit;
       
-      // ML Training context detection
-      const isMLContext = query?.toLowerCase().includes('train') || 
-                         query?.toLowerCase().includes('ml') ||
-                         table?.toLowerCase().includes('train') ||
-                         (includeContent && table === 'incident'); // ML often needs incident content
+      // 📊 ANALYTICS DETECTION - Need ALL data
+      const isAnalyticsContext = 
+        query?.toLowerCase().includes('analyz') ||
+        query?.toLowerCase().includes('trend') ||
+        query?.toLowerCase().includes('when') ||
+        query?.toLowerCase().includes('pattern') ||
+        query?.toLowerCase().includes('all') ||
+        query?.toLowerCase().includes('onboard') ||
+        (fields && fields.length <= 2); // Minimal fields = analytics
+      
+      if (isAnalyticsContext) {
+        logger.info(`📊 Analytics context detected - NO LIMIT applied for complete analysis`);
+        return 99999; // Get ALL data for accurate analytics
+      }
+      
+      // 🤖 ML Training context
+      const isMLContext = 
+        query?.toLowerCase().includes('train') || 
+        query?.toLowerCase().includes('ml') ||
+        table?.toLowerCase().includes('train');
       
       if (isMLContext) {
         logger.info(`🧠 ML context detected - using ML-optimized limit: 5000`);
-        return 5000; // ML training needs more data
+        return 5000; // ML training needs substantial data
       }
       
-      // Count-only queries can handle more records efficiently  
+      // 📈 Count-only queries - efficient
       if (!includeContent) {
-        return 2000; // Count queries are memory-efficient
+        logger.info(`📈 Count-only query - can handle large datasets efficiently`);
+        return 10000; // Count queries are very memory-efficient
       }
       
-      // Normal content queries
-      return 1000; // Balanced default for content queries
+      // 🖥️ Display context - limited data needed
+      if (includeContent && fields && fields.length > 5) {
+        logger.info(`🖥️ Display context detected - limiting to viewable records`);
+        return 100; // Display queries need less data
+      }
+      
+      // Default: moderate limit
+      logger.info(`⚠️ No specific context detected - using conservative limit. Consider specifying limit for your use case!`);
+      return 500; // Conservative default
     };
     
     const { 
@@ -930,8 +954,8 @@ class ServiceNowOperationsMCP {
       order_by
     } = args;
     
-    // Apply smart limit logic
-    const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields);
+    // Apply intelligent limit strategy
+    const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields, fields);
     
     // 🚨 ML Training Warning for low limits
     const isMLTrainingContext = query?.toLowerCase().includes('train') || 
