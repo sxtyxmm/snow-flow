@@ -57,19 +57,6 @@ export class MCPToolRegistry {
       description: 'Deploy flows to ServiceNow'
     });
 
-    // Widget deployment
-    this.registerTool({
-      canonicalName: 'deploy_widget',
-      aliases: [
-        'mcp__servicenow-deployment__snow_deploy_widget',
-        'snow_deploy_widget',
-        'deploy_widget',
-        'widget_deploy'
-      ],
-      provider: 'servicenow-deployment',
-      actualTool: 'mcp__servicenow-deployment__snow_deploy',
-      description: 'Deploy widgets to ServiceNow'
-    });
 
 
     // Update Set management

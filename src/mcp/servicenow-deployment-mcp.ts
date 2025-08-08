@@ -1230,7 +1230,7 @@ Use \`snow_deployment_debug\` for more information about this session.`,
 4. Try widget preview: snow_preview_widget()
 
 💡 Alternative Approaches:
-• Use snow_deploy_widget with smaller components first
+• Use snow_deploy with smaller components first
 • Test with snow_widget_test() before deployment
 • Check dependencies with check_dependencies: true
 
@@ -8632,104 +8632,6 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
     }
   }
 
-  /**
-   * DEPRECATION HANDLERS - Redirect old tools to new unified system
-   */
-  private async handleDeprecatedWidgetDeploy(args: any) {
-    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
-
-🚨 **snow_deploy_widget is deprecated** - Use \`snow_deploy\` instead
-
-📋 **Automatic Redirect**: Converting to unified deployment...
-
-`;
-
-    // Convert old widget args to unified deploy format
-    const unifiedArgs = {
-      type: 'widget',
-      config: args,
-      auto_update_set: true,
-      fallback_strategy: 'manual_steps'
-    };
-
-    const result = await this.unifiedDeploy(unifiedArgs);
-    
-    // Prepend deprecation warning to the result
-    if (result.content && result.content[0]) {
-      result.content[0].text = deprecationWarning + result.content[0].text;
-    }
-    
-    return result;
-  }
-  private async handleDeprecatedApplicationDeploy(args: any) {
-    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
-
-🚨 **snow_deploy_application is deprecated** - Use \`snow_deploy\` instead
-
-📋 **Automatic Redirect**: Converting to unified deployment...
-
-`;
-
-    // Convert old application args to unified deploy format
-    const unifiedArgs = {
-      type: 'application',
-      config: args,
-      auto_update_set: true,
-      fallback_strategy: 'manual_steps'
-    };
-
-    const result = await this.unifiedDeploy(unifiedArgs);
-    
-    // Prepend deprecation warning to the result
-    if (result.content && result.content[0]) {
-      result.content[0].text = deprecationWarning + result.content[0].text;
-    }
-    
-    return result;
-  }
-
-  private async handleDeprecatedBulkDeploy(args: any) {
-    const deprecationWarning = `⚠️ **DEPRECATED TOOL USED**
-
-🚨 **snow_bulk_deploy is deprecated** - Use \`snow_deploy\` with batch configuration instead
-
-📋 **Automatic Redirect**: Converting to unified deployment...
-
-💡 **New Usage**: Use \`snow_deploy\` for single artifacts or implement batch logic with multiple \`snow_deploy\` calls
-
-`;
-
-    return {
-      content: [{
-        type: 'text',
-        text: `${deprecationWarning}
-
-❌ **Bulk Deploy No Longer Supported in Unified System**
-
-🔧 **Alternative Solutions:**
-
-**Option 1: Single Artifact Deployment**
-\`\`\`
-snow_deploy({
-  type: 'widget',
-  config: { /* your widget config */ }
-})
-\`\`\`
-
-**Option 2: Multiple Sequential Deployments**
-Deploy each artifact individually using \`snow_deploy\` - the unified system automatically manages Update Sets across all deployments.
-
-**Option 3: Use Existing Bulk Deploy (Legacy)**
-The original \`snow_bulk_deploy\` functionality is still available but deprecated. Consider migrating to the simplified \`snow_deploy\` approach.
-
-📊 **Benefits of New Approach:**
-- Automatic Update Set management
-- Better error handling per artifact
-- Clearer deployment tracking
-- Resilient fallback strategies`
-      }]
-    };
-  }
 
   async start() {
     const transport = new StdioServerTransport();
