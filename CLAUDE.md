@@ -286,15 +286,21 @@ snow_create_event            // System events
 snow_create_script_action    // Event responses
 snow_create_workflow        // Classic workflows
 snow_create_orchestration   // Orchestration activities
+snow_execute_background_script // Execute scripts with security analysis
 ```
 
 ### 📋 Service Catalog Tools
 ```javascript
 snow_create_catalog_item      // Service catalog items
-snow_create_record_producer  // Record producers
+snow_create_catalog_variable  // Form variables for catalog items
 snow_create_catalog_ui_policy // Dynamic form behavior
 snow_create_catalog_client_script // Client-side logic
-snow_create_variable_set     // Reusable variables
+snow_search_catalog           // Search catalog items
+snow_order_catalog_item       // Order items programmatically
+snow_get_catalog_item_details // Get item details with variables
+snow_discover_catalogs        // Discover catalogs and categories
+snow_create_record_producer   // Record producers
+snow_create_variable_set      // Reusable variables
 snow_create_catalog_workflow  // Fulfillment processes
 ```
 
@@ -337,14 +343,25 @@ snow_test_business_rule    // Business rule testing
 snow_validate_update_set   // Pre-deployment validation
 snow_test_integration      // Integration testing
 snow_load_test            // Performance testing
+snow_create_atf_test       // Create automated test framework tests
+snow_create_atf_test_step  // Add test steps to ATF tests
+snow_execute_atf_test      // Execute ATF tests
+snow_get_atf_results       // Get test execution results
+snow_create_atf_test_suite // Group tests into suites
+snow_discover_atf_tests    // Discover existing tests
 ```
 
-### 📝 Documentation Tools
+### 📝 Documentation & Knowledge Tools
 ```javascript
-snow_generate_documentation  // Auto-generate docs from code
-snow_create_knowledge_article // Knowledge base articles
-snow_document_api           // API documentation
-snow_create_help_content    // In-app help
+snow_generate_documentation   // Auto-generate docs from code
+snow_create_knowledge_article // Create knowledge base articles
+snow_search_knowledge         // Search knowledge articles
+snow_update_knowledge_article // Update existing articles
+snow_retire_knowledge_article // Retire outdated articles
+snow_create_knowledge_base    // Create knowledge bases
+snow_discover_knowledge_bases // Discover KB structure
+snow_document_api            // API documentation
+snow_create_help_content     // In-app help
 ```
 
 ### 🔄 Process Mining Tools
@@ -860,7 +877,7 @@ Before EVERY deployment:
    - Support multiple languages
    - Respect user preferences
 
-## 📊 ALL 11 MCP SERVERS
+## 📊 ALL 12 MCP SERVERS
 
 ### 1. **servicenow-deployment**
 - Widget deployment
@@ -916,7 +933,9 @@ Before EVERY deployment:
 - Scheduled jobs
 - Event management
 - Workflow automation
-- Script execution
+- Background script execution
+- ATF test management
+- Test suite creation
 
 ### 9. **servicenow-integration**
 - REST API setup
@@ -932,7 +951,15 @@ Before EVERY deployment:
 - Dependency analysis
 - Impact prediction
 
-### 11. **snow-flow**
+### 11. **servicenow-knowledge-catalog**
+- Knowledge article management
+- Knowledge base creation
+- Service catalog items
+- Catalog variables
+- Order management
+- Catalog discovery
+
+### 12. **snow-flow**
 - Orchestration
 - Memory management
 - Session handling
