@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.0.16",
-  "description": "Snow-Flow v3.0.16: WIDGET DEPLOYMENT ERROR FIX! 🔧 Fixed 'error: null' issue in widget deployment. Enhanced error reporting for failed POST requests to /api/now/table/sp_widget. Now provides detailed HTTP status codes, ServiceNow-specific error messages, and better debugging information. Widget deployment failures now show exact cause (401 auth, 403 permissions, 404 endpoint, etc).",
+  "version": "3.0.17",
+  "description": "Snow-Flow v3.0.17: NULL ERROR FALSE NEGATIVE FIX! ✅ Fixed widget deployment false negatives where widgets ARE created successfully but tool reports failure due to 'null' error in verification. Now correctly detects successful deployments even when verification fails, searches for created widgets, and reports success appropriately. No more false 'deployment failed' messages when widgets actually exist!",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
