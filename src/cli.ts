@@ -4099,7 +4099,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "MCP_TOOL_TIMEOUT": "0",
       "DISABLE_COST_WARNINGS": "1",
       "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "0",
-      "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8192",
+      "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "32000",
       "CLAUDE_CODE_TIMEOUT": "0",
       "CLAUDE_CODE_SESSION_TIMEOUT": "0",
       "CLAUDE_CODE_EXECUTION_TIMEOUT": "0"
