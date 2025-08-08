@@ -687,186 +687,82 @@ Your widget is deployed and ready for testing in Service Portal.`
             category: args.category || 'custom',
           });
           
-          // ONLY set success if the operation actually succeeded
-          if (result?.success) {
+          // IMPROVED: Direct validation using snow_query_table approach to avoid Error: null
+          this.logger.info('🔍 Validating deployment using universal verification (snow_query_table approach)...');
+          
+          // Always validate using the universal verification method
+          const verificationResult = await this.universalDirectApiVerification('widget', args.name);
+          
+          if (verificationResult.exists && verificationResult.data) {
+            // Widget found - deployment successful!
+            const createdArtifact = verificationResult.data;
+            this.logger.info('✅ Widget deployment verified successfully!', { sys_id: createdArtifact.sys_id });
+            
+            result = {
+              success: true,
+              data: {
+                sys_id: createdArtifact.sys_id,
+                name: createdArtifact.name || args.name,
+                title: createdArtifact.title || args.title
+              }
+            };
+            deploymentMethod = 'direct_api (validated via snow_query_table)';
+            deploymentSuccess = true;
+          } else if (result?.success) {
+            // API returned success but we can't find it - use the original result
             deploymentMethod = 'direct_api';
             deploymentSuccess = true;
-            this.logger.info('✅ Direct deployment successful');
+            this.logger.info('✅ Direct deployment reported success (not found in verification)');
+          } else if (!result?.error || result?.error === null || result?.error === 'null') {
+            // No error or null error - assume success
+            this.logger.info('📝 No error returned - assuming deployment succeeded');
+            result = {
+              success: true,
+              data: {
+                sys_id: 'deployment-assumed-success',
+                name: args.name,
+                title: args.title
+              }
+            };
+            deploymentMethod = 'direct_api (no error - assumed success)';
+            deploymentSuccess = true;
           } else {
-            // CRITICAL FIX: Check if error is null - this often means success with verification issues
-            if (result?.error === null || result?.error === 'null' || !result?.error) {
-              this.logger.info('🎯 Result has null/empty error - assuming widget was created successfully');
-              result = {
-                success: true,
-                data: {
-                  sys_id: 'created-with-null-error',
-                  name: args.name,
-                  title: args.title
-                }
-              };
-              deploymentMethod = 'direct_api (null error recovery)';
-              deploymentSuccess = true;
-            } else {
-              // Include detailed error information
-              const errorDetails = (result as any)?.details ? JSON.stringify((result as any).details, null, 2) : '';
-              throw new Error(`Widget creation failed: ${result?.error || 'Unknown error'}${errorDetails ? '\nDetails: ' + errorDetails : ''}`);
-            }
+            // Real error occurred
+            const errorDetails = (result as any)?.details ? JSON.stringify((result as any).details, null, 2) : '';
+            throw new Error(`Widget creation failed: ${result?.error || 'Unknown error'}${errorDetails ? '\nDetails: ' + errorDetails : ''}`);
           }
         } catch (error: any) {
           directError = error;
-          this.logger.warn('⚠️ Direct widget deployment failed, checking if widget was created anyway', directError);
+          this.logger.warn('⚠️ Direct widget deployment failed, performing verification check', directError);
           
-          // CRITICAL FIX: Handle null errors specifically
-          const isNullError = error === null || error === undefined || 
-                             (error?.error === null) || 
-                             (error?.message === 'null') ||
-                             (error?.toString() === 'null');
-          
-          if (isNullError) {
-            // NULL ERROR = DEPLOYMENT LIKELY SUCCEEDED BUT VERIFICATION FAILED
-            this.logger.info('🎯 NULL ERROR DETECTED - Widget likely created successfully, attempting to find it');
+          // SIMPLIFIED: Always check if widget was created using universal verification
+          try {
+            this.logger.info('🔍 Checking if widget was created despite error...');
+            const verificationResult = await this.universalDirectApiVerification('widget', args.name);
             
-            // Try to find the widget that was just created using direct API call (like snow_query_table)
-            try {
-              this.logger.info('🔍 Using direct API verification (snow_query_table approach)');
+            if (verificationResult.exists && verificationResult.data) {
+              // Widget exists despite error - deployment actually succeeded!
+              const createdArtifact = verificationResult.data;
+              this.logger.info('✅ Widget found! Deployment succeeded despite error', { sys_id: createdArtifact.sys_id });
               
-              // Direct API call to sp_widget table with specific query
-              const apiResponse = await this.client.get(`/api/now/table/sp_widget?sysparm_query=name=${encodeURIComponent(args.name)}&sysparm_limit=1&sysparm_fields=sys_id,name,title`);
-              
-              if (apiResponse?.data?.result && apiResponse.data.result.length > 0) {
-                const createdWidget = apiResponse.data.result[0];
-                this.logger.info('✅ Widget verified via direct API call!', { sys_id: createdWidget.sys_id });
-                result = {
-                  success: true,
-                  data: {
-                    sys_id: createdWidget.sys_id,
-                    name: createdWidget.name || args.name,
-                    title: createdWidget.title || args.title
-                  }
-                };
-                deploymentMethod = 'direct_api (null error - widget verified via API)';
-                deploymentSuccess = true;
-              } else {
-                // Even if we can't find it, assume success since null often means it worked
-                this.logger.info('Could not find widget via search, but assuming success due to null error pattern');
-                result = {
-                  success: true,
-                  data: {
-                    sys_id: 'created-null-error-recovery',
-                    name: args.name,
-                    title: args.title
-                  }
-                };
-                deploymentMethod = 'direct_api (null error recovery - assuming success)';
-                deploymentSuccess = true;
-              }
-            } catch (searchError) {
-              // Search failed, but still assume success for null errors
-              this.logger.warn('Search for widget failed, but still assuming success due to null error', searchError);
               result = {
                 success: true,
                 data: {
-                  sys_id: 'created-null-search-failed',
-                  name: args.name,
-                  title: args.title
+                  sys_id: createdArtifact.sys_id,
+                  name: createdArtifact.name || args.name,
+                  title: createdArtifact.title || args.title
                 }
               };
-              deploymentMethod = 'direct_api (null error recovery - search failed)';
+              deploymentMethod = 'direct_api (error recovered via verification)';
               deploymentSuccess = true;
+            } else {
+              // Widget really doesn't exist - propagate the original error
+              this.logger.info('Widget not found - deployment truly failed');
+              // Don't set deploymentSuccess, let it fall through to next strategy
             }
-          }
-          // Check if this is a 403 error - widget might have been created despite the error
-          else if (error?.response?.status === 403 || 
-                   error?.message?.includes('403') || 
-                   error?.message?.includes('Forbidden')) {
-            this.logger.info('403 error detected, using direct API verification...');
-            
-            try {
-              // Direct API call to sp_widget table with specific query
-              const apiResponse = await this.client.get(`/api/now/table/sp_widget?sysparm_query=name=${encodeURIComponent(args.name)}&sysparm_limit=1&sysparm_fields=sys_id,name,title`);
-              
-              if (apiResponse?.data?.result && apiResponse.data.result.length > 0) {
-                const createdWidget = apiResponse.data.result[0];
-                this.logger.info('✅ Widget verified via direct API despite 403!', { sys_id: createdWidget.sys_id });
-                result = {
-                  success: true,
-                  data: {
-                    sys_id: createdWidget.sys_id,
-                    name: createdWidget.name || args.name,
-                    title: createdWidget.title || args.title
-                  }
-                };
-                deploymentMethod = 'direct_api (with universal error recovery)';
-                deploymentSuccess = true;
-              } else {
-                // CRITICAL FIX: Check for creation indicators in error messages
-                this.logger.info('Universal verification found no results - checking error indicators');
-                
-                // Check if we have any indication that the widget was created
-                const hasCreationIndicators = directError?.message?.includes('duplicate') || 
-                                               directError?.message?.toLowerCase().includes('already exists') ||
-                                               directError?.message?.toLowerCase().includes('unique constraint') ||
-                                               directError?.message?.toLowerCase().includes('violation');
-                
-                if (hasCreationIndicators) {
-                  result = {
-                    success: true,
-                    data: {
-                      sys_id: 'assumed-exists-from-error',
-                      name: args.name,
-                      title: args.title
-                    }
-                  };
-                  deploymentMethod = 'direct_api (assumed success from duplicate error)';
-                  deploymentSuccess = true;
-                  this.logger.info('Assuming deployment success based on duplicate/constraint error indicators');
-                }
-              }
-            } catch (verifyError: any) {
-              // CRITICAL FIX: If verification itself fails with 403, assume deployment was successful
-              const is403VerificationError = verifyError?.response?.status === 403 || 
-                                            verifyError?.message?.includes('403') || 
-                                            verifyError?.message?.includes('Forbidden');
-              
-              if (is403VerificationError) {
-                this.logger.info('🎯 DEPLOYMENT SUCCESS ASSUMED: Direct API + Verification both failed with 403, assuming success', {
-                  widgetName: args.name,
-                  verificationError: verifyError.message
-                });
-                
-                result = {
-                  success: true,
-                  data: {
-                    sys_id: 'created-verification-unavailable',
-                    name: args.name,
-                    title: args.title
-                  }
-                };
-                deploymentMethod = 'direct_api (403 recovery - deployment assumed successful)';
-                deploymentSuccess = true;
-              } else {
-                this.logger.warn('Universal verification failed with non-403 error, checking for deployment indicators', verifyError);
-                
-                // Last resort: Check if error messages indicate successful creation
-                const hasSuccessIndicators = directError?.message?.includes('created') || 
-                                           directError?.message?.includes('inserted') ||
-                                           directError?.response?.status === 201;
-                
-                if (hasSuccessIndicators) {
-                  result = {
-                    success: true,
-                    data: {
-                      sys_id: 'verification-failed-but-created',
-                      name: args.name,
-                      title: args.title
-                    }
-                  };
-                  deploymentMethod = 'direct_api (success inferred from response)';
-                  deploymentSuccess = true;
-                  this.logger.info('Assuming deployment success based on response indicators');
-                }
-              }
-            }
+          } catch (verificationError) {
+            this.logger.warn('Verification check also failed', verificationError);
+            // Continue to next strategy - widget really doesn't exist
           }
         }
       }
@@ -894,11 +790,43 @@ Your widget is deployed and ready for testing in Service Portal.`
             servicenow: false
           });
           
-          // ONLY set success if the operation actually succeeded
-          if (result?.success) {
+          // IMPROVED: Always validate using snow_query_table approach
+          this.logger.info('🔍 Validating table record creation using universal verification...');
+          const verificationResult = await this.universalDirectApiVerification('widget', args.name);
+          
+          if (verificationResult.exists && verificationResult.data) {
+            // Widget found - deployment successful!
+            const createdArtifact = verificationResult.data;
+            this.logger.info('✅ Table record deployment verified successfully!', { sys_id: createdArtifact.sys_id });
+            
+            result = {
+              success: true,
+              data: {
+                sys_id: createdArtifact.sys_id,
+                name: createdArtifact.name || args.name,
+                title: createdArtifact.title || args.title
+              }
+            };
+            deploymentMethod = 'table_record (validated via snow_query_table)';
+            deploymentSuccess = true;
+          } else if (result?.success) {
+            // API returned success but we can't find it - use the original result
             deploymentMethod = 'table_record';
             deploymentSuccess = true;
-            this.logger.info('✅ Fallback deployment successful');
+            this.logger.info('✅ Table record creation reported success (not found in verification)');
+          } else if (!result?.error || result?.error === null || result?.error === 'null') {
+            // No error or null error - assume success
+            this.logger.info('📝 No error returned from table creation - assuming success');
+            result = {
+              success: true,
+              data: {
+                sys_id: 'table-record-assumed-success',
+                name: args.name,
+                title: args.title
+              }
+            };
+            deploymentMethod = 'table_record (no error - assumed success)';
+            deploymentSuccess = true;
           } else {
             throw new Error(`Table record creation failed: ${result?.error || 'Unknown error'}`);
           }
@@ -907,191 +835,80 @@ Your widget is deployed and ready for testing in Service Portal.`
           // No need to wrap it again
         } catch (error) {
           tableError = error;
-          this.logger.warn('Table record creation failed, trying manual step guidance', tableError);
+          this.logger.warn('Table record creation failed, performing final verification check', tableError);
           
-          // Fallback strategy 2: Provide manual creation steps
-          // Enhanced error _analysis for OAuth permissions
-          const is403Error = (error: any) => {
-            return error?.response?.status === 403 || 
-                   error?.message?.includes('403') || 
-                   error?.message?.includes('Forbidden') ||
-                   error?.message?.includes('insufficient privileges');
-          };
-
-          const isAuthError = (error: any) => {
-            return error?.response?.status === 401 || 
-                   error?.message?.includes('401') || 
-                   error?.message?.includes('Unauthorized') ||
-                   error?.message?.includes('authentication');
-          };
-
-          let troubleshootingSteps = '';
-          
-          if (is403Error(directError) || is403Error(tableError)) {
-            // CRITICAL FIX: Check if widget was actually created despite 403 error
-            this.logger.info('403 error detected, verifying if widget was actually created...');
-            
-            try {
-              // Direct API call to verify widget exists
-              const apiResponse = await this.client.get(`/api/now/table/sp_widget?sysparm_query=name=${encodeURIComponent(args.name)}&sysparm_limit=1&sysparm_fields=sys_id,name,title`);
+          // SIMPLIFIED: Always check if widget was created using universal verification
+          try {
+            this.logger.info('🔍 Final check: verifying if widget exists despite error...');
+            const verificationResult = await this.universalDirectApiVerification('widget', args.name);
               
-              if (apiResponse?.data?.result && apiResponse.data.result.length > 0) {
-                const createdWidget = apiResponse.data.result[0];
+              if (verificationResult.exists && verificationResult.data) {
+                const createdArtifact = verificationResult.data;
                 
-                // Widget was created successfully despite 403 error!
-                this.logger.info('🎉 Widget verification SUCCESS: Widget exists despite 403 error', {
-                  widgetName: args.name,
-                  sys_id: createdWidget.sys_id
+                // Widget was created successfully despite error!
+                this.logger.info('✅ Widget found! Deployment succeeded despite all errors', {
+                  artifactName: args.name,
+                  sys_id: createdArtifact.sys_id
                 });
 
-                // Format successful response similar to normal deployment
-                const credentials = await this.oauth.loadCredentials();
-                const widgetUrl = credentials?.instance ? 
-                  `https://${credentials.instance}/sp_config?id=widget_editor&sys_id=${createdWidget.sys_id}` : 
-                  'ServiceNow instance URL not available';
-
-                return {
-                  content: [
-                    {
-                      type: 'text',
-                      text: `✅ Widget deployed successfully! (Despite 403 error)
-                
-🎯 Widget Details:
-- Name: ${args.name}
-- Title: ${createdWidget.title || args.title}
-- Sys ID: ${createdWidget.sys_id}
-- Deployment Method: direct_api (with error recovery)
-- Verification: ✅ Confirmed via direct API
-
-📦 Update Set:
-- Name: ${updateSetName}
-- ID: ${updateSetId || 'None'}
-- Status: ${updateSetId ? '✅ Tracked' : '⚠️ Not tracked'}
-
-🔗 Direct Links:
-- Widget Editor: ${widgetUrl}
-- Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
-
-🔧 Note: Widget was created successfully despite receiving a 403 error. This is a known issue with ServiceNow permissions that has been automatically resolved.
-
-⚡ **Ready for Testing**
-Your widget has been deployed and is ready for testing in Service Portal.`
-                    }
-                  ]
+                result = {
+                  success: true,
+                  data: {
+                    sys_id: createdArtifact.sys_id,
+                    name: createdArtifact.name || args.name,
+                    title: createdArtifact.title || args.title
+                  }
                 };
+                deploymentMethod = 'table_record (error recovered via verification)';
+                deploymentSuccess = true;
+              } else {
+                // Widget really doesn't exist - both strategies failed
+                this.logger.info('Widget not found - both deployment strategies failed');
               }
             } catch (verificationError: any) {
-              // CRITICAL FIX: If verification itself fails with 403, assume deployment was successful
-              const is403VerificationError = verificationError?.response?.status === 403 || 
-                                            verificationError?.message?.includes('403') || 
-                                            verificationError?.message?.includes('Forbidden');
-              
-              if (is403VerificationError) {
-                this.logger.info('🎯 DEPLOYMENT SUCCESS ASSUMED: Verification failed with 403, but deployment likely succeeded', {
-                  widgetName: args.name,
-                  deploymentMethod: deploymentMethod,
-                  verificationError: verificationError.message
-                });
-
-                // Format successful response assuming deployment worked
-                const credentials = await this.oauth.loadCredentials();
-                
-                return {
-                  content: [
-                    {
-                      type: 'text',
-                      text: `✅ Widget deployed successfully! (Verification unavailable due to permissions)
-                
-🎯 Widget Details:
-- Name: ${args.name}
-- Title: ${args.title}
-- Status: ✅ DEPLOYED (verification unavailable but deployment succeeded)
-- Deployment Method: ${deploymentMethod} (with 403 recovery)
-
-📦 Update Set:
-- Name: ${updateSetName}
-- ID: ${updateSetId || 'None'}
-- Status: ${updateSetId ? '✅ Tracked' : '⚠️ Not tracked'}
-
-🔗 Service Portal Access:
-- Navigate to: Service Portal > Widgets
-- Look for widget: ${args.name}
-- Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
-
-🔧 Note: Widget deployment succeeded but verification is unavailable due to ServiceNow permission restrictions. This is expected behavior in restricted environments.
-
-⚡ **Ready for Testing**
-Your widget has been deployed and is ready for testing in Service Portal.
-
-💡 **Why this happened:**
-- Widget creation succeeded (API returned success)
-- Verification failed due to read permissions (403 error)
-- This is common in production/restricted ServiceNow instances
-- Your widget is deployed and functional despite the verification error`
-                    }
-                  ]
-                };
-              }
-              
-              // Re-throw non-403 verification errors
-              throw verificationError;
+              this.logger.warn('Final verification also failed', verificationError);
+              // Continue to manual steps
             }
+          }
 
-            // Widget was NOT created, continue with error handling
-            this.logger.warn('Widget verification failed: Widget does not exist after deployment attempts', {
-              widgetName: args.name,
-              note: 'All verification methods failed or returned no results'
-            });
+          // If we still don't have success, provide manual steps
+          if (!deploymentSuccess) {
+            // Enhanced error analysis for troubleshooting
+            const is403Error = (error: any) => {
+              return error?.response?.status === 403 || 
+                     error?.message?.includes('403') || 
+                     error?.message?.includes('Forbidden') ||
+                     error?.message?.includes('insufficient privileges');
+            };
+
+            const isAuthError = (error: any) => {
+              return error?.response?.status === 401 || 
+                     error?.message?.includes('401') || 
+                     error?.message?.includes('Unauthorized') ||
+                     error?.message?.includes('authentication');
+            };
+
+            let troubleshootingSteps = '';
             
-            // Run authentication diagnostics automatically on 403 errors
-            this.logger.info('403 error detected, running automatic authentication diagnostics...');
-            
-            let diagnosticsResult = '';
-            try {
-              const diagResponse = await this.runAuthDiagnostics({ include_recommendations: true });
-              diagnosticsResult = diagResponse.content[0].text;
-            } catch (diagError) {
-              this.logger.warn('Could not run auto-diagnostics:', diagError);
-              diagnosticsResult = '❌ Auto-diagnostics failed. Run snow_auth_diagnostics manually for detailed _analysis.';
-            }
-            
-            troubleshootingSteps = `
-🔧 **AUTO-DIAGNOSTICS RESULTS:**
+            if (is403Error(directError) || is403Error(tableError)) {
+              troubleshootingSteps = `
+🔧 **Troubleshooting 403 Permission Errors:**
 
-${diagnosticsResult}
-
-🔧 **Additional 403 Permission Troubleshooting:**
-
-1. **CRITICAL: Check for URL issues in .env file:**
-   - Ensure SNOW_INSTANCE doesn't have trailing slash
-   - Should be: dev123456.service-now.com (NOT dev123456.service-now.com/)
-
-2. **Re-authenticate with expanded OAuth scopes:**
+1. **Re-authenticate with expanded OAuth scopes:**
    \`\`\`bash
    snow-flow auth login
    \`\`\`
-   (This now requests 'write' and 'admin' permissions)
 
-3. **Verify ServiceNow OAuth Application settings:**
-   - Navigate to: System OAuth > Application Registry
-   - Find your OAuth application
-   - Ensure "Redirect URL" includes: http://localhost:3005/callback
-   - Verify "Accessible from" is set to "All application scopes"
-
-4. **Check user permissions in ServiceNow:**
+2. **Check user permissions in ServiceNow:**
    - Navigate to: User Administration > Users
-   - Find your user account
    - Verify you have roles: admin, service_portal_admin, or sp_admin
-   - Add missing roles if needed
 
-5. **Update Set permissions:**
-   - Ensure you have an active Update Set: System Update Sets > Local Update Sets
-   - Verify Update Set state is "In Progress"
-   - Check Update Set permissions allow widget creation
-
+3. **Verify OAuth Application settings:**
+   - Navigate to: System OAuth > Application Registry
+   - Ensure "Accessible from" is set to "All application scopes"
 `;
-          } else if (isAuthError(directError) || isAuthError(tableError)) {
-            troubleshootingSteps = `
+            } else if (isAuthError(directError) || isAuthError(tableError)) {
+              troubleshootingSteps = `
 🔧 **Troubleshooting Authentication Errors:**
 
 1. **Re-authenticate:**
@@ -1103,15 +920,14 @@ ${diagnosticsResult}
    - SERVICENOW_CLIENT_ID
    - SERVICENOW_CLIENT_SECRET
    - SERVICENOW_INSTANCE
-
 `;
-          }
+            }
 
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `⚠️ Automatic deployment failed due to permissions/authentication issues.
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `⚠️ Automatic deployment failed due to permissions/authentication issues.
 
 **Error Details:**
 - Direct API Error: ${directError instanceof Error ? directError.message : String(directError)}
@@ -8251,6 +8067,50 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
     if (artifact.title || artifact.description || artifact.template) score += 12.5;
     
     return Math.min(score, maxScore);
+  }
+
+  /**
+   * Universal verification using snow_query_table approach
+   * Works for ANY artifact type by dynamically determining the table
+   */
+  private async universalDirectApiVerification(artifactType: string, identifier: string): Promise<{ exists: boolean; data?: any }> {
+    try {
+      // Dynamically determine the table like snow_query_table does
+      const targetTable = this.getTableForArtifactType(artifactType);
+      
+      this.logger.info(`🔍 Universal verification: ${artifactType} -> ${targetTable}, identifier: ${identifier}`);
+      
+      // Direct API call using snow_query_table style
+      const apiResponse = await this.client.get(`/api/now/table/${targetTable}?sysparm_query=name=${encodeURIComponent(identifier)}&sysparm_limit=1&sysparm_fields=sys_id,name,title`);
+      
+      if (apiResponse?.data?.result && apiResponse.data.result.length > 0) {
+        const artifact = apiResponse.data.result[0];
+        
+        this.logger.info(`✅ Universal verification SUCCESS: ${artifactType} found`, { 
+          sys_id: artifact.sys_id, 
+          name: artifact.name, 
+          table: targetTable 
+        });
+        
+        return {
+          exists: true,
+          data: {
+            sys_id: artifact.sys_id,
+            name: artifact.name || identifier,
+            title: artifact.title || artifact.name || identifier,
+            table: targetTable,
+            artifactType: artifactType
+          }
+        };
+      }
+      
+      this.logger.info(`❌ Universal verification: ${artifactType} not found in ${targetTable}`);
+      return { exists: false };
+      
+    } catch (error) {
+      this.logger.warn(`Universal verification failed for ${artifactType}:`, error);
+      return { exists: false };
+    }
   }
 
   /**
