@@ -44,6 +44,20 @@ Snow-Flow connects directly to ServiceNow instances through OAuth 2.0 authentica
 - Natural language interface for ServiceNow operations
 - Machine learning capabilities using TensorFlow.js
 - Process automation and workflow optimization
+- Real-time logging and token tracking for API operations
+
+### API Operation Visibility
+
+Snow-Flow displays detailed information during API calls:
+
+```
+⏳ Operation in progress... (2s elapsed, 150 tokens used)
+🔄 API Call: GET /api/now/table/incident (10 records)
+📊 Tokens used: 450 (in: 100, out: 350)
+✅ Operation complete in 3 seconds
+```
+
+MCP operations run in separate processes and their logs are sent to stderr for visibility in the console.
 
 ## ServiceNow API Integration
 
