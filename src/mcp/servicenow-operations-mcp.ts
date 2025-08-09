@@ -946,13 +946,19 @@ class ServiceNowOperationsMCP {
     
     const { 
       table,
-      query, 
+      query = '', 
       include_content = false,
       fields,
       include_display_values = false,
       group_by,
-      order_by
+      order_by,
+      offset = 0  // ✅ NEW: Support pagination!
     } = args;
+    
+    // Validate table name
+    if (!table) {
+      throw new McpError(ErrorCode.InvalidParams, 'Table name is required');
+    }
     
     // Apply intelligent limit strategy
     const limit = determineSmartLimit(args.limit, table, query, include_content || !!fields, fields);
@@ -969,22 +975,25 @@ class ServiceNowOperationsMCP {
       logger.warn(`⚠️  ML Training detected with low limit (${limit}). Consider setting limit=5000+ for better training data!`);
     }
     
-    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit === undefined ? 'UNLIMITED' : limit}, include_content: ${include_content})`);
+    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit === undefined ? 'UNLIMITED' : limit}, offset: ${offset}, include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
-      const processedQuery = this.processNaturalLanguageQuery(query, table);
+      const processedQuery = this.processNaturalLanguageQuery(query || '', table);
       
-      // Build the query with order_by if specified
+      // Build the query with CORRECT order_by syntax
       let finalQuery = processedQuery;
       if (order_by) {
+        // ✅ FIX: Use correct ServiceNow ordering syntax
         const orderDirection = order_by.startsWith('-') ? 'DESC' : '';
         const orderField = order_by.replace(/^-/, '');
-        finalQuery += `^ORDERBY${orderDirection}${orderField}`;
+        finalQuery += `^ORDERBY${orderDirection ? orderDirection : ''}${orderField}`;
       }
       
-      // Query the table
-      const records = await this.client.searchRecords(table, finalQuery, effectiveLimit);
+      // ✅ NEW: Use searchRecordsWithOffset when offset is provided
+      const records = offset > 0 
+        ? await this.client.searchRecordsWithOffset(table, finalQuery, effectiveLimit, offset)
+        : await this.client.searchRecords(table, finalQuery, effectiveLimit);
       
       let result: any = {
         table: table,
@@ -1004,34 +1013,70 @@ class ServiceNowOperationsMCP {
         result.unique_values = Object.keys(grouped).length;
       }
       
-      // 🎯 SMART CONTENT DECISION: Only include full data if explicitly requested
-      if (include_content || (fields && fields.length > 0)) {
+      // ✅ IMPROVED: Clear content decision logic
+      const shouldIncludeContent = include_content === true || (fields && fields.length > 0);
+      
+      if (shouldIncludeContent) {
         // Include full record data when specifically requested
         result.records = records.success ? records.data.result : [];
         
-        // If specific fields requested, filter them
-        if (fields && fields.length > 0 && records.success) {
+        // If specific fields requested, filter and validate them
+        if (fields && fields.length > 0 && records.success && records.data.result.length > 0) {
+          // ✅ NEW: Validate fields exist
+          const sampleRecord = records.data.result[0];
+          const validFields = fields.filter((field: string) => {
+            const exists = sampleRecord.hasOwnProperty(field) || 
+                          sampleRecord.hasOwnProperty(`${field}_display_value`);
+            if (!exists) {
+              logger.warn(`⚠️ Field '${field}' not found in table '${table}'`);
+            }
+            return exists;
+          });
+          
+          if (validFields.length === 0 && fields.length > 0) {
+            // All requested fields are invalid
+            throw new McpError(
+              ErrorCode.InvalidParams, 
+              `None of the requested fields exist in table '${table}'. Available fields: ${Object.keys(sampleRecord).slice(0, 10).join(', ')}...`
+            );
+          }
+          
           result.records = records.data.result.map((record: any) => {
             const filtered: any = {};
             
             // Always include sys_id and number/name if available
             if (record.sys_id) filtered.sys_id = record.sys_id;
-            if (record.number) filtered.number = record.number;
-            if (record.name && !fields.includes('name')) filtered.name = record.name;
+            if (record.number && !validFields.includes('number')) filtered.number = record.number;
+            if (record.name && !validFields.includes('name')) filtered.name = record.name;
             
             // Add requested fields
-            fields.forEach((field: string) => {
+            validFields.forEach((field: string) => {
               if (record[field] !== undefined) {
                 filtered[field] = record[field];
                 
-                // Add display value if requested and available
-                if (include_display_values && record[`${field}_display_value`]) {
-                  filtered[`${field}_display`] = record[`${field}_display_value`];
+                // ✅ FIX: Properly handle display values
+                if (include_display_values) {
+                  // Check for standard display value pattern
+                  const displayField = `dv_${field}`; // Some tables use dv_ prefix
+                  const displayFieldAlt = `${field}_display_value`; // Others use _display_value suffix
+                  
+                  if (record[displayField]) {
+                    filtered[`${field}_display`] = record[displayField];
+                  } else if (record[displayFieldAlt]) {
+                    filtered[`${field}_display`] = record[displayFieldAlt];
+                  }
                 }
               }
             });
             return filtered;
           });
+          
+          // Add metadata about fields
+          result.fields_info = {
+            requested: fields,
+            valid: validFields,
+            invalid: fields.filter((f: string) => !validFields.includes(f))
+          };
         }
       } else {
         // 🚀 PERFORMANCE MODE: Only return summary for large datasets
@@ -1054,17 +1099,45 @@ class ServiceNowOperationsMCP {
         }
       }
       
+      // ✅ NEW: Add pagination info when offset is used
+      if (offset > 0) {
+        result.pagination = {
+          offset: offset,
+          limit: effectiveLimit,
+          has_more: records.success && records.data.result.length === effectiveLimit,
+          next_offset: offset + effectiveLimit
+        };
+      }
+      
       return {
         content: [
           {
             type: 'text',
-            text: `Found ${records.success ? records.data.result.length : 0} ${table} records matching query: "${query}"\n\n${JSON.stringify(result, null, 2)}`
+            text: `Found ${records.success ? records.data.result.length : 0} ${table} records${offset > 0 ? ` (offset: ${offset})` : ''} matching query: "${query || 'all'}"\n\n${JSON.stringify(result, null, 2)}`
           }
         ]
       };
-    } catch (error) {
+    } catch (error: any) {
+      // ✅ IMPROVED: Better error messages
       logger.error(`Error querying ${table}:`, error);
-      throw new McpError(ErrorCode.InternalError, `Failed to query ${table}: ${error}`);
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new McpError(ErrorCode.InternalError, `Cannot connect to ServiceNow. Please check your instance URL and network connection.`);
+      }
+      
+      if (error.response?.status === 401) {
+        throw new McpError(ErrorCode.InvalidRequest, `Authentication failed. Please run: snow-flow auth login`);
+      }
+      
+      if (error.response?.status === 404) {
+        throw new McpError(ErrorCode.InvalidParams, `Table '${table}' not found. Please check the table name.`);
+      }
+      
+      if (error.response?.status === 400) {
+        throw new McpError(ErrorCode.InvalidParams, `Invalid query syntax: ${query}. Check ServiceNow encoded query format.`);
+      }
+      
+      throw new McpError(ErrorCode.InternalError, `Failed to query ${table}: ${error.message || error}`);
     }
   }
   

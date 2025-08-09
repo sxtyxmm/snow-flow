@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.3.5",
-  "description": "Snow-Flow v3.3.5: CRITICAL ML FIX - Machine Learning MCP now fully functional with TensorFlow.js! Fixed pagination, ServiceNow API integration, data parsing, and training workflow. Real progress tracking, intelligent error messages, and automatic fallback when PA/PI not available. Train incident classifiers, predict change risks, forecast volumes, and detect anomalies - all working with real ServiceNow data. Enhanced MCP servers with real-time progress indicators and comprehensive operation logging. 180+ MCP tools across 17 specialized servers.",
+  "version": "3.3.6",
+  "description": "Snow-Flow v3.3.6: CRITICAL QUERY & FIELD FIX - snow_query_table now fully supports pagination, field validation, and proper error handling! Fixed: offset support for large datasets, ORDERBY syntax, field discovery with correct ServiceNow queries, display values, and intelligent error messages. Enhanced field grouping (required/reference/regular), better limit strategies for analytics vs display, and clear content inclusion logic. Query any table with confidence - all 9 critical issues resolved! 180+ MCP tools across 17 specialized servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

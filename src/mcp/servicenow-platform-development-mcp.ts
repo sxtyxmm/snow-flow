@@ -312,7 +312,11 @@ class ServiceNowPlatformDevelopmentMCP {
    */
   private async discoverTableFields(args: any) {
     try {
-      const tableName = args.tableName;
+      const tableName = args.tableName || args.table_name; // Support both parameter names
+      if (!tableName) {
+        throw new Error('Table name is required (use tableName or table_name parameter)');
+      }
+      
       this.logger.info(`Discovering fields for table: ${tableName}`);
 
       // First, resolve table name to sys_id if needed
@@ -321,27 +325,41 @@ class ServiceNowPlatformDevelopmentMCP {
         throw new Error(`Table not found: ${tableName}`);
       }
 
-      // Get all fields for this table
+      // Get all fields for this table with CORRECT query syntax
+      // ✅ FIX: Use proper ServiceNow query for dictionary
       const fieldsResponse = await this.client.searchRecords(
         'sys_dictionary',
-        `nameSTARTSWITH${tableInfo.name}^element!=NULL`,
-        100
+        `name=${tableInfo.name}^element!=NULL^ORname=${tableInfo.name}^elementISNOTEMPTY`,
+        500  // Increased limit for tables with many fields
       );
 
       if (!fieldsResponse.success || !fieldsResponse.data) {
         throw new Error(`Failed to get fields for table: ${tableName}`);
       }
 
-      const fields = fieldsResponse.data.result.map((field: any) => ({
-        name: field.element,
-        type: field.internal_type,
-        label: field.column_label,
-        mandatory: field.mandatory === 'true',
-        display: field.display === 'true',
-        max_length: field.max_length,
-        reference: field.reference,
-        choice: field.choice
-      }));
+      // ✅ IMPROVED: Better field mapping with validation
+      const fields = fieldsResponse.data.result
+        .filter((field: any) => field.element && field.element !== 'null' && field.element !== 'NULL')
+        .map((field: any) => ({
+          name: field.element,
+          type: field.internal_type || field.data_type || 'string',
+          label: field.column_label || field.element,
+          mandatory: field.mandatory === 'true' || field.mandatory === true,
+          display: field.display === 'true' || field.display === true,
+          max_length: parseInt(field.max_length) || null,
+          reference: field.reference || null,
+          choice: field.choice || null,
+          default_value: field.default_value || null,
+          read_only: field.read_only === 'true' || field.read_only === true
+        }))
+        .sort((a: any, b: any) => {
+          // Sort: sys_id first, then mandatory fields, then alphabetically
+          if (a.name === 'sys_id') return -1;
+          if (b.name === 'sys_id') return 1;
+          if (a.mandatory && !b.mandatory) return -1;
+          if (!a.mandatory && b.mandatory) return 1;
+          return a.name.localeCompare(b.name);
+        });
 
       // Cache the table info
       this.tableCache.set(tableName, {
@@ -350,17 +368,43 @@ class ServiceNowPlatformDevelopmentMCP {
         fields: fields
       });
 
+      // ✅ NEW: Group fields by category for better readability
+      const mandatoryFields = fields.filter((f: any) => f.mandatory);
+      const referenceFields = fields.filter((f: any) => f.reference);
+      const regularFields = fields.filter((f: any) => !f.mandatory && !f.reference);
+      
       return {
         content: [{
           type: 'text',
-          text: `📋 Fields for ${tableInfo.label} (${tableInfo.name}):\n\n${fields.map((field: any) => 
-            `- **${field.name}** (${field.label})\n  Type: ${field.type}${field.mandatory ? ' *Required*' : ''}${field.reference ? ` -> ${field.reference}` : ''}`
-          ).join('\n')}\n\n🔍 Total fields: ${fields.length}\n✨ All fields discovered dynamically from ServiceNow schema!`
+          text: `📋 Fields for ${tableInfo.label} (${tableInfo.name}):\n\n` +
+            (mandatoryFields.length > 0 ? `**Required Fields:**\n${mandatoryFields.map((field: any) => 
+              `- **${field.name}** (${field.label})\n  Type: ${field.type}${field.max_length ? ` [max: ${field.max_length}]` : ''}${field.default_value ? ` = '${field.default_value}'` : ''}`
+            ).join('\n')}\n\n` : '') +
+            (referenceFields.length > 0 ? `**Reference Fields:**\n${referenceFields.map((field: any) => 
+              `- **${field.name}** (${field.label})\n  → ${field.reference}${field.mandatory ? ' *Required*' : ''}`
+            ).join('\n')}\n\n` : '') +
+            (regularFields.length > 0 ? `**Other Fields:**\n${regularFields.slice(0, 20).map((field: any) => 
+              `- ${field.name} (${field.type}${field.read_only ? ', read-only' : ''})`
+            ).join('\n')}${regularFields.length > 20 ? `\n  ... and ${regularFields.length - 20} more fields` : ''}\n\n` : '') +
+            `🔍 Total: ${fields.length} fields (${mandatoryFields.length} required, ${referenceFields.length} references)\n` +
+            `✨ All fields discovered dynamically from ServiceNow!\n\n` +
+            `💡 Tip: Use these field names in snow_query_table with fields parameter`
         }]
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to discover table fields:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to discover fields: ${error}`);
+      
+      // ✅ IMPROVED: Better error messages
+      if (error.message?.includes('Table not found')) {
+        const tableName = args.tableName || args.table_name;
+        throw new McpError(ErrorCode.InvalidParams, `Table '${tableName}' does not exist in ServiceNow. Please check the table name.`);
+      }
+      
+      if (error.response?.status === 401) {
+        throw new McpError(ErrorCode.InvalidRequest, `Authentication required. Please run: snow-flow auth login`);
+      }
+      
+      throw new McpError(ErrorCode.InternalError, `Failed to discover fields for ${args.tableName || args.table_name}: ${error.message || error}`);
     }
   }
 
