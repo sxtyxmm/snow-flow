@@ -248,7 +248,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_atf_test',
-          description: '🧪 Creates an Automated Test Framework (ATF) test for automated testing of ServiceNow applications and configurations.',
+          description: 'Creates an Automated Test Framework (ATF) test for automated testing of ServiceNow applications and configurations using the sys_atf_test table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -264,7 +264,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_atf_test_step',
-          description: '➕ Adds a test step to an existing ATF test. Steps define the actions and assertions for testing.',
+          description: 'Adds a test step to an existing ATF test. Steps define the actions and assertions for testing using the sys_atf_step table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -280,7 +280,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_execute_atf_test',
-          description: '▶️ Executes an ATF test or test suite and returns the results. Tests run asynchronously in ServiceNow.',
+          description: 'Executes an ATF test or test suite and returns the results. Tests run asynchronously in ServiceNow using sys_atf_test_result table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -293,7 +293,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_get_atf_results',
-          description: '📊 Retrieves ATF test execution results including pass/fail status, error details, and execution time.',
+          description: 'Retrieves ATF test execution results including pass/fail status, error details, and execution time from sys_atf_test_result table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -305,7 +305,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_create_atf_test_suite',
-          description: '📦 Creates an ATF test suite to group and run multiple tests together.',
+          description: 'Creates an ATF test suite to group and run multiple tests together using sys_atf_test_suite table.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -320,7 +320,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_discover_atf_tests',
-          description: '🔍 Discovers existing ATF tests and test suites in the instance with filtering options.',
+          description: 'Discovers existing ATF tests and test suites in the instance with filtering options from sys_atf_test and sys_atf_test_suite tables.',
           inputSchema: {
             type: 'object',
             properties: {
