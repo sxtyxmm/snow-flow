@@ -200,13 +200,13 @@ export class MLDataFetcher {
     includeContent: boolean = true
   ): Promise<any[]> {
     try {
-      // Build query with offset
-      const offsetQuery = query ? `${query}^ORDERBY${offset}` : `ORDERBY${offset}`;
-      
+      // ServiceNow uses sysparm_offset for pagination, not ORDERBY syntax
+      // The query remains unchanged, offset is handled by the tool
       const result = await this.operationsMCP.handleTool('snow_query_table', {
         table,
-        query: offsetQuery,
+        query: query || '',
         limit,
+        offset, // Pass offset directly - the tool should handle sysparm_offset
         fields,
         include_content: includeContent
       });
@@ -214,12 +214,28 @@ export class MLDataFetcher {
       return this.extractDataFromResult(result);
     } catch (error) {
       logger.error(`Failed to fetch batch (offset: ${offset}, limit: ${limit}):`, error);
+      
+      // If offset isn't supported, try without it for first batch
+      if (offset === 0) {
+        try {
+          const fallbackResult = await this.operationsMCP.handleTool('snow_query_table', {
+            table,
+            query: query || '',
+            limit,
+            fields,
+            include_content: includeContent
+          });
+          return this.extractDataFromResult(fallbackResult);
+        } catch (fallbackError) {
+          logger.error('Fallback batch fetch also failed:', fallbackError);
+        }
+      }
       return [];
     }
   }
 
   /**
-   * Extract data from MCP tool result
+   * Extract data from MCP tool result - More robust parsing
    */
   private extractDataFromResult(result: any): any[] {
     if (!result?.content?.[0]?.text) {
@@ -229,33 +245,73 @@ export class MLDataFetcher {
     try {
       const text = result.content[0].text;
       
-      // Try to parse as JSON first
-      if (text.includes('[') && text.includes(']')) {
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+      // Method 1: Direct JSON parsing
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+        if (parsed.result && Array.isArray(parsed.result)) {
+          return parsed.result;
+        }
+        if (parsed.data && Array.isArray(parsed.data)) {
+          return parsed.data;
+        }
+      } catch (jsonError) {
+        // Not pure JSON, try other methods
+      }
+      
+      // Method 2: Extract JSON array from text
+      const jsonArrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonArrayMatch) {
+        try {
+          return JSON.parse(jsonArrayMatch[0]);
+        } catch (e) {
+          // Continue to next method
         }
       }
 
-      // Try to extract from formatted output
+      // Method 3: Extract individual JSON objects
+      const jsonObjects: any[] = [];
+      const objectMatches = text.matchAll(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+      for (const match of objectMatches) {
+        try {
+          const obj = JSON.parse(match[0]);
+          if (obj && typeof obj === 'object') {
+            jsonObjects.push(obj);
+          }
+        } catch (e) {
+          // Skip invalid JSON
+        }
+      }
+      if (jsonObjects.length > 0) {
+        return jsonObjects;
+      }
+
+      // Method 4: Parse formatted text output (fallback)
       const lines = text.split('\n');
       const data: any[] = [];
       let currentRecord: any = null;
 
       for (const line of lines) {
-        if (line.includes('number:') || line.includes('sys_id:')) {
-          if (currentRecord) {
+        // Detect new record
+        if (line.match(/^(Record \d+|\d+\.|#{1,3}|-)/) || 
+            (line.includes('sys_id:') && currentRecord)) {
+          if (currentRecord && Object.keys(currentRecord).length > 0) {
             data.push(currentRecord);
           }
           currentRecord = {};
         }
         
-        if (currentRecord && line.includes(':')) {
-          const [key, ...valueParts] = line.split(':');
-          const cleanKey = key.trim().replace(/^[-\s]+/, '');
-          const value = valueParts.join(':').trim();
-          if (cleanKey && value) {
-            currentRecord[cleanKey] = value;
+        // Extract key-value pairs
+        if (currentRecord !== null) {
+          const kvMatch = line.match(/^\s*[-*]?\s*([\w_]+)\s*[:=]\s*(.+)$/);
+          if (kvMatch) {
+            const key = kvMatch[1].trim();
+            const value = kvMatch[2].trim();
+            if (key && value && value !== 'null' && value !== 'undefined') {
+              currentRecord[key] = value;
+            }
           }
         }
       }
@@ -275,10 +331,11 @@ export class MLDataFetcher {
    * Calculate optimal batch size based on data characteristics
    */
   private calculateOptimalBatchSize(totalRecords: number, requestedBatchSize: number, numFields: number): number {
-    // Estimate tokens per record (rough approximation)
-    const avgTokensPerField = 10; // Conservative estimate
-    const tokensPerRecord = numFields * avgTokensPerField;
-    const maxTokensPerBatch = 20000; // Leave buffer below 25000 limit
+    // More conservative token estimation for ServiceNow data
+    const avgTokensPerField = 15; // ServiceNow fields can be verbose
+    const systemFieldOverhead = 100; // System fields add overhead
+    const tokensPerRecord = (numFields * avgTokensPerField) + systemFieldOverhead;
+    const maxTokensPerBatch = 15000; // More conservative limit for safety
     
     // Calculate max records per batch based on token limit
     const maxRecordsPerBatch = Math.floor(maxTokensPerBatch / tokensPerRecord);
@@ -286,8 +343,11 @@ export class MLDataFetcher {
     // Use the smaller of requested batch size and calculated max
     const optimalSize = Math.min(requestedBatchSize, maxRecordsPerBatch);
     
-    // Ensure at least 10 records per batch but not more than total
-    return Math.max(10, Math.min(optimalSize, totalRecords));
+    // For ML training, we want reasonable batch sizes (20-100 typically)
+    const minBatchSize = Math.min(20, totalRecords);
+    const maxBatchSize = Math.min(100, totalRecords);
+    
+    return Math.max(minBatchSize, Math.min(optimalSize, maxBatchSize));
   }
 
   /**

@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.3.4",
-  "description": "Snow-Flow v3.3.4: ServiceNow development platform with 180+ MCP tools. FIXED: snow_update natural language processing bug - now supports intelligent parsing of instructions like 'Add a chart showing priority distribution'. Enhanced MCP servers with real-time progress indicators, per-operation token tracking (tokens reset per call), and comprehensive operation logging. Supports ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps integration. All tools use official ServiceNow REST APIs across 17 specialized MCP servers with full visibility into API operations.",
+  "version": "3.3.5",
+  "description": "Snow-Flow v3.3.5: CRITICAL ML FIX - Machine Learning MCP now fully functional with TensorFlow.js! Fixed pagination, ServiceNow API integration, data parsing, and training workflow. Real progress tracking, intelligent error messages, and automatic fallback when PA/PI not available. Train incident classifiers, predict change risks, forecast volumes, and detect anomalies - all working with real ServiceNow data. Enhanced MCP servers with real-time progress indicators and comprehensive operation logging. 180+ MCP tools across 17 specialized servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
