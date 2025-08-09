@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.2.2",
-  "description": "Snow-Flow v3.2.2: ServiceNow development platform with 180+ MCP tools. Includes ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps integration. All tools use official ServiceNow REST APIs across 17 specialized MCP servers.",
+  "version": "3.2.3",
+  "description": "Snow-Flow v3.2.3: ServiceNow development platform with 180+ MCP tools. One command to rule them all: 'snow-flow swarm'. Includes ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps integration. All tools use official ServiceNow REST APIs across 17 specialized MCP servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

@@ -10,6 +10,31 @@
 
 Snow-Flow is an AI-powered development platform for ServiceNow that provides 180+ MCP tools and multi-agent coordination. It enables developers and administrators to interact with ServiceNow through natural language commands and automated workflows.
 
+## Quick Start - One Command to Rule Them All
+
+### 🚀 The Swarm Command
+The simplest way to use Snow-Flow is with the swarm command. Just describe what you want in natural language:
+
+```bash
+# Basic usage - no flags needed!
+snow-flow swarm "Create an incident dashboard with real-time updates"
+```
+
+This single command automatically:
+- Spawns multiple specialized AI agents
+- Discovers existing ServiceNow artifacts
+- Creates complete working solutions
+- Deploys directly to your instance
+- Handles all technical complexity
+
+More examples:
+```bash
+snow-flow swarm "Build employee onboarding workflow"
+snow-flow swarm "Create knowledge base for IT support"
+snow-flow swarm "Set up change management process"
+snow-flow swarm "Analyze last month's incident patterns"
+```
+
 ## Core Functionality
 
 Snow-Flow connects directly to ServiceNow instances through OAuth 2.0 authentication and provides:
@@ -369,7 +394,42 @@ snow-flow auth login
 snow-flow auth test
 ```
 
+### Troubleshooting: Claude Code stdio Error
+
+If you encounter a stdio/permissions error when using Snow-Flow with Claude Code:
+
+```bash
+# 1. Fix Claude permissions
+claude --dangerously-skip-permissions
+
+# 2. Activate Claude Code
+# Open Claude Code and ensure it's activated with your account
+
+# 3. Login to Claude
+# Sign in with your Claude account in the Claude Code interface
+
+# 4. Close Claude Code completely
+# Make sure Claude Code is fully closed before proceeding
+
+# 5. Now run Snow-Flow swarm
+snow-flow swarm "Your ServiceNow task here"
+```
+
+This resolves the common "stdio" error that occurs when Claude Code doesn't have proper permissions to communicate with MCP servers.
+
 ## Usage Examples
+
+### Swarm Command (Recommended)
+```bash
+# The simplest way - just describe what you want!
+snow-flow swarm "Create incident management dashboard"
+
+# No flags needed for basic usage
+snow-flow swarm "Build service catalog for laptop requests"
+
+# Advanced usage with optional flags
+snow-flow swarm "Optimize incident resolution process" --monitor --parallel
+```
 
 ### Natural Language Commands
 ```bash
@@ -395,19 +455,24 @@ snow-flow deploy widget --name "SLA Dashboard" --template dashboard
 snow-flow generate docs --scope "incident_management"
 ```
 
-### Swarm Coordination
+### Advanced Swarm Options
 ```bash
-# Multi-agent development
+# With specific strategy
 snow-flow swarm "Build complete HR service portal" \
   --strategy development \
   --mode hierarchical \
   --max-agents 8
 
-# Analysis swarm
+# Parallel analysis
 snow-flow swarm "Analyze system performance bottlenecks" \
   --strategy analysis \
   --mode mesh \
   --parallel
+
+# With monitoring
+snow-flow swarm "Deploy production changes" \
+  --monitor \
+  --auto-rollback
 ```
 
 ## Configuration
