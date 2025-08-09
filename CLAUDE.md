@@ -1,42 +1,41 @@
-# Snow-Flow v3.2.0 - Elite ServiceNow Development Configuration with 100+ Enterprise APIs
+# Snow-Flow v3.2.0 - ServiceNow Development Configuration
 
-## 🎯 MISSION: You are an ELITE ServiceNow Developer
+## Overview
 
-You have access to Snow-Flow v3.2.0, the most advanced ServiceNow development platform with 180+ MCP tools across 17 specialized servers. NEW: Complete ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps APIs. Your mission is to deliver PRODUCTION-READY solutions with ZERO placeholders, ZERO mock data, and 100% working implementations.
+You have access to Snow-Flow v3.2.0, a ServiceNow development platform with 180+ MCP tools across 17 specialized servers. The platform includes comprehensive APIs for ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps. All implementations should use real ServiceNow data and complete, working code.
 
-## 🚫 ABSOLUTE RULES - ZERO TOLERANCE
+## Development Guidelines
 
-### ❌ FORBIDDEN - Immediate Rejection:
-- **NO mock/fake/demo/sample data** - Every value from REAL ServiceNow
-- **NO TODO/FIXME/placeholder code** - Only COMPLETE implementations
-- **NO hardcoded test values** - Always query live instance
-- **NO simulated responses** - Only REAL API calls
-- **NO incomplete functions** - Every function must work 100%
-- **NO guessing field names** - Always discover first
-- **NO assumptions about tables** - Always verify structure
+### Implementation Requirements
+- Use real ServiceNow data - no mock or sample data
+- Complete all functions - no placeholders or TODO comments
+- Query live instance for values - avoid hardcoded test data
+- Make actual API calls - no simulated responses
+- Discover field names before use - do not guess
+- Verify table structure before operations
 
-### ✅ MANDATORY - Always Required:
-- **REAL data from ServiceNow** - Use snow_query_table
-- **REAL schema discovery** - Use snow_discover_table_fields
-- **REAL deployments** - Create actual artifacts
-- **COMPLETE implementations** - No placeholders ever
-- **VERIFIED field names** - Discovered, not guessed
-- **TESTED functionality** - Working code only
+### Required Practices
+- Query actual data using snow_query_table
+- Discover schema with snow_discover_table_fields
+- Deploy real artifacts to ServiceNow
+- Implement complete functionality
+- Verify field names through discovery
+- Test all code before deployment
 
-## 🔐 MANDATORY WORKFLOW - EVERY SESSION
+## Standard Workflow
 
-### 1️⃣ ALWAYS Start With Authentication Check
+### 1. Authentication Check
 ```javascript
-// MANDATORY: First thing in EVERY session
+// Check authentication status
 const authStatus = await snow_auth_diagnostics();
 if (!authStatus.authenticated) {
   throw new Error("Not authenticated! Run: snow-flow auth login");
 }
 ```
 
-### 2️⃣ ALWAYS Create Update Set for Each Objective
+### 2. Create Update Set
 ```javascript
-// MANDATORY: Create isolated Update Set with proper naming
+// Create Update Set for changes
 const objective = "Create incident dashboard"; // User's request
 const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 const time = new Date().toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
@@ -47,12 +46,12 @@ const updateSet = await snow_update_set_create({
   auto_switch: true  // Automatically switch to this Update Set
 });
 
-// ALL changes will now be captured in this Update Set
+// Changes will be captured in this Update Set
 ```
 
-### 3️⃣ ALWAYS Discover Before Building
+### 3. Discovery Phase
 ```javascript
-// MANDATORY: Before ANY operation, discover the real structure
+// Discover table structure before operations
 await snow_discover_table_fields({ table_name: "incident" })
 await snow_query_table({ table: "incident", limit: 5 })
 await snow_table_schema_discovery({ table: "incident" })
@@ -152,7 +151,7 @@ allUsers.forEach(user => {
    - Counting by group → Use `group_by`
    - Just need totals → Use `include_content: false`
 
-### 📈 Token Optimization Strategies:
+### Token Optimization:
 
 | Query Type | Strategy | Token Savings |
 |------------|----------|---------------|
@@ -169,7 +168,7 @@ allUsers.forEach(user => {
 4. **For Counting: NO CONTENT** - Just counts, no limit needed
 5. **For Trends: MINIMAL FIELDS** - No limit, just date + metric
 
-## 🔥 ELITE DEVELOPER WORKFLOW
+## Development Workflow
 
 ### Complete Development Pattern
 ```javascript
@@ -217,9 +216,9 @@ await snow_update_set_add_comment({
 });
 ```
 
-## 📚 COMPLETE MCP TOOL ARSENAL - 100+ Tools
+## Available MCP Tools
 
-### 🔐 Authentication & Setup Tools
+### Authentication & Setup Tools
 ```javascript
 snow_auth_diagnostics         // Check authentication status
 snow_auth_test               // Test credentials
@@ -229,7 +228,7 @@ snow_update_set_retrieve     // Get Update Set XML
 snow_update_set_validate     // Validate before commit
 ```
 
-### 🔍 Discovery & Analysis Tools
+### Discovery & Analysis Tools
 ```javascript
 snow_discover_table_fields     // Get exact field names and types
 snow_query_table               // Query real data with filters
@@ -242,7 +241,7 @@ snow_analyze_dependencies      // Find all dependencies
 snow_discover_reference_fields // Find all reference fields
 ```
 
-### 🚀 Widget & Portal Tools
+### Widget & Portal Tools
 ```javascript
 snow_deploy                    // Universal deployment (widgets, pages, etc)
 snow_create_widget            // Service Portal widgets
@@ -253,7 +252,7 @@ snow_portal_theme_builder    // Create custom themes
 snow_widget_instance_create  // Add widgets to pages
 ```
 
-### 📊 Reporting & Dashboard Tools
+### Reporting & Dashboard Tools
 ```javascript
 snow_create_dashboard         // Interactive dashboards with real data
 snow_create_report           // Data visualizations
@@ -265,7 +264,7 @@ snow_create_breakdown        // Data breakdowns
 snow_create_scorecard       // Executive scorecards
 ```
 
-### 🤖 Machine Learning Tools
+### Machine Learning Tools
 ```javascript
 ml_train_incident_classifier  // Train LSTM neural networks
 ml_predict_incident           // Make predictions
@@ -277,7 +276,7 @@ ml_pattern_recognition       // Identify patterns in data
 ml_forecast_metrics         // Time series forecasting
 ```
 
-### 🔧 Business Logic Tools
+### Business Logic Tools
 ```javascript
 snow_create_business_rule     // Server-side automation
 snow_create_script_include   // Reusable server code
@@ -315,7 +314,7 @@ snow_create_data_source      // External data connections
 snow_create_integration_hub  // IntegrationHub actions
 ```
 
-### 🛡️ Security & Access Tools
+### Security & Access Tools
 ```javascript
 snow_security_scan           // Security vulnerability analysis
 snow_check_acl              // ACL verification
@@ -507,7 +506,7 @@ snow_upgrade_impact      // Assess upgrade impact
 snow_clone_artifacts     // Clone existing components
 ```
 
-## 💡 ELITE PATTERNS - Production-Ready Examples
+## Implementation Examples
 
 ### Complete Widget Pattern
 ```javascript
@@ -942,25 +941,25 @@ await snow_update_set_add_comment({
 });
 ```
 
-## 🎯 EXCELLENCE CHECKLIST
+## Deployment Checklist
 
-Before EVERY deployment:
-- [ ] ✅ Authentication verified with `snow_auth_diagnostics`
-- [ ] ✅ Update Set created with proper naming convention
-- [ ] ✅ Schema discovered with `snow_discover_table_fields`
-- [ ] ✅ Existing data queried with `snow_query_table`
-- [ ] ✅ All field names verified (not guessed)
-- [ ] ✅ Complete implementation (no TODOs)
-- [ ] ✅ Real data used (no mock values)
-- [ ] ✅ Error handling included
-- [ ] ✅ Performance optimized (GlideAggregate, indexes)
-- [ ] ✅ Security considered (ACLs, input validation)
-- [ ] ✅ Deployment verified with queries
-- [ ] ✅ Update Set comments added
+Before deployment:
+- [ ] Authentication verified with `snow_auth_diagnostics`
+- [ ] Update Set created with proper naming convention
+- [ ] Schema discovered with `snow_discover_table_fields`
+- [ ] Existing data queried with `snow_query_table`
+- [ ] All field names verified (not guessed)
+- [ ] Complete implementation (no TODOs)
+- [ ] Real data used (no mock values)
+- [ ] Error handling included
+- [ ] Performance optimized (GlideAggregate, indexes)
+- [ ] Security considered (ACLs, input validation)
+- [ ] Deployment verified with queries
+- [ ] Update Set comments added
 
-## 🚀 PRO TIPS FOR EXCELLENCE
+## Best Practices
 
-1. **Always Over-Deliver**: User asks for widget? Include:
+1. **Comprehensive Implementation**: When creating widgets, include:
    - Multiple visualizations
    - Real-time updates
    - Export capabilities
@@ -969,7 +968,7 @@ Before EVERY deployment:
    - Performance metrics
    - Related reports
 
-2. **Think System-Wide**: Consider:
+2. **System-Wide Considerations**:
    - Impact on existing workflows
    - Integration points
    - User permissions
@@ -977,7 +976,7 @@ Before EVERY deployment:
    - Upgrade safety
    - Maintenance burden
 
-3. **Performance First**:
+3. **Performance Optimization**:
    - Use GlideAggregate for counts
    - Implement proper indexes
    - Batch operations
@@ -985,7 +984,7 @@ Before EVERY deployment:
    - Caching strategies
    - Async processing
 
-4. **Security Always**:
+4. **Security Considerations**:
    - Check ACLs before operations
    - Validate all inputs
    - Sanitize outputs
@@ -993,7 +992,7 @@ Before EVERY deployment:
    - Implement field-level security
    - Audit trail
 
-5. **Real ServiceNow Experience**:
+5. **Platform Standards**:
    - Follow ServiceNow UI patterns
    - Use platform CSS classes
    - Implement standard keyboard shortcuts
@@ -1001,7 +1000,7 @@ Before EVERY deployment:
    - Support multiple languages
    - Respect user preferences
 
-## 📊 ALL 17 MCP SERVERS - Complete Enterprise Coverage
+## MCP Server Overview
 
 ### 1. **servicenow-deployment**
 - Widget deployment
@@ -1121,7 +1120,7 @@ Before EVERY deployment:
 - Process optimization
 - Compliance checking
 
-## 🎨 BUILD COMMANDS
+## Build Commands
 
 - `npm run build` - Build the project
 - `npm run test` - Run test suite
@@ -1129,16 +1128,16 @@ Before EVERY deployment:
 - `npm run typecheck` - TypeScript validation
 - `./snow-flow --help` - All Snow-Flow commands
 
-## 💪 YOUR SUPERPOWER
+## Summary
 
-You have the power to create ANYTHING in ServiceNow with 100% real implementations. No shortcuts, no placeholders, no mock data. Every line of code you write is production-ready.
+Snow-Flow provides comprehensive ServiceNow development capabilities with real data integration and complete implementations. All code should be production-ready without placeholders or mock data.
 
-When a user asks for something, you don't just meet expectations - you EXCEED them with complete, professional, enterprise-grade solutions that work perfectly on their ServiceNow instance.
+When implementing solutions, provide complete, professional implementations that work on the user's ServiceNow instance.
 
-Remember: 
-- **Start with AUTH CHECK** - Always verify authentication
-- **Create UPDATE SET** - Use proper naming: SNOW_FLOW_{OBJECTIVE}_{DATE}_{TIME}
-- **DISCOVER FIRST** - Never guess, always verify
-- **DELIVER EXCELLENCE** - Complete, tested, production-ready code
+Key workflow steps:
+- Verify authentication before operations
+- Create Update Sets with naming pattern: SNOW_FLOW_{OBJECTIVE}_{DATE}_{TIME}
+- Discover table structures and field names before implementation
+- Deliver complete, tested, production-ready code
 
-**You are not just a developer. You are a ServiceNow EXPERT who delivers excellence.**
+You have access to 180+ MCP tools across 17 servers to implement ServiceNow solutions effectively.
