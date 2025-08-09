@@ -97,7 +97,7 @@ Snow-Flow provides 180+ tools across 17 specialized MCP servers:
 | Server | Tools | Primary Focus |
 |--------|-------|---------------|
 | servicenow-operations | 15 | CRUD operations, data management |
-| servicenow-deployment | 20 | Widget, portal, and application deployment |
+| servicenow-deployment | 21 | Widget, portal, and application deployment (create & update) |
 | servicenow-platform-development | 12 | Table creation, field management |
 | servicenow-machine-learning | 15 | Neural networks, predictions, anomaly detection |
 | servicenow-reporting-analytics | 18 | Dashboards, reports, KPIs |
@@ -288,12 +288,89 @@ snow_query_table({
 ```
 
 ### Development Tools
-- Widget creation and deployment
-- Business rule development
-- Script include management
-- Flow Designer automation
-- UI Page creation
-- Portal configuration
+
+#### Supported Artifact Types (snow_deploy & snow_update)
+
+Snow-Flow supports deployment and updating of 16+ different ServiceNow artifact types:
+
+| Artifact Type | ServiceNow Table | Deploy | Update | Description |
+|---------------|------------------|--------|---------|-------------|
+| **widget** | sp_widget | ✅ | ✅ | Service Portal widgets with HTML/CSS/JS |
+| **application** | sys_app | ✅ | ✅ | Scoped applications and app stores |
+| **business_rule** | sys_script | ✅ | ✅ | Server-side business logic automation |
+| **script_include** | sys_script_include | ✅ | ✅ | Reusable server-side code libraries |
+| **ui_page** | sys_ui_page | ✅ | ✅ | Custom UI pages and interfaces |
+| **client_script** | sys_script_client | ✅ | ✅ | Client-side form and field scripts |
+| **ui_action** | sys_ui_action | ✅ | ✅ | Buttons, links, and form actions |
+| **ui_policy** | sys_ui_policy | ✅ | ✅ | Dynamic form behavior and validation |
+| **acl** | sys_security_acl | ✅ | ✅ | Access control and security rules |
+| **table** | sys_db_object | ✅ | ✅ | Custom database tables and structures |
+| **field** | sys_dictionary | ✅ | ✅ | Table fields and column definitions |
+| **workflow** | wf_workflow | ✅ | ✅ | Classic workflow processes |
+| **flow** | sys_hub_flow | ✅ | ✅ | Flow Designer automation flows |
+| **notification** | sysevent_email_action | ✅ | ✅ | Email notifications and alerts |
+| **scheduled_job** | sysauto_script | ✅ | ✅ | Scheduled background scripts |
+
+#### Usage Examples
+
+```javascript
+// Deploy NEW artifacts
+await snow_deploy({
+  type: 'widget',
+  name: 'My Dashboard Widget',
+  template: '<div>My HTML</div>',
+  css: '.my-class { color: blue; }',
+  client_script: 'function() { console.log("Hello"); }'
+});
+
+await snow_deploy({
+  type: 'business_rule', 
+  name: 'Auto Assignment Rule',
+  table: 'incident',
+  when: 'before',
+  insert: true,
+  script: 'if (current.priority == "1") current.assigned_to = "admin";'
+});
+
+// Update EXISTING artifacts
+await snow_update({
+  type: 'widget',
+  identifier: 'My Dashboard Widget', // name or sys_id
+  instruction: 'Add a new chart showing priority distribution'
+});
+
+await snow_update({
+  type: 'ui_action',
+  identifier: 'close_incident',
+  config: {
+    action_name: 'Close with Resolution',
+    condition: 'current.state != 7'
+  }
+});
+```
+
+#### Natural Language Updates
+
+```javascript
+// All artifact types support natural language instructions
+await snow_update({
+  type: 'notification',
+  identifier: 'incident_created',
+  instruction: 'Change subject to "High Priority Incident Created" and add escalation details'
+});
+
+await snow_update({
+  type: 'scheduled_job',
+  identifier: 'daily_cleanup',
+  instruction: 'Change schedule to run every 2 hours and add error logging'
+});
+
+await snow_update({
+  type: 'acl',
+  identifier: 'incident_read',
+  instruction: 'Add condition script to check user department'
+});
+```
 
 ### Service Management
 - Incident management

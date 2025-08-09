@@ -256,14 +256,59 @@ class ServiceNowDeploymentMCP {
           },
         },
         {
-          name: 'snow_deploy',
-          description: 'Universal deployment tool for all ServiceNow artifacts. Features automatic update set management, permission escalation, retry logic, and comprehensive error recovery. Primary deployment method for v3.0.0+',
+          name: 'snow_update',
+          description: 'Updates existing ServiceNow artifacts (widgets, applications, etc.). Finds artifact by name or sys_id and modifies it. Use snow_deploy for creating new artifacts.',
           inputSchema: {
             type: 'object',
             properties: {
               type: {
                 type: 'string',
-                enum: ['widget', 'portal_page', 'application', 'script', 'business_rule', 'table'],
+                enum: [
+                  'widget', 'application', 'business_rule', 'script_include', 'ui_page',
+                  'client_script', 'ui_action', 'ui_policy', 'acl', 'table', 'field',
+                  'workflow', 'flow', 'notification', 'scheduled_job'
+                ],
+                description: 'Type of artifact to update'
+              },
+              identifier: {
+                type: 'string',
+                description: 'sys_id or name of existing artifact to update'
+              },
+              config: {
+                type: 'object',
+                description: 'New configuration/content for the artifact'
+              },
+              instruction: {
+                type: 'string',
+                description: 'Natural language description of changes to make'
+              },
+              create_if_not_exists: {
+                type: 'boolean',
+                default: false,
+                description: 'Create artifact if it does not exist'
+              },
+              auto_update_set: {
+                type: 'boolean',
+                default: true,
+                description: 'Automatically manage update set'
+              }
+            },
+            required: ['type', 'identifier']
+          }
+        },
+        {
+          name: 'snow_deploy',
+          description: 'Universal deployment tool for creating NEW ServiceNow artifacts. For updating existing artifacts, use snow_update. Features automatic update set management, permission escalation, retry logic, and comprehensive error recovery.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                enum: [
+                  'widget', 'portal_page', 'application', 'script', 'business_rule', 'table',
+                  'script_include', 'ui_page', 'client_script', 'ui_action', 'ui_policy', 
+                  'acl', 'field', 'workflow', 'flow', 'notification', 'scheduled_job'
+                ],
                 description: 'Type of artifact to deploy'
               },
               instruction: {
@@ -337,6 +382,8 @@ class ServiceNowDeploymentMCP {
             return await this.createSolutionPackage(args);
           case 'snow_deploy':
             return await this.unifiedDeploy(args);
+          case 'snow_update':
+            return await this.updateArtifact(args);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -8653,6 +8700,778 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
     } catch (error) {
       this.logger.error('Failed to ensure Update Set session', error);
       throw new Error(`Update Set session required for deployment. Error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update existing ServiceNow artifact
+   */
+  private async updateArtifact(args: any) {
+    try {
+      this.logger.info('Starting artifact update', args);
+      
+      // Check authentication first
+      const isAuthenticated = await this.oauth.isAuthenticated();
+      if (!isAuthenticated) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          'Not authenticated. Run "snow-flow auth login" first.'
+        );
+      }
+
+      const { type, identifier, config, instruction, create_if_not_exists = false, auto_update_set = true } = args;
+
+      // Step 1: Ensure Update Set if requested
+      let updateSetSession = null;
+      if (auto_update_set) {
+        try {
+          const ensureResponse = await this.ensureActiveUpdateSet(`${type} update: ${identifier}`);
+          updateSetSession = ensureResponse.session;
+        } catch (error) {
+          this.logger.warn('Failed to ensure Update Set, continuing without', error);
+        }
+      }
+
+      // Step 2: Determine table name
+      let tableName: string;
+      switch (type) {
+        case 'widget':
+          tableName = 'sp_widget';
+          break;
+        case 'application':
+          tableName = 'sys_app';
+          break;
+        case 'business_rule':
+          tableName = 'sys_script';
+          break;
+        case 'script_include':
+          tableName = 'sys_script_include';
+          break;
+        case 'ui_page':
+          tableName = 'sys_ui_page';
+          break;
+        case 'client_script':
+          tableName = 'sys_script_client';
+          break;
+        case 'ui_action':
+          tableName = 'sys_ui_action';
+          break;
+        case 'ui_policy':
+          tableName = 'sys_ui_policy';
+          break;
+        case 'acl':
+          tableName = 'sys_security_acl';
+          break;
+        case 'table':
+          tableName = 'sys_db_object';
+          break;
+        case 'field':
+          tableName = 'sys_dictionary';
+          break;
+        case 'workflow':
+          tableName = 'wf_workflow';
+          break;
+        case 'flow':
+          tableName = 'sys_hub_flow';
+          break;
+        case 'notification':
+          tableName = 'sysevent_email_action';
+          break;
+        case 'scheduled_job':
+          tableName = 'sysauto_script';
+          break;
+        default:
+          throw new Error(`Unsupported artifact type: ${type}`);
+      }
+
+      // Step 3: Find existing artifact
+      let existingArtifact = null;
+      let searchQuery = '';
+      
+      // Check if identifier is a sys_id (32 char hex) or a name
+      const isSysId = /^[a-f0-9]{32}$/.test(identifier);
+      
+      if (isSysId) {
+        searchQuery = `sys_id=${identifier}`;
+      } else {
+        searchQuery = `name=${identifier}`;
+      }
+
+      this.logger.info(`Searching for ${type} with query: ${searchQuery}`);
+      
+      try {
+        const searchResponse = await this.client.searchRecords(tableName, searchQuery, 1);
+        
+        if (searchResponse?.data?.result?.length > 0) {
+          existingArtifact = searchResponse.data.result[0];
+          this.logger.info(`Found existing ${type}: ${existingArtifact.sys_id}`);
+        }
+      } catch (searchError) {
+        this.logger.error(`Failed to search for ${type}:`, searchError);
+      }
+
+      // Step 4: Handle artifact not found
+      if (!existingArtifact) {
+        if (create_if_not_exists) {
+          this.logger.info(`${type} not found, creating new one as requested`);
+          // Delegate to snow_deploy for creation
+          return await this.unifiedDeploy({
+            type,
+            config,
+            instruction,
+            auto_update_set
+          });
+        } else {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ ${type} not found: "${identifier}"
+
+🔍 **Search Details:**
+- Table: ${tableName}
+- Search Query: ${searchQuery}
+- Results: 0
+
+💡 **Suggestions:**
+1. Check the ${isSysId ? 'sys_id' : 'name'} is correct
+2. Verify you have read permissions for ${tableName}
+3. Use exact ${isSysId ? 'sys_id format (32 char hex)' : 'name (case sensitive)'}
+4. Add create_if_not_exists: true to create if missing
+
+🔧 **Alternative Commands:**
+- List existing: \`snow_query_table({ table: "${tableName}", limit: 10 })\`
+- Create new: \`snow_deploy({ type: "${type}", ... })\`
+- Find by name: \`snow_update({ type: "${type}", identifier: "exact_name" })\``
+            }]
+          };
+        }
+      }
+
+      // Step 5: Process update configuration
+      let updateData: any = {};
+      
+      if (instruction) {
+        // Natural language instruction - convert to specific updates
+        updateData = await this.processUpdateInstruction(type, instruction, existingArtifact);
+      } else if (config) {
+        updateData = config;
+      } else {
+        throw new Error('Either instruction or config must be provided for update');
+      }
+
+      // Step 6: Perform the update
+      this.logger.info(`Updating ${type} ${existingArtifact.sys_id}`, updateData);
+      
+      const updateResponse = await this.client.updateRecord(tableName, existingArtifact.sys_id, updateData);
+
+      if (!updateResponse?.success) {
+        throw new Error(`Failed to update ${type}: ${updateResponse?.error || 'Unknown error'}`);
+      }
+
+      // Step 7: Track the update
+      if (updateSetSession) {
+        artifactTracker.trackArtifact(
+          existingArtifact.sys_id,
+          tableName,
+          existingArtifact.name,
+          type,
+          'update'
+        );
+      }
+
+      // Step 8: Return success response
+      const updatedFields = Object.keys(updateData);
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ ${type} updated successfully!
+
+📝 **Updated Artifact:**
+- Name: ${existingArtifact.name}
+- sys_id: ${existingArtifact.sys_id}
+- Table: ${tableName}
+
+🔧 **Fields Updated:**
+${updatedFields.map(field => `- ${field}`).join('\n')}
+
+${updateSetSession ? `📦 **Update Set:**
+- Name: ${updateSetSession.name}
+- sys_id: ${updateSetSession.update_set_id}
+- Ready for promotion to higher environments` : '🔄 Changes made outside Update Set - track manually'}
+
+💡 **Next Steps:**
+1. Test the updated ${type} in your environment
+2. ${updateSetSession ? 'Preview and commit Update Set when ready' : 'Create Update Set to track changes'}
+3. Promote to production after validation
+
+🔗 **ServiceNow Links:**
+- View artifact: /nav_to.do?uri=${tableName}.do?sys_id=${existingArtifact.sys_id}
+${updateSetSession ? `- View Update Set: /nav_to.do?uri=sys_update_set.do?sys_id=${updateSetSession.update_set_id}` : ''}`
+        }]
+      };
+
+    } catch (error) {
+      this.logger.error('Artifact update failed:', error);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ Failed to update ${args.type}: ${error.message}
+
+🔍 **Troubleshooting:**
+1. Verify the artifact exists: \`snow_query_table({ table: "${this.getTableName(args.type)}", query: "name=${args.identifier}" })\`
+2. Check permissions for ${this.getTableName(args.type)} table
+3. Ensure Update Set is active (if required)
+4. Try with create_if_not_exists: true if artifact might not exist
+
+💡 **Alternative:**
+Use \`snow_deploy\` to create a new ${args.type} instead.`
+        }]
+      };
+    }
+  }
+
+  /**
+   * Process natural language instruction for updates
+   */
+  /**
+   * Intelligent Natural Language Processing for ServiceNow artifact updates
+   * Converts natural language instructions into valid ServiceNow field updates
+   */
+  private async processUpdateInstruction(type: string, instruction: string, existingArtifact: any): Promise<any> {
+    const updateData: any = {};
+    const lowerInstruction = instruction.toLowerCase().trim();
+    
+    this.logger.info(`Processing update instruction for ${type}`, { instruction });
+
+    try {
+      // First, extract any code blocks or explicit values
+      const codeBlocks = this.extractCodeBlocks(instruction);
+      const explicitValues = this.extractExplicitValues(instruction);
+      
+      // Apply type-specific intelligent parsing
+      switch (type) {
+        case 'widget':
+          await this.parseWidgetInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'business_rule':
+        case 'client_script':
+        case 'script_include':
+          await this.parseScriptInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'ui_action':
+          await this.parseUIActionInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'ui_policy':
+          await this.parseUIPolicyInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'notification':
+          await this.parseNotificationInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'acl':
+          await this.parseACLInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'table':
+          await this.parseTableInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'field':
+          await this.parseFieldInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'workflow':
+          await this.parseWorkflowInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'flow':
+          await this.parseFlowInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        case 'scheduled_job':
+          await this.parseScheduledJobInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+          break;
+        default:
+          // Generic parsing for unsupported types
+          await this.parseGenericInstruction(updateData, lowerInstruction, codeBlocks, explicitValues, existingArtifact);
+      }
+      
+      // Apply common field updates
+      this.applyCommonUpdates(updateData, lowerInstruction, explicitValues);
+      
+      // Validate that we have valid updates
+      if (Object.keys(updateData).length === 0) {
+        throw new Error(`Unable to parse instruction: "${instruction}". Please use more specific language or provide explicit field values.
+
+📝 **Examples that work:**
+- "Change the title to 'New Widget Title'"
+- "Update the description to 'Updated description'"  
+- "Add this CSS: .my-class { color: blue; }"
+- "Change the script to: function() { console.log('updated'); }"
+- "Set active to false"
+
+💡 **Or use the config parameter directly:**
+snow_update({ 
+  type: "${type}", 
+  identifier: "${existingArtifact?.name || 'artifact_name'}", 
+  config: { 
+    field_name: "new_value"
+  }
+})`);
+      }
+      
+      this.logger.info(`Parsed ${Object.keys(updateData).length} field updates`, { updateData });
+      return updateData;
+      
+    } catch (error) {
+      this.logger.error('Failed to process update instruction', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
+  }
+
+  /**
+   * Extract code blocks from instruction text
+   */
+  private extractCodeBlocks(instruction: string): { [key: string]: string } {
+    const codeBlocks: { [key: string]: string } = {};
+    
+    // Extract different types of code blocks
+    const htmlMatch = instruction.match(/```html\s*\n([\s\S]*?)\n```/i);
+    if (htmlMatch) codeBlocks.html = htmlMatch[1].trim();
+    
+    const cssMatch = instruction.match(/```css\s*\n([\s\S]*?)\n```/i);
+    if (cssMatch) codeBlocks.css = cssMatch[1].trim();
+    
+    const jsMatch = instruction.match(/```javascript\s*\n([\s\S]*?)\n```/i);
+    if (jsMatch) codeBlocks.javascript = jsMatch[1].trim();
+    
+    const jsonMatch = instruction.match(/```json\s*\n([\s\S]*?)\n```/i);
+    if (jsonMatch) {
+      try {
+        codeBlocks.json = JSON.parse(jsonMatch[1].trim());
+      } catch (e) {
+        codeBlocks.json = jsonMatch[1].trim();
+      }
+    }
+    
+    return codeBlocks;
+  }
+
+  /**
+   * Extract explicit field values from instruction
+   */
+  private extractExplicitValues(instruction: string): { [key: string]: any } {
+    const values: { [key: string]: any } = {};
+    
+    // Common patterns for explicit values
+    const patterns = [
+      { regex: /title[:\s]+["']([^"']+)["']/i, field: 'title' },
+      { regex: /name[:\s]+["']([^"']+)["']/i, field: 'name' },
+      { regex: /description[:\s]+["']([^"']+)["']/i, field: 'description' },
+      { regex: /subject[:\s]+["']([^"']+)["']/i, field: 'subject' },
+      { regex: /label[:\s]+["']([^"']+)["']/i, field: 'label' },
+      { regex: /condition[:\s]+["']([^"']+)["']/i, field: 'condition' },
+      { regex: /script[:\s]+["']([^"']+)["']/i, field: 'script' },
+      { regex: /active[:\s]+(\w+)/i, field: 'active', transform: (v: string) => v.toLowerCase() === 'true' },
+      { regex: /priority[:\s]+(\d+)/i, field: 'priority', transform: (v: string) => parseInt(v) },
+      { regex: /order[:\s]+(\d+)/i, field: 'order', transform: (v: string) => parseInt(v) }
+    ];
+    
+    for (const pattern of patterns) {
+      const match = instruction.match(pattern.regex);
+      if (match) {
+        values[pattern.field] = pattern.transform ? pattern.transform(match[1]) : match[1];
+      }
+    }
+    
+    return values;
+  }
+
+  /**
+   * Parse widget-specific instructions
+   */
+  private async parseWidgetInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    // Handle code blocks
+    if (codeBlocks.html) updateData.template = codeBlocks.html;
+    if (codeBlocks.css) updateData.css = codeBlocks.css;
+    if (codeBlocks.javascript) updateData.script = codeBlocks.javascript;
+    
+    // Handle semantic instructions for widgets
+    if (instruction.includes('add') && instruction.includes('chart')) {
+      // User wants to add a chart - enhance existing template
+      if (existingArtifact?.template) {
+        const currentTemplate = existingArtifact.template || '';
+        if (!currentTemplate.includes('canvas') && !currentTemplate.includes('chart')) {
+          updateData.template = currentTemplate + '\n<div class="chart-container">\n  <canvas id="widget-chart"></canvas>\n</div>';
+        }
+      }
+      
+      // Add chart CSS if not present
+      if (existingArtifact?.css && !existingArtifact.css.includes('chart-container')) {
+        updateData.css = (existingArtifact.css || '') + '\n\n.chart-container {\n  margin: 20px 0;\n  height: 300px;\n}\n\ncanvas {\n  width: 100% !important;\n  height: 100% !important;\n}';
+      }
+      
+      // Add chart script if not present  
+      if (existingArtifact?.script && !existingArtifact.script.includes('Chart')) {
+        const chartScript = `
+// Chart functionality added
+c.initChart = function() {
+  if (typeof Chart !== 'undefined' && document.getElementById('widget-chart')) {
+    var ctx = document.getElementById('widget-chart').getContext('2d');
+    c.chart = new Chart(ctx, {
+      type: 'bar',
+      data: c.data.chartData || { labels: [], datasets: [] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+};
+
+// Add to existing onInit
+var originalInit = c.$onInit;
+c.$onInit = function() {
+  if (originalInit) originalInit();
+  c.initChart();
+};`;
+        updateData.script = (existingArtifact.script || '') + chartScript;
+      }
+    }
+    
+    // Handle title/name changes  
+    if (instruction.includes('change') && instruction.includes('title')) {
+      const titleMatch = instruction.match(/title[:\s]+["']([^"']+)["']/i) || 
+                         instruction.match(/to\s+["']([^"']+)["']/i);
+      if (titleMatch) updateData.title = titleMatch[1];
+    }
+    
+    // Handle style updates
+    if (instruction.includes('style') || instruction.includes('css')) {
+      if (!codeBlocks.css) {
+        // Generate basic style updates based on instruction
+        if (instruction.includes('color')) {
+          const colorMatch = instruction.match(/color[:\s]+(\w+|#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3})/i);
+          if (colorMatch) {
+            updateData.css = (existingArtifact?.css || '') + `\n\n.widget-content { color: ${colorMatch[1]}; }`;
+          }
+        }
+      }
+    }
+    
+    // Apply explicit values
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse script-based artifact instructions (business_rule, script_include, client_script)
+   */
+  private async parseScriptInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.javascript) {
+      updateData.script = codeBlocks.javascript;
+    }
+    
+    // Handle condition updates
+    if (instruction.includes('condition') && !codeBlocks.javascript) {
+      const conditionMatch = instruction.match(/condition[:\s]+["']([^"']+)["']/i);
+      if (conditionMatch) updateData.condition = conditionMatch[1];
+    }
+    
+    // Handle when/trigger changes for business rules
+    if (instruction.includes('when') || instruction.includes('trigger')) {
+      const whenOptions = ['before', 'after', 'async', 'display'];
+      for (const option of whenOptions) {
+        if (instruction.includes(option)) {
+          updateData.when = option;
+          break;
+        }
+      }
+    }
+    
+    // Handle table changes
+    if (instruction.includes('table')) {
+      const tableMatch = instruction.match(/table[:\s]+["']?([a-z_]+)["']?/i);
+      if (tableMatch) updateData.table = tableMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse UI Action instructions
+   */
+  private async parseUIActionInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.javascript) {
+      updateData.script = codeBlocks.javascript;
+    }
+    
+    // Handle label/action name changes
+    if (instruction.includes('label') || instruction.includes('button') || instruction.includes('action name')) {
+      const labelMatch = instruction.match(/(?:label|button|action name)[:\s]+["']([^"']+)["']/i);
+      if (labelMatch) updateData.action_name = labelMatch[1];
+    }
+    
+    // Handle condition changes
+    if (instruction.includes('condition')) {
+      const conditionMatch = instruction.match(/condition[:\s]+["']([^"']+)["']/i);
+      if (conditionMatch) updateData.condition = conditionMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse UI Policy instructions
+   */
+  private async parseUIPolicyInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.javascript) {
+      updateData.script_true = codeBlocks.javascript;
+    }
+    
+    if (instruction.includes('condition')) {
+      const conditionMatch = instruction.match(/condition[:\s]+["']([^"']+)["']/i);
+      if (conditionMatch) updateData.conditions = conditionMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse notification instructions
+   */
+  private async parseNotificationInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.html) {
+      updateData.message_html = codeBlocks.html;
+    }
+    
+    // Handle subject changes
+    if (instruction.includes('subject')) {
+      const subjectMatch = instruction.match(/subject[:\s]+["']([^"']+)["']/i);
+      if (subjectMatch) updateData.subject = subjectMatch[1];
+    }
+    
+    // Handle body/message changes  
+    if (instruction.includes('body') || instruction.includes('message')) {
+      if (!codeBlocks.html) {
+        const messageMatch = instruction.match(/(?:body|message)[:\s]+["']([^"']+)["']/i);
+        if (messageMatch) updateData.message_html = messageMatch[1];
+      }
+    }
+    
+    // Handle recipient changes
+    if (instruction.includes('recipient') || instruction.includes('to')) {
+      const recipientMatch = instruction.match(/(?:recipient|to)[:\s]+["']([^"']+)["']/i);
+      if (recipientMatch) updateData.recipient = recipientMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse ACL instructions
+   */
+  private async parseACLInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.javascript) {
+      updateData.script = codeBlocks.javascript;
+    }
+    
+    // Handle operation changes
+    const operations = ['read', 'write', 'create', 'delete', 'execute'];
+    for (const op of operations) {
+      if (instruction.includes(op)) {
+        updateData.operation = op;
+        break;
+      }
+    }
+    
+    // Handle role changes
+    if (instruction.includes('role')) {
+      const roleMatch = instruction.match(/role[:\s]+["']([^"']+)["']/i);
+      if (roleMatch) updateData.role = roleMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse table instructions
+   */
+  private async parseTableInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (instruction.includes('label')) {
+      const labelMatch = instruction.match(/label[:\s]+["']([^"']+)["']/i);
+      if (labelMatch) updateData.label = labelMatch[1];
+    }
+    
+    if (instruction.includes('access')) {
+      const accessMatch = instruction.match(/access[:\s]+["']([^"']+)["']/i);
+      if (accessMatch) updateData.access = accessMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse field instructions  
+   */
+  private async parseFieldInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (instruction.includes('label')) {
+      const labelMatch = instruction.match(/label[:\s]+["']([^"']+)["']/i);
+      if (labelMatch) updateData.column_label = labelMatch[1];
+    }
+    
+    if (instruction.includes('type')) {
+      const typeMatch = instruction.match(/type[:\s]+["']([^"']+)["']/i);
+      if (typeMatch) updateData.internal_type = typeMatch[1];
+    }
+    
+    // Handle mandatory/required changes
+    if (instruction.includes('mandatory') || instruction.includes('required')) {
+      if (instruction.includes('make mandatory') || instruction.includes('make required')) {
+        updateData.mandatory = true;
+      } else if (instruction.includes('remove mandatory') || instruction.includes('optional')) {
+        updateData.mandatory = false;
+      }
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse workflow instructions
+   */
+  private async parseWorkflowInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (instruction.includes('description')) {
+      const descMatch = instruction.match(/description[:\s]+["']([^"']+)["']/i);
+      if (descMatch) updateData.description = descMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse flow instructions
+   */
+  private async parseFlowInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (instruction.includes('description')) {
+      const descMatch = instruction.match(/description[:\s]+["']([^"']+)["']/i);
+      if (descMatch) updateData.description = descMatch[1];
+    }
+    
+    if (instruction.includes('trigger')) {
+      const triggerMatch = instruction.match(/trigger[:\s]+["']([^"']+)["']/i);
+      if (triggerMatch) updateData.trigger = triggerMatch[1];
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Parse scheduled job instructions
+   */
+  private async parseScheduledJobInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    if (codeBlocks.javascript) {
+      updateData.script = codeBlocks.javascript;
+    }
+    
+    if (instruction.includes('schedule') || instruction.includes('cron')) {
+      const scheduleMatch = instruction.match(/(?:schedule|cron)[:\s]+["']([^"']+)["']/i);
+      if (scheduleMatch) {
+        updateData.run_type = 'Periodically';
+        updateData.run_period = scheduleMatch[1];
+      }
+      
+      // Handle time-based schedules
+      if (instruction.includes('hour')) {
+        const hourMatch = instruction.match(/(\d+)\s*hour/i);
+        if (hourMatch) {
+          updateData.run_type = 'Periodically';
+          updateData.run_period = `0 0 */${hourMatch[1]} * * *`;
+        }
+      }
+      
+      if (instruction.includes('daily')) {
+        updateData.run_type = 'Periodically';
+        updateData.run_period = '0 0 0 * * *'; // Daily at midnight
+      }
+      
+      if (instruction.includes('weekly')) {
+        updateData.run_type = 'Periodically';
+        updateData.run_period = '0 0 0 * * 0'; // Weekly on Sunday
+      }
+    }
+    
+    Object.assign(updateData, explicitValues);
+  }
+
+  /**
+   * Generic parsing for unsupported types
+   */
+  private async parseGenericInstruction(updateData: any, instruction: string, codeBlocks: any, explicitValues: any, existingArtifact: any) {
+    // Apply only explicit values for unsupported types
+    Object.assign(updateData, explicitValues);
+    
+    // Handle common script field
+    if (codeBlocks.javascript && !updateData.script) {
+      updateData.script = codeBlocks.javascript;
+    }
+  }
+
+  /**
+   * Apply common field updates across all artifact types
+   */
+  private applyCommonUpdates(updateData: any, instruction: string, explicitValues: any) {
+    // Handle active/inactive states
+    if (instruction.includes('activate') || instruction.includes('enable')) {
+      updateData.active = true;
+    } else if (instruction.includes('deactivate') || instruction.includes('disable')) {
+      updateData.active = false;
+    }
+    
+    // Handle description updates (various field names)
+    if (instruction.includes('description') && !updateData.description && !updateData.short_description) {
+      const descMatch = instruction.match(/description[:\s]+["']([^"']+)["']/i);
+      if (descMatch) {
+        // Use appropriate description field based on common patterns
+        updateData.short_description = descMatch[1];
+      }
+    }
+    
+    // Handle name updates
+    if (instruction.includes('name') && instruction.includes('change')) {
+      const nameMatch = instruction.match(/name[:\s]+["']([^"']+)["']/i);
+      if (nameMatch) updateData.name = nameMatch[1];
+    }
+  }
+
+  /**
+   * Get table name for artifact type
+   */
+  private getTableName(type: string): string {
+    switch (type) {
+      case 'widget':
+        return 'sp_widget';
+      case 'application':
+        return 'sys_app';
+      case 'business_rule':
+        return 'sys_script';
+      case 'script_include':
+        return 'sys_script_include';
+      case 'ui_page':
+        return 'sys_ui_page';
+      case 'client_script':
+        return 'sys_script_client';
+      case 'ui_action':
+        return 'sys_ui_action';
+      case 'ui_policy':
+        return 'sys_ui_policy';
+      case 'acl':
+        return 'sys_security_acl';
+      case 'table':
+        return 'sys_db_object';
+      case 'field':
+        return 'sys_dictionary';
+      case 'workflow':
+        return 'wf_workflow';
+      case 'flow':
+        return 'sys_hub_flow';
+      case 'notification':
+        return 'sysevent_email_action';
+      case 'scheduled_job':
+        return 'sysauto_script';
+      default:
+        return 'sys_metadata';
     }
   }
 

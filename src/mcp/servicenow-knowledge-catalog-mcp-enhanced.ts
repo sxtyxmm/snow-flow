@@ -64,7 +64,177 @@ class ServiceNowKnowledgeCatalogMCPEnhanced extends EnhancedBaseMCPServer {
             required: ['query']
           }
         },
-        // ... other tools omitted for brevity
+        {
+          name: 'snow_update_knowledge_article',
+          description: 'Updates existing knowledge article in kb_knowledge table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_id: { type: 'string', description: 'Article sys_id to update' },
+              short_description: { type: 'string', description: 'Article title' },
+              text: { type: 'string', description: 'Article content' },
+              workflow_state: { type: 'string', description: 'State: draft, review, published' },
+              valid_to: { type: 'string', description: 'Expiration date' },
+              keywords: { type: 'array', items: { type: 'string' } }
+            },
+            required: ['sys_id']
+          }
+        },
+        {
+          name: 'snow_retire_knowledge_article',
+          description: 'Retires knowledge article by setting workflow_state to retired in kb_knowledge table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_id: { type: 'string', description: 'Article sys_id' },
+              retirement_reason: { type: 'string', description: 'Reason for retirement' }
+            },
+            required: ['sys_id']
+          }
+        },
+        {
+          name: 'snow_create_knowledge_base',
+          description: 'Creates new knowledge base using kb_knowledge_base table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Knowledge base name' },
+              description: { type: 'string', description: 'KB description' },
+              owner: { type: 'string', description: 'Owner user/group' },
+              kb_managers: { type: 'array', items: { type: 'string' } }
+            },
+            required: ['title']
+          }
+        },
+        {
+          name: 'snow_discover_knowledge_bases',
+          description: 'Lists all knowledge bases from kb_knowledge_base table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              active_only: { type: 'boolean', default: true }
+            }
+          }
+        },
+        {
+          name: 'snow_get_knowledge_stats',
+          description: 'Gets statistics for knowledge articles from kb_knowledge table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              kb_knowledge_base: { type: 'string', description: 'Filter by KB' },
+              date_range: { type: 'string', description: 'Date range filter' }
+            }
+          }
+        },
+        {
+          name: 'snow_knowledge_feedback',
+          description: 'Manages feedback for knowledge articles using kb_feedback table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              article_id: { type: 'string', description: 'Article sys_id' },
+              rating: { type: 'number', description: 'Rating 1-5' },
+              comments: { type: 'string', description: 'Feedback comments' }
+            },
+            required: ['article_id']
+          }
+        },
+        // Service Catalog Tools
+        {
+          name: 'snow_create_catalog_item',
+          description: 'Creates service catalog item using sc_cat_item table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Catalog item name' },
+              short_description: { type: 'string', description: 'Brief description' },
+              category: { type: 'string', description: 'Category sys_id' },
+              price: { type: 'string', description: 'Item price' },
+              workflow: { type: 'string', description: 'Fulfillment workflow' }
+            },
+            required: ['name', 'short_description']
+          }
+        },
+        {
+          name: 'snow_create_catalog_variable',
+          description: 'Creates variables for catalog items using item_option_new table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cat_item: { type: 'string', description: 'Catalog item sys_id' },
+              name: { type: 'string', description: 'Variable name' },
+              question_text: { type: 'string', description: 'Question to display' },
+              type: { type: 'string', description: 'Variable type' },
+              mandatory: { type: 'boolean', default: false }
+            },
+            required: ['cat_item', 'name', 'question_text']
+          }
+        },
+        {
+          name: 'snow_create_catalog_ui_policy',
+          description: 'Creates UI policies for catalog items using catalog_ui_policy table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cat_item: { type: 'string', description: 'Catalog item sys_id' },
+              short_description: { type: 'string', description: 'Policy name' },
+              condition: { type: 'string', description: 'When to apply' },
+              actions: { type: 'array', items: { type: 'object' } }
+            },
+            required: ['cat_item', 'short_description']
+          }
+        },
+        {
+          name: 'snow_order_catalog_item',
+          description: 'Submits catalog item order using sc_req_item table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              cat_item: { type: 'string', description: 'Catalog item sys_id' },
+              requested_for: { type: 'string', description: 'User sys_id' },
+              variables: { type: 'object', description: 'Variable values' },
+              quantity: { type: 'number', default: 1 }
+            },
+            required: ['cat_item']
+          }
+        },
+        {
+          name: 'snow_search_catalog',
+          description: 'Searches service catalog items in sc_cat_item table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: { type: 'string', description: 'Search text' },
+              category: { type: 'string', description: 'Filter by category' },
+              active_only: { type: 'boolean', default: true },
+              limit: { type: 'number', default: 10 }
+            },
+            required: ['query']
+          }
+        },
+        {
+          name: 'snow_get_catalog_item_details',
+          description: 'Gets full details of catalog item from sc_cat_item table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_id: { type: 'string', description: 'Catalog item sys_id' },
+              include_variables: { type: 'boolean', default: true }
+            },
+            required: ['sys_id']
+          }
+        },
+        {
+          name: 'snow_discover_catalogs',
+          description: 'Discovers catalog structure from sc_catalog table.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              include_categories: { type: 'boolean', default: true }
+            }
+          }
+        }
       ]
     }));
 
@@ -79,6 +249,32 @@ class ServiceNowKnowledgeCatalogMCPEnhanced extends EnhancedBaseMCPServer {
               return await this.createKnowledgeArticle(args as any);
             case 'snow_search_knowledge':
               return await this.searchKnowledge(args as any);
+            case 'snow_update_knowledge_article':
+              return await this.updateKnowledgeArticle(args as any);
+            case 'snow_retire_knowledge_article':
+              return await this.retireKnowledgeArticle(args as any);
+            case 'snow_create_knowledge_base':
+              return await this.createKnowledgeBase(args as any);
+            case 'snow_discover_knowledge_bases':
+              return await this.discoverKnowledgeBases(args as any);
+            case 'snow_get_knowledge_stats':
+              return await this.getKnowledgeStats(args as any);
+            case 'snow_knowledge_feedback':
+              return await this.knowledgeFeedback(args as any);
+            case 'snow_create_catalog_item':
+              return await this.createCatalogItem(args as any);
+            case 'snow_create_catalog_variable':
+              return await this.createCatalogVariable(args as any);
+            case 'snow_create_catalog_ui_policy':
+              return await this.createCatalogUIPolicy(args as any);
+            case 'snow_order_catalog_item':
+              return await this.orderCatalogItem(args as any);
+            case 'snow_search_catalog':
+              return await this.searchCatalog(args as any);
+            case 'snow_get_catalog_item_details':
+              return await this.getCatalogItemDetails(args as any);
+            case 'snow_discover_catalogs':
+              return await this.discoverCatalogs(args as any);
             default:
               throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
           }
@@ -220,6 +416,415 @@ ${args.include_content ? `📝 ${snippet}` : ''}`;
 ${articleList}
 
 ✨ Found ${articles.length} article(s)`
+    );
+  }
+
+  /**
+   * Update Knowledge Article
+   */
+  private async updateKnowledgeArticle(args: any): Promise<MCPToolResult> {
+    this.logger.info('Updating knowledge article...', { sys_id: args.sys_id });
+
+    const updateData: any = {};
+    if (args.short_description) updateData.short_description = args.short_description;
+    if (args.text) updateData.text = args.text;
+    if (args.workflow_state) updateData.workflow_state = args.workflow_state;
+    if (args.valid_to) updateData.valid_to = args.valid_to;
+    if (args.keywords) updateData.keywords = args.keywords.join(',');
+
+    this.logger.progress('Updating article in ServiceNow...');
+    const response = await this.updateRecord('kb_knowledge', args.sys_id, updateData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to update article: ${response.error}`);
+    }
+
+    this.logger.info('✅ Article updated successfully');
+    return this.createResponse(`✅ Knowledge article updated successfully!\n🆔 sys_id: ${args.sys_id}`);
+  }
+
+  /**
+   * Retire Knowledge Article
+   */
+  private async retireKnowledgeArticle(args: any): Promise<MCPToolResult> {
+    this.logger.info('Retiring knowledge article...', { sys_id: args.sys_id });
+
+    const updateData = {
+      workflow_state: 'retired',
+      u_retirement_reason: args.retirement_reason || 'Retired via API'
+    };
+
+    const response = await this.updateRecord('kb_knowledge', args.sys_id, updateData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to retire article: ${response.error}`);
+    }
+
+    this.logger.info('✅ Article retired successfully');
+    return this.createResponse(`✅ Knowledge article retired!\n🆔 sys_id: ${args.sys_id}`);
+  }
+
+  /**
+   * Create Knowledge Base
+   */
+  private async createKnowledgeBase(args: any): Promise<MCPToolResult> {
+    this.logger.info('Creating knowledge base...', { title: args.title });
+
+    const kbData = {
+      title: args.title,
+      description: args.description || '',
+      owner: args.owner || '',
+      kb_managers: args.kb_managers?.join(',') || ''
+    };
+
+    this.logger.progress('Creating KB in ServiceNow...');
+    const response = await this.createRecord('kb_knowledge_base', kbData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to create KB: ${response.error}`);
+    }
+
+    const result = response.data;
+    this.logger.info('✅ Knowledge base created', { sys_id: result.sys_id });
+    
+    return this.createResponse(
+      `✅ Knowledge Base created!\n📚 **${args.title}**\n🆔 sys_id: ${result.sys_id}`
+    );
+  }
+
+  /**
+   * Discover Knowledge Bases
+   */
+  private async discoverKnowledgeBases(args: any): Promise<MCPToolResult> {
+    this.logger.info('Discovering knowledge bases...');
+
+    const query = args.active_only ? 'active=true' : '';
+    const response = await this.queryTable('kb_knowledge_base', query, 50);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to discover KBs: ${response.error}`);
+    }
+
+    const kbs = response.data.result;
+    this.logger.info(`Found ${kbs.length} knowledge bases`);
+
+    const kbList = kbs.map((kb: any) => 
+      `📚 **${kb.title}**\n🆔 ${kb.sys_id}\n📝 ${kb.description || 'No description'}`
+    ).join('\n\n');
+
+    return this.createResponse(
+      `📚 Knowledge Bases Found:\n\n${kbList}\n\n✨ Total: ${kbs.length} knowledge base(s)`
+    );
+  }
+
+  /**
+   * Get Knowledge Stats
+   */
+  private async getKnowledgeStats(args: any): Promise<MCPToolResult> {
+    this.logger.info('Getting knowledge statistics...');
+
+    let query = 'active=true';
+    if (args.kb_knowledge_base) {
+      query += `^kb_knowledge_base=${args.kb_knowledge_base}`;
+    }
+
+    this.logger.progress('Gathering statistics...');
+    
+    // Get article counts by state
+    const states = ['draft', 'review', 'published', 'retired'];
+    const stats: any = { total: 0, by_state: {} };
+
+    for (const state of states) {
+      const stateQuery = `${query}^workflow_state=${state}`;
+      const response = await this.queryTable('kb_knowledge', stateQuery, 1);
+      
+      if (response.success && response.data.headers) {
+        const count = parseInt(response.data.headers['x-total-count'] || '0');
+        stats.by_state[state] = count;
+        stats.total += count;
+      }
+    }
+
+    this.logger.info('✅ Statistics gathered', stats);
+
+    return this.createResponse(
+      `📊 Knowledge Base Statistics:\n\n` +
+      `📚 Total Articles: ${stats.total}\n` +
+      `📝 Draft: ${stats.by_state.draft || 0}\n` +
+      `👁️ In Review: ${stats.by_state.review || 0}\n` +
+      `✅ Published: ${stats.by_state.published || 0}\n` +
+      `🗄️ Retired: ${stats.by_state.retired || 0}`
+    );
+  }
+
+  /**
+   * Knowledge Feedback
+   */
+  private async knowledgeFeedback(args: any): Promise<MCPToolResult> {
+    this.logger.info('Managing knowledge feedback...', { article_id: args.article_id });
+
+    if (args.rating || args.comments) {
+      // Create feedback
+      const feedbackData = {
+        article: args.article_id,
+        rating: args.rating || 0,
+        comments: args.comments || '',
+        user: 'api_user'
+      };
+
+      this.logger.progress('Submitting feedback...');
+      const response = await this.createRecord('kb_feedback', feedbackData);
+
+      if (!response.success) {
+        return this.createResponse(`❌ Failed to submit feedback: ${response.error}`);
+      }
+
+      this.logger.info('✅ Feedback submitted');
+      return this.createResponse(`✅ Feedback submitted!\n⭐ Rating: ${args.rating || 'N/A'}`);
+    } else {
+      // Get feedback for article
+      const query = `article=${args.article_id}`;
+      const response = await this.queryTable('kb_feedback', query, 10);
+
+      if (!response.success) {
+        return this.createResponse(`❌ Failed to get feedback: ${response.error}`);
+      }
+
+      const feedback = response.data.result;
+      const avgRating = feedback.length > 0 ? 
+        (feedback.reduce((sum: number, f: any) => sum + (f.rating || 0), 0) / feedback.length).toFixed(1) : 
+        'N/A';
+
+      return this.createResponse(
+        `📊 Article Feedback:\n⭐ Average Rating: ${avgRating}\n💬 ${feedback.length} feedback entries`
+      );
+    }
+  }
+
+  /**
+   * Create Catalog Item
+   */
+  private async createCatalogItem(args: any): Promise<MCPToolResult> {
+    this.logger.info('Creating catalog item...', { name: args.name });
+
+    const itemData = {
+      name: args.name,
+      short_description: args.short_description,
+      category: args.category || '',
+      price: args.price || '0',
+      workflow: args.workflow || '',
+      active: true
+    };
+
+    this.logger.progress('Creating item in ServiceNow...');
+    const response = await this.createRecord('sc_cat_item', itemData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to create catalog item: ${response.error}`);
+    }
+
+    const result = response.data;
+    this.logger.info('✅ Catalog item created', { sys_id: result.sys_id });
+
+    return this.createResponse(
+      `✅ Catalog Item created!\n🛍️ **${args.name}**\n🆔 sys_id: ${result.sys_id}\n💰 Price: ${args.price || '0'}`
+    );
+  }
+
+  /**
+   * Create Catalog Variable
+   */
+  private async createCatalogVariable(args: any): Promise<MCPToolResult> {
+    this.logger.info('Creating catalog variable...', { name: args.name });
+
+    const varData = {
+      cat_item: args.cat_item,
+      name: args.name,
+      question_text: args.question_text,
+      type: args.type || '6', // Single line text
+      mandatory: args.mandatory || false,
+      order: 100
+    };
+
+    this.logger.progress('Creating variable...');
+    const response = await this.createRecord('item_option_new', varData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to create variable: ${response.error}`);
+    }
+
+    this.logger.info('✅ Variable created');
+    return this.createResponse(
+      `✅ Catalog variable created!\n📝 ${args.question_text}\n🔤 Name: ${args.name}`
+    );
+  }
+
+  /**
+   * Create Catalog UI Policy
+   */
+  private async createCatalogUIPolicy(args: any): Promise<MCPToolResult> {
+    this.logger.info('Creating catalog UI policy...', { short_description: args.short_description });
+
+    const policyData = {
+      cat_item: args.cat_item,
+      short_description: args.short_description,
+      condition: args.condition || '',
+      active: true
+    };
+
+    this.logger.progress('Creating UI policy...');
+    const response = await this.createRecord('catalog_ui_policy', policyData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to create UI policy: ${response.error}`);
+    }
+
+    this.logger.info('✅ UI policy created');
+    return this.createResponse(
+      `✅ Catalog UI Policy created!\n📋 ${args.short_description}\n🆔 sys_id: ${response.data.sys_id}`
+    );
+  }
+
+  /**
+   * Order Catalog Item
+   */
+  private async orderCatalogItem(args: any): Promise<MCPToolResult> {
+    this.logger.info('Ordering catalog item...', { cat_item: args.cat_item });
+
+    const orderData = {
+      cat_item: args.cat_item,
+      requested_for: args.requested_for || 'current_user',
+      quantity: args.quantity || 1,
+      variables: JSON.stringify(args.variables || {})
+    };
+
+    this.logger.progress('Submitting order...');
+    const response = await this.createRecord('sc_req_item', orderData);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to order item: ${response.error}`);
+    }
+
+    const result = response.data;
+    this.logger.info('✅ Order submitted', { number: result.number });
+
+    return this.createResponse(
+      `✅ Catalog item ordered!\n📦 Request: ${result.number}\n🆔 sys_id: ${result.sys_id}\n📊 Status: ${result.state || 'Submitted'}`
+    );
+  }
+
+  /**
+   * Search Catalog
+   */
+  private async searchCatalog(args: any): Promise<MCPToolResult> {
+    this.logger.info('Searching service catalog...', { query: args.query });
+
+    let query = `nameLIKE${args.query}^ORshort_descriptionLIKE${args.query}`;
+    if (args.category) {
+      query += `^category=${args.category}`;
+    }
+    if (args.active_only) {
+      query += '^active=true';
+    }
+
+    this.logger.progress('Searching catalog...');
+    const response = await this.queryTable('sc_cat_item', query, args.limit || 10);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Search failed: ${response.error}`);
+    }
+
+    const items = response.data.result;
+    
+    if (!items.length) {
+      return this.createResponse(`❌ No catalog items found matching "${args.query}"`);
+    }
+
+    this.logger.info(`Found ${items.length} catalog items`);
+
+    const itemList = items.map((item: any) => 
+      `🛍️ **${item.name}**\n📝 ${item.short_description}\n💰 ${item.price || '0'}\n🆔 ${item.sys_id}`
+    ).join('\n\n');
+
+    return this.createResponse(
+      `🔍 Catalog Search Results:\n\n${itemList}\n\n✨ Found ${items.length} item(s)`
+    );
+  }
+
+  /**
+   * Get Catalog Item Details
+   */
+  private async getCatalogItemDetails(args: any): Promise<MCPToolResult> {
+    this.logger.info('Getting catalog item details...', { sys_id: args.sys_id });
+
+    const response = await this.getRecord('sc_cat_item', args.sys_id);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to get item details: ${response.error}`);
+    }
+
+    const item = response.data;
+    let details = `🛍️ **${item.name}**\n` +
+                  `📝 ${item.short_description}\n` +
+                  `💰 Price: ${item.price || '0'}\n` +
+                  `📊 Active: ${item.active}\n` +
+                  `🆔 sys_id: ${item.sys_id}`;
+
+    if (args.include_variables) {
+      // Get variables
+      const varQuery = `cat_item=${args.sys_id}`;
+      const varResponse = await this.queryTable('item_option_new', varQuery, 50);
+      
+      if (varResponse.success && varResponse.data.result.length > 0) {
+        const variables = varResponse.data.result;
+        details += `\n\n📋 Variables (${variables.length}):\n`;
+        variables.forEach((v: any) => {
+          details += `  • ${v.question_text} (${v.name})\n`;
+        });
+      }
+    }
+
+    this.logger.info('✅ Retrieved item details');
+    return this.createResponse(details);
+  }
+
+  /**
+   * Discover Catalogs
+   */
+  private async discoverCatalogs(args: any): Promise<MCPToolResult> {
+    this.logger.info('Discovering service catalogs...');
+
+    const response = await this.queryTable('sc_catalog', 'active=true', 20);
+
+    if (!response.success) {
+      return this.createResponse(`❌ Failed to discover catalogs: ${response.error}`);
+    }
+
+    const catalogs = response.data.result;
+    this.logger.info(`Found ${catalogs.length} catalogs`);
+
+    let catalogInfo = `📚 Service Catalogs:\n\n`;
+    
+    for (const catalog of catalogs) {
+      catalogInfo += `🛍️ **${catalog.title}**\n🆔 ${catalog.sys_id}\n`;
+      
+      if (args.include_categories) {
+        // Get categories for this catalog
+        const catQuery = `sc_catalog=${catalog.sys_id}^active=true`;
+        const catResponse = await this.queryTable('sc_category', catQuery, 10);
+        
+        if (catResponse.success && catResponse.data.result.length > 0) {
+          catalogInfo += `📁 Categories:\n`;
+          catResponse.data.result.forEach((cat: any) => {
+            catalogInfo += `  • ${cat.title}\n`;
+          });
+        }
+      }
+      catalogInfo += '\n';
+    }
+
+    return this.createResponse(
+      `${catalogInfo}✨ Total: ${catalogs.length} catalog(s) discovered`
     );
   }
 

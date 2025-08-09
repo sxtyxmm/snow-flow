@@ -1,8 +1,8 @@
-# Snow-Flow v3.2.0 - ServiceNow Development Configuration
+# Snow-Flow v3.3.4 - ServiceNow Development Configuration
 
 ## Overview
 
-You have access to Snow-Flow v3.2.0, a ServiceNow development platform with 180+ MCP tools across 17 specialized servers. The platform includes comprehensive APIs for ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps. All implementations should use real ServiceNow data and complete, working code.
+You have access to Snow-Flow v3.3.4, a ServiceNow development platform with 180+ MCP tools across 17 specialized servers. The platform includes comprehensive APIs for ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps. All implementations should use real ServiceNow data and complete, working code.
 
 ## Development Guidelines
 
@@ -21,6 +21,92 @@ You have access to Snow-Flow v3.2.0, a ServiceNow development platform with 180+
 - Implement complete functionality
 - Verify field names through discovery
 - Test all code before deployment
+
+## 🚨 CRITICAL: snow_deploy vs snow_update
+
+### Use snow_deploy for NEW artifacts
+```javascript
+// Creating a NEW widget
+const widget = await snow_deploy({
+  type: 'widget',
+  name: 'My New Dashboard',
+  config: { /* widget configuration */ }
+});
+```
+
+### Use snow_update for EXISTING artifacts  
+```javascript
+// Updating an EXISTING widget
+const updated = await snow_update({
+  type: 'widget',
+  identifier: 'My New Dashboard',  // or sys_id
+  config: { /* updated configuration */ }
+});
+
+// Natural language updates
+const updated2 = await snow_update({
+  type: 'widget',
+  identifier: 'incident-dashboard',
+  instruction: 'Add a new chart showing priority distribution'
+});
+```
+
+### ❌ Common Mistake
+Using `snow_deploy` to update existing artifacts will often fail or create duplicates!
+
+### ✅ Correct Approach
+1. **First time creating**: Use `snow_deploy`
+2. **Modifying existing**: Use `snow_update` 
+3. **Not sure if exists**: Use `snow_update` with `create_if_not_exists: true`
+
+## 🔧 Supported Artifact Types (NEW in v3.3.4)
+
+Snow-Flow now supports **16+ different ServiceNow artifact types** for both deployment and updates:
+
+| Artifact Type | ServiceNow Table | Create | Update | Natural Language |
+|---------------|------------------|--------|---------|------------------|
+| **widget** | sp_widget | ✅ | ✅ | ✅ |
+| **application** | sys_app | ✅ | ✅ | ✅ |
+| **business_rule** | sys_script | ✅ | ✅ | ✅ |
+| **script_include** | sys_script_include | ✅ | ✅ | ✅ |
+| **ui_page** | sys_ui_page | ✅ | ✅ | ✅ |
+| **client_script** | sys_script_client | ✅ | ✅ | ✅ |
+| **ui_action** | sys_ui_action | ✅ | ✅ | ✅ |
+| **ui_policy** | sys_ui_policy | ✅ | ✅ | ✅ |
+| **acl** | sys_security_acl | ✅ | ✅ | ✅ |
+| **table** | sys_db_object | ✅ | ✅ | ✅ |
+| **field** | sys_dictionary | ✅ | ✅ | ✅ |
+| **workflow** | wf_workflow | ✅ | ✅ | ✅ |
+| **flow** | sys_hub_flow | ✅ | ✅ | ✅ |
+| **notification** | sysevent_email_action | ✅ | ✅ | ✅ |
+| **scheduled_job** | sysauto_script | ✅ | ✅ | ✅ |
+
+### Universal Patterns
+
+```javascript
+// Deploy ANY artifact type
+await snow_deploy({
+  type: 'ui_action',
+  name: 'Close with Resolution',
+  table: 'incident',
+  action_name: 'Close Incident',
+  script: 'current.state = 7; current.resolution_code = "Solved";'
+});
+
+// Update ANY artifact type with natural language
+await snow_update({
+  type: 'notification',
+  identifier: 'incident_assigned',
+  instruction: 'Change subject to include priority level and add escalation manager in CC'
+});
+
+// Works with all types!
+await snow_update({
+  type: 'scheduled_job',
+  identifier: 'data_cleanup',
+  instruction: 'Change schedule to run every 6 hours instead of daily'
+});
+```
 
 ## Standard Workflow
 
@@ -243,7 +329,9 @@ snow_discover_reference_fields // Find all reference fields
 
 ### Widget & Portal Tools
 ```javascript
-snow_deploy                    // Universal deployment (widgets, pages, etc)
+// IMPORTANT: snow_deploy vs snow_update
+snow_deploy                    // Universal deployment for NEW artifacts (widgets, pages, etc)
+snow_update                    // Update EXISTING artifacts by name or sys_id
 snow_create_widget            // Service Portal widgets
 snow_create_ui_page          // Classic UI pages
 snow_create_portal_page      // Portal pages

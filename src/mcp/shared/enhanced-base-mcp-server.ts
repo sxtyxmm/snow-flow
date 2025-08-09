@@ -56,6 +56,9 @@ export abstract class EnhancedBaseMCPServer {
    * Execute tool with enhanced tracking
    */
   protected async executeTool(toolName: string, handler: () => Promise<MCPToolResult>): Promise<MCPToolResult> {
+    // Reset tokens at start of each operation to avoid accumulation
+    this.logger.resetTokens();
+    
     // Start operation tracking
     this.logger.operationStart(toolName);
     
@@ -190,6 +193,36 @@ export abstract class EnhancedBaseMCPServer {
     
     if (result?.success) {
       this.logger.info(`✅ Created ${table} record: ${result.data?.result?.sys_id}`);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Update record with tracking
+   */
+  protected async updateRecord(table: string, sysId: string, data: any): Promise<any> {
+    this.logger.progress(`Updating ${table} record ${sysId}...`);
+    
+    const result = await this.client.updateRecord(table, sysId, data);
+    
+    if (result?.success) {
+      this.logger.info(`✅ Updated ${table} record: ${sysId}`);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Get record with tracking
+   */
+  protected async getRecord(table: string, sysId: string): Promise<any> {
+    this.logger.progress(`Getting ${table} record ${sysId}...`);
+    
+    const result = await this.client.getRecord(table, sysId);
+    
+    if (result?.success) {
+      this.logger.info(`✅ Retrieved ${table} record: ${sysId}`);
     }
     
     return result;

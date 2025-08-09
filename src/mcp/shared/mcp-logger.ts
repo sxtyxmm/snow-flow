@@ -150,7 +150,7 @@ export class MCPLogger {
    */
   public operationStart(operation: string, params?: any) {
     this.startTime = Date.now();
-    this.info(`🚀 Starting: ${operation}`, params);
+    this.info(`🚀 Starting: ${operation} (tokens reset)`, params);
   }
 
   /**
@@ -189,6 +189,7 @@ export class MCPLogger {
    */
   public resetTokens() {
     this.tokenUsage = { input: 0, output: 0, total: 0 };
+    console.error(`🔄 [${this.name}] Token counter reset for new operation`);
   }
 }
 

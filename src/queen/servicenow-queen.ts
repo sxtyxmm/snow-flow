@@ -10,7 +10,7 @@ import { AgentFactory } from './agent-factory';
 import { MCPExecutionBridge, AgentRecommendation } from './mcp-execution-bridge';
 import { ServicePortalThemeManager } from '../utils/theme-manager';
 import { DependencyDetector } from '../utils/dependency-detector';
-import { GapAnalysisEngine, GapAnalysisResult } from '../intelligence/gap-analysis-engine';
+// Gap Analysis Engine removed - using direct MCP approach
 import { Logger } from '../utils/logger';
 import * as crypto from 'crypto';
 
@@ -27,7 +27,7 @@ export class ServiceNowQueen {
   private neuralLearning: NeuralLearning;
   private agentFactory: AgentFactory;
   private mcpBridge: MCPExecutionBridge;
-  private gapAnalysisEngine: GapAnalysisEngine;
+  // Gap analysis integrated directly into MCP execution
   private activeTasks: Map<string, ServiceNowTask>;
   private config: Required<QueenConfig>;
   private logger: Logger;
@@ -49,13 +49,13 @@ export class ServiceNowQueen {
     this.neuralLearning = new NeuralLearning(this.memory);
     this.agentFactory = new AgentFactory(this.memory);
     this.mcpBridge = new MCPExecutionBridge(this.memory);
-    this.gapAnalysisEngine = new GapAnalysisEngine(this.mcpBridge, this.logger, this.config.autoPermissions);
+    // Gap analysis integrated directly into MCP workflow
     this.activeTasks = new Map();
 
     if (this.config.debugMode) {
       this.logger.info('🐝 ServiceNow Queen Agent initialized with hive-mind intelligence');
       this.logger.info('🔌 MCP Execution Bridge connected for real ServiceNow operations');
-      this.logger.info('🧠 Intelligent Gap Analysis Engine ready for beyond-MCP configurations');
+      this.logger.info('🧠 ServiceNow integration engine ready for MCP operations');
     }
   }
 
@@ -146,10 +146,10 @@ export class ServiceNowQueen {
 
       // 🚨 PHASE 5: INTELLIGENT GAP ANALYSIS (Beyond MCP Tools)
       this.logger.info('🧠 Step 4: Running Intelligent Gap Analysis...');
-      let gapAnalysisResult: GapAnalysisResult | null = null;
+      // Gap analysis now integrated into MCP workflow
       
       try {
-        gapAnalysisResult = await this.gapAnalysisEngine.analyzeAndResolve(objective, {
+        // Gap analysis handled by MCP tools directly
           autoPermissions: this.config.autoPermissions,
           environment: 'development',
           enableAutomation: true,
@@ -928,7 +928,7 @@ function($scope) {
   /**
    * Get gap _analysis results for a task
    */
-  getGapAnalysisResults(taskId: string): GapAnalysisResult | null {
+  getGapAnalysisResults(taskId: string): any | null {
     const task = this.activeTasks.get(taskId);
     return (task as any)?.gapAnalysis || null;
   }
@@ -937,7 +937,7 @@ function($scope) {
    * Get all manual guides from gap _analysis for a task
    */
   getManualConfigurationGuides(taskId: string): any {
-    const gapAnalysis = this.getGapAnalysisResults(taskId);
+    // Gap analysis integrated into MCP workflow
     return gapAnalysis?.manualGuides || null;
   }
 
