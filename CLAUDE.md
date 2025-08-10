@@ -1,1231 +1,542 @@
-# Snow-Flow v3.3.4 - ServiceNow Development Configuration
+# Snow-Flow Configuration & Best Practices
 
-## Overview
+This document provides comprehensive instructions for Snow-Flow, an advanced ServiceNow development and orchestration framework powered by Claude AI.
 
-You have access to Snow-Flow v3.3.4, a ServiceNow development platform with 180+ MCP tools across 17 specialized servers. The platform includes comprehensive APIs for ATF Testing, Knowledge Management, Service Catalog, Change Management, Virtual Agent, Performance Analytics, Flow Designer, Agent Workspace, Mobile, CMDB/Discovery, Event Management, HR Service Delivery, Customer Service Management, and DevOps. All implementations should use real ServiceNow data and complete, working code.
+## Table of Contents
+1. [Core Philosophy](#core-philosophy)
+2. [Fundamental Rules](#fundamental-rules)
+3. [ServiceNow Development Standards](#servicenow-development-standards)
+4. [MCP Server Capabilities](#mcp-server-capabilities)
+5. [Debugging Best Practices](#debugging-best-practices)
+6. [Command Reference](#command-reference)
+7. [Workflow Guidelines](#workflow-guidelines)
 
-## Development Guidelines
+## Core Philosophy
 
-### Implementation Requirements
-- Use real ServiceNow data - no mock or sample data
-- Complete all functions - no placeholders or TODO comments
-- Query live instance for values - avoid hardcoded test data
-- Make actual API calls - no simulated responses
-- Discover field names before use - do not guess
-- Verify table structure before operations
+### The Prime Directive: Verify, Don't Assume
 
-### Required Practices
-- Query actual data using snow_query_table
-- Discover schema with snow_discover_table_fields
-- Deploy real artifacts to ServiceNow
-- Implement complete functionality
-- Verify field names through discovery
-- Test all code before deployment
+Snow-Flow operates on evidence-based development. Never make assumptions about what exists or doesn't exist in a ServiceNow environment. Every environment is unique with custom tables, fields, integrations, and configurations that you cannot predict.
 
-## 🚨 CRITICAL: snow_deploy vs snow_update
+**Cardinal Rules:**
+1. If code references something, it probably exists
+2. Test before declaring something broken
+3. Verify before modifying
+4. Fix only what's confirmed broken
+5. Respect existing configurations
 
-### Use snow_deploy for NEW artifacts
+### The Verification-First Approach
+
 ```javascript
-// Creating a NEW widget
-const widget = await snow_deploy({
-  type: 'widget',
-  name: 'My New Dashboard',
-  config: { /* widget configuration */ }
+// Before claiming anything doesn't work or exist:
+// Step 1: Test the actual implementation
+const verify = await snow_execute_script_with_output({
+  script: `/* Test the exact code or resource */`
 });
+
+// Step 2: Check if resources exist
+const tableCheck = await snow_discover_table_fields({
+  table_name: 'potentially_custom_table'
+});
+
+// Step 3: Validate configurations
+const propertyCheck = await snow_property_manager({
+  action: 'get',
+  name: 'system.property'
+});
+
+// Step 4: Only then make informed decisions
 ```
 
-### Use snow_update for EXISTING artifacts  
+## Fundamental Rules
+
+### Rule 1: ES5 JavaScript Only in ServiceNow
+
+ServiceNow uses the Rhino JavaScript engine which supports only ES5. Modern JavaScript syntax will fail.
+
+**Never Use:**
+- `const` or `let` - use `var`
+- Arrow functions `() => {}` - use `function() {}`
+- Template literals `` `${var}` `` - use string concatenation
+- Destructuring `{a, b} = obj` - use explicit property access
+- `for...of` loops - use traditional `for` loops
+- Default parameters - use `typeof` checks
+- `async/await` - use callbacks or GlideAjax
+
+**Always Use:**
 ```javascript
-// Updating an EXISTING widget
-const updated = await snow_update({
-  type: 'widget',
-  identifier: 'My New Dashboard',  // or sys_id
-  config: { /* updated configuration */ }
-});
-
-// Natural language updates
-const updated2 = await snow_update({
-  type: 'widget',
-  identifier: 'incident-dashboard',
-  instruction: 'Add a new chart showing priority distribution'
-});
-```
-
-### ❌ Common Mistake
-Using `snow_deploy` to update existing artifacts will often fail or create duplicates!
-
-### ✅ Correct Approach
-1. **First time creating**: Use `snow_deploy`
-2. **Modifying existing**: Use `snow_update` 
-3. **Not sure if exists**: Use `snow_update` with `create_if_not_exists: true`
-
-## 🔧 Supported Artifact Types (NEW in v3.3.4)
-
-Snow-Flow now supports **16+ different ServiceNow artifact types** for both deployment and updates:
-
-| Artifact Type | ServiceNow Table | Create | Update | Natural Language |
-|---------------|------------------|--------|---------|------------------|
-| **widget** | sp_widget | ✅ | ✅ | ✅ |
-| **application** | sys_app | ✅ | ✅ | ✅ |
-| **business_rule** | sys_script | ✅ | ✅ | ✅ |
-| **script_include** | sys_script_include | ✅ | ✅ | ✅ |
-| **ui_page** | sys_ui_page | ✅ | ✅ | ✅ |
-| **client_script** | sys_script_client | ✅ | ✅ | ✅ |
-| **ui_action** | sys_ui_action | ✅ | ✅ | ✅ |
-| **ui_policy** | sys_ui_policy | ✅ | ✅ | ✅ |
-| **acl** | sys_security_acl | ✅ | ✅ | ✅ |
-| **table** | sys_db_object | ✅ | ✅ | ✅ |
-| **field** | sys_dictionary | ✅ | ✅ | ✅ |
-| **workflow** | wf_workflow | ✅ | ✅ | ✅ |
-| **flow** | sys_hub_flow | ✅ | ✅ | ✅ |
-| **notification** | sysevent_email_action | ✅ | ✅ | ✅ |
-| **scheduled_job** | sysauto_script | ✅ | ✅ | ✅ |
-
-### Universal Patterns
-
-```javascript
-// Deploy ANY artifact type
-await snow_deploy({
-  type: 'ui_action',
-  name: 'Close with Resolution',
-  table: 'incident',
-  action_name: 'Close Incident',
-  script: 'current.state = 7; current.resolution_code = "Solved";'
-});
-
-// Update ANY artifact type with natural language
-await snow_update({
-  type: 'notification',
-  identifier: 'incident_assigned',
-  instruction: 'Change subject to include priority level and add escalation manager in CC'
-});
-
-// Works with all types!
-await snow_update({
-  type: 'scheduled_job',
-  identifier: 'data_cleanup',
-  instruction: 'Change schedule to run every 6 hours instead of daily'
-});
-```
-
-## Standard Workflow
-
-### 1. Authentication Check
-```javascript
-// Check authentication status
-const authStatus = await snow_auth_diagnostics();
-if (!authStatus.authenticated) {
-  throw new Error("Not authenticated! Run: snow-flow auth login");
+// ES5 compatible code
+var name = 'value';
+function processData() {
+  return 'result';
+}
+var message = 'Hello ' + userName;
+for (var i = 0; i < array.length; i++) {
+  var item = array[i];
 }
 ```
 
-### 2. Create Update Set
+### Rule 2: Background Scripts as Primary Debug Tool
+
+Background scripts provide immediate, factual feedback from the actual ServiceNow instance. Use them extensively for verification and debugging.
+
 ```javascript
-// Create Update Set for changes
-const objective = "Create incident dashboard"; // User's request
-const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-const time = new Date().toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
-
-const updateSet = await snow_update_set_create({
-  name: `SNOW_FLOW_${objective.substring(0, 30)}_${date}_${time}`,
-  description: `Automated by Snow-Flow for: ${objective}`,
-  auto_switch: true  // Automatically switch to this Update Set
-});
-
-// Changes will be captured in this Update Set
-```
-
-### 3. Discovery Phase
-```javascript
-// Discover table structure before operations
-await snow_discover_table_fields({ table_name: "incident" })
-await snow_query_table({ table: "incident", limit: 5 })
-await snow_table_schema_discovery({ table: "incident" })
-```
-
-## 🧠 CRITICAL: Smart Query Patterns - THINK BEFORE QUERYING!
-
-### ❌ NEVER Do This (Token Waste):
-```javascript
-// WRONG: Trying to analyze all users but using a limit
-snow_query_table({ 
-  table: "sys_user", 
-  limit: 500,  // ❌ Only gets partial data for analytics!
-  include_content: true,  // ❌ Wastes tokens!
-  fields: ["sys_created_on","first_name","last_name","user_name","department","active"]  // ❌ Too many fields!
-})
-// Result: 92,477 tokens! Exceeds limit! Only 500 of 5000+ users analyzed!
-```
-
-### ✅ ALWAYS Do This (Smart Analytics):
-```javascript
-// CORRECT: Get ALL data with MINIMAL fields for analytics
-snow_query_table({ 
-  table: "sys_user", 
-  query: "active=true",
-  // NO LIMIT! ✅ Omit limit for ALL records
-  include_content: true,
-  fields: ["sys_created_on", "sys_id"]  // ✅ ONLY fields needed for analysis
-})
-// Result: ALL users, only 2 fields = 5% of tokens, 100% of data!
-```
-
-### 📊 Analytics Query Rules:
-
-**1. TIME ANALYSIS (When did X happen?):**
-```javascript
-// Need ALL records, MINIMAL fields
-snow_query_table({ 
-  table: "incident",
-  // NO limit parameter = get ALL records
-  fields: ["sys_created_on", "sys_id"]  // Just timestamp + ID
-})
-```
-
-**2. DISTRIBUTION ANALYSIS (Count by category):**
-```javascript
-// Use aggregation, not content
-snow_query_table({ 
-  table: "incident",
-  // No limit needed for count-only
-  include_content: false,  // Count only!
-  group_by: "category"  // Server-side aggregation
-})
-```
-
-**3. TREND ANALYSIS (Patterns over time):**
-```javascript
-// Minimal fields, maximum records
-snow_query_table({ 
-  table: "change_request",
-  // Omit limit for complete trend data
-  fields: ["sys_created_on", "state", "risk"]  // Only trend fields
-})
-```
-
-**4. USER ONBOARDING ANALYSIS:**
-```javascript
-// SMART: Get ALL users with ONLY needed field
-const allUsers = await snow_query_table({ 
-  table: "sys_user",
-  query: "active=true",
-  // NO LIMIT - gets ALL users automatically
-  fields: ["sys_created_on"]  // ONLY the field we analyze
-});
-
-// Now analyze when most onboarding happened
-const onboardingByMonth = {};
-allUsers.forEach(user => {
-  const month = user.sys_created_on.substring(0, 7);
-  onboardingByMonth[month] = (onboardingByMonth[month] || 0) + 1;
-});
-```
-
-### 🎯 Query Decision Tree:
-
-**Ask yourself:**
-1. **Do I need ALL records for accurate analysis?**
-   - YES → DON'T specify limit (gets all records)
-   - NO → Use appropriate limit (50-1000)
-
-2. **Do I need the actual content?**
-   - Just counting → `include_content: false`
-   - Need specific fields → `fields: ["only", "what", "needed"]`
-   - Need everything → Consider pagination
-
-3. **Can the server do the aggregation?**
-   - Counting by group → Use `group_by`
-   - Just need totals → Use `include_content: false`
-
-### Token Optimization:
-
-| Query Type | Strategy | Token Savings |
-|------------|----------|---------------|
-| Time Analysis | `fields: ["sys_created_on", "sys_id"]` | 95% |
-| Count by Category | `include_content: false, group_by: "field"` | 99% |
-| Trend Analysis | `fields: ["date", "metric"]` only | 90% |
-| Full Export | Paginate with `offset` | Manageable chunks |
-| Statistical Analysis | Minimal fields, max records | 85% |
-
-### 🚀 Performance Rules:
-1. **For Analytics: DON'T SPECIFY LIMIT** - Automatically gets ALL data
-2. **For Display: LIMIT to what's visible** - 10-50 records
-3. **For Export: PAGINATE** - Chunks of 1000 with offset
-4. **For Counting: NO CONTENT** - Just counts, no limit needed
-5. **For Trends: MINIMAL FIELDS** - No limit, just date + metric
-
-## Development Workflow
-
-### Complete Development Pattern
-```javascript
-// 1. Authentication (MANDATORY)
-const auth = await snow_auth_diagnostics();
-if (!auth.authenticated) {
-  throw new Error("Authentication required!");
-}
-
-// 2. Create Update Set (MANDATORY)
-const updateSet = await snow_update_set_create({
-  name: `SNOW_FLOW_IncidentDashboard_${new Date().toISOString().split('T')[0]}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}`,
-  description: "Creating comprehensive incident management dashboard",
-  auto_switch: true
-});
-
-// 3. Discovery Phase (MANDATORY)
-const widgetFields = await snow_discover_table_fields({ 
-  table_name: "sp_widget" 
-});
-const incidentFields = await snow_discover_table_fields({ 
-  table_name: "incident" 
-});
-
-// 4. Check Existing Artifacts
-const existing = await snow_query_table({ 
-  table: "sp_widget",
-  query: "name LIKE incident",
-  limit: 3
-});
-
-// 5. Build Complete Solution
-// ... implementation code ...
-
-// 6. Verify Deployment
-const verification = await snow_query_table({
-  table: "sp_widget",
-  query: `sys_id=${result.sys_id}`,
-  fields: "sys_id,name,active"
-});
-
-// 7. Document in Update Set
-await snow_update_set_add_comment({
-  comment: `Successfully deployed: ${result.name} (${result.sys_id})`
-});
-```
-
-## Available MCP Tools
-
-### Authentication & Setup Tools
-```javascript
-snow_auth_diagnostics         // Check authentication status
-snow_auth_test               // Test credentials
-snow_update_set_create       // Create Update Sets
-snow_update_set_switch       // Switch Update Sets
-snow_update_set_retrieve     // Get Update Set XML
-snow_update_set_validate     // Validate before commit
-```
-
-### Discovery & Analysis Tools
-```javascript
-snow_discover_table_fields     // Get exact field names and types
-snow_query_table               // Query real data with filters
-snow_table_schema_discovery    // Complete table structure
-snow_get_table_relationships   // Foreign keys and references
-snow_analyze_field_usage       // Field usage patterns
-snow_analyze_table_deep        // Deep table analysis with 6+ dimensions
-snow_discover_cross_table_process // Process flows across tables
-snow_analyze_dependencies      // Find all dependencies
-snow_discover_reference_fields // Find all reference fields
-```
-
-### Widget & Portal Tools
-```javascript
-// IMPORTANT: snow_deploy vs snow_update
-snow_deploy                    // Universal deployment for NEW artifacts (widgets, pages, etc)
-snow_update                    // Update EXISTING artifacts by name or sys_id
-snow_create_widget            // Service Portal widgets
-snow_create_ui_page          // Classic UI pages
-snow_create_portal_page      // Portal pages
-snow_widget_dependency_scan   // Find widget dependencies
-snow_portal_theme_builder    // Create custom themes
-snow_widget_instance_create  // Add widgets to pages
-```
-
-### Reporting & Dashboard Tools
-```javascript
-snow_create_dashboard         // Interactive dashboards with real data
-snow_create_report           // Data visualizations
-snow_create_pa_widget        // Performance Analytics widgets
-snow_create_report_source    // Custom report data sources
-snow_create_metric_base      // KPI metrics
-snow_create_indicator        // Performance indicators
-snow_create_breakdown        // Data breakdowns
-snow_create_scorecard       // Executive scorecards
-```
-
-### Machine Learning Tools
-```javascript
-ml_train_incident_classifier  // Train LSTM neural networks
-ml_predict_incident           // Make predictions
-ml_train_anomaly_detector     // Detect anomalies
-ml_train_change_predictor    // Predict change success
-ml_performance_analytics      // Native PA ML integration
-ml_hybrid_recommendation      // Best of both ML worlds
-ml_pattern_recognition       // Identify patterns in data
-ml_forecast_metrics         // Time series forecasting
-```
-
-### Business Logic Tools
-```javascript
-snow_create_business_rule     // Server-side automation
-snow_create_script_include   // Reusable server code
-snow_create_scheduled_job     // Automation tasks
-snow_create_event            // System events
-snow_create_script_action    // Event responses
-snow_create_workflow        // Classic workflows
-snow_create_orchestration   // Orchestration activities
-snow_execute_background_script // Execute scripts with security analysis
-```
-
-### 📋 Service Catalog Tools
-```javascript
-// Service Catalog - Complete Catalog Management
-snow_create_catalog_item      // Create items with sc_cat_item API
-snow_create_catalog_variable  // Variables with item_option_new table
-snow_create_catalog_ui_policy // Dynamic forms with catalog_ui_policy
-snow_create_catalog_client_script // Client scripts for catalog
-snow_search_catalog           // Search across all catalogs
-snow_order_catalog_item       // Submit orders via sc_req_item
-snow_get_catalog_item_details // Full item details with pricing
-snow_discover_catalogs        // Discover structure and categories
-snow_create_record_producer   // Create record producers
-snow_create_variable_set      // Reusable variable sets
-snow_create_catalog_workflow  // Automated fulfillment workflows
-```
-
-### 🔄 Integration Tools
-```javascript
-snow_create_rest_message      // REST integrations
-snow_create_soap_message     // SOAP integrations
-snow_create_import_set       // Data imports
-snow_create_transform_map    // Data transformation
-snow_create_data_source      // External data connections
-snow_create_integration_hub  // IntegrationHub actions
-```
-
-### Security & Access Tools
-```javascript
-snow_security_scan           // Security vulnerability analysis
-snow_check_acl              // ACL verification
-snow_create_acl             // Access control rules
-snow_audit_compliance       // Compliance checking
-snow_create_security_rule   // Security policies
-snow_check_user_criteria    // User access validation
-snow_create_role           // Custom roles
-```
-
-### ⚡ Performance & Optimization Tools
-```javascript
-snow_batch_api              // Batch operations (80% API reduction)
-snow_analyze_query          // Query optimization
-snow_predict_change_impact  // AI impact analysis
-snow_performance_diagnostic // Performance bottleneck detection
-snow_index_recommendation   // Database index suggestions
-snow_cache_analysis        // Cache optimization
-```
-
-### 🔬 Testing & Validation Tools
-```javascript
-snow_execute_script         // Server-side script execution
-snow_test_client_script    // Client-side testing
-snow_test_business_rule    // Business rule testing
-snow_validate_update_set   // Pre-deployment validation
-snow_test_integration      // Integration testing
-snow_load_test            // Performance testing
-
-// Automated Test Framework (ATF) - Complete Testing Suite
-snow_create_atf_test       // Create ATF tests with sys_atf_test table
-snow_create_atf_test_step  // Add test steps (form fill, validation, REST)
-snow_execute_atf_test      // Execute tests with real-time results
-snow_get_atf_results       // Get test execution results and logs
-snow_create_atf_test_suite // Group tests into suites for batch execution
-snow_discover_atf_tests    // Discover existing tests and coverage
-```
-
-### 📝 Documentation & Knowledge Tools
-```javascript
-snow_generate_documentation   // Auto-generate docs from code
-snow_document_api            // API documentation
-snow_create_help_content     // In-app help
-
-// Knowledge Management - Complete KB System
-snow_create_knowledge_article // Create articles with kb_knowledge API
-snow_search_knowledge         // Full-text search across all KBs
-snow_update_knowledge_article // Update with version control
-snow_retire_knowledge_article // Retire with proper workflow
-snow_create_knowledge_base    // Create new knowledge bases
-snow_discover_knowledge_bases // Discover KB structure and categories
-snow_get_knowledge_stats      // Analytics on article usage
-snow_knowledge_feedback       // Manage user feedback and ratings
-```
-
-### 🔄 Process Mining Tools
-```javascript
-snow_discover_process       // Discover actual processes
-snow_analyze_workflow_execution // Execution analysis
-snow_process_optimization   // Find optimization opportunities
-snow_bottleneck_detection  // Identify bottlenecks
-snow_process_compliance    // Compliance checking
-```
-
-### 🔄 Change Management Tools
-```javascript
-// Change Management - Enterprise Change Control
-snow_create_change_request    // Create change with change_request table
-snow_create_change_task       // Break changes into tasks
-snow_get_change_impact        // Analyze downstream impacts
-snow_schedule_change_cab      // Schedule CAB meetings
-snow_change_risk_assessment   // Calculate risk scores
-snow_get_change_conflicts     // Detect scheduling conflicts
-```
-
-### 🤖 Virtual Agent & Chatbot Tools
-```javascript
-// Virtual Agent - AI-Powered Conversations
-snow_create_chatbot_topic     // Create topics with sys_cs_topic
-snow_create_topic_block       // Design conversation flows
-snow_configure_nlu_model      // Natural language understanding
-snow_get_conversation_logs    // Analyze chat transcripts
-snow_test_chatbot_response    // Test bot responses
-snow_deploy_virtual_agent     // Deploy to channels
-```
-
-### 📊 Performance Analytics (PA) Tools
-```javascript
-// Performance Analytics - KPI Management
-snow_create_pa_indicator      // Create indicators with pa_indicators
-snow_create_pa_widget         // Dashboard widgets with pa_widgets
-snow_create_pa_breakdown      // Data breakdowns with pa_breakdowns
-snow_create_pa_threshold      // Alert thresholds
-snow_get_pa_scores           // Get current KPI scores
-snow_create_pa_target        // Set performance targets
-snow_analyze_pa_trends       // Trend analysis and forecasting
-```
-
-### 🔧 Flow Designer Tools
-```javascript
-// Flow Designer - Visual Workflow Automation
-snow_create_flow             // Create flows with sys_hub_flow
-snow_create_flow_action      // Custom actions with sys_hub_action_instance
-snow_create_subflow          // Reusable subflows
-snow_add_flow_trigger        // Event/schedule triggers
-snow_publish_flow           // Activate flows
-snow_test_flow              // Test with sample data
-snow_get_flow_execution_details // Execution history and logs
-```
-
-### 💼 Agent Workspace Tools
-```javascript
-// Agent Workspace - Unified Agent Experience
-snow_create_workspace        // Create workspace with sys_aw_workspace
-snow_configure_workspace_tab // Configure tabs with sys_aw_tab
-snow_add_workspace_list      // Add lists with sys_aw_list
-snow_create_workspace_form   // Custom forms
-snow_configure_workspace_ui_action // UI actions
-snow_deploy_workspace       // Deploy to agents
-```
-
-### 📱 Mobile Platform Tools
-```javascript
-// Mobile - Native Mobile Experience
-snow_create_mobile_app_config // App config with sys_mobile_config
-snow_configure_mobile_layout  // Layouts with sys_mobile_layout
-snow_create_mobile_applet     // Mobile applets
-snow_configure_offline_tables // Offline data sync
-snow_set_mobile_security      // Security policies
-snow_push_notification_config // Push notifications
-snow_deploy_mobile_app        // Deploy to app stores
-```
-
-### 🗄️ CMDB & Discovery Tools
-```javascript
-// CMDB & Discovery - Infrastructure Management
-snow_create_cmdb_ci          // Create CIs with cmdb_ci tables
-snow_create_ci_relationship  // Relationships with cmdb_rel_ci
-snow_discover_ci_dependencies // Dependency mapping
-snow_run_discovery           // Execute discovery schedules
-snow_get_discovery_status    // Monitor discovery progress
-snow_import_cmdb_data        // Bulk CMDB imports
-```
-
-### 🚨 Event Management Tools
-```javascript
-// Event Management - Intelligent Event Processing
-snow_create_event            // Create events with em_event
-snow_create_alert_rule       // Alert rules with em_alert_rule
-snow_correlate_alerts        // Alert correlation
-snow_get_event_metrics       // Event analytics
-```
-
-### 👥 HR Service Delivery Tools
-```javascript
-// HR Service Delivery - Employee Services
-snow_create_hr_case          // HR cases with sn_hr_core_case
-snow_manage_onboarding       // Employee onboarding workflows
-snow_manage_offboarding      // Offboarding processes
-snow_get_hr_analytics        // HR metrics and analytics
-```
-
-### 🎯 Customer Service Management Tools
-```javascript
-// Customer Service Management - Customer Experience
-snow_create_csm_case         // Customer cases with sn_customerservice_case
-snow_manage_customer_account // Account management
-snow_create_csm_communication // Customer communications
-snow_get_customer_satisfaction // CSAT metrics
-```
-
-### 🚀 DevOps Tools
-```javascript
-// DevOps - CI/CD Integration
-snow_create_devops_pipeline  // Pipelines with sn_devops_pipeline
-snow_track_deployment        // Deployments with sn_devops_deployment
-snow_manage_devops_change    // DevOps change management
-snow_get_velocity_metrics    // Team velocity metrics
-snow_create_devops_artifact  // Build artifacts
-```
-
-### 📦 Advanced Features
-```javascript
-snow_create_application     // Scoped applications
-snow_application_publish   // Publish to store
-snow_create_plugin        // Custom plugins
-snow_dependency_check     // Check all dependencies
-snow_upgrade_impact      // Assess upgrade impact
-snow_clone_artifacts     // Clone existing components
-```
-
-## Implementation Examples
-
-### Complete Widget Pattern
-```javascript
-// 1. Auth & Update Set (MANDATORY)
-const auth = await snow_auth_diagnostics();
-const updateSet = await snow_update_set_create({
-  name: `SNOW_FLOW_IncidentDashboard_${new Date().toISOString().split('T')[0]}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}`,
-  description: "Incident Analytics Dashboard",
-  auto_switch: true
-});
-
-// 2. Discovery (MANDATORY)
-const widgetFields = await snow_discover_table_fields({ table_name: "sp_widget" });
-const incidentFields = await snow_discover_table_fields({ table_name: "incident" });
-
-// 3. Create COMPLETE Widget
-const widget = await snow_deploy({
-  type: "widget",
-  name: "Incident Analytics Dashboard",
-  html_template: `
-    <div class="incident-dashboard">
-      <div class="kpi-row">
-        <div class="kpi-card" ng-repeat="kpi in data.kpis">
-          <div class="kpi-value">{{kpi.value}}</div>
-          <div class="kpi-label">{{kpi.label}}</div>
-          <div class="kpi-trend" ng-class="{'up': kpi.trend > 0, 'down': kpi.trend < 0}">
-            <i class="fa" ng-class="{'fa-arrow-up': kpi.trend > 0, 'fa-arrow-down': kpi.trend < 0}"></i>
-            {{Math.abs(kpi.trend)}}%
-          </div>
-        </div>
-      </div>
-      <div class="charts-row">
-        <div class="chart-container">
-          <canvas id="priority-chart"></canvas>
-        </div>
-        <div class="chart-container">
-          <canvas id="trend-chart"></canvas>
-        </div>
-      </div>
-      <div class="data-table">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Number</th>
-              <th>Priority</th>
-              <th>State</th>
-              <th>Assigned To</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr ng-repeat="inc in data.incidents" ng-click="openIncident(inc.sys_id)">
-              <td>{{inc.number}}</td>
-              <td><span class="priority-{{inc.priority}}">{{inc.priority_label}}</span></td>
-              <td>{{inc.state_label}}</td>
-              <td>{{inc.assigned_to_name}}</td>
-              <td>{{inc.sys_updated_on | date:'short'}}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `,
-  client_script: `
-    function($scope, $http, spUtil, $window) {
-      var c = this;
-      
-      c.$onInit = function() {
-        loadDashboardData();
-        initializeCharts();
-        setupAutoRefresh();
-      };
-      
-      function loadDashboardData() {
-        c.server.get({
-          action: 'load_dashboard'
-        }).then(function(response) {
-          c.data.kpis = response.data.kpis;
-          c.data.incidents = response.data.incidents;
-          updateCharts(response.data.chartData);
-        });
-      }
-      
-      function initializeCharts() {
-        // Priority Distribution Chart
-        var priorityCtx = document.getElementById('priority-chart').getContext('2d');
-        c.priorityChart = new Chart(priorityCtx, {
-          type: 'doughnut',
-          data: { labels: [], datasets: [] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            legend: { position: 'bottom' }
-          }
-        });
-        
-        // Trend Chart
-        var trendCtx = document.getElementById('trend-chart').getContext('2d');
-        c.trendChart = new Chart(trendCtx, {
-          type: 'line',
-          data: { labels: [], datasets: [] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
-      }
-      
-      function updateCharts(data) {
-        // Update Priority Chart
-        c.priorityChart.data = data.priorityData;
-        c.priorityChart.update();
-        
-        // Update Trend Chart
-        c.trendChart.data = data.trendData;
-        c.trendChart.update();
-      }
-      
-      function setupAutoRefresh() {
-        // Refresh every 30 seconds
-        setInterval(loadDashboardData, 30000);
-        
-        // Watch for record changes
-        spUtil.recordWatch($scope, 'incident', 'active=true', function() {
-          loadDashboardData();
-        });
-      }
-      
-      $scope.openIncident = function(sysId) {
-        $window.open('/nav_to.do?uri=incident.do?sys_id=' + sysId, '_blank');
-      };
-    }
-  `,
-  server_script: `
-    (function() {
-      data.kpis = [];
-      data.incidents = [];
-      data.chartData = {};
-      
-      if (input.action === 'load_dashboard') {
-        // Calculate KPIs from REAL data
-        var kpis = calculateKPIs();
-        data.kpis = kpis;
-        
-        // Get recent incidents
-        var incidents = getRecentIncidents();
-        data.incidents = incidents;
-        
-        // Generate chart data
-        data.chartData = {
-          priorityData: getPriorityDistribution(),
-          trendData: getTrendData()
-        };
-      }
-      
-      function calculateKPIs() {
-        var kpis = [];
-        
-        // Total Open Incidents
-        var grOpen = new GlideAggregate('incident');
-        grOpen.addQuery('active', true);
-        grOpen.addAggregate('COUNT');
-        grOpen.query();
-        var openCount = grOpen.next() ? parseInt(grOpen.getAggregate('COUNT')) : 0;
-        
-        // Calculate trend (vs last week)
-        var grLastWeek = new GlideAggregate('incident');
-        grLastWeek.addQuery('active', true);
-        grLastWeek.addQuery('sys_created_on', 'RELATIVELT', 'WEEKAGO', 1);
-        grLastWeek.addAggregate('COUNT');
-        grLastWeek.query();
-        var lastWeekCount = grLastWeek.next() ? parseInt(grLastWeek.getAggregate('COUNT')) : 0;
-        
-        var trend = lastWeekCount > 0 ? ((openCount - lastWeekCount) / lastWeekCount * 100).toFixed(1) : 0;
-        
-        kpis.push({
-          label: 'Open Incidents',
-          value: openCount,
-          trend: parseFloat(trend)
-        });
-        
-        // Critical Incidents
-        var grCritical = new GlideAggregate('incident');
-        grCritical.addQuery('active', true);
-        grCritical.addQuery('priority', '1');
-        grCritical.addAggregate('COUNT');
-        grCritical.query();
-        var criticalCount = grCritical.next() ? parseInt(grCritical.getAggregate('COUNT')) : 0;
-        
-        kpis.push({
-          label: 'Critical',
-          value: criticalCount,
-          trend: 0
-        });
-        
-        // Average Resolution Time
-        var grResolved = new GlideAggregate('incident');
-        grResolved.addQuery('resolved_at', 'RELATIVEGT', 'DAYAGO', 7);
-        grResolved.addAggregate('AVG', 'calendar_duration');
-        grResolved.query();
-        
-        if (grResolved.next()) {
-          var avgDuration = grResolved.getAggregate('AVG', 'calendar_duration');
-          var hours = Math.round(avgDuration / 3600);
-          kpis.push({
-            label: 'Avg Resolution (hrs)',
-            value: hours,
-            trend: -5
-          });
-        }
-        
-        // SLA Compliance
-        var grSLA = new GlideRecord('task_sla');
-        grSLA.addQuery('task.sys_class_name', 'incident');
-        grSLA.addQuery('active', true);
-        grSLA.query();
-        
-        var totalSLA = 0;
-        var breachedSLA = 0;
-        while (grSLA.next()) {
-          totalSLA++;
-          if (grSLA.has_breached == true) {
-            breachedSLA++;
-          }
-        }
-        
-        var compliance = totalSLA > 0 ? Math.round((1 - breachedSLA/totalSLA) * 100) : 100;
-        kpis.push({
-          label: 'SLA Compliance',
-          value: compliance + '%',
-          trend: 2
-        });
-        
-        return kpis;
-      }
-      
-      function getRecentIncidents() {
-        var incidents = [];
-        var gr = new GlideRecord('incident');
-        gr.addQuery('active', true);
-        gr.orderByDesc('sys_updated_on');
-        gr.setLimit(10);
-        gr.query();
-        
-        while (gr.next()) {
-          incidents.push({
-            sys_id: gr.getUniqueValue(),
-            number: gr.getValue('number'),
-            priority: gr.getValue('priority'),
-            priority_label: gr.getDisplayValue('priority'),
-            state: gr.getValue('state'),
-            state_label: gr.getDisplayValue('state'),
-            assigned_to: gr.getValue('assigned_to'),
-            assigned_to_name: gr.getDisplayValue('assigned_to'),
-            sys_updated_on: gr.getValue('sys_updated_on')
-          });
-        }
-        
-        return incidents;
-      }
-      
-      function getPriorityDistribution() {
-        var priorities = ['1 - Critical', '2 - High', '3 - Moderate', '4 - Low', '5 - Planning'];
-        var counts = [];
-        var colors = ['#d32f2f', '#f57c00', '#fbc02d', '#689f38', '#1976d2'];
-        
-        for (var i = 1; i <= 5; i++) {
-          var gr = new GlideAggregate('incident');
-          gr.addQuery('active', true);
-          gr.addQuery('priority', i);
-          gr.addAggregate('COUNT');
-          gr.query();
-          
-          var count = gr.next() ? parseInt(gr.getAggregate('COUNT')) : 0;
-          counts.push(count);
-        }
-        
-        return {
-          labels: priorities,
-          datasets: [{
-            data: counts,
-            backgroundColor: colors
-          }]
-        };
-      }
-      
-      function getTrendData() {
-        var labels = [];
-        var data = [];
-        
-        // Get last 30 days of data
-        for (var i = 29; i >= 0; i--) {
-          var date = new GlideDateTime();
-          date.addDaysUTC(-i);
-          labels.push(date.getDate().getByFormat('MM/dd'));
-          
-          var gr = new GlideAggregate('incident');
-          gr.addQuery('sys_created_on', 'RELATIVELE', 'DAYAGO', i);
-          gr.addQuery('sys_created_on', 'RELATIVEGT', 'DAYAGO', i + 1);
-          gr.addAggregate('COUNT');
-          gr.query();
-          
-          var count = gr.next() ? parseInt(gr.getAggregate('COUNT')) : 0;
-          data.push(count);
-        }
-        
-        return {
-          labels: labels,
-          datasets: [{
-            label: 'New Incidents',
-            data: data,
-            borderColor: '#1976d2',
-            backgroundColor: 'rgba(25, 118, 210, 0.1)',
-            tension: 0.3
-          }]
-        };
-      }
-    })();
-  `,
-  css: `
-    .incident-dashboard {
-      padding: 15px;
-      font-family: 'SourceSansPro', Arial, sans-serif;
-    }
+// Universal verification pattern
+const verify = await snow_execute_script_with_output({
+  script: `
+    gs.info('=== VERIFICATION TEST ===');
     
-    .kpi-row {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
+    // Test table existence
+    var table = new GlideRecord('table_name');
+    gs.info('Table valid: ' + table.isValid());
     
-    .kpi-card {
-      flex: 1;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 20px;
-      text-align: center;
-      transition: transform 0.2s;
-    }
+    // Test property existence
+    var prop = gs.getProperty('property.name');
+    gs.info('Property: ' + (prop || 'NOT SET'));
     
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    // Test actual code
+    try {
+      // User's code here
+      gs.info('SUCCESS');
+    } catch(e) {
+      gs.error('ERROR: ' + e.message);
     }
-    
-    .kpi-value {
-      font-size: 36px;
-      font-weight: 300;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    
-    .kpi-label {
-      font-size: 14px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .kpi-trend {
-      margin-top: 10px;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    
-    .kpi-trend.up {
-      color: #4caf50;
-    }
-    
-    .kpi-trend.down {
-      color: #f44336;
-    }
-    
-    .charts-row {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    
-    .chart-container {
-      flex: 1;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 20px;
-      height: 300px;
-    }
-    
-    .data-table {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    .data-table table {
-      width: 100%;
-      margin: 0;
-    }
-    
-    .data-table tbody tr {
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    
-    .data-table tbody tr:hover {
-      background-color: #f5f5f5;
-    }
-    
-    .priority-1 { color: #d32f2f; font-weight: 600; }
-    .priority-2 { color: #f57c00; font-weight: 600; }
-    .priority-3 { color: #fbc02d; }
-    .priority-4 { color: #689f38; }
-    .priority-5 { color: #1976d2; }
   `
 });
-
-// 4. Verify Deployment
-const deployed = await snow_query_table({
-  table: "sp_widget",
-  query: `sys_id=${widget.sys_id}`,
-  fields: "sys_id,name,active"
-});
-
-// 5. Add to Update Set Comments
-await snow_update_set_add_comment({
-  comment: `Deployed Widget: ${widget.name} (${widget.sys_id})`
-});
 ```
 
-## Deployment Checklist
+### Rule 3: Widget Coherence - Critical Client-Server Communication
 
-Before deployment:
-- [ ] Authentication verified with `snow_auth_diagnostics`
-- [ ] Update Set created with proper naming convention
-- [ ] Schema discovered with `snow_discover_table_fields`
-- [ ] Existing data queried with `snow_query_table`
-- [ ] All field names verified (not guessed)
-- [ ] Complete implementation (no TODOs)
-- [ ] Real data used (no mock values)
-- [ ] Error handling included
-- [ ] Performance optimized (GlideAggregate, indexes)
-- [ ] Security considered (ACLs, input validation)
-- [ ] Deployment verified with queries
-- [ ] Update Set comments added
+ServiceNow widgets MUST have perfect communication between client and server scripts. This is not optional - widgets fail when these components don't talk to each other correctly.
 
-## Best Practices
+**The Three-Way Contract:**
 
-1. **Comprehensive Implementation**: When creating widgets, include:
-   - Multiple visualizations
-   - Real-time updates
-   - Export capabilities
-   - Mobile responsive design
-   - Accessibility features
-   - Performance metrics
-   - Related reports
+**Server Script Must:**
+- Initialize all `data` properties that HTML will reference
+- Handle every `input.action` that client sends
+- Return data in the format client expects
 
-2. **System-Wide Considerations**:
-   - Impact on existing workflows
-   - Integration points
-   - User permissions
-   - Performance at scale
-   - Upgrade safety
-   - Maintenance burden
+**Client Script Must:**
+- Implement every method that HTML calls via `ng-click`
+- Use `c.server.get({action: 'name'})` for server communication
+- Update `c.data` when server responds
 
-3. **Performance Optimization**:
-   - Use GlideAggregate for counts
-   - Implement proper indexes
-   - Batch operations
-   - Lazy loading
-   - Caching strategies
-   - Async processing
+**HTML Template Must:**
+- Only reference `data` properties that server provides
+- Only call methods that client implements
+- Use correct Angular directives and bindings
 
-4. **Security Considerations**:
-   - Check ACLs before operations
-   - Validate all inputs
-   - Sanitize outputs
-   - Use GlideRecordSecure
-   - Implement field-level security
-   - Audit trail
+**Critical Communication Points:**
 
-5. **Platform Standards**:
-   - Follow ServiceNow UI patterns
-   - Use platform CSS classes
-   - Implement standard keyboard shortcuts
-   - Include contextual help
-   - Support multiple languages
-   - Respect user preferences
+1. **Server → Client Data Flow**
+   - Server sets `data.property`
+   - Client receives via `c.data.property`
+   - HTML displays with `{{data.property}}`
 
-## MCP Server Overview
+2. **Client → Server Requests**
+   - Client sends `c.server.get({action: 'name'})`
+   - Server receives via `input.action`
+   - Server processes and returns updated `data`
 
-### 1. **servicenow-deployment**
-- Widget deployment
-- UI Page creation
-- Portal configuration
-- Theme management
-- Application deployment
+3. **HTML → Client Method Calls**
+   - HTML has `ng-click="methodName()"`
+   - Client must have `$scope.methodName = function()`
+   - Method typically calls server with `c.server.get()`
 
-### 2. **servicenow-operations**
-- CRUD operations
-- Bulk data management
-- Record manipulation
-- Query operations
-- Data import/export
+**Common Failures to Avoid:**
+- Action name mismatches between client and server
+- Method name mismatches between HTML and client  
+- Property name mismatches between server and HTML
+- Missing handlers for client requests
+- Orphaned data properties or methods
 
-### 3. **servicenow-platform-development**
-- Table creation
-- Field management
-- Dictionary updates
-- Schema discovery
-- Relationship mapping
+**Coherence Validation Checklist:**
+- [ ] Every `data.property` in server is used in HTML/client
+- [ ] Every `ng-click` in HTML has matching `$scope.method` in client
+- [ ] Every `c.server.get({action})` in client has matching `if(input.action)` in server
+- [ ] Data flows correctly: Server → HTML → Client → Server
+- [ ] No orphaned methods or unused data properties
 
-### 4. **servicenow-machine-learning**
-- Neural network training
-- Incident classification
-- Anomaly detection
+### Rule 4: Evidence-Based Debugging
+
+Follow this systematic approach for all debugging:
+
+1. **Reproduce** - Run the exact failing code
+2. **Inventory** - List all dependencies
+3. **Verify** - Test each dependency exists
+4. **Fix** - Correct only confirmed issues
+
+**Fix only:**
+- ✅ Confirmed syntax errors
+- ✅ Verified null references
+- ✅ Missing dependencies (after verification)
+- ✅ Real type mismatches
+
+**Never change:**
+- ❌ Unverified resources
+- ❌ Configurations that "seem wrong"
+- ❌ APIs you haven't tested
+- ❌ Working code that could be "better"
+
+## ServiceNow Development Standards
+
+### Table Operations
+- Always verify table existence before operations
+- Use proper field types and references
+- Check for ACLs and permissions
+- Handle large datasets with pagination
+
+### Script Development
+- Use Script Includes for reusable code
+- Implement proper error handling
+- Add meaningful logging with gs.info/warn/error
+- Test in scoped applications when applicable
+
+### Widget Development
+- Ensure HTML/Client/Server coherence
+- Use Angular providers correctly
+- Implement proper data binding
+- Test across different themes and portals
+
+### Flow Development
+- Use proper trigger conditions
+- Implement error handling paths
+- Add appropriate logging actions
+- Test with various data scenarios
+
+## MCP Server Capabilities
+
+Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNow capabilities:
+
+### 1. ServiceNow Deployment Server
+**Purpose:** Widget and artifact deployment with coherence validation
+
+**Key Tools:**
+- `snow_deploy_widget` - Deploy widgets with HTML/Client/Server validation
+- `snow_deploy_portal_page` - Deploy portal pages
+- `snow_deploy_flow` - Deploy Flow Designer flows
+- `snow_create_update_set` - Create update sets
+- `snow_validate_deployment` - Validate deployed artifacts
+- `snow_rollback_deployment` - Rollback failed deployments
+
+**Special Features:**
+- Automatic widget coherence validation
+- Data flow contract verification
+- Method implementation checking
+- CSS class validation
+
+### 2. ServiceNow Operations Server
+**Purpose:** Core ServiceNow operations and queries
+
+**Key Tools:**
+- `snow_query_table` - Universal table querying with pagination
+- `snow_create_incident` - Create and manage incidents
+- `snow_update_record` - Update any table record
+- `snow_delete_record` - Delete records with validation
+- `snow_discover_table_fields` - Discover table schema
+- `snow_cmdb_search` - Search Configuration Management Database
+
+**Features:**
+- Full CRUD operations on any table
+- Advanced query capabilities
+- Field discovery and validation
+- Relationship navigation
+
+### 3. ServiceNow Automation Server
+**Purpose:** Script execution and automation
+
+**Key Tools:**
+- `snow_execute_script_with_output` - Execute scripts with output capture
+- `snow_get_script_output` - Retrieve script execution history
+- `snow_execute_script_sync` - Synchronous script execution
+- `snow_get_logs` - Access system logs
+- `snow_test_rest_connection` - Test REST integrations
+- `snow_trace_execution` - Trace script execution
+- `snow_schedule_job` - Create scheduled jobs
+- `snow_create_event` - Trigger system events
+
+**Features:**
+- Full output capture (gs.print/info/warn/error)
+- Execution history tracking
+- System log access
+- REST message testing
+- Performance tracing
+
+### 4. ServiceNow Platform Development Server
+**Purpose:** Platform development artifacts
+
+**Key Tools:**
+- `snow_create_script_include` - Create reusable scripts
+- `snow_create_business_rule` - Create business rules
+- `snow_create_client_script` - Create client-side scripts
+- `snow_create_ui_policy` - Create UI policies
+- `snow_create_ui_action` - Create UI actions
+- `snow_create_ui_page` - Create UI pages
+
+**Features:**
+- Full artifact creation
+- Proper scoping support
+- Condition builder integration
+- Script validation
+
+### 5. ServiceNow Integration Server
+**Purpose:** Integration and data management
+
+**Key Tools:**
+- `snow_create_rest_message` - Create REST integrations
+- `snow_create_transform_map` - Create data transformation maps
+- `snow_create_import_set` - Manage import sets
+- `snow_test_web_service` - Test web services
+- `snow_configure_email` - Configure email settings
+
+**Features:**
+- REST/SOAP integration
+- Data transformation
+- Import/Export capabilities
+- Email configuration
+
+### 6. ServiceNow System Properties Server
+**Purpose:** System property management
+
+**Key Tools:**
+- `snow_property_get` - Retrieve property values
+- `snow_property_set` - Set property values
+- `snow_property_list` - List properties by pattern
+- `snow_property_delete` - Remove properties
+- `snow_property_bulk_update` - Bulk operations
+- `snow_property_export` - Export to JSON
+- `snow_property_import` - Import from JSON
+
+**Features:**
+- Full CRUD on sys_properties
+- Bulk operations
+- Import/Export capabilities
+- Property validation
+
+### 7. ServiceNow Update Set Server
+**Purpose:** Change management and deployment
+
+**Key Tools:**
+- `snow_create_update_set` - Create new update sets
+- `snow_switch_update_set` - Switch active update set
+- `snow_complete_update_set` - Mark as complete
+- `snow_preview_update_set` - Preview changes
+- `snow_export_update_set` - Export as XML
+
+**Features:**
+- Full update set lifecycle
+- Change tracking
+- XML export/import
+- Conflict detection
+
+### 8. ServiceNow Development Assistant Server
+**Purpose:** Code generation and best practices
+
+**Key Tools:**
+- `snow_generate_code` - Generate ServiceNow code
+- `snow_suggest_pattern` - Suggest design patterns
+- `snow_review_code` - Code review and analysis
+- `snow_optimize_performance` - Performance recommendations
+
+**Features:**
+- Pattern-based code generation
+- Best practice enforcement
+- Performance optimization
+- Security review
+
+### 9. ServiceNow Security & Compliance Server
+**Purpose:** Security and compliance management
+
+**Key Tools:**
+- `snow_create_security_policy` - Create security policies
+- `snow_audit_compliance` - Compliance auditing
+- `snow_scan_vulnerabilities` - Vulnerability scanning
+- `snow_assess_risk` - Risk assessment
+- `snow_review_access_control` - ACL review
+
+**Features:**
+- SOX/GDPR/HIPAA compliance
+- Security policy management
+- Vulnerability assessment
+- Access control validation
+
+### 10. ServiceNow Reporting & Analytics Server
+**Purpose:** Reporting and data visualization
+
+**Key Tools:**
+- `snow_create_report` - Create reports
+- `snow_create_dashboard` - Create dashboards
+- `snow_define_kpi` - Define KPIs
+- `snow_schedule_report` - Schedule report delivery
+- `snow_analyze_data_quality` - Data quality analysis
+
+**Features:**
+- Advanced reporting
+- Dashboard creation
+- KPI management
+- Scheduled delivery
+
+### 11. ServiceNow Machine Learning Server
+**Purpose:** AI/ML capabilities
+
+**Key Tools:**
+- `snow_train_classifier` - Train incident classifier
+- `snow_predict_change_risk` - Predict change risks
+- `snow_detect_anomalies` - Anomaly detection
+- `snow_forecast_incidents` - Incident forecasting
+- `snow_optimize_process` - Process optimization
+
+**Features:**
 - Predictive analytics
 - Pattern recognition
-
-### 5. **servicenow-reporting-analytics**
-- Dashboard creation
-- Report generation
-- KPI management
-- Performance Analytics
-- Metric visualization
-
-### 6. **servicenow-security-compliance**
-- Security scanning
-- ACL management
-- Compliance checking
-- Vulnerability detection
-- Access control
-
-### 7. **servicenow-update-set**
-- Change packaging
-- Version control
-- Deployment management
-- Rollback capabilities
-- Conflict resolution
-
-### 8. **servicenow-automation**
-- Business rule creation
-- Scheduled jobs
-- Event management
-- Workflow automation
-- Background script execution
-- ATF test management
-- Test suite creation
-
-### 9. **servicenow-integration**
-- REST API setup
-- SOAP integration
-- Data sources
-- Transform maps
-- IntegrationHub
-
-### 10. **servicenow-advanced-features**
-- Process mining
-- Advanced analytics
-- Performance optimization
-- Dependency analysis
-- Impact prediction
-
-### 11. **servicenow-knowledge-catalog**
-- Knowledge article management
-- Knowledge base creation
-- Service catalog items
-- Catalog variables
-- Order management
-- Catalog discovery
-
-### 12. **snow-flow**
-- Orchestration
-- Memory management
-- Session handling
-- Batch operations
-- Tool coordination
-
-### 13. **servicenow-change-virtualagent-pa**
-- Change Management (CAB, risk assessment, impact analysis)
-- Virtual Agent (chatbot topics, NLU, conversation flows)
-- Performance Analytics (KPIs, widgets, trends, thresholds)
-
-### 14. **servicenow-flow-workspace-mobile**
-- Flow Designer (flows, actions, subflows, triggers)
-- Agent Workspace (unified UI, tabs, lists, forms)
-- Mobile Platform (app config, offline sync, push notifications)
-
-### 15. **servicenow-cmdb-event-hr-csm-devops**
-- CMDB & Discovery (CIs, relationships, discovery schedules)
-- Event Management (events, alerts, correlation)
-- HR Service Delivery (cases, onboarding, offboarding)
-- Customer Service Management (customer cases, accounts, CSAT)
-- DevOps (pipelines, deployments, velocity metrics)
-
-### 16. **servicenow-performance-optimization**
-- Query optimization and analysis
-- Batch API operations
-- Performance diagnostics
-- Index recommendations
-- Cache analysis
-
-### 17. **servicenow-process-intelligence**
-- Process mining and discovery
-- Workflow execution analysis
-- Bottleneck detection
+- Anomaly detection
 - Process optimization
-- Compliance checking
 
-## Build Commands
+### 12. Snow-Flow Orchestration Server
+**Purpose:** Multi-agent coordination and task management
 
-- `npm run build` - Build the project
-- `npm run test` - Run test suite
-- `npm run lint` - Code quality checks
-- `npm run typecheck` - TypeScript validation
-- `./snow-flow --help` - All Snow-Flow commands
+**Key Tools:**
+- `snow_swarm_init` - Initialize agent swarms
+- `snow_agent_spawn` - Create specialized agents
+- `snow_task_orchestrate` - Orchestrate complex tasks
+- `snow_memory_store` - Persistent memory storage
+- `snow_neural_train` - Train neural networks
+- `snow_performance_analyze` - Performance analysis
 
-## Summary
+**Features:**
+- Multi-agent coordination
+- Task orchestration
+- Neural network training (TensorFlow.js)
+- Memory management
+- Performance monitoring
 
-Snow-Flow provides comprehensive ServiceNow development capabilities with real data integration and complete implementations. All code should be production-ready without placeholders or mock data.
+## Debugging Best Practices
 
-When implementing solutions, provide complete, professional implementations that work on the user's ServiceNow instance.
+### Systematic Debugging Protocol
 
-Key workflow steps:
-- Verify authentication before operations
-- Create Update Sets with naming pattern: SNOW_FLOW_{OBJECTIVE}_{DATE}_{TIME}
-- Discover table structures and field names before implementation
-- Deliver complete, tested, production-ready code
+1. **Reproduce the Issue**
+   ```javascript
+   // Always use ES5 and test exact code
+   const result = await snow_execute_script_with_output({
+     script: `/* Exact failing code in ES5 */`
+   });
+   ```
 
-You have access to 180+ MCP tools across 17 servers to implement ServiceNow solutions effectively.
+2. **Verify Dependencies**
+   - Check all referenced tables exist
+   - Verify all properties are set
+   - Confirm all fields are present
+   - Test all integrations work
+
+3. **Test in Context**
+   - Use same scope and variables
+   - Include same imports
+   - Test with same data
+
+4. **Apply Evidence-Based Fixes**
+   - Fix only confirmed issues
+   - Document why changes were made
+   - Test fixes thoroughly
+
+### Common Verification Patterns
+
+**Table Verification:**
+```javascript
+var table = new GlideRecord('table_name');
+gs.info('Table exists: ' + table.isValid());
+```
+
+**Property Verification:**
+```javascript
+var prop = gs.getProperty('property.name');
+gs.info('Property value: ' + (prop || 'NOT SET'));
+```
+
+**Field Verification:**
+```javascript
+var gr = new GlideRecord('table');
+var element = gr.getElement('field_name');
+gs.info('Field exists: ' + (element ? 'Yes' : 'No'));
+```
+
+## Command Reference
+
+### Core Commands
+- `./snow-flow start` - Start orchestration system
+- `./snow-flow status` - System status
+- `./snow-flow monitor` - Real-time monitoring
+
+### Agent Management
+- `./snow-flow agent spawn <type>` - Create agents
+- `./snow-flow agent list` - List active agents
+
+### Task Management
+- `./snow-flow task create` - Create tasks
+- `./snow-flow task list` - View task queue
+
+### Memory Operations
+- `./snow-flow memory store <key> <data>` - Store data
+- `./snow-flow memory get <key>` - Retrieve data
+- `./snow-flow memory list` - List all keys
+
+### SPARC Modes
+- `./snow-flow sparc "<task>"` - Orchestrator mode
+- `./snow-flow sparc run <mode> "<task>"` - Specific mode
+- `./snow-flow sparc tdd "<feature>"` - Test-driven development
+
+### Swarm Coordination
+- `./snow-flow swarm "<objective>"` - Multi-agent coordination
+- Options: `--strategy`, `--mode`, `--parallel`, `--monitor`
+
+## Workflow Guidelines
+
+### Development Workflow
+1. **Plan** - Use TodoWrite for task management
+2. **Verify** - Check existing resources
+3. **Develop** - Follow ES5 standards
+4. **Test** - Use background scripts
+5. **Deploy** - Use update sets
+6. **Validate** - Verify deployment
+
+### Testing Workflow
+1. Run unit tests with background scripts
+2. Test integrations with REST tools
+3. Validate UI with widget coherence
+4. Check performance with tracing
+5. Review logs for errors
+
+### Debugging Workflow
+1. Reproduce issue exactly
+2. Gather evidence with scripts
+3. Verify all assumptions
+4. Apply minimal fixes
+5. Test thoroughly
+6. Document changes
+
+## Important Reminders
+
+### Always Remember
+- Every ServiceNow instance is unique
+- Custom implementations exist that you don't know about
+- Preview/beta features may be available
+- Organization-specific configurations are common
+- Test everything before making assumptions
+
+### Never Assume
+- That something doesn't exist without verification
+- That configurations are wrong without testing
+- That APIs aren't available without checking
+- That code won't work without running it
+- That you know better than existing implementations
+
+### Golden Rules
+1. **Verify First** - Test before declaring broken
+2. **ES5 Only** - No modern JavaScript in ServiceNow
+3. **Evidence-Based** - Make decisions on facts, not assumptions
+4. **Minimal Changes** - Fix only what's broken
+5. **Respect Context** - Understand why things exist as they do
+
+## Conclusion
+
+Snow-Flow is a powerful framework for ServiceNow development that emphasizes verification, testing, and evidence-based decision making. By following these guidelines and best practices, you ensure reliable, maintainable, and effective ServiceNow solutions.
+
+Remember: Your job is to solve problems, not to judge implementations. Every environment has its reasons for existing configurations. Verify, test, and respect what you find.
