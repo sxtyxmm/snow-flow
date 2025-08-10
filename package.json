@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.3.8",
-  "description": "Snow-Flow v3.3.8: SYSTEM PROPERTIES MCP - Complete system property management via official ServiceNow APIs! 12 new tools: get, set, list, delete, search, bulk operations, import/export, validation, categories, and audit history. All using standard Table API on sys_properties - no hacks, 100% official! Manage configurations, feature flags, and system settings programmatically. Now 192+ MCP tools across 18 specialized servers.",
+  "version": "3.4.4",
+  "description": "Snow-Flow v3.4.4: ES5 JAVASCRIPT ONLY - Critical ServiceNow compatibility fix! ServiceNow uses Rhino engine (ES5 only) - NO modern JavaScript! ALWAYS convert user's ES6+ code to ES5: var (not let/const), function() (not arrows), string concatenation (not template literals), traditional for loops. Background scripts MUST be ES5 or they WILL FAIL. Includes ES5 conversion examples and compatibility checklist. 200+ MCP tools across 18 specialized servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

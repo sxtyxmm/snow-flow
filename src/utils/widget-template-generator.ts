@@ -17,6 +17,31 @@ export interface WidgetComponents {
   serverScript: string;
   clientScript: string;
   optionSchema: string;
+  coherenceReport: WidgetCoherenceReport;
+}
+
+export interface WidgetCoherenceReport {
+  isCoherent: boolean;
+  dataProperties: {
+    server: string[];         // data.kpis, data.incidents 
+    html: string[];          // {{data.kpis}}, data.incidents
+    matched: string[];       // Properties that match
+    missing: string[];       // Server properties not used in HTML
+  };
+  methods: {
+    html: string[];          // ng-click="refreshData()"
+    client: string[];        // $scope.refreshData = function()
+    matched: string[];       // Methods that match
+    missing: string[];       // HTML methods not implemented in client
+  };
+  serverActions: {
+    client: string[];        // {action: 'refresh_data'}
+    server: string[];        // if (input.action === 'refresh_data')
+    matched: string[];       // Actions that match
+    missing: string[];       // Client actions not handled by server
+  };
+  warnings: string[];
+  suggestions: string[];
 }
 
 export class ServiceNowWidgetTemplateGenerator {
@@ -30,13 +55,19 @@ export class ServiceNowWidgetTemplateGenerator {
     
     const widgetTitle = title || this.extractTitleFromInstruction(instruction);
     
-    return {
+    const components = {
       template: this.generateTemplate(detectedType, widgetTitle, instruction),
       css: this.generateCss(detectedType, options),
       serverScript: this.generateServerScript(detectedType, instruction),
       clientScript: this.generateClientScript(detectedType, instruction),
-      optionSchema: this.generateOptionSchema(detectedType)
+      optionSchema: this.generateOptionSchema(detectedType),
+      coherenceReport: {} as WidgetCoherenceReport
     };
+    
+    // Generate coherence report
+    components.coherenceReport = this.validateCoherence(components);
+    
+    return components;
   }
 
   /**
@@ -1737,6 +1768,112 @@ function($scope, $http, spUtil, $timeout) {
 
     const allOptions = [...baseOptions, ...typeSpecificOptions];
     return JSON.stringify(allOptions, null, 2);
+  }
+
+  /**
+   * Validate widget coherence - ensures HTML, client script, and server script work together
+   */
+  private validateCoherence(components: Omit<WidgetComponents, 'coherenceReport'>): WidgetCoherenceReport {
+    const report: WidgetCoherenceReport = {
+      isCoherent: true,
+      dataProperties: { server: [], html: [], matched: [], missing: [] },
+      methods: { html: [], client: [], matched: [], missing: [] },
+      serverActions: { client: [], server: [], matched: [], missing: [] },
+      warnings: [],
+      suggestions: []
+    };
+
+    // Extract data properties from server script
+    const serverDataMatches = components.serverScript.match(/data\.(\w+)\s*=/g) || [];
+    report.dataProperties.server = serverDataMatches.map(match => 
+      match.replace(/data\.(\w+)\s*=/, '$1')
+    );
+
+    // Extract data properties from HTML template
+    const htmlDataMatches = components.template.match(/\{\{data\.(\w+)[\}|\.]/g) || [];
+    report.dataProperties.html = [...new Set(htmlDataMatches.map(match => 
+      match.replace(/\{\{data\.(\w+)[\}|\.].*/, '$1')
+    ))];
+
+    // Find matched and missing data properties
+    report.dataProperties.matched = report.dataProperties.server.filter(prop => 
+      report.dataProperties.html.includes(prop)
+    );
+    report.dataProperties.missing = report.dataProperties.server.filter(prop => 
+      !report.dataProperties.html.includes(prop)
+    );
+
+    // Extract methods from HTML (ng-click)
+    const htmlMethodMatches = components.template.match(/ng-click="(\w+)\(/g) || [];
+    report.methods.html = [...new Set(htmlMethodMatches.map(match => 
+      match.replace(/ng-click="(\w+)\(/, '$1')
+    ))];
+
+    // Extract methods from client script ($scope.method)
+    const clientMethodMatches = components.clientScript.match(/\$scope\.(\w+)\s*=/g) || [];
+    report.methods.client = [...new Set(clientMethodMatches.map(match => 
+      match.replace(/\$scope\.(\w+)\s*=/, '$1')
+    ))];
+
+    // Find matched and missing methods
+    report.methods.matched = report.methods.html.filter(method => 
+      report.methods.client.includes(method)
+    );
+    report.methods.missing = report.methods.html.filter(method => 
+      !report.methods.client.includes(method)
+    );
+
+    // Extract client server actions
+    const clientActionMatches = components.clientScript.match(/action:\s*['"](\w+)['"]/g) || [];
+    report.serverActions.client = [...new Set(clientActionMatches.map(match => 
+      match.replace(/action:\s*['"](\w+)['"]/, '$1')
+    ))];
+
+    // Extract server action handlers
+    const serverActionMatches = components.serverScript.match(/input\.action\s*===?\s*['"](\w+)['"]/g) || [];
+    report.serverActions.server = [...new Set(serverActionMatches.map(match => 
+      match.replace(/input\.action\s*===?\s*['"](\w+)['"]/, '$1')
+    ))];
+
+    // Find matched and missing server actions
+    report.serverActions.matched = report.serverActions.client.filter(action => 
+      report.serverActions.server.includes(action)
+    );
+    report.serverActions.missing = report.serverActions.client.filter(action => 
+      !report.serverActions.server.includes(action)
+    );
+
+    // Generate warnings and suggestions
+    if (report.dataProperties.missing.length > 0) {
+      report.warnings.push(`Server data properties not used in HTML: ${report.dataProperties.missing.join(', ')}`);
+      report.suggestions.push(`Add {{data.${report.dataProperties.missing[0]}}} to HTML template`);
+    }
+
+    if (report.methods.missing.length > 0) {
+      report.warnings.push(`HTML methods not implemented in client: ${report.methods.missing.join(', ')}`);
+      report.suggestions.push(`Add $scope.${report.methods.missing[0]} = function() {} to client script`);
+    }
+
+    if (report.serverActions.missing.length > 0) {
+      report.warnings.push(`Client actions not handled by server: ${report.serverActions.missing.join(', ')}`);
+      report.suggestions.push(`Add if (input.action === '${report.serverActions.missing[0]}') {} to server script`);
+    }
+
+    // Additional coherence checks
+    if (report.dataProperties.server.length === 0) {
+      report.warnings.push('Server script does not set any data properties');
+      report.suggestions.push('Add data.items = [] or similar in server script');
+    }
+
+    if (components.template.includes('ng-repeat') && !components.template.includes('{{')) {
+      report.warnings.push('HTML has ng-repeat but no data bindings');
+      report.suggestions.push('Add {{item.property}} bindings inside ng-repeat');
+    }
+
+    // Determine overall coherence
+    report.isCoherent = report.warnings.length === 0;
+
+    return report;
   }
 }
 

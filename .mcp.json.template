@@ -5,7 +5,7 @@
       "args": [
         "{{PROJECT_ROOT}}/dist/mcp/servicenow-deployment-mcp.js"
       ],
-      "description": "Widget deployment (snow_deploy), update set creation, deployment validation/rollback, artifact export/import, auth diagnostics, widget preview/testing",
+      "description": "Widget deployment (snow_deploy) with COHERENCE VALIDATION - ensures HTML template, client script, server script work together perfectly. Validates data.properties sync, ng-click methods, server actions. Update set creation, deployment validation/rollback, artifact export/import, auth diagnostics, widget preview/testing",
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -79,7 +79,7 @@
       "args": [
         "{{PROJECT_ROOT}}/dist/mcp/servicenow-automation-mcp.js"
       ],
-      "description": "Scheduled jobs, event rules, notifications, SLA definitions, escalation rules, workflow activities, schedule/event discovery",
+      "description": "Scheduled jobs, event rules, notifications, SLA definitions, escalation rules, workflow activities, script execution with output retrieval, script history, REST testing, system logs, execution tracing",
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",

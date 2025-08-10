@@ -15,6 +15,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { Logger } from '../utils/logger.js';
+import { SnowOAuth } from '../utils/snow-oauth.js';
 import { z } from 'zod';
 
 const logger = new Logger('ServiceNowSystemProperties');
@@ -26,6 +27,7 @@ const logger = new Logger('ServiceNowSystemProperties');
 export class ServiceNowSystemPropertiesMCP {
   private server: Server;
   private client: ServiceNowClient;
+  private oauth: SnowOAuth;
   private propertyCache: Map<string, any> = new Map();
   
   constructor() {
@@ -42,6 +44,7 @@ export class ServiceNowSystemPropertiesMCP {
     );
 
     this.client = new ServiceNowClient();
+    this.oauth = new SnowOAuth();
     this.setupHandlers();
     this.setupTools();
   }
@@ -334,7 +337,7 @@ export class ServiceNowSystemPropertiesMCP {
 
       try {
         // Ensure authentication
-        const isAuthenticated = await this.client.isAuthenticated();
+        const isAuthenticated = await this.oauth.isAuthenticated();
         if (!isAuthenticated) {
           throw new McpError(
             ErrorCode.InvalidRequest,

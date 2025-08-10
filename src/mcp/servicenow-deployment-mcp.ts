@@ -596,6 +596,38 @@ class ServiceNowDeploymentMCP {
 
       this.logger.info('Deploying widget to ServiceNow', { name: args.name, sys_id: args.sys_id });
 
+      // COHERENCE VALIDATION: Check widget component consistency
+      if (args.template && args.client_script && args.server_script) {
+        try {
+          const { widgetTemplateGenerator } = await import('../utils/widget-template-generator');
+          const coherenceReport = widgetTemplateGenerator['validateCoherence']({
+            template: args.template,
+            css: args.css || '',
+            serverScript: args.server_script,
+            clientScript: args.client_script,
+            optionSchema: args.option_schema || ''
+          });
+
+          if (!coherenceReport.isCoherent) {
+            this.logger.warn('⚠️  Widget coherence issues detected:', {
+              warnings: coherenceReport.warnings,
+              suggestions: coherenceReport.suggestions
+            });
+            
+            // Include coherence warnings in response (but don't fail deployment)
+            const warningMessage = `⚠️ **Widget Coherence Warnings:**\n\n${coherenceReport.warnings.map(w => `• ${w}`).join('\n')}\n\n**Suggestions:**\n${coherenceReport.suggestions.map(s => `• ${s}`).join('\n')}\n\n*Widget will still deploy but may not function correctly.*`;
+            
+            // Store coherence warnings for later inclusion in response
+            args._coherenceWarnings = warningMessage;
+          } else {
+            this.logger.info('✅ Widget coherence validation passed');
+          }
+        } catch (coherenceError) {
+          this.logger.warn('Coherence validation failed:', coherenceError);
+          // Continue with deployment even if coherence check fails
+        }
+      }
+
       // CHECK: If sys_id is provided, this is an UPDATE not a CREATE
       if (args.sys_id) {
         this.logger.info('🔄 UPDATE mode detected - updating existing widget', { sys_id: args.sys_id });
@@ -635,6 +667,8 @@ class ServiceNowDeploymentMCP {
 - Name: ${args.name || 'Unchanged'}
 - Deployment Context: ${args.config?.deployment_context || args.deployment_context || 'Widget update'}
 - Method: Direct update via API
+
+${args._coherenceWarnings || ''}
 
 🔗 Direct Links:
 - Widget Editor: ${widgetUrl}
@@ -1242,6 +1276,8 @@ Use \`snow_deployment_debug\` for more information about this session.`,
 - Widget Editor: ${widgetUrl}
 - Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
 
+${args._coherenceWarnings || ''}
+
 🛠️ Deployment Info:
 - Method Used: ${deploymentMethod === 'direct_api' ? 'Direct API (preferred)' : 
                 deploymentMethod === 'table_record' ? 'Table Record (fallback)' : 'Unknown'}
@@ -1340,6 +1376,8 @@ Use \`snow_deployment_debug\` for more information about this session.`,
 🔗 Direct Links:
 - Widget Editor: ${widgetUrl}
 - Service Portal Designer: https://${credentials?.instance}/sp_config?id=designer
+
+${args._coherenceWarnings || ''}
 
 🔧 **Note**: Widget was successfully created despite receiving permission errors during verification. This is a known ServiceNow API limitation.
 

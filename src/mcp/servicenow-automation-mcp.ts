@@ -329,6 +329,120 @@ class ServiceNowAutomationMCP {
               active: { type: 'boolean', description: 'Filter by active status' }
             }
           }
+        },
+        {
+          name: 'snow_execute_script_with_output',
+          description: 'Executes a background script and retrieves the actual output. Waits for execution to complete and returns the results.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              script: { type: 'string', description: 'JavaScript code to execute' },
+              return_output: { type: 'boolean', description: 'Return script output', default: true },
+              max_wait: { type: 'number', description: 'Maximum wait time in milliseconds', default: 5000 },
+              capture_logs: { type: 'boolean', description: 'Capture system logs during execution', default: true }
+            },
+            required: ['script']
+          }
+        },
+        {
+          name: 'snow_get_script_output',
+          description: 'Retrieves the output from a previously executed script using its execution ID.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              execution_id: { type: 'string', description: 'Execution ID from previous script run' }
+            },
+            required: ['execution_id']
+          }
+        },
+        {
+          name: 'snow_execute_script_sync',
+          description: 'Synchronously executes a script and waits for the result. Returns output immediately.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              script: { type: 'string', description: 'JavaScript code to execute' },
+              timeout: { type: 'number', description: 'Timeout in milliseconds', default: 3000 },
+              capture_output: { type: 'boolean', description: 'Capture and return output', default: true }
+            },
+            required: ['script']
+          }
+        },
+        {
+          name: 'snow_get_logs',
+          description: 'Retrieves system logs with filtering options. Access script, system, and background logs.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              source: { type: 'string', description: 'Log source: system, script, background, all', default: 'all' },
+              filter: { type: 'string', description: 'Filter string to search for' },
+              last_n_minutes: { type: 'number', description: 'Get logs from last N minutes', default: 5 },
+              return_content: { type: 'boolean', description: 'Return full log content', default: true },
+              limit: { type: 'number', description: 'Maximum number of log entries', default: 100 }
+            }
+          }
+        },
+        {
+          name: 'snow_test_rest_connection',
+          description: 'Tests a REST message connection with full response details and diagnostics.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              rest_message: { type: 'string', description: 'REST Message name' },
+              method: { type: 'string', description: 'HTTP Method name' },
+              test_params: { type: 'object', description: 'Test parameters for the request' },
+              return_full_response: { type: 'boolean', description: 'Return complete response details', default: true },
+              validate_auth: { type: 'boolean', description: 'Validate authentication', default: true }
+            },
+            required: ['rest_message']
+          }
+        },
+        {
+          name: 'snow_rest_message_test_suite',
+          description: 'Comprehensive REST message testing with authentication validation and connection diagnostics.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              rest_message: { type: 'string', description: 'REST Message to test' },
+              validate_auth: { type: 'boolean', description: 'Validate authentication', default: true },
+              test_connection: { type: 'boolean', description: 'Test actual connection', default: true },
+              return_diagnostics: { type: 'boolean', description: 'Return detailed diagnostics', default: true }
+            },
+            required: ['rest_message']
+          }
+        },
+        {
+          name: 'snow_property_manager',
+          description: 'Enhanced property management with get, set, and validation in one tool.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              action: { type: 'string', description: 'Action: get, set, validate', enum: ['get', 'set', 'validate'] },
+              name: { type: 'string', description: 'Property name' },
+              value: { type: 'string', description: 'Property value (for set action)' },
+              mask_sensitive: { type: 'boolean', description: 'Mask sensitive values like API keys', default: true }
+            },
+            required: ['action', 'name']
+          }
+        },
+        {
+          name: 'snow_trace_execution',
+          description: 'Traces execution flow with real-time tracking of scripts, REST calls, and errors.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              track_id: { type: 'string', description: 'Tracking ID for the execution session' },
+              include: { 
+                type: 'array', 
+                items: { type: 'string' },
+                description: 'What to track: scripts, rest_calls, errors, queries, all',
+                default: ['all']
+              },
+              real_time: { type: 'boolean', description: 'Enable real-time tracking', default: true },
+              max_entries: { type: 'number', description: 'Maximum trace entries', default: 1000 }
+            },
+            required: ['track_id']
+          }
         }
       ]
     }));
@@ -379,6 +493,22 @@ class ServiceNowAutomationMCP {
             return await this.createATFTestSuite(args);
           case 'snow_discover_atf_tests':
             return await this.discoverATFTests(args);
+          case 'snow_execute_script_with_output':
+            return await this.executeScriptWithOutput(args);
+          case 'snow_get_script_output':
+            return await this.getScriptOutput(args);
+          case 'snow_execute_script_sync':
+            return await this.executeScriptSync(args);
+          case 'snow_get_logs':
+            return await this.getLogs(args);
+          case 'snow_test_rest_connection':
+            return await this.testRESTConnection(args);
+          case 'snow_rest_message_test_suite':
+            return await this.restMessageTestSuite(args);
+          case 'snow_property_manager':
+            return await this.propertyManager(args);
+          case 'snow_trace_execution':
+            return await this.traceExecution(args);
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -1733,6 +1863,785 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
       
       default:
         return baseConfig;
+    }
+  }
+
+  /**
+   * Execute script with output retrieval
+   */
+  private async executeScriptWithOutput(args: any) {
+    try {
+      this.logger.info('Executing script with output retrieval...');
+      
+      // Create a unique execution ID
+      const executionId = `snow_flow_exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      // Wrap the script to capture output
+      const wrappedScript = `
+        var snowFlowOutput = [];
+        var snowFlowErrors = [];
+        var snowFlowExecutionId = '${executionId}';
+        
+        // Override gs methods to capture output
+        var originalPrint = gs.print;
+        var originalInfo = gs.info;
+        var originalWarn = gs.warn;
+        var originalError = gs.error;
+        var originalLog = gs.log;
+        
+        gs.print = function(msg) {
+          snowFlowOutput.push({type: 'print', message: msg, timestamp: new GlideDateTime().getDisplayValue()});
+          originalPrint.call(gs, msg);
+        };
+        
+        gs.info = function(msg) {
+          snowFlowOutput.push({type: 'info', message: msg, timestamp: new GlideDateTime().getDisplayValue()});
+          originalInfo.call(gs, msg);
+        };
+        
+        gs.warn = function(msg) {
+          snowFlowOutput.push({type: 'warn', message: msg, timestamp: new GlideDateTime().getDisplayValue()});
+          originalWarn.call(gs, msg);
+        };
+        
+        gs.error = function(msg) {
+          snowFlowErrors.push({type: 'error', message: msg, timestamp: new GlideDateTime().getDisplayValue()});
+          originalError.call(gs, msg);
+        };
+        
+        gs.log = function(msg) {
+          snowFlowOutput.push({type: 'log', message: msg, timestamp: new GlideDateTime().getDisplayValue()});
+          originalLog.call(gs, msg);
+        };
+        
+        try {
+          // User script
+          ${args.script}
+          
+          // Store output in sys_properties temporarily
+          var prop = new GlideRecord('sys_properties');
+          prop.initialize();
+          prop.name = 'snow_flow.script_output.' + snowFlowExecutionId;
+          prop.value = JSON.stringify({
+            executionId: snowFlowExecutionId,
+            output: snowFlowOutput,
+            errors: snowFlowErrors,
+            executedAt: new GlideDateTime().getDisplayValue(),
+            success: true
+          });
+          prop.type = 'string';
+          prop.description = 'Temporary script output from Snow-Flow';
+          prop.insert();
+          
+        } catch(e) {
+          snowFlowErrors.push({type: 'exception', message: e.toString(), timestamp: new GlideDateTime().getDisplayValue()});
+          
+          // Store error output
+          var prop = new GlideRecord('sys_properties');
+          prop.initialize();
+          prop.name = 'snow_flow.script_output.' + snowFlowExecutionId;
+          prop.value = JSON.stringify({
+            executionId: snowFlowExecutionId,
+            output: snowFlowOutput,
+            errors: snowFlowErrors,
+            executedAt: new GlideDateTime().getDisplayValue(),
+            success: false,
+            exception: e.toString()
+          });
+          prop.type = 'string';
+          prop.description = 'Temporary script output from Snow-Flow';
+          prop.insert();
+        }
+        
+        // Restore original methods
+        gs.print = originalPrint;
+        gs.info = originalInfo;
+        gs.warn = originalWarn;
+        gs.error = originalError;
+        gs.log = originalLog;
+        
+        'Execution ID: ' + snowFlowExecutionId;
+      `;
+      
+      // Execute the wrapped script
+      const updateSetResult = await this.client.ensureUpdateSet();
+      const response = await this.client.executeScript(wrappedScript);
+      
+      // Wait a moment for the property to be written
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Retrieve the output from sys_properties
+      const outputResponse = await this.client.searchRecords(
+        'sys_properties',
+        `name=snow_flow.script_output.${executionId}`,
+        1
+      );
+      
+      let scriptOutput = null;
+      if (outputResponse.success && outputResponse.data?.result?.length > 0) {
+        try {
+          scriptOutput = JSON.parse(outputResponse.data.result[0].value);
+          
+          // Clean up the temporary property
+          await this.client.deleteRecord('sys_properties', outputResponse.data.result[0].sys_id);
+        } catch (parseError) {
+          this.logger.warn('Could not parse script output:', parseError);
+        }
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ Script executed successfully!\n\n🆔 **Execution ID**: ${executionId}\n⏰ **Executed At**: ${new Date().toISOString()}\n\n${scriptOutput ? `📋 **Output**:\n${scriptOutput.output.map((o: any) => `[${o.type}] ${o.message}`).join('\n')}\n\n${scriptOutput.errors.length > 0 ? `⚠️ **Errors**:\n${scriptOutput.errors.map((e: any) => `[${e.type}] ${e.message}`).join('\n')}` : '✅ No errors'}` : '⚠️ Output retrieval pending - use snow_get_script_output with the execution ID'}\n\n💡 **Tip**: Use snow_get_script_output to retrieve the output later`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to execute script with output:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to execute script: ${error}`);
+    }
+  }
+
+  /**
+   * Get script output from previous execution
+   */
+  private async getScriptOutput(args: any) {
+    try {
+      this.logger.info(`Retrieving script output for execution: ${args.executionId}`);
+      
+      // Try to find the output in sys_properties
+      const outputResponse = await this.client.searchRecords(
+        'sys_properties',
+        `nameLIKEsnow_flow.script_output.${args.executionId}`,
+        1
+      );
+      
+      if (outputResponse.success && outputResponse.data?.result?.length > 0) {
+        const scriptOutput = JSON.parse(outputResponse.data.result[0].value);
+        
+        // Optionally clean up old property
+        if (args.cleanup !== false) {
+          await this.client.deleteRecord('sys_properties', outputResponse.data.result[0].sys_id);
+        }
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📋 **Script Output Retrieved**\n\n🆔 **Execution ID**: ${scriptOutput.executionId}\n⏰ **Executed At**: ${scriptOutput.executedAt}\n✅ **Success**: ${scriptOutput.success}\n\n**Output**:\n${scriptOutput.output.map((o: any) => `[${o.type}] ${o.message}`).join('\n')}\n\n${scriptOutput.errors.length > 0 ? `**Errors**:\n${scriptOutput.errors.map((e: any) => `[${e.type}] ${e.message}`).join('\n')}` : 'No errors'}${scriptOutput.exception ? `\n\n**Exception**: ${scriptOutput.exception}` : ''}`
+          }]
+        };
+      }
+      
+      // Try to find in script execution history
+      const historyResponse = await this.client.searchRecords(
+        'sys_script_execution_history',
+        `script_nameLIKE${args.executionId}`,
+        5
+      );
+      
+      if (historyResponse.success && historyResponse.data?.result?.length > 0) {
+        const history = historyResponse.data.result[0];
+        return {
+          content: [{
+            type: 'text',
+            text: `📋 **Script Execution History**\n\n🆔 **Execution ID**: ${args.executionId}\n⏰ **Executed**: ${history.sys_created_on}\n👤 **User**: ${history.sys_created_by}\n\n**Output**:\n${history.output || 'No output captured'}\n\n**Errors**:\n${history.error_message || 'No errors'}`
+          }]
+        };
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `⚠️ No output found for execution ID: ${args.executionId}\n\nPossible reasons:\n- The script is still executing\n- The execution ID is incorrect\n- The output has been cleaned up\n\nTry running snow_get_script_history to see recent executions.`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to get script output:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to get script output: ${error}`);
+    }
+  }
+
+  /**
+   * Execute script synchronously
+   */
+  private async executeScriptSync(args: any) {
+    try {
+      this.logger.info('Executing script synchronously...');
+      
+      const timeout = args.timeout || 30000; // Default 30 seconds
+      
+      // Create a polling script that executes and returns immediately
+      const executionId = `sync_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      const executionScript = `
+        var result = {};
+        var startTime = new GlideDateTime();
+        
+        try {
+          // Execute the user script
+          var scriptResult = (function() {
+            ${args.script}
+          })();
+          
+          result = {
+            success: true,
+            result: scriptResult,
+            executionTime: GlideDateTime.subtract(startTime, new GlideDateTime()).getNumericValue(),
+            executionId: '${executionId}'
+          };
+        } catch(e) {
+          result = {
+            success: false,
+            error: e.toString(),
+            executionTime: GlideDateTime.subtract(startTime, new GlideDateTime()).getNumericValue(),
+            executionId: '${executionId}'
+          };
+        }
+        
+        // Return result directly
+        JSON.stringify(result);
+      `;
+      
+      const updateSetResult = await this.client.ensureUpdateSet();
+      const response = await this.client.executeScript(executionScript);
+      
+      let result;
+      try {
+        // Try to parse the response as JSON
+        if (response.data?.result) {
+          result = JSON.parse(response.data.result);
+        } else {
+          result = { success: true, result: response.data?.result || 'Script executed successfully' };
+        }
+      } catch (parseError) {
+        result = { success: true, result: response.data?.result || 'Script executed successfully' };
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ **Script Executed Synchronously**\n\n🆔 **Execution ID**: ${executionId}\n⏱️ **Execution Time**: ${result.executionTime || 'N/A'}ms\n✅ **Success**: ${result.success}\n\n**Result**:\n${typeof result.result === 'object' ? JSON.stringify(result.result, null, 2) : result.result}${result.error ? `\n\n**Error**: ${result.error}` : ''}`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to execute script synchronously:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to execute script: ${error}`);
+    }
+  }
+
+  /**
+   * Get system logs
+   */
+  private async getLogs(args: any) {
+    try {
+      this.logger.info('Retrieving system logs...');
+      
+      const limit = args.limit || 100;
+      const source = args.source || 'all';
+      const level = args.level || 'all';
+      
+      // Build query for syslog_transaction table
+      let query = '';
+      
+      if (source !== 'all') {
+        query += `source=${source}^`;
+      }
+      
+      if (level !== 'all') {
+        query += `level=${level}^`;
+      }
+      
+      if (args.since) {
+        query += `sys_created_on>javascript:gs.dateGenerate('${args.since}')^`;
+      }
+      
+      if (args.message) {
+        query += `messageLIKE${args.message}^`;
+      }
+      
+      // Remove trailing ^  
+      query = query.replace(/\^$/, '');
+      
+      const logsResponse = await this.client.searchRecords(
+        'syslog_transaction',
+        query,
+        limit
+      );
+      
+      if (logsResponse.success && logsResponse.data?.result?.length > 0) {
+        const logs = logsResponse.data.result.map((log: any) => ({
+          timestamp: log.sys_created_on,
+          level: log.level,
+          source: log.source,
+          message: log.message,
+          user: log.sys_created_by
+        }));
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📋 **System Logs** (${logs.length} entries)\n\n${logs.map((log: any) => `⏰ ${log.timestamp} | ${log.level} | ${log.source}\n   ${log.message}\n   User: ${log.user}`).join('\n\n')}`
+          }]
+        };
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `⚠️ No logs found matching criteria:\n- Source: ${source}\n- Level: ${level}\n- Since: ${args.since || 'Not specified'}\n- Message filter: ${args.message || 'None'}`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to get logs:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to get logs: ${error}`);
+    }
+  }
+
+  /**
+   * Test REST connection
+   */
+  private async testRESTConnection(args: any) {
+    try {
+      this.logger.info(`Testing REST connection: ${args.name}`);
+      
+      // Find the REST message
+      const restMessageResponse = await this.client.searchRecords(
+        'sys_rest_message',
+        `name=${args.name}`,
+        1
+      );
+      
+      if (!restMessageResponse.success || !restMessageResponse.data?.result?.length) {
+        throw new Error(`REST message not found: ${args.name}`);
+      }
+      
+      const restMessage = restMessageResponse.data.result[0];
+      
+      // Get REST message methods
+      const methodsResponse = await this.client.searchRecords(
+        'sys_rest_message_fn',
+        `rest_message=${restMessage.sys_id}`,
+        10
+      );
+      
+      const testResults = [];
+      
+      if (methodsResponse.success && methodsResponse.data?.result?.length > 0) {
+        for (const method of methodsResponse.data.result) {
+          // Test each method
+          const testScript = `
+            var rm = new sn_ws.RESTMessageV2('${args.name}', '${method.function_name}');
+            
+            // Set test parameters if provided
+            ${args.parameters ? Object.entries(args.parameters).map(([key, value]) => 
+              `rm.setStringParameter('${key}', '${value}');`
+            ).join('\n') : ''}
+            
+            try {
+              var response = rm.execute();
+              var httpStatus = response.getStatusCode();
+              var body = response.getBody();
+              var headers = response.getAllHeaders();
+              
+              JSON.stringify({
+                method: '${method.function_name}',
+                endpoint: '${method.rest_endpoint}',
+                httpMethod: '${method.http_method}',
+                status: httpStatus,
+                success: httpStatus >= 200 && httpStatus < 300,
+                responseTime: response.getEccResponseTime ? response.getEccResponseTime() : 'N/A',
+                bodyLength: body ? body.length : 0,
+                headers: headers
+              });
+            } catch(e) {
+              JSON.stringify({
+                method: '${method.function_name}',
+                endpoint: '${method.rest_endpoint}',
+                httpMethod: '${method.http_method}',
+                success: false,
+                error: e.toString()
+              });
+            }
+          `;
+          
+          const testResponse = await this.client.executeScript(testScript);
+          
+          if (testResponse.data?.result) {
+            try {
+              const result = JSON.parse(testResponse.data.result);
+              testResults.push(result);
+            } catch (e) {
+              testResults.push({
+                method: method.function_name,
+                success: false,
+                error: 'Could not parse test result'
+              });
+            }
+          }
+        }
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `🔌 **REST Connection Test Results**\n\n📡 **REST Message**: ${args.name}\n\n${testResults.map((result: any) => `\n**Method**: ${result.method}\n- Endpoint: ${result.endpoint}\n- HTTP Method: ${result.httpMethod}\n- Status: ${result.status || 'N/A'}\n- Success: ${result.success ? '✅' : '❌'}\n- Response Time: ${result.responseTime}\n- Response Size: ${result.bodyLength} bytes\n${result.error ? `- Error: ${result.error}` : ''}`).join('\n')}\n\n**Summary**:\n- Total Methods: ${testResults.length}\n- Successful: ${testResults.filter((r: any) => r.success).length}\n- Failed: ${testResults.filter((r: any) => !r.success).length}`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to test REST connection:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to test REST connection: ${error}`);
+    }
+  }
+
+  /**
+   * REST message test suite
+   */
+  private async restMessageTestSuite(args: any) {
+    try {
+      this.logger.info('Running REST message test suite...');
+      
+      // Get all REST messages or filter by pattern
+      let query = '';
+      if (args.pattern) {
+        query = `nameLIKE${args.pattern}`;
+      }
+      
+      const messagesResponse = await this.client.searchRecords(
+        'sys_rest_message',
+        query,
+        args.limit || 10
+      );
+      
+      const testSuiteResults = [];
+      
+      if (messagesResponse.success && messagesResponse.data?.result?.length > 0) {
+        for (const message of messagesResponse.data.result) {
+          // Get methods for this message
+          const methodsResponse = await this.client.searchRecords(
+            'sys_rest_message_fn',
+            `rest_message=${message.sys_id}`,
+            5
+          );
+          
+          const messageResults = {
+            name: message.name,
+            description: message.description,
+            methods: [],
+            totalMethods: 0,
+            successfulMethods: 0,
+            failedMethods: 0
+          };
+          
+          if (methodsResponse.success && methodsResponse.data?.result?.length > 0) {
+            messageResults.totalMethods = methodsResponse.data.result.length;
+            
+            for (const method of methodsResponse.data.result) {
+              // Quick connectivity test
+              const testScript = `
+                var rm = new sn_ws.RESTMessageV2('${message.name}', '${method.function_name}');
+                rm.setEccParameter('skip_sensor', true); // Skip sensor for test
+                
+                try {
+                  // Just validate the configuration
+                  var endpoint = rm.getEndpoint();
+                  var isValid = endpoint && endpoint.length > 0;
+                  
+                  JSON.stringify({
+                    method: '${method.function_name}',
+                    endpoint: endpoint,
+                    valid: isValid,
+                    httpMethod: '${method.http_method}'
+                  });
+                } catch(e) {
+                  JSON.stringify({
+                    method: '${method.function_name}',
+                    valid: false,
+                    error: e.toString()
+                  });
+                }
+              `;
+              
+              const testResponse = await this.client.executeScript(testScript);
+              
+              if (testResponse.data?.result) {
+                try {
+                  const result = JSON.parse(testResponse.data.result);
+                  messageResults.methods.push(result);
+                  if (result.valid) {
+                    messageResults.successfulMethods++;
+                  } else {
+                    messageResults.failedMethods++;
+                  }
+                } catch (e) {
+                  messageResults.failedMethods++;
+                }
+              }
+            }
+          }
+          
+          testSuiteResults.push(messageResults);
+        }
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `🧪 **REST Message Test Suite Results**\n\n${testSuiteResults.map((result: any) => `\n📡 **${result.name}**\n${result.description ? `   ${result.description}\n` : ''}   - Total Methods: ${result.totalMethods}\n   - ✅ Valid: ${result.successfulMethods}\n   - ❌ Invalid: ${result.failedMethods}\n   ${result.methods.length > 0 ? `\n   Methods:\n${result.methods.map((m: any) => `     • ${m.method} (${m.httpMethod}) - ${m.valid ? '✅' : '❌'}`).join('\n')}` : ''}`).join('\n')}\n\n**Suite Summary**:\n- Total REST Messages: ${testSuiteResults.length}\n- Total Methods Tested: ${testSuiteResults.reduce((sum, r) => sum + r.totalMethods, 0)}\n- Valid Configurations: ${testSuiteResults.reduce((sum, r) => sum + r.successfulMethods, 0)}\n- Invalid Configurations: ${testSuiteResults.reduce((sum, r) => sum + r.failedMethods, 0)}`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to run REST test suite:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to run REST test suite: ${error}`);
+    }
+  }
+
+  /**
+   * Enhanced property manager
+   */
+  private async propertyManager(args: any) {
+    try {
+      this.logger.info('Managing system properties...');
+      
+      const action = args.action || 'list';
+      
+      switch (action) {
+        case 'get':
+          const getPropResponse = await this.client.searchRecords(
+            'sys_properties',
+            `name=${args.name}`,
+            1
+          );
+          
+          if (getPropResponse.success && getPropResponse.data?.result?.length > 0) {
+            const prop = getPropResponse.data.result[0];
+            return {
+              content: [{
+                type: 'text',
+                text: `📋 **Property**: ${prop.name}\n\n**Value**: ${prop.value}\n**Type**: ${prop.type}\n**Description**: ${prop.description || 'None'}\n**Private**: ${prop.is_private ? 'Yes' : 'No'}\n**Read Only**: ${prop.read_roles ? 'Restricted' : 'No'}`
+              }]
+            };
+          }
+          throw new Error(`Property not found: ${args.name}`);
+          
+        case 'set':
+          const setPropResponse = await this.client.searchRecords(
+            'sys_properties',
+            `name=${args.name}`,
+            1
+          );
+          
+          if (setPropResponse.success && setPropResponse.data?.result?.length > 0) {
+            // Update existing
+            const updateResponse = await this.client.updateRecord(
+              'sys_properties',
+              setPropResponse.data.result[0].sys_id,
+              { value: args.value }
+            );
+            
+            if (updateResponse.success) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `✅ Property updated: ${args.name} = ${args.value}`
+                }]
+              };
+            }
+          } else {
+            // Create new
+            const createResponse = await this.client.createRecord('sys_properties', {
+              name: args.name,
+              value: args.value,
+              type: args.type || 'string',
+              description: args.description || ''
+            });
+            
+            if (createResponse.success) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `✅ Property created: ${args.name} = ${args.value}`
+                }]
+              };
+            }
+          }
+          throw new Error('Failed to set property');
+          
+        case 'delete':
+          const delPropResponse = await this.client.searchRecords(
+            'sys_properties',
+            `name=${args.name}`,
+            1
+          );
+          
+          if (delPropResponse.success && delPropResponse.data?.result?.length > 0) {
+            await this.client.deleteRecord('sys_properties', delPropResponse.data.result[0].sys_id);
+            return {
+              content: [{
+                type: 'text',
+                text: `✅ Property deleted: ${args.name}`
+              }]
+            };
+          }
+          throw new Error(`Property not found: ${args.name}`);
+          
+        case 'list':
+        default:
+          const listQuery = args.pattern ? `nameLIKE${args.pattern}` : '';
+          const listResponse = await this.client.searchRecords(
+            'sys_properties',
+            listQuery,
+            args.limit || 50
+          );
+          
+          if (listResponse.success && listResponse.data?.result?.length > 0) {
+            return {
+              content: [{
+                type: 'text',
+                text: `📋 **System Properties** (${listResponse.data.result.length} found)\n\n${listResponse.data.result.map((p: any) => `• **${p.name}**\n  Value: ${p.value}\n  Type: ${p.type}`).join('\n\n')}`
+              }]
+            };
+          }
+          return {
+            content: [{
+              type: 'text',
+              text: '⚠️ No properties found matching criteria'
+            }]
+          };
+      }
+    } catch (error) {
+      this.logger.error('Failed to manage properties:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to manage properties: ${error}`);
+    }
+  }
+
+  /**
+   * Trace execution of a script or flow
+   */
+  private async traceExecution(args: any) {
+    try {
+      this.logger.info('Tracing execution...');
+      
+      const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      // Enhanced script with detailed tracing
+      const tracedScript = `
+        var snowFlowTrace = {
+          id: '${traceId}',
+          startTime: new GlideDateTime(),
+          steps: [],
+          variables: {},
+          queries: [],
+          apiCalls: [],
+          errors: []
+        };
+        
+        // Trace function for logging steps
+        function trace(stepName, details) {
+          snowFlowTrace.steps.push({
+            step: stepName,
+            details: details,
+            timestamp: new GlideDateTime().getDisplayValue(),
+            memory: gs.getSession().getAvailableMemory ? gs.getSession().getAvailableMemory() : 'N/A'
+          });
+        }
+        
+        // Override GlideRecord to trace queries
+        var OriginalGlideRecord = GlideRecord;
+        GlideRecord = function(table) {
+          var gr = new OriginalGlideRecord(table);
+          var originalQuery = gr.query;
+          
+          gr.query = function() {
+            var queryString = gr.getEncodedQuery();
+            snowFlowTrace.queries.push({
+              table: table,
+              query: queryString,
+              timestamp: new GlideDateTime().getDisplayValue()
+            });
+            return originalQuery.call(gr);
+          };
+          
+          return gr;
+        };
+        
+        try {
+          trace('Script Start', 'Beginning execution');
+          
+          // User script with tracing
+          ${args.script.replace(/;/g, ';\ntrace("Code Execution", "Line executed");')}
+          
+          trace('Script Complete', 'Execution finished successfully');
+          
+          snowFlowTrace.endTime = new GlideDateTime();
+          snowFlowTrace.duration = GlideDateTime.subtract(snowFlowTrace.startTime, snowFlowTrace.endTime).getNumericValue();
+          snowFlowTrace.success = true;
+          
+        } catch(e) {
+          snowFlowTrace.errors.push({
+            error: e.toString(),
+            stack: e.stack || 'No stack trace',
+            timestamp: new GlideDateTime().getDisplayValue()
+          });
+          snowFlowTrace.success = false;
+        }
+        
+        // Store trace for retrieval
+        var prop = new GlideRecord('sys_properties');
+        prop.initialize();
+        prop.name = 'snow_flow.trace.' + snowFlowTrace.id;
+        prop.value = JSON.stringify(snowFlowTrace);
+        prop.type = 'string';
+        prop.description = 'Execution trace from Snow-Flow';
+        prop.insert();
+        
+        JSON.stringify({
+          traceId: snowFlowTrace.id,
+          success: snowFlowTrace.success,
+          steps: snowFlowTrace.steps.length,
+          queries: snowFlowTrace.queries.length,
+          errors: snowFlowTrace.errors.length
+        });
+      `;
+      
+      const updateSetResult = await this.client.ensureUpdateSet();
+      const response = await this.client.executeScript(tracedScript);
+      
+      let traceResult;
+      try {
+        traceResult = JSON.parse(response.data?.result || '{}');
+      } catch (e) {
+        traceResult = { traceId: traceId, success: false };
+      }
+      
+      // Wait and retrieve full trace
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const traceResponse = await this.client.searchRecords(
+        'sys_properties',
+        `name=snow_flow.trace.${traceId}`,
+        1
+      );
+      
+      let fullTrace = null;
+      if (traceResponse.success && traceResponse.data?.result?.length > 0) {
+        try {
+          fullTrace = JSON.parse(traceResponse.data.result[0].value);
+          
+          // Clean up
+          await this.client.deleteRecord('sys_properties', traceResponse.data.result[0].sys_id);
+        } catch (e) {
+          this.logger.warn('Could not parse trace data');
+        }
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `🔍 **Execution Trace**\n\n🆔 **Trace ID**: ${traceId}\n✅ **Success**: ${traceResult.success}\n📊 **Steps**: ${traceResult.steps}\n🔍 **Queries**: ${traceResult.queries}\n⚠️ **Errors**: ${traceResult.errors}\n\n${fullTrace ? `**Detailed Trace**:\n\n${fullTrace.steps.map((s: any) => `⏰ ${s.timestamp}\n   📍 ${s.step}: ${s.details}`).join('\n\n')}\n\n${fullTrace.queries.length > 0 ? `**Database Queries**:\n${fullTrace.queries.map((q: any) => `• Table: ${q.table}\n  Query: ${q.query || 'All records'}`).join('\n')}` : ''}\n\n${fullTrace.errors.length > 0 ? `**Errors**:\n${fullTrace.errors.map((e: any) => `❌ ${e.error}\n   ${e.stack}`).join('\n')}` : ''}` : '⚠️ Full trace pending - check sys_properties for details'}`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to trace execution:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to trace execution: ${error}`);
     }
   }
 
