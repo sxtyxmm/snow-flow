@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.4.4",
-  "description": "Snow-Flow v3.4.4: ES5 JAVASCRIPT ONLY - Critical ServiceNow compatibility fix! ServiceNow uses Rhino engine (ES5 only) - NO modern JavaScript! ALWAYS convert user's ES6+ code to ES5: var (not let/const), function() (not arrows), string concatenation (not template literals), traditional for loops. Background scripts MUST be ES5 or they WILL FAIL. Includes ES5 conversion examples and compatibility checklist. 200+ MCP tools across 18 specialized servers.",
+  "version": "3.4.5",
+  "description": "ServiceNow development framework with MCP server integration. Executes background scripts using ES5 JavaScript only (ServiceNow Rhino engine requirement). Provides 12 MCP servers for ServiceNow operations including widget deployment with coherence validation, table operations, script execution, and system property management.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
