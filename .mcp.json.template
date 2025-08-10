@@ -131,6 +131,18 @@
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
+    },
+    "servicenow-system-properties": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-system-properties-mcp.js"
+      ],
+      "description": "System property management via official ServiceNow APIs: get/set/list/delete properties, bulk operations, import/export JSON, validate values, search, categories, audit history - all using standard Table API on sys_properties",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
     }
   }
 }

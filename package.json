@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.3.7",
-  "description": "Snow-Flow v3.3.7: PORTAL PAGE FIX - Fixed portal_page deployment field mapping! Now correctly maps id->page_id, handles sp_portal sys_id, and converts containers to widgets format. Fixed widget instance creation with proper sys_id handling. Portal pages with AI chatbots and complex widgets now deploy successfully. Improved validation messages and support for both single widgets and widget arrays. 180+ MCP tools across 17 specialized servers.",
+  "version": "3.3.8",
+  "description": "Snow-Flow v3.3.8: SYSTEM PROPERTIES MCP - Complete system property management via official ServiceNow APIs! 12 new tools: get, set, list, delete, search, bulk operations, import/export, validation, categories, and audit history. All using standard Table API on sys_properties - no hacks, 100% official! Manage configurations, feature flags, and system settings programmatically. Now 192+ MCP tools across 18 specialized servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -27,6 +27,7 @@
     "mcp:clean": "node scripts/cleanup-mcp-servers.js && npm run build",
     "mcp:start": "node scripts/start-mcp-proper.js",
     "mcp:start-proper": "node scripts/start-mcp-proper.js",
+    "mcp:sysprops": "node scripts/start-sysprops-mcp.js",
     "test:integration": "npm run build && node dist/tests/integration-test.js",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "node scripts/postinstall.js",
