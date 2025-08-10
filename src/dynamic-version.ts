@@ -37,7 +37,7 @@ export function getDynamicVersion(): string {
   }
   
   // Fallback to hardcoded version
-  return '3.3.6';
+  return '3.3.7';
 }
 
 // Export a constant that uses the dynamic version

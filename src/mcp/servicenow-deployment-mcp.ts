@@ -1418,7 +1418,12 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
 
       // Validate portal page structure
       if (!args.page_id || !args.title) {
-        throw new Error('Portal page must have page_id and title');
+        this.logger.error('Portal page validation failed', { 
+          args,
+          hasPageId: !!args.page_id,
+          hasTitle: !!args.title 
+        });
+        throw new Error(`Portal page must have page_id and title. Received: page_id=${args.page_id}, title=${args.title}`);
       }
 
       // Find widget sys_id if widget name is provided
@@ -1439,17 +1444,22 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
       }
 
       // Determine portal sys_id
-      let portalSysId = '';
-      try {
-        // Default to Employee Service Portal if available, otherwise standard Service Portal
-        const portalQuery = args.portal === 'esc' ? 'url_suffix=esc' : 'url_suffix=sp';
-        const portalResult = await this.client.searchRecords('sp_portal', portalQuery, 1);
-        if (portalResult.success && portalResult.data?.length > 0) {
-          portalSysId = portalResult.data[0].sys_id;
-          this.logger.info('Found portal', { portal: args.portal, sys_id: portalSysId });
+      let portalSysId = args.sp_portal || '';
+      
+      // If sp_portal is already a sys_id (32 char hex), use it directly
+      if (!/^[a-f0-9]{32}$/.test(portalSysId)) {
+        // Not a sys_id, try to look it up
+        try {
+          // Default to Employee Service Portal if available, otherwise standard Service Portal
+          const portalQuery = args.portal === 'esc' ? 'url_suffix=esc' : 'url_suffix=sp';
+          const portalResult = await this.client.searchRecords('sp_portal', portalQuery, 1);
+          if (portalResult.success && portalResult.data?.result?.length > 0) {
+            portalSysId = portalResult.data.result[0].sys_id;
+            this.logger.info('Found portal', { portal: args.portal, sys_id: portalSysId });
+          }
+        } catch (error) {
+          this.logger.warn('Failed to lookup portal, using provided value', { portal: args.portal, error });
         }
-      } catch (error) {
-        this.logger.warn('Failed to lookup portal, using default', { portal: args.portal, error });
       }
 
       // Create portal page
@@ -1487,8 +1497,38 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
       
       // Create widget instances on the page if widget is provided
       const widgetInstances = [];
-      if (widgetSysId && args.widgets && args.widgets.length > 0) {
-        for (const widgetConfig of args.widgets) {
+      
+      // Support both widgets array and single widget
+      const widgetsToCreate = args.widgets || [];
+      
+      // If no widgets array but a single widget is specified, create one widget
+      if (widgetsToCreate.length === 0 && widgetSysId) {
+        widgetsToCreate.push({
+          widget: args.widget_name || widgetSysId,
+          width: 12,
+          row: 1,
+          column: 1,
+          title: args.widget_title || args.title || '',
+          options: args.widget_options || {}
+        });
+      }
+      
+      if (widgetsToCreate.length > 0) {
+        for (const widgetConfig of widgetsToCreate) {
+          // Determine widget sys_id for this widget
+          let currentWidgetSysId = widgetSysId; // Default to the main widget
+          
+          // If widget config specifies a different widget, look it up
+          if (widgetConfig.widget && widgetConfig.widget !== args.widget_name) {
+            try {
+              const widgetLookup = await this.client.searchRecords('sp_widget', `sys_id=${widgetConfig.widget}^ORname=${widgetConfig.widget}`, 1);
+              if (widgetLookup.success && widgetLookup.data?.result?.length > 0) {
+                currentWidgetSysId = widgetLookup.data.result[0].sys_id;
+              }
+            } catch (lookupError) {
+              this.logger.warn('Could not find widget, using default', { widget: widgetConfig.widget });
+            }
+          }
           try {
             // Create container
             const containerResult = await this.client.createRecord('sp_container', {
@@ -1526,10 +1566,10 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
                   // Create widget instance
                   const instanceResult = await this.client.createRecord('sp_instance', {
                     sp_column: columnResult.data.sys_id,
-                    sp_widget: widgetSysId,
+                    sp_widget: currentWidgetSysId,  // Use the current widget sys_id, not the main one
                     order: widgetConfig.order || 100,
                     title: widgetConfig.title || '',
-                    options: JSON.stringify(widgetConfig.options || {}),
+                    options: JSON.stringify(widgetConfig.options || widgetConfig.widget_parameters || {}),
                     class_name: widgetConfig.instance_class || '',
                     color: widgetConfig.color || 'default',
                     active: true,
@@ -7750,7 +7790,23 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
       case 'widget':
         return await this.deployWidget(scopedConfig);
       case 'portal_page':
-        return await this.deployPortalPage(scopedConfig);
+        // Map config fields to expected parameter names for portal_page
+        const portalPageArgs = {
+          page_id: scopedConfig.id || scopedConfig.page_id,
+          title: scopedConfig.title,
+          widget_name: scopedConfig.widget_name,
+          widget_sys_id: scopedConfig.widget_sys_id,
+          description: scopedConfig.summary || scopedConfig.description,
+          page_css: scopedConfig.css,
+          portal: scopedConfig.portal || scopedConfig.sp_portal || 'sp',
+          public: scopedConfig.public !== undefined ? scopedConfig.public : true,
+          requires_authentication: scopedConfig.requires_authentication,
+          draft: scopedConfig.draft || false,
+          // Map containers to widgets format
+          widgets: this.mapContainersToWidgets(scopedConfig.containers),
+          ...scopedConfig  // Include any other fields
+        };
+        return await this.deployPortalPage(portalPageArgs);
       case 'application':
         return await this.deployApplication(scopedConfig);
       case 'xml_update_set':
@@ -9480,6 +9536,40 @@ c.$onInit = function() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     this.logger.info('ServiceNow Deployment MCP Server started');
+  }
+
+  /**
+   * Map container structure to widget structure for portal page deployment
+   */
+  private mapContainersToWidgets(containers: any[]): any[] {
+    if (!containers || !Array.isArray(containers)) {
+      return [];
+    }
+    
+    const widgets = [];
+    
+    for (const container of containers) {
+      if (container.widget_instance) {
+        widgets.push({
+          widget: container.widget_instance.widget,
+          width: container.width || 12,
+          row: container.row || 1,
+          column: container.column || 1,
+          title: container.widget_instance.title || '',
+          options: container.widget_instance.widget_parameters || {},
+          container_title: container.title || '',
+          class_name: container.class_name || '',
+          background_color: container.background_color || '',
+          background_image: container.background_image || '',
+          background_style: container.background_style || 'default',
+          instance_class: container.widget_instance.class_name || '',
+          color: container.widget_instance.color || 'default',
+          order: container.widget_instance.order || 100
+        });
+      }
+    }
+    
+    return widgets;
   }
 
   /**

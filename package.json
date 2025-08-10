@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.3.6",
-  "description": "Snow-Flow v3.3.6: CRITICAL QUERY & FIELD FIX - snow_query_table now fully supports pagination, field validation, and proper error handling! Fixed: offset support for large datasets, ORDERBY syntax, field discovery with correct ServiceNow queries, display values, and intelligent error messages. Enhanced field grouping (required/reference/regular), better limit strategies for analytics vs display, and clear content inclusion logic. Query any table with confidence - all 9 critical issues resolved! 180+ MCP tools across 17 specialized servers.",
+  "version": "3.3.7",
+  "description": "Snow-Flow v3.3.7: PORTAL PAGE FIX - Fixed portal_page deployment field mapping! Now correctly maps id->page_id, handles sp_portal sys_id, and converts containers to widgets format. Fixed widget instance creation with proper sys_id handling. Portal pages with AI chatbots and complex widgets now deploy successfully. Improved validation messages and support for both single widgets and widget arrays. 180+ MCP tools across 17 specialized servers.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
