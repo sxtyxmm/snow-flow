@@ -568,6 +568,40 @@ class ServiceNowDeploymentMCP {
     let updateSetName: string = 'No Update Set';
     
     try {
+      // CRITICAL: Validate required fields FIRST for clear error messages
+      if (!args.name) {
+        return {
+          success: false,
+          error: 'Widget name is required',
+          content: [{
+            type: 'text',
+            text: `❌ Widget deployment failed: Missing required field\n\n**Error:** Widget name is required\n\n**Required fields for widget deployment:**\n• name: Internal identifier for the widget (e.g., "my_dashboard_widget")\n• title: Display title shown in Service Portal (e.g., "My Dashboard")\n• template: HTML template for the widget\n\n**Example usage:**\n\`\`\`javascript\nsnow_deploy({\n  type: "widget",\n  config: {\n    name: "my_widget",\n    title: "My Widget Title",\n    template: "<div>{{data.message}}</div>",\n    server_script: "data.message = 'Hello World';",\n    client_script: "function() { var c = this; }"\n  }\n})\n\`\`\``
+          }]
+        };
+      }
+
+      if (!args.title) {
+        return {
+          success: false,
+          error: 'Widget title is required',
+          content: [{
+            type: 'text',
+            text: `❌ Widget deployment failed: Missing required field\n\n**Error:** Widget title is required for display in Service Portal\n\n**Required fields for widget deployment:**\n• name: Internal identifier for the widget\n• title: Display title shown in Service Portal ← MISSING\n• template: HTML template for the widget\n\n**Why title is required:**\nThe title is displayed in Service Portal widget picker and page designer.\nIt's what users see when selecting widgets to add to pages.\n\n**Example:**\n\`\`\`javascript\nconfig: {\n  name: "incident_list",\n  title: "Active Incidents",  // ← This is what users will see\n  template: "<div>...</div>"\n}\n\`\`\``
+          }]
+        };
+      }
+
+      if (!args.template && !args.html_template) {
+        return {
+          success: false,
+          error: 'Widget template (HTML) is required',
+          content: [{
+            type: 'text',
+            text: `❌ Widget deployment failed: Missing required field\n\n**Error:** Widget template (HTML) is required\n\n**Required fields for widget deployment:**\n• name: Internal identifier for the widget\n• title: Display title shown in Service Portal\n• template: HTML template for the widget ← MISSING\n\n**Template defines the widget's visual structure:**\n\`\`\`html\n<div class="my-widget">\n  <h3>{{data.title}}</h3>\n  <ul>\n    <li ng-repeat="item in data.items">\n      {{item.name}}\n    </li>\n  </ul>\n</div>\n\`\`\`\n\n**Note:** Use either 'template' or 'html_template' parameter.`
+          }]
+        };
+      }
+
       // Enhanced authentication check with token refresh for deployment
       const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
       if (!authResult.isValid) {
@@ -7055,11 +7089,18 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
     
     // For widgets, delegate to widget composer  
     if (type === 'widget') {
+      const widgetName = this.extractNameFromInstruction(instruction);
+      // Ensure title is always valid and user-friendly
+      const widgetTitle = widgetName
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase())
+        || 'Auto Generated Widget';
+      
       return {
-        name: this.extractNameFromInstruction(instruction),
-        title: this.extractNameFromInstruction(instruction),
+        name: widgetName,
+        title: widgetTitle,  // Always ensure a valid display title
         description: instruction,
-        template: this.generateWidgetTemplate(instruction),
+        template: this.generateWidgetTemplate(instruction) || '<div>{{data.message}}</div>',  // Ensure template is never empty
         css: this.generateWidgetCss(instruction),
         server_script: this.generateWidgetServerScript(instruction),
         client_script: this.generateWidgetClientScript(instruction),
@@ -7082,10 +7123,11 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
     const words = instruction.toLowerCase().split(/\s+/);
     const name = words.filter(word => 
       word.length > 2 && 
-      !['the', 'and', 'for', 'with', 'that', 'will', 'can', 'should'].includes(word)
+      !['the', 'and', 'for', 'with', 'that', 'will', 'can', 'should', 'create', 'make', 'build', 'new'].includes(word)
     ).slice(0, 3).join('_');
     
-    return name || 'auto_generated_artifact';
+    // Ensure we always return a valid name
+    return name || `auto_generated_${Date.now().toString().slice(-6)}`;
   }
 
   /**
