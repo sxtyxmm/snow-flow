@@ -47,6 +47,87 @@ const propertyCheck = await snow_property_manager({
 // Step 4: Only then make informed decisions
 ```
 
+### 🔄 CRITICAL: Sync User Modifications Before Working
+
+**When a user mentions they've modified an artifact directly in ServiceNow, ALWAYS fetch the latest version first!**
+
+If a user says any of these:
+- "I've updated the widget in ServiceNow"
+- "I made some changes to the flow"
+- "I modified the script"
+- "I adjusted the configuration"
+- "Ik heb het zelf aangepast" (Dutch: I adjusted it myself)
+
+**YOU MUST:**
+
+1. **Immediately fetch the current version from ServiceNow:**
+```javascript
+// For any artifact the user has modified
+const currentVersion = await snow_query_table({
+  table: 'artifact_table_name',
+  query: `sys_id=${artifact_sys_id}`,
+  fields: ['*'],  // Get all fields
+  limit: 1
+});
+
+// Or for widgets specifically
+const widgetData = await snow_query_table({
+  table: 'sp_widget',
+  query: `sys_id=${widget_sys_id}`,
+  fields: ['name', 'template', 'client_script', 'script', 'css', 'option_schema'],
+  limit: 1
+});
+
+// Or use snow_get_by_sysid for comprehensive retrieval
+const artifact = await snow_get_by_sysid({
+  table: 'table_name',
+  sys_id: 'the_sys_id'
+});
+```
+
+2. **Analyze the user's modifications:**
+   - Review what they changed
+   - Understand their intent
+   - Preserve their modifications
+
+3. **Build upon their changes:**
+   - Don't overwrite their work
+   - Integrate new features with their modifications
+   - Maintain their code style and patterns
+
+4. **Inform the user:**
+   - Acknowledge that you've fetched their latest changes
+   - Summarize what modifications you found
+   - Explain how you'll build upon their work
+
+**Example Workflow:**
+```javascript
+// User: "I've updated the widget to add a loading spinner"
+// Snow-Flow response:
+
+// 1. Fetch current version
+const widget = await snow_query_table({
+  table: 'sp_widget',
+  query: `sys_id=${widgetSysId}`,
+  fields: ['*'],
+  limit: 1
+});
+
+// 2. Analyze changes
+console.log("✅ Fetched your latest widget version from ServiceNow");
+console.log("📝 I see you've added a loading spinner in the template");
+
+// 3. Work with the updated version
+// ... make additional changes based on user's modifications ...
+```
+
+**Why This Matters:**
+- User modifications are not tracked locally
+- Working with outdated versions causes conflicts
+- User's work could be lost if not synced
+- Builds trust by respecting user's contributions
+- Ensures coherent development flow
+
 ## Fundamental Rules
 
 ### Rule 1: ES5 JavaScript Only in ServiceNow

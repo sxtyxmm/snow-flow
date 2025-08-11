@@ -22,7 +22,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
-import { logger } from '../utils/logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 
 // Operational table mappings for ServiceNow
 const operationalTableMapping = {
@@ -152,6 +152,7 @@ interface OperationalMetrics {
 class ServiceNowOperationsMCP {
   private server: Server;
   private client: ServiceNowClient;
+  private logger: MCPLogger;
 
   constructor() {
     this.server = new Server(
@@ -167,6 +168,7 @@ class ServiceNowOperationsMCP {
     );
 
     this.client = new ServiceNowClient();
+    this.logger = new MCPLogger('ServiceNowOperationsMCP');
     this.setupToolHandlers();
   }
 
@@ -844,52 +846,80 @@ class ServiceNowOperationsMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+        
+        let result;
         switch (name) {
           case 'snow_query_table':
-            return await this.handleUniversalQuery(args);
+            result = await this.handleUniversalQuery(args);
+            break;
           case 'snow_query_incidents':
-            return await this.handleQueryIncidents(args);
+            result = await this.handleQueryIncidents(args);
+            break;
           case 'snow_analyze_incident':
-            return await this.handleAnalyzeIncident(args);
+            result = await this.handleAnalyzeIncident(args);
+            break;
           case 'snow_auto_resolve_incident':
-            return await this.handleAutoResolveIncident(args);
+            result = await this.handleAutoResolveIncident(args);
+            break;
           case 'snow_query_requests':
-            return await this.handleQueryRequests(args);
+            result = await this.handleQueryRequests(args);
+            break;
           case 'snow_query_problems':
-            return await this.handleQueryProblems(args);
+            result = await this.handleQueryProblems(args);
+            break;
           case 'snow_cmdb_search':
-            return await this.handleCMDBSearch(args);
+            result = await this.handleCMDBSearch(args);
+            break;
           case 'snow_user_lookup':
-            return await this.handleUserLookup(args);
+            result = await this.handleUserLookup(args);
+            break;
           case 'snow_operational_metrics':
-            return await this.handleOperationalMetrics(args);
+            result = await this.handleOperationalMetrics(args);
+            break;
           case 'snow_pattern__analysis':
-            return await this.handlePatternAnalysis(args);
+            result = await this.handlePatternAnalysis(args);
+            break;
           case 'snow_knowledge_search':
-            return await this.handleKnowledgeSearch(args);
+            result = await this.handleKnowledgeSearch(args);
+            break;
           case 'snow_predictive__analysis':
-            return await this.handlePredictiveAnalysis(args);
+            result = await this.handlePredictiveAnalysis(args);
+            break;
           case 'snow_catalog_item_manager':
-            return await this.handleCatalogItemManager(args);
+            result = await this.handleCatalogItemManager(args);
+            break;
           case 'snow_catalog_item_search':
-            return await this.handleCatalogItemSearch(args);
+            result = await this.handleCatalogItemSearch(args);
+            break;
           case 'snow_cleanup_test_artifacts':
-            return await this.handleCleanupTestArtifacts(args);
+            result = await this.handleCleanupTestArtifacts(args);
+            break;
           case 'snow_create_user_group':
-            return await this.handleCreateUserGroup(args);
+            result = await this.handleCreateUserGroup(args);
+            break;
           case 'snow_create_user':
-            return await this.handleCreateUser(args);
+            result = await this.handleCreateUser(args);
+            break;
           case 'snow_assign_user_to_group':
-            return await this.handleAssignUserToGroup(args);
+            result = await this.handleAssignUserToGroup(args);
+            break;
           case 'snow_remove_user_from_group':
-            return await this.handleRemoveUserFromGroup(args);
+            result = await this.handleRemoveUserFromGroup(args);
+            break;
           case 'snow_list_group_members':
-            return await this.handleListGroupMembers(args);
+            result = await this.handleListGroupMembers(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Tool ${name} not found`);
         }
+        
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
-        logger.error(`Error executing tool ${name}:`, error);
+        this.logger.error(`Error executing tool ${name}:`, error);
         throw new McpError(ErrorCode.InternalError, `Failed to execute ${name}: ${error}`);
       }
     });
@@ -991,6 +1021,7 @@ class ServiceNowOperationsMCP {
       }
       
       // ✅ NEW: Use searchRecordsWithOffset when offset is provided
+      this.logger.trackAPICall('SEARCH', table, effectiveLimit);
       const records = offset > 0 
         ? await this.client.searchRecordsWithOffset(table, finalQuery, effectiveLimit, offset)
         : await this.client.searchRecords(table, finalQuery, effectiveLimit);
@@ -1181,6 +1212,7 @@ class ServiceNowOperationsMCP {
       const processedQuery = this.processNaturalLanguageQuery(query, 'incident');
       
       // Query incidents
+      this.logger.trackAPICall('SEARCH', 'incident', limit);
       const incidents = await this.client.searchRecords('incident', processedQuery, limit);
       
       let result: any = {

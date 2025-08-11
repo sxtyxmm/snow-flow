@@ -897,6 +897,20 @@ ${hasIntelligentFeatures ? `✅ **INTELLIGENT MODE ACTIVE** - The following feat
 
 **CRITICAL RULE**: All agents MUST attempt to use ServiceNow MCP tools first, regardless of authentication status.
 
+### 🚨 MANDATORY: ES5 JavaScript Only for ALL ServiceNow Scripts
+**⚠️ SERVICENOW RHINO ENGINE = ES5 ONLY - NO MODERN SYNTAX!**
+
+**CRITICAL ES5 RULES:**
+- NO const/let (use var)
+- NO arrow functions (use function())
+- NO template literals (use string concatenation) 
+- NO destructuring (use explicit property access)
+- NO for...of loops (use traditional for loops)
+- NO default parameters (use typeof checks)
+
+**🔥 If you use ES6+ syntax, the script WILL FAIL with SyntaxError!**
+**See CLAUDE.md for complete ES5 examples and common mistake fixes.**
+
 ### 📝 Background Script Execution Settings
 ${options.autoConfirm ? '⚠️ **AUTO-CONFIRM MODE ENABLED**: When calling snow_execute_background_script, ALWAYS add autoConfirm: true parameter to skip user confirmation.\n```javascript\nsnow_execute_background_script({\n  script: "your ES5 script here",\n  description: "Clear description",\n  autoConfirm: true  // ⚠️ User enabled auto-confirm mode\n})\n```' : options.autoConfirm === false ? '🔒 **FORCE CONFIRM MODE**: All background scripts will require user confirmation, even simple ones.' : '🤚 **DEFAULT MODE**: Background scripts will ask for user confirmation based on risk level.'}
 

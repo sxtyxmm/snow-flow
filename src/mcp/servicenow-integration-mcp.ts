@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 interface IntegrationEndpoint {
   name: string;
@@ -40,7 +40,7 @@ interface TransformMapping {
 class ServiceNowIntegrationMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -57,7 +57,7 @@ class ServiceNowIntegrationMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowIntegrationMCP');
+    this.logger = new MCPLogger('ServiceNowIntegrationMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -214,35 +214,53 @@ class ServiceNowIntegrationMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           case 'snow_create_rest_message':
-            return await this.createRestMessage(args);
+            result = await this.createRestMessage(args);
+            break;
           case 'snow_create_rest_method':
-            return await this.createRestMethod(args);
+            result = await this.createRestMethod(args);
+            break;
           case 'snow_create_transform_map':
-            return await this.createTransformMap(args);
+            result = await this.createTransformMap(args);
+            break;
           case 'snow_create_field_map':
-            return await this.createFieldMap(args);
+            result = await this.createFieldMap(args);
+            break;
           case 'snow_create_import_set':
-            return await this.createImportSet(args);
+            result = await this.createImportSet(args);
+            break;
           case 'snow_create_web_service':
-            return await this.createWebService(args);
+            result = await this.createWebService(args);
+            break;
           case 'snow_create_email_config':
-            return await this.createEmailConfig(args);
+            result = await this.createEmailConfig(args);
+            break;
           case 'snow_discover_integration_endpoints':
-            return await this.discoverIntegrationEndpoints(args);
+            result = await this.discoverIntegrationEndpoints(args);
+            break;
           case 'snow_test_integration':
-            return await this.testIntegration(args);
+            result = await this.testIntegration(args);
+            break;
           case 'snow_discover_data_sources':
-            return await this.discoverDataSources(args);
+            result = await this.discoverDataSources(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -269,6 +287,7 @@ class ServiceNowIntegrationMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_rest_message', 1);
       const response = await this.client.createRecord('sys_rest_message', restMessageData);
       
       if (!response.success) {
@@ -309,6 +328,7 @@ class ServiceNowIntegrationMCP {
         headers: JSON.stringify(args.headers || {})
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_rest_message_fn', 1);
       const response = await this.client.createRecord('sys_rest_message_fn', restMethodData);
       
       if (!response.success) {
@@ -355,6 +375,7 @@ class ServiceNowIntegrationMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_transform_map', 1);
       const response = await this.client.createRecord('sys_transform_map', transformMapData);
       
       if (!response.success) {
@@ -399,6 +420,7 @@ class ServiceNowIntegrationMCP {
         map: transformMap.sys_id
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_transform_entry', 1);
       const response = await this.client.createRecord('sys_transform_entry', fieldMapData);
       
       if (!response.success) {
@@ -443,6 +465,7 @@ class ServiceNowIntegrationMCP {
       const updateSetResult = await this.client.ensureUpdateSet();
       
       // Create the import set table structure first
+      this.logger.trackAPICall('CREATE', 'sys_db_object', 1);
       const response = await this.client.createRecord('sys_db_object', importSetData);
       
       if (!response.success) {
@@ -460,6 +483,7 @@ class ServiceNowIntegrationMCP {
       };
       
       try {
+        this.logger.trackAPICall('CREATE', 'sys_dictionary', 1);
         await this.client.createRecord('sys_dictionary', fieldData);
       } catch (fieldError) {
         this.logger.warn('Could not create default field, continuing:', fieldError);
@@ -495,6 +519,7 @@ class ServiceNowIntegrationMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_web_service', 1);
       const response = await this.client.createRecord('sys_web_service', webServiceData);
       
       if (!response.success) {
@@ -531,6 +556,7 @@ class ServiceNowIntegrationMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_email_account', 1);
       const response = await this.client.createRecord('sys_email_account', emailConfigData);
       
       if (!response.success) {
@@ -561,6 +587,7 @@ class ServiceNowIntegrationMCP {
 
       // Discover REST Messages
       if (type === 'all' || type === 'REST') {
+        this.logger.trackAPICall('SEARCH', 'sys_rest_message', 50);
         const restMessages = await this.client.searchRecords('sys_rest_message', '', 50);
         if (restMessages.success) {
           endpoints.push({
@@ -577,6 +604,7 @@ class ServiceNowIntegrationMCP {
 
       // Discover Web Services
       if (type === 'all' || type === 'SOAP') {
+        this.logger.trackAPICall('SEARCH', 'sys_web_service', 50);
         const webServices = await this.client.searchRecords('sys_web_service', '', 50);
         if (webServices.success) {
           endpoints.push({
@@ -593,6 +621,7 @@ class ServiceNowIntegrationMCP {
 
       // Discover Email Accounts
       if (type === 'all' || type === 'EMAIL') {
+        this.logger.trackAPICall('SEARCH', 'sys_email_account', 50);
         const emailAccounts = await this.client.searchRecords('sys_email_account', '', 50);
         if (emailAccounts.success) {
           endpoints.push({
@@ -638,6 +667,7 @@ class ServiceNowIntegrationMCP {
       }
 
       // Get available test methods
+      this.logger.trackAPICall('SEARCH', 'sys_rest_message_fn', 10);
       const methods = await this.client.searchRecords(
         'sys_rest_message_fn',
         `rest_message=${restMessage.sys_id}`,
@@ -672,6 +702,7 @@ class ServiceNowIntegrationMCP {
       const dataSources: Array<{type: string, count: number, items: any[]}> = [];
 
       // Discover Import Sets
+      this.logger.trackAPICall('SEARCH', 'sys_import_set_table', 50);
       const importSets = await this.client.searchRecords('sys_import_set_table', '', 50);
       if (importSets.success) {
         dataSources.push({
@@ -686,6 +717,7 @@ class ServiceNowIntegrationMCP {
       }
 
       // Discover Transform Maps
+      this.logger.trackAPICall('SEARCH', 'sys_transform_map', 50);
       const transformMaps = await this.client.searchRecords('sys_transform_map', '', 50);
       if (transformMaps.success) {
         dataSources.push({
@@ -700,6 +732,7 @@ class ServiceNowIntegrationMCP {
       }
 
       // Discover Data Sources
+      this.logger.trackAPICall('SEARCH', 'sys_data_source', 50);
       const dataSourcesResponse = await this.client.searchRecords('sys_data_source', '', 50);
       if (dataSourcesResponse.success) {
         dataSources.push({
@@ -733,6 +766,7 @@ class ServiceNowIntegrationMCP {
   private async getAuthenticationTypes(): Promise<string[]> {
     // Discover available authentication types dynamically
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_choice', 10);
       const authTypes = await this.client.searchRecords('sys_choice', 'name=sys_rest_message^element=authentication_type', 10);
       if (authTypes.success) {
         return authTypes.data.result.map((choice: any) => choice.value);
@@ -745,6 +779,7 @@ class ServiceNowIntegrationMCP {
 
   private async getTableInfo(tableName: string): Promise<{name: string, label: string, sys_id: string} | null> {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_db_object', 1);
       const tableResponse = await this.client.searchRecords('sys_db_object', `name=${tableName}`, 1);
       if (tableResponse.success && tableResponse.data?.result?.length > 0) {
         const table = tableResponse.data.result[0];
@@ -759,6 +794,7 @@ class ServiceNowIntegrationMCP {
 
   private async getTableFields(tableName: string): Promise<string[]> {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_dictionary', 100);
       const fieldsResponse = await this.client.searchRecords('sys_dictionary', `nameSTARTSWITH${tableName}^element!=NULL`, 100);
       if (fieldsResponse.success) {
         return fieldsResponse.data.result.map((field: any) => field.element);
@@ -772,6 +808,7 @@ class ServiceNowIntegrationMCP {
 
   private async findRestMessage(name: string): Promise<any> {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_rest_message', 1);
       const response = await this.client.searchRecords('sys_rest_message', `name=${name}`, 1);
       if (response.success && response.data?.result?.length > 0) {
         return response.data.result[0];
@@ -785,6 +822,7 @@ class ServiceNowIntegrationMCP {
 
   private async findTransformMap(name: string): Promise<any> {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_transform_map', 1);
       const response = await this.client.searchRecords('sys_transform_map', `name=${name}`, 1);
       if (response.success && response.data?.result?.length > 0) {
         return response.data.result[0];

@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 interface PlatformArtifactType {
   table: string;
@@ -42,7 +42,7 @@ interface DynamicTableInfo {
 class ServiceNowPlatformDevelopmentMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
   private tableCache: Map<string, DynamicTableInfo> = new Map();
 
@@ -60,7 +60,7 @@ class ServiceNowPlatformDevelopmentMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowPlatformDevelopmentMCP');
+    this.logger = new MCPLogger('ServiceNowPlatformDevelopmentMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -211,6 +211,9 @@ class ServiceNowPlatformDevelopmentMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         // Ensure authentication
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
@@ -220,28 +223,42 @@ class ServiceNowPlatformDevelopmentMCP {
           );
         }
 
+        let result;
         switch (name) {
           case 'snow_create_ui_page':
-            return await this.createUIPage(args);
+            result = await this.createUIPage(args);
+            break;
           case 'snow_create_script_include':
-            return await this.createScriptInclude(args);
+            result = await this.createScriptInclude(args);
+            break;
           case 'snow_create_business_rule':
-            return await this.createBusinessRule(args);
+            result = await this.createBusinessRule(args);
+            break;
           case 'snow_create_client_script':
-            return await this.createClientScript(args);
+            result = await this.createClientScript(args);
+            break;
           case 'snow_create_ui_policy':
-            return await this.createUIPolicy(args);
+            result = await this.createUIPolicy(args);
+            break;
           case 'snow_create_ui_action':
-            return await this.createUIAction(args);
+            result = await this.createUIAction(args);
+            break;
           case 'snow_discover_platform_tables':
-            return await this.discoverPlatformTables(args);
+            result = await this.discoverPlatformTables(args);
+            break;
           case 'snow_discover_table_fields':
-            return await this.discoverTableFields(args);
+            result = await this.discoverTableFields(args);
+            break;
           case 'snow_table_schema_discovery':
-            return await this.discoverTableSchema(args);
+            result = await this.discoverTableSchema(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -270,6 +287,7 @@ class ServiceNowPlatformDevelopmentMCP {
 
       for (const tableQuery of tableQueries) {
         if (category === 'all' || category === tableQuery.category) {
+          this.logger.trackAPICall('SEARCH', 'sys_db_object', 50);
           const tablesResponse = await this.client.searchRecords(
             'sys_db_object',
             tableQuery.query,
@@ -327,6 +345,7 @@ class ServiceNowPlatformDevelopmentMCP {
 
       // Get all fields for this table with CORRECT query syntax
       // ✅ FIX: Use proper ServiceNow query for dictionary
+      this.logger.trackAPICall('SEARCH', 'sys_dictionary', 500);
       const fieldsResponse = await this.client.searchRecords(
         'sys_dictionary',
         `name=${tableInfo.name}^element!=NULL^ORname=${tableInfo.name}^elementISNOTEMPTY`,
@@ -436,6 +455,7 @@ class ServiceNowPlatformDevelopmentMCP {
       }
       
       // Try direct lookup first
+      this.logger.trackAPICall('SEARCH', 'sys_db_object', 1);
       const tableResponse = await this.client.searchRecords(
         'sys_db_object',
         `name=${tableName}`,
@@ -455,6 +475,7 @@ class ServiceNowPlatformDevelopmentMCP {
       this.logger.debug(`Table lookup response for ${tableName}: ${JSON.stringify(tableResponse)}`);
 
       // Try by sys_id
+      this.logger.trackAPICall('SEARCH', 'sys_db_object', 1);
       const tableByIdResponse = await this.client.searchRecords(
         'sys_db_object',
         `sys_id=${tableName}`,
@@ -471,6 +492,7 @@ class ServiceNowPlatformDevelopmentMCP {
       }
 
       // Try partial match
+      this.logger.trackAPICall('SEARCH', 'sys_db_object', 5);
       const tableByPartialResponse = await this.client.searchRecords(
         'sys_db_object',
         `nameCONTAINS${tableName}^ORlabelCONTAINS${tableName}`,
@@ -516,6 +538,7 @@ class ServiceNowPlatformDevelopmentMCP {
       // Ensure we have Update Set
       const updateSetResult = await this.client.ensureUpdateSet();
       
+      this.logger.trackAPICall('CREATE', 'sys_ui_page', 1);
       const response = await this.client.createRecord('sys_ui_page', uiPageData);
       
       if (!response.success) {
@@ -550,6 +573,7 @@ class ServiceNowPlatformDevelopmentMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_script_include', 1);
       const response = await this.client.createRecord('sys_script_include', scriptIncludeData);
       
       if (!response.success) {
@@ -591,6 +615,7 @@ class ServiceNowPlatformDevelopmentMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_script', 1);
       const response = await this.client.createRecord('sys_script', businessRuleData);
       
       if (!response.success) {
@@ -632,6 +657,7 @@ class ServiceNowPlatformDevelopmentMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_script_client', 1);
       const response = await this.client.createRecord('sys_script_client', clientScriptData);
       
       if (!response.success) {
@@ -672,6 +698,7 @@ class ServiceNowPlatformDevelopmentMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_ui_policy', 1);
       const response = await this.client.createRecord('sys_ui_policy', uiPolicyData);
       
       if (!response.success) {
@@ -714,6 +741,7 @@ class ServiceNowPlatformDevelopmentMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_ui_action', 1);
       const response = await this.client.createRecord('sys_ui_action', uiActionData);
       
       if (!response.success) {
@@ -737,6 +765,7 @@ class ServiceNowPlatformDevelopmentMCP {
    */
   private async discoverRequiredFields(tableName: string): Promise<string[]> {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_dictionary', 50);
       const fieldsResponse = await this.client.searchRecords(
         'sys_dictionary',
         `nameSTARTSWITH${tableName}^element!=NULL^mandatory=true`,
@@ -783,6 +812,7 @@ class ServiceNowPlatformDevelopmentMCP {
       let tableDetailsResponse: any = { success: false };
       
       if (!isStandardTable) {
+        this.logger.trackAPICall('GET', 'sys_db_object', 1);
         tableDetailsResponse = await this.client.getRecord('sys_db_object', tableInfo.sys_id);
       }
       
@@ -815,6 +845,7 @@ class ServiceNowPlatformDevelopmentMCP {
       }
 
       // Get all fields with detailed information
+      this.logger.trackAPICall('SEARCH', 'sys_dictionary', 200);
       const fieldsResponse = await this.client.searchRecords(
         'sys_dictionary',
         `name=${tableInfo.name}^element!=NULL`,
@@ -870,6 +901,7 @@ class ServiceNowPlatformDevelopmentMCP {
         };
 
         // Find tables that extend this one
+        this.logger.trackAPICall('SEARCH', 'sys_db_object', 50);
         const childTablesResponse = await this.client.searchRecords(
           'sys_db_object',
           `super_class=${tableInfo.sys_id}`,
@@ -888,6 +920,7 @@ class ServiceNowPlatformDevelopmentMCP {
       // Get indexes if requested
       let indexes: any[] = [];
       if (includeIndexes) {
+        this.logger.trackAPICall('SEARCH', 'sys_db_index', 50);
         const indexResponse = await this.client.searchRecords(
           'sys_db_index',
           `table=${tableInfo.sys_id}`,

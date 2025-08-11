@@ -16,12 +16,12 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 class ServiceNowKnowledgeCatalogMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -38,7 +38,7 @@ class ServiceNowKnowledgeCatalogMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowKnowledgeCatalogMCP');
+    this.logger = new MCPLogger('ServiceNowKnowledgeCatalogMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -281,47 +281,69 @@ class ServiceNowKnowledgeCatalogMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           // Knowledge Management
           case 'snow_create_knowledge_article':
-            return await this.createKnowledgeArticle(args);
+            result = await this.createKnowledgeArticle(args);
+            break;
           case 'snow_search_knowledge':
-            return await this.searchKnowledge(args);
+            result = await this.searchKnowledge(args);
+            break;
           case 'snow_update_knowledge_article':
-            return await this.updateKnowledgeArticle(args);
+            result = await this.updateKnowledgeArticle(args);
+            break;
           case 'snow_retire_knowledge_article':
-            return await this.retireKnowledgeArticle(args);
+            result = await this.retireKnowledgeArticle(args);
+            break;
           case 'snow_create_knowledge_base':
-            return await this.createKnowledgeBase(args);
+            result = await this.createKnowledgeBase(args);
+            break;
           case 'snow_discover_knowledge_bases':
-            return await this.discoverKnowledgeBases(args);
+            result = await this.discoverKnowledgeBases(args);
+            break;
           
           // Service Catalog
           case 'snow_create_catalog_item':
-            return await this.createCatalogItem(args);
+            result = await this.createCatalogItem(args);
+            break;
           case 'snow_create_catalog_variable':
-            return await this.createCatalogVariable(args);
+            result = await this.createCatalogVariable(args);
+            break;
           case 'snow_create_catalog_ui_policy':
-            return await this.createCatalogUIPolicy(args);
+            result = await this.createCatalogUIPolicy(args);
+            break;
           case 'snow_create_catalog_client_script':
-            return await this.createCatalogClientScript(args);
+            result = await this.createCatalogClientScript(args);
+            break;
           case 'snow_search_catalog':
-            return await this.searchCatalog(args);
+            result = await this.searchCatalog(args);
+            break;
           case 'snow_order_catalog_item':
-            return await this.orderCatalogItem(args);
+            result = await this.orderCatalogItem(args);
+            break;
           case 'snow_get_catalog_item_details':
-            return await this.getCatalogItemDetails(args);
+            result = await this.getCatalogItemDetails(args);
+            break;
           case 'snow_discover_catalogs':
-            return await this.discoverCatalogs(args);
+            result = await this.discoverCatalogs(args);
+            break;
             
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -369,6 +391,7 @@ class ServiceNowKnowledgeCatalogMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'kb_knowledge', 1);
       const response = await this.client.createRecord('kb_knowledge', articleData);
 
       if (!response.success) {
@@ -421,6 +444,7 @@ ${args.valid_to ? `📅 Valid Until: ${args.valid_to}` : ''}
       }
 
       const limit = args.limit || 10;
+      this.logger.trackAPICall('SEARCH', 'kb_knowledge', limit);
       const response = await this.client.searchRecords('kb_knowledge', query, limit);
 
       if (!response.success) {
@@ -481,6 +505,7 @@ ${articleList}
       if (args.meta_description) updateData.meta_description = args.meta_description;
       if (args.keywords) updateData.keywords = args.keywords.join(',');
 
+      this.logger.trackAPICall('UPDATE', 'kb_knowledge', 1);
       const response = await this.client.updateRecord('kb_knowledge', args.sys_id, updateData);
 
       if (!response.success) {
@@ -523,6 +548,7 @@ ${args.valid_to ? `📅 Valid Until: ${args.valid_to}` : ''}
         updateData['replacement_article'] = args.replacement_article;
       }
 
+      this.logger.trackAPICall('UPDATE', 'kb_knowledge', 1);
       const response = await this.client.updateRecord('kb_knowledge', args.sys_id, updateData);
 
       if (!response.success) {
@@ -685,6 +711,7 @@ ${kbText}
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sc_cat_item', 1);
       const response = await this.client.createRecord('sc_cat_item', itemData);
 
       if (!response.success) {
@@ -877,6 +904,7 @@ ${args.variable ? `📝 Variable: ${args.variable}` : ''}
       }
 
       const limit = args.limit || 20;
+      this.logger.trackAPICall('SEARCH', 'sc_cat_item', limit);
       const response = await this.client.searchRecords('sc_cat_item', query, limit);
 
       if (!response.success) {

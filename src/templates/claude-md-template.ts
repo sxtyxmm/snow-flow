@@ -49,39 +49,75 @@ const propertyCheck = await snow_property_manager({
 
 ## Fundamental Rules
 
-### Rule 1: ES5 JavaScript Only in ServiceNow
+### Rule 1: 🚨 ES5 JavaScript ONLY in ServiceNow - NO EXCEPTIONS!
 
-ServiceNow uses the Rhino JavaScript engine which supports only ES5. Modern JavaScript syntax will fail.
+**⚠️ CRITICAL WARNING: ServiceNow uses Rhino engine - ES6/ES7/ES8+ WILL FAIL!**
 
-**Never Use:**
-- \`const\` or \`let\` - use \`var\`
-- Arrow functions \`() => {}\` - use \`function() {}\`
-- Template literals \`\` \`\${var}\` \`\` - use string concatenation
-- Destructuring \`{a, b} = obj\` - use explicit property access
-- \`for...of\` loops - use traditional \`for\` loops
-- Default parameters - use \`typeof\` checks
-- \`async/await\` - use callbacks or GlideAjax
+ServiceNow's server-side JavaScript runs on Mozilla Rhino which **ONLY supports ES5 (2009)**. Any modern JavaScript syntax will cause **RUNTIME ERRORS**.
 
-**Always Use:**
+**❌ THESE WILL CRASH SERVICENOW (DO NOT USE):**
 \`\`\`javascript
-// ES5 compatible code
-var name = 'value';
-function processData() {
-  return 'result';
+// ❌ ES6+ features that BREAK ServiceNow:
+const data = [];           // SyntaxError: missing ; after for-loop initializer
+let items = [];            // SyntaxError: missing ; after for-loop initializer  
+const fn = () => {};       // SyntaxError: syntax error
+var msg = \`Hello \${name}\`; // SyntaxError: syntax error
+for (let item of items){}  // SyntaxError: missing ; after for-loop initializer
+var {name, id} = user;     // SyntaxError: destructuring declaration not supported
+array.forEach(x => {});    // SyntaxError: syntax error  
+array.map(x => x.id);      // SyntaxError: syntax error
+function test(param = 'default') {} // SyntaxError: syntax error
+class MyClass {}           // SyntaxError: missing ; after for-loop initializer
+\`\`\`
+
+**✅ ONLY USE ES5 SYNTAX (THIS WORKS):**
+\`\`\`javascript
+// ✅ ES5 compatible code that WORKS in ServiceNow:
+var data = [];
+var items = [];
+function fn() { return 'result'; }
+var msg = 'Hello ' + name;
+for (var i = 0; i < items.length; i++) {
+  var item = items[i];
 }
-var message = 'Hello ' + userName;
-for (var i = 0; i < array.length; i++) {
-  var item = array[i];
+var name = user.name;
+var id = user.id;
+for (var j = 0; j < array.length; j++) {
+  // Process array[j]
+}
+function test(param) {
+  if (typeof param === 'undefined') param = 'default';
 }
 \`\`\`
+
+**🔥 COMMON MISTAKES THAT BREAK SERVICENOW:**
+1. **Arrow Functions**: \`() => {}\` → Use \`function() {}\`
+2. **Template Literals**: \`\` \`\${var}\` \`\` → Use \`'text ' + var\`
+3. **Let/Const**: \`let x\` → Use \`var x\`
+4. **Destructuring**: \`{a, b} = obj\` → Use \`obj.a\`, \`obj.b\`
+5. **For...of**: \`for (x of arr)\` → Use \`for (var i=0; i<arr.length; i++)\`
+6. **Default Parameters**: \`fn(x='default')\` → Use \`typeof x === 'undefined'\`
+7. **Array Methods with Arrows**: \`.map(x => x)\` → Use \`.map(function(x) { return x; })\`
 
 ### Rule 2: Background Scripts for Verification Only (Not Widget Updates!)
 
 **CRITICAL DISTINCTION:**
-- ✅ Use background scripts for TESTING and VERIFICATION
+- ✅ Use background scripts for TESTING and VERIFICATION  
 - ❌ Do NOT use background scripts to UPDATE widget fields
 - ✅ Use \`snow_update\` to directly modify widget records
 - ❌ Do NOT try to import server scripts into client scripts via background scripts
+
+**🚨 ES5 ENFORCEMENT FOR BACKGROUND SCRIPTS:**
+Background scripts run on ServiceNow's server-side Rhino engine. **EVERY background script MUST be ES5-only or it will fail.**
+
+**Quick ES5 Validation Checklist:**
+- [ ] No \`const\` or \`let\` (only \`var\`)
+- [ ] No arrow functions \`() => {}\` (only \`function() {}\`)
+- [ ] No template literals \`\` \`\${var}\` \`\` (only string concatenation)
+- [ ] No destructuring \`{a, b} = obj\` (only explicit \`obj.a\`)
+- [ ] No \`for...of\` loops (only traditional \`for\` loops)
+- [ ] No default parameters (use \`typeof\` checks)
+- [ ] No modern array methods with arrows (use traditional functions)
 
 Background scripts are excellent for verification and debugging, but widget updates must go through proper MCP tools.
 
@@ -89,27 +125,137 @@ Background scripts are excellent for verification and debugging, but widget upda
 You can now skip the human-in-the-loop confirmation for trusted scripts:
 
 \`\`\`javascript
-// Standard mode - requires user confirmation
+// Standard mode - requires user confirmation (ES5 ONLY!)
 snow_execute_background_script({
-  script: "var gr = new GlideRecord('incident'); gr.query();",
+  script: "var gr = new GlideRecord('incident'); gr.query();", // ✅ ES5 syntax
   description: "Query incidents",
   allowDataModification: false
 });
 
 // Auto-confirm mode - executes immediately ⚠️ USE WITH CAUTION!
 snow_execute_background_script({
-  script: "var gr = new GlideRecord('incident'); gr.query();",
+  script: "var gr = new GlideRecord('incident'); gr.query();", // ✅ ES5 syntax
   description: "Query incidents",
   allowDataModification: false,
   autoConfirm: true  // ⚠️ Bypasses user confirmation!
 });
+
+// ❌ WRONG - This will FAIL in ServiceNow:
+// script: "const gr = new GlideRecord('incident'); gr.query();", // SyntaxError!
+// script: "incidents.forEach(i => console.log(i.number));",      // SyntaxError!
 \`\`\`
+
+**🚨 ES5 Validation Required:**
+Before using any background script tool, validate your script is ES5-only:
+- No \`const\`/\`let\` (use \`var\`)
+- No arrow functions (use \`function()\`)
+- No template literals (use string concatenation)
+- No destructuring (use explicit property access)
 
 **⚠️ Security Warning:**
 - Only use \`autoConfirm: true\` for verified, safe scripts
 - High-risk operations will still be logged
 - All auto-executions are tracked with audit IDs
 - Default behavior (without autoConfirm) remains unchanged
+
+## 🚨 CRITICAL: Common ES5 Mistakes That Break ServiceNow
+
+ServiceNow developers frequently use modern JavaScript that fails on the Rhino engine. Here are the most common mistakes:
+
+### 🔥 Top ES5 Violations (Fix These Immediately!)
+
+**1. Arrow Functions with Array Methods**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+var activeIncidents = incidents.filter(inc => inc.active);
+var numbers = activeIncidents.map(inc => inc.number);
+
+// ✅ WORKS in ServiceNow:
+var activeIncidents = [];
+for (var i = 0; i < incidents.length; i++) {
+  if (incidents[i].active) {
+    activeIncidents.push(incidents[i]);
+  }
+}
+var numbers = [];
+for (var j = 0; j < activeIncidents.length; j++) {
+  numbers.push(activeIncidents[j].number);
+}
+\`\`\`
+
+**2. Template Literals for String Building**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+var message = \`Incident \${incident.number} assigned to \${user.name}\`;
+
+// ✅ WORKS in ServiceNow:
+var message = 'Incident ' + incident.number + ' assigned to ' + user.name;
+\`\`\`
+
+**3. Const/Let Variable Declarations**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+const MAX_RETRIES = 3;
+let currentUser = gs.getUser();
+
+// ✅ WORKS in ServiceNow:
+var MAX_RETRIES = 3;
+var currentUser = gs.getUser();
+\`\`\`
+
+**4. Object Destructuring**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+var {name, email, department} = user;
+var {sys_id: id, short_description: desc} = incident;
+
+// ✅ WORKS in ServiceNow:
+var name = user.name;
+var email = user.email;
+var department = user.department;
+var id = incident.sys_id;
+var desc = incident.short_description;
+\`\`\`
+
+**5. For...of Loops**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+for (let incident of incidents) {
+  gs.info('Processing: ' + incident.number);
+}
+
+// ✅ WORKS in ServiceNow:
+for (var i = 0; i < incidents.length; i++) {
+  gs.info('Processing: ' + incidents[i].number);
+}
+\`\`\`
+
+**6. Default Function Parameters**
+\`\`\`javascript
+// ❌ BREAKS ServiceNow:
+function processIncident(incident, priority = 3, assignee = 'unassigned') {
+  // Process incident
+}
+
+// ✅ WORKS in ServiceNow:
+function processIncident(incident, priority, assignee) {
+  if (typeof priority === 'undefined') priority = 3;
+  if (typeof assignee === 'undefined') assignee = 'unassigned';
+  // Process incident
+}
+\`\`\`
+
+### 🎯 Quick ES5 Conversion Guide
+| Modern (ES6+) | ES5 Equivalent |
+|---------------|----------------|
+| \`const x = 5;\` | \`var x = 5;\` |
+| \`let items = [];\` | \`var items = [];\` |
+| \`() => {}\` | \`function() {}\` |
+| \`\` \`Hello \${name}\` \`\` | \`'Hello ' + name\` |
+| \`{a, b} = obj\` | \`var a = obj.a; var b = obj.b;\` |
+| \`for (item of items)\` | \`for (var i = 0; i < items.length; i++)\` |
+| \`func(x = 'default')\` | \`if (typeof x === 'undefined') x = 'default';\` |
+| \`arr.map(x => x.id)\` | \`arr.map(function(x) { return x.id; })\` |
 
 \`\`\`javascript
 // Universal verification pattern
@@ -311,17 +457,22 @@ Snow-Flow includes 16+ specialized MCP servers with over 200 tools for comprehen
 ### 3. ServiceNow Automation Server
 **Purpose:** Script execution and automation
 
+**🚨 CRITICAL: ALL SCRIPTS MUST BE ES5 ONLY!**
+ServiceNow runs on Rhino engine - ES6+ syntax will cause SyntaxError and script failure.
+
 **Key Tools:**
-- \`snow_execute_background_script\` - Execute background scripts (with optional autoConfirm)
+- \`snow_execute_background_script\` - Execute background scripts (**ES5 ONLY!** with optional autoConfirm)
 - \`snow_confirm_script_execution\` - Confirm script execution after user approval
-- \`snow_execute_script_with_output\` - Execute scripts with output capture
+- \`snow_execute_script_with_output\` - Execute scripts with output capture (**ES5 ONLY!**)
 - \`snow_get_script_output\` - Retrieve script execution history
-- \`snow_execute_script_sync\` - Synchronous script execution
+- \`snow_execute_script_sync\` - Synchronous script execution (**ES5 ONLY!**)
 - \`snow_get_logs\` - Access system logs
 - \`snow_test_rest_connection\` - Test REST integrations
-- \`snow_trace_execution\` - Trace script execution
+- \`snow_trace_execution\` - Trace script execution (**ES5 ONLY!**)
 - \`snow_schedule_job\` - Create scheduled jobs
 - \`snow_create_event\` - Trigger system events
+
+**Remember:** Use \`var\`, \`function(){}\`, string concatenation, traditional for loops only!
 
 **Features:**
 - Full output capture (gs.print/info/warn/error)

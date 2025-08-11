@@ -46,7 +46,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import * as tf from '@tensorflow/tfjs-node';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowCredentials } from '../utils/snow-oauth.js';
 import { MLDataFetcher } from '../utils/ml-data-fetcher.js';
@@ -106,7 +106,7 @@ interface ChangeData {
 
 export class ServiceNowMachineLearningMCP {
   private server: Server;
-  private logger: Logger;
+  private logger: MCPLogger;
   private client: ServiceNowClient;
   
   // Neural network models
@@ -125,7 +125,7 @@ export class ServiceNowMachineLearningMCP {
   private mlAPICheckComplete: boolean = false;
 
   constructor(credentials?: ServiceNowCredentials) {
-    this.logger = new Logger('ServiceNowMachineLearning');
+    this.logger = new MCPLogger('ServiceNowMachineLearning');
     this.client = new ServiceNowClient();
 
     this.server = new Server(
@@ -537,49 +537,73 @@ export class ServiceNowMachineLearningMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+        
+        let result;
         switch (name) {
           // Training
           case 'ml_train_incident_classifier':
-            return await this.trainIncidentClassifier(args);
+            result = await this.trainIncidentClassifier(args);
+            break;
           case 'ml_train_change_risk':
-            return await this.trainChangeRiskModel(args);
+            result = await this.trainChangeRiskModel(args);
+            break;
           case 'ml_train_anomaly_detector':
-            return await this.trainAnomalyDetector(args);
+            result = await this.trainAnomalyDetector(args);
+            break;
           
           // Prediction
           case 'ml_classify_incident':
-            return await this.classifyIncident(args);
+            result = await this.classifyIncident(args);
+            break;
           case 'ml_predict_change_risk':
-            return await this.predictChangeRisk(args);
+            result = await this.predictChangeRisk(args);
+            break;
           case 'ml_forecast_incidents':
-            return await this.forecastIncidents(args);
+            result = await this.forecastIncidents(args);
+            break;
           case 'ml_detect_anomalies':
-            return await this.detectAnomalies(args);
+            result = await this.detectAnomalies(args);
+            break;
           
           // Management
           case 'ml_model_status':
-            return await this.getModelStatus(args);
+            result = await this.getModelStatus(args);
+            break;
           case 'ml_evaluate_model':
-            return await this.evaluateModel(args);
+            result = await this.evaluateModel(args);
+            break;
           
           // ServiceNow Native ML
           case 'ml_performance_analytics':
-            return await this.performanceAnalytics(args);
+            result = await this.performanceAnalytics(args);
+            break;
           case 'ml_predictive_intelligence':
-            return await this.predictiveIntelligence(args);
+            result = await this.predictiveIntelligence(args);
+            break;
           case 'ml_agent_intelligence':
-            return await this.agentIntelligence(args);
+            result = await this.agentIntelligence(args);
+            break;
           case 'ml_process_optimization':
-            return await this.processOptimization(args);
+            result = await this.processOptimization(args);
+            break;
           case 'ml_virtual_agent_nlu':
-            return await this.virtualAgentNLU(args);
+            result = await this.virtualAgentNLU(args);
+            break;
           case 'ml_hybrid_recommendation':
-            return await this.hybridRecommendation(args);
+            result = await this.hybridRecommendation(args);
+            break;
           
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
+        
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error: any) {
+        this.logger.error(`ML tool execution failed: ${name}`, error);
         return {
           content: [{
             type: 'text',
@@ -661,6 +685,7 @@ export class ServiceNowMachineLearningMCP {
               }
             } catch (aggError) {
               // Final fallback: Estimate based on a sample
+              this.logger.trackAPICall('SEARCH', 'incident', 1000);
               const sampleResult = await this.client.searchRecords('incident', countQuery, 1000);
               if (sampleResult.success && sampleResult.data?.result) {
                 totalAvailable = sampleResult.data.result.length >= 1000 ? 5000 : sampleResult.data.result.length;
@@ -1965,6 +1990,7 @@ export class ServiceNowMachineLearningMCP {
             const { table, query: q, limit: l, fields, include_content } = args;
             
             // Use the client to fetch data
+            this.logger.trackAPICall('SEARCH', table, l || 100);
             const response = await this.client.searchRecords(table, q || '', l || 100);
             
             if (!response.success) {
@@ -2247,6 +2273,7 @@ export class ServiceNowMachineLearningMCP {
             const { table, query: q, limit: l, fields, include_content } = args;
             
             // Use the client to fetch data
+            this.logger.trackAPICall('SEARCH', table, l || 100);
             const response = await this.client.searchRecords(table, q || '', l || 100);
             
             if (!response.success) {
@@ -3397,6 +3424,7 @@ export class ServiceNowMachineLearningMCP {
           const query = params.sysparm_query || '';
           const limit = params.sysparm_limit || 100;
           
+          this.logger.trackAPICall('SEARCH', tableName, limit);
           const response = await this.client.searchRecords(tableName, query, limit);
           if (response.success) {
             return { 
@@ -3412,6 +3440,7 @@ export class ServiceNowMachineLearningMCP {
           const query = params.sysparm_query || '';
           
           // Use a limit of 1 with count to get total
+          this.logger.trackAPICall('SEARCH', tableName, 1);
           const response = await this.client.searchRecords(tableName, query, 1);
           if (response.success) {
             // Estimate count based on response

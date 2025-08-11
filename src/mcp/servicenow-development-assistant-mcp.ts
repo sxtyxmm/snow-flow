@@ -15,7 +15,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 import { widgetTemplateGenerator } from '../utils/widget-template-generator.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -51,7 +51,7 @@ interface IndexedArtifact {
 export class ServiceNowDevelopmentAssistantMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private memoryPath: string;
   private config: ReturnType<typeof mcpConfig.getMemoryConfig>;
   private documentationSystem: SelfDocumentingSystem;
@@ -75,7 +75,7 @@ export class ServiceNowDevelopmentAssistantMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowDevelopmentAssistantMCP');
+    this.logger = new MCPLogger('ServiceNowDevelopmentAssistantMCP');
     this.config = mcpConfig.getMemoryConfig();
     this.memoryPath = this.config.path || join(process.cwd(), 'memory', 'servicenow_artifacts');
     
@@ -289,47 +289,68 @@ export class ServiceNowDevelopmentAssistantMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         // Authenticate if needed
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
         
+        let result;
         switch (name) {
           case 'snow_find_artifact':
-            return await this.findArtifact(args);
+            result = await this.findArtifact(args);
+            break;
           case 'snow_edit_artifact':
-            return await this.editArtifact(args);
+            result = await this.editArtifact(args);
+            break;
           case 'snow_get_by_sysid':
-            return await this.getBySysId(args);
+            result = await this.getBySysId(args);
+            break;
           case 'snow_edit_by_sysid':
-            return await this.editBySysId(args);
+            result = await this.editBySysId(args);
+            break;
           case 'snow_analyze_artifact':
-            return await this.analyzeArtifact(args);
+            result = await this.analyzeArtifact(args);
+            break;
           case 'snow_memory_search':
-            return await this.searchMemory(args);
+            result = await this.searchMemory(args);
+            break;
           case 'snow_comprehensive_search':
-            return await this.comprehensiveSearch(args);
+            result = await this.comprehensiveSearch(args);
+            break;
           case 'snow_sync_data_consistency':
-            return await this.syncDataConsistency(args);
+            result = await this.syncDataConsistency(args);
+            break;
           case 'snow_validate_live_connection':
-            return await this.validateLiveConnection(args);
+            result = await this.validateLiveConnection(args);
+            break;
           case 'batch_deployment_validator':
-            return await this.batchDeploymentValidator(args);
+            result = await this.batchDeploymentValidator(args);
+            break;
           case 'snow_escalate_permissions':
-            return await this.escalatePermissions(args);
+            result = await this.escalatePermissions(args);
+            break;
           case 'snow_analyze_requirements':
-            return await this.analyzeRequirements(args);
+            result = await this.analyzeRequirements(args);
+            break;
           case 'snow_orchestrate_development':
-            return await this.orchestrateDevelopment(args);
+            result = await this.orchestrateDevelopment(args);
+            break;
           case 'snow_verify_artifact_searchable':
-            return await this.verifyArtifactSearchable(args);
+            result = await this.verifyArtifactSearchable(args);
+            break;
           case 'snow_generate_documentation':
-            return await this.generateDocumentation(args);
+            result = await this.generateDocumentation(args);
+            break;
           case 'snow_documentation_suggestions':
-            return await this.getDocumentationSuggestions(args);
+            result = await this.getDocumentationSuggestions(args);
+            break;
           case 'snow_start_continuous_documentation':
-            return await this.startContinuousDocumentation(args);
+            result = await this.startContinuousDocumentation(args);
+            break;
           case 'snow_analyze_costs':
             const costRequest: any = {
               scope: args.scope || 'all',
@@ -338,7 +359,7 @@ export class ServiceNowDevelopmentAssistantMCP {
               testing_enabled: args.testing_enabled !== false
             };
             const costResult = await this.costOptimizationEngine.analyzeCosts(costRequest);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -346,9 +367,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_cost_dashboard':
             const dashboardResult = await this.costOptimizationEngine.getCostDashboard();
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -356,9 +378,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_start_autonomous_cost_optimization':
             const startResult = await this.costOptimizationEngine.startAutonomousOptimization(args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -366,9 +389,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_implement_cost_optimization':
             const implementResult = await this.costOptimizationEngine.implementOptimization(String(args.optimization_id));
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -376,9 +400,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_assess_compliance':
             const complianceResult = await this.complianceSystem.assessCompliance(args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -386,9 +411,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_compliance_dashboard':
             const complianceDashboard = await this.complianceSystem.getComplianceDashboard();
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -396,9 +422,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_start_compliance_monitoring':
             const monitoringResult = await this.complianceSystem.startContinuousMonitoring(args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -406,9 +433,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_execute_corrective_action':
             const actionResult = await this.complianceSystem.executeCorrectiveAction(String(args.action_id), args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -416,9 +444,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_health_check':
             const healthResult = await this.selfHealingSystem.performHealthCheck(args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -426,9 +455,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_health_dashboard':
             const healthDashboard = await this.selfHealingSystem.getHealthDashboard();
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -436,9 +466,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_start_autonomous_healing':
             const healingStartResult = await this.selfHealingSystem.startAutonomousHealing(args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -446,9 +477,10 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           case 'snow_execute_healing_action':
             const healingResult = await this.selfHealingSystem.executeHealingAction(String(args.action_id), args);
-            return {
+            result = {
               content: [
                 {
                   type: 'text',
@@ -456,9 +488,14 @@ export class ServiceNowDevelopmentAssistantMCP {
                 }
               ]
             };
+            break;
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Tool execution failed: ${name}`, error);
         throw new McpError(
@@ -610,6 +647,7 @@ export class ServiceNowDevelopmentAssistantMCP {
       this.logger.info('Analyzing ServiceNow artifact', { sys_id: args.sys_id });
 
       // Fetch complete artifact from ServiceNow
+      this.logger.trackAPICall('GET', args.table, 1);
       const artifact = await this.client.getRecord(args.table, args.sys_id);
       
       // Skip indexing - causes timeouts

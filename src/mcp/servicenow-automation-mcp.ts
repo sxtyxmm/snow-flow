@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 
 interface SchedulePattern {
   type: 'daily' | 'weekly' | 'monthly' | 'interval' | 'cron';
@@ -34,7 +34,7 @@ interface EventRule {
 class ServiceNowAutomationMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -51,7 +51,7 @@ class ServiceNowAutomationMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowAutomationMCP');
+    this.logger = new MCPLogger('ServiceNowAutomationMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -67,7 +67,7 @@ class ServiceNowAutomationMCP {
             type: 'object',
             properties: {
               name: { type: 'string', description: 'Scheduled Job name' },
-              script: { type: 'string', description: 'JavaScript code to execute' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! JavaScript code to execute (no const/let/arrows/templates - Rhino engine)' },
               description: { type: 'string', description: 'Job description' },
               schedule: { type: 'string', description: 'Schedule pattern (daily, weekly, monthly, or cron)' },
               active: { type: 'boolean', description: 'Job active status' },
@@ -85,8 +85,8 @@ class ServiceNowAutomationMCP {
             properties: {
               name: { type: 'string', description: 'Event Rule name' },
               eventName: { type: 'string', description: 'Event name to listen for' },
-              condition: { type: 'string', description: 'Event condition script' },
-              script: { type: 'string', description: 'Action script to execute' },
+              condition: { type: 'string', description: 'Event condition script (ES5 only!)' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! Action script to execute (no const/let/arrows/templates - Rhino engine)' },
               description: { type: 'string', description: 'Rule description' },
               active: { type: 'boolean', description: 'Rule active status' },
               order: { type: 'number', description: 'Execution order' }
@@ -208,13 +208,13 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_execute_background_script',
-          description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Executes a JavaScript background script in ServiceNow. Script runs in server-side context with full API access. By default asks for user approval.',
+          description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Executes JavaScript background script in ServiceNow. ⚠️ CRITICAL: Script MUST be ES5-only (no const/let/arrow functions/template literals) - ES6+ will cause SyntaxError on Rhino engine!',
           inputSchema: {
             type: 'object',
             properties: {
               script: { 
                 type: 'string', 
-                description: 'JavaScript code to execute in background. Has access to GlideRecord, GlideAggregate, gs, etc.'
+                description: '🚨 ES5 JAVASCRIPT ONLY! Use var (not const/let), function(){} (not arrows), string concatenation (not templates). Has access to GlideRecord, GlideAggregate, gs, etc.'
               },
               description: { 
                 type: 'string', 
@@ -337,11 +337,11 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_execute_script_with_output',
-          description: 'Executes a background script and retrieves the actual output. Waits for execution to complete and returns the results.',
+          description: 'Executes a background script and retrieves the actual output. ⚠️ CRITICAL: Script MUST be ES5-only (Rhino engine) - no const/let/arrows/templates!',
           inputSchema: {
             type: 'object',
             properties: {
-              script: { type: 'string', description: 'JavaScript code to execute' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! Use var, function(){}, string+concatenation. JavaScript code to execute on ServiceNow server.' },
               return_output: { type: 'boolean', description: 'Return script output', default: true },
               max_wait: { type: 'number', description: 'Maximum wait time in milliseconds', default: 5000 },
               capture_logs: { type: 'boolean', description: 'Capture system logs during execution', default: true }
@@ -362,11 +362,11 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_execute_script_sync',
-          description: 'Synchronously executes a script and waits for the result. Returns output immediately.',
+          description: 'Synchronously executes a script and waits for the result. ⚠️ CRITICAL: Script MUST be ES5-only (Rhino engine)!',
           inputSchema: {
             type: 'object',
             properties: {
-              script: { type: 'string', description: 'JavaScript code to execute' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! No const/let/arrows/templates. JavaScript code to execute synchronously.' },
               timeout: { type: 'number', description: 'Timeout in milliseconds', default: 3000 },
               capture_output: { type: 'boolean', description: 'Capture and return output', default: true }
             },
@@ -453,70 +453,104 @@ class ServiceNowAutomationMCP {
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      
       try {
-        const { name, arguments: args } = request.params;
-
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+        
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           case 'snow_create_scheduled_job':
-            return await this.createScheduledJob(args);
+            result = await this.createScheduledJob(args);
+            break;
           case 'snow_create_event_rule':
-            return await this.createEventRule(args);
+            result = await this.createEventRule(args);
+            break;
           case 'snow_create_notification':
-            return await this.createNotification(args);
+            result = await this.createNotification(args);
+            break;
           case 'snow_create_sla_definition':
-            return await this.createSLADefinition(args);
+            result = await this.createSLADefinition(args);
+            break;
           case 'snow_create_escalation_rule':
-            return await this.createEscalationRule(args);
+            result = await this.createEscalationRule(args);
+            break;
           case 'snow_create_workflow_activity':
-            return await this.createWorkflowActivity(args);
+            result = await this.createWorkflowActivity(args);
+            break;
           case 'snow_discover_schedules':
-            return await this.discoverSchedules(args);
+            result = await this.discoverSchedules(args);
+            break;
           case 'snow_discover_events':
-            return await this.discoverEvents(args);
+            result = await this.discoverEvents(args);
+            break;
           case 'snow_discover_automation_jobs':
-            return await this.discoverAutomationJobs(args);
+            result = await this.discoverAutomationJobs(args);
+            break;
           case 'snow_test_scheduled_job':
-            return await this.testScheduledJob(args);
+            result = await this.testScheduledJob(args);
+            break;
           case 'snow_execute_background_script':
-            return await this.executeBackgroundScript(args);
+            result = await this.executeBackgroundScript(args);
+            break;
           case 'snow_confirm_script_execution':
-            return await this.confirmScriptExecution(args);
+            result = await this.confirmScriptExecution(args);
+            break;
           case 'snow_create_atf_test':
-            return await this.createATFTest(args);
+            result = await this.createATFTest(args);
+            break;
           case 'snow_create_atf_test_step':
-            return await this.createATFTestStep(args);
+            result = await this.createATFTestStep(args);
+            break;
           case 'snow_execute_atf_test':
-            return await this.executeATFTest(args);
+            result = await this.executeATFTest(args);
+            break;
           case 'snow_get_atf_results':
-            return await this.getATFResults(args);
+            result = await this.getATFResults(args);
+            break;
           case 'snow_create_atf_test_suite':
-            return await this.createATFTestSuite(args);
+            result = await this.createATFTestSuite(args);
+            break;
           case 'snow_discover_atf_tests':
-            return await this.discoverATFTests(args);
+            result = await this.discoverATFTests(args);
+            break;
           case 'snow_execute_script_with_output':
-            return await this.executeScriptWithOutput(args);
+            result = await this.executeScriptWithOutput(args);
+            break;
           case 'snow_get_script_output':
-            return await this.getScriptOutput(args);
+            result = await this.getScriptOutput(args);
+            break;
           case 'snow_execute_script_sync':
-            return await this.executeScriptSync(args);
+            result = await this.executeScriptSync(args);
+            break;
           case 'snow_get_logs':
-            return await this.getLogs(args);
+            result = await this.getLogs(args);
+            break;
           case 'snow_test_rest_connection':
-            return await this.testRESTConnection(args);
+            result = await this.testRESTConnection(args);
+            break;
           case 'snow_rest_message_test_suite':
-            return await this.restMessageTestSuite(args);
+            result = await this.restMessageTestSuite(args);
+            break;
           case 'snow_property_manager':
-            return await this.propertyManager(args);
+            result = await this.propertyManager(args);
+            break;
           case 'snow_trace_execution':
-            return await this.traceExecution(args);
+            result = await this.traceExecution(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+        
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -549,6 +583,7 @@ class ServiceNowAutomationMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sysauto_script', 1);
       const response = await this.client.createRecord('sysauto_script', jobData);
       
       if (!response.success) {
@@ -1328,6 +1363,7 @@ Reply with:
       };
 
       // Execute script using sys_script table (Background Scripts)
+      this.logger.trackAPICall('CREATE', 'sys_script', 1);
       const scriptResponse = await this.client.createRecord('sys_script', executionRecord);
       
       if (!scriptResponse.success) {
@@ -2186,6 +2222,7 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
       // Remove trailing ^  
       query = query.replace(/\^$/, '');
       
+      this.logger.trackAPICall('SEARCH', 'syslog_transaction', limit);
       const logsResponse = await this.client.searchRecords(
         'syslog_transaction',
         query,
@@ -2430,6 +2467,7 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
       
       switch (action) {
         case 'get':
+          this.logger.trackAPICall('SEARCH', 'sys_properties', 1);
           const getPropResponse = await this.client.searchRecords(
             'sys_properties',
             `name=${args.name}`,

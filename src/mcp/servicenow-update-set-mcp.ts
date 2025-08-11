@@ -14,7 +14,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -39,7 +39,7 @@ class ServiceNowUpdateSetMCP {
   private server: Server;
   private client: ServiceNowClient;
   private oauth: ServiceNowOAuth;
-  private logger: Logger;
+  private logger: MCPLogger;
   private currentSession: UpdateSetSession | null = null;
   private sessionsPath: string;
 
@@ -58,7 +58,7 @@ class ServiceNowUpdateSetMCP {
 
     this.client = new ServiceNowClient();
     this.oauth = new ServiceNowOAuth();
-    this.logger = new Logger('ServiceNowUpdateSetMCP');
+    this.logger = new MCPLogger('ServiceNowUpdateSetMCP');
     this.sessionsPath = join(process.cwd(), 'memory', 'update-set-sessions');
 
     // Debug: Test credentials on startup
@@ -263,6 +263,9 @@ class ServiceNowUpdateSetMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         // Check authentication for all operations
         const isAuthenticated = await this.oauth.isAuthenticated();
         if (!isAuthenticated) {
@@ -272,31 +275,45 @@ class ServiceNowUpdateSetMCP {
           );
         }
 
+        let result;
         switch (name) {
           case 'snow_update_set_create':
-            return await this.createUpdateSet(args);
+            result = await this.createUpdateSet(args);
+            break;
           case 'snow_update_set_switch':
-            return await this.switchUpdateSet(args);
+            result = await this.switchUpdateSet(args);
+            break;
           case 'snow_update_set_current':
-            return await this.getCurrentUpdateSet();
+            result = await this.getCurrentUpdateSet();
+            break;
           case 'snow_update_set_list':
-            return await this.listUpdateSets(args);
+            result = await this.listUpdateSets(args);
+            break;
           case 'snow_update_set_complete':
-            return await this.completeUpdateSet(args);
+            result = await this.completeUpdateSet(args);
+            break;
           case 'snow_update_set_add_artifact':
-            return await this.addArtifactToSession(args);
+            result = await this.addArtifactToSession(args);
+            break;
           case 'snow_update_set_preview':
-            return await this.previewUpdateSet(args);
+            result = await this.previewUpdateSet(args);
+            break;
           case 'snow_update_set_export':
-            return await this.exportUpdateSet(args);
+            result = await this.exportUpdateSet(args);
+            break;
           case 'snow_ensure_active_update_set':
-            return await this.ensureActiveUpdateSet(args);
+            result = await this.ensureActiveUpdateSet(args);
+            break;
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
               `Unknown tool: ${name}`
             );
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         if (error instanceof McpError) throw error;
         
@@ -314,6 +331,7 @@ class ServiceNowUpdateSetMCP {
       this.logger.info('Creating new Update Set', args);
 
       // Create Update Set in ServiceNow
+      this.logger.trackAPICall('CREATE', 'sys_update_set', 1);
       const response = await this.client.createUpdateSet({
         name: args.name,
         description: args.description,
@@ -335,6 +353,7 @@ class ServiceNowUpdateSetMCP {
       let switchedToUpdateSet = false;
       
       if (autoSwitch) {
+        this.logger.trackAPICall('UPDATE', 'sys_update_set', 1);
         await this.client.setCurrentUpdateSet(response.data.sys_id);
         switchedToUpdateSet = true;
         
@@ -395,6 +414,7 @@ Use \`snow_update_set_switch\` to activate this Update Set before making changes
       this.logger.info('Switching to Update Set', { update_set_id: args.update_set_id });
 
       // Set as current in ServiceNow
+      this.logger.trackAPICall('UPDATE', 'sys_update_set', 1);
       await this.client.setCurrentUpdateSet(args.update_set_id);
 
       // Load or create session
@@ -404,6 +424,7 @@ Use \`snow_update_set_switch\` to activate this Update Set before making changes
         this.currentSession = JSON.parse(sessionData);
       } catch {
         // Create new session for existing Update Set
+        this.logger.trackAPICall('GET', 'sys_update_set', 1);
         const updateSet = await this.client.getUpdateSet(args.update_set_id);
         this.currentSession = {
           update_set_id: args.update_set_id,
@@ -439,6 +460,7 @@ All subsequent changes will be tracked in this Update Set.`
   private async getCurrentUpdateSet() {
     if (!this.currentSession) {
       // Try to get from ServiceNow
+      this.logger.trackAPICall('GET', 'sys_update_set', 1);
       const current = await this.client.getCurrentUpdateSet();
       if (current.success && current.data) {
         return {
@@ -483,6 +505,7 @@ ${this.currentSession.artifacts.length > 0
 
   private async listUpdateSets(args: any) {
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_update_set', args.limit || 10);
       const response = await this.client.listUpdateSets({
         state: args.state,
         limit: args.limit || 10
@@ -526,6 +549,7 @@ ${updateSets.map((us: any) => `
       }
 
       // Mark as complete in ServiceNow
+      this.logger.trackAPICall('UPDATE', 'sys_update_set', 1);
       const response = await this.client.completeUpdateSet(updateSetId, args.notes);
 
       if (!response.success) {
@@ -636,6 +660,7 @@ ${autoCreatedNotice}
       }
 
       // Get Update Set details and changes
+      this.logger.trackAPICall('GET', 'sys_update_set_preview', 1);
       const response = await this.client.previewUpdateSet(updateSetId);
 
       if (!response.success) {
@@ -682,6 +707,7 @@ ${changes.length > 20 ? `\n... and ${changes.length - 20} more changes` : ''}
       }
 
       // Export Update Set as XML
+      this.logger.trackAPICall('GET', 'sys_update_set_export', 1);
       const response = await this.client.exportUpdateSet(updateSetId);
 
       if (!response.success) {

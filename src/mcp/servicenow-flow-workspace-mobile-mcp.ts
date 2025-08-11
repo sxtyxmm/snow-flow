@@ -16,12 +16,12 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 class ServiceNowFlowWorkspaceMobileMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -38,7 +38,7 @@ class ServiceNowFlowWorkspaceMobileMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowFlowWorkspaceMobileMCP');
+    this.logger = new MCPLogger('ServiceNowFlowWorkspaceMobileMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -361,61 +361,89 @@ class ServiceNowFlowWorkspaceMobileMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           // Flow Designer
           case 'snow_create_flow':
-            return await this.createFlow(args);
+            result = await this.createFlow(args);
+            break;
           case 'snow_create_flow_action':
-            return await this.createFlowAction(args);
+            result = await this.createFlowAction(args);
+            break;
           case 'snow_create_subflow':
-            return await this.createSubflow(args);
+            result = await this.createSubflow(args);
+            break;
           case 'snow_create_flow_trigger':
-            return await this.createFlowTrigger(args);
+            result = await this.createFlowTrigger(args);
+            break;
           case 'snow_test_flow':
-            return await this.testFlow(args);
+            result = await this.testFlow(args);
+            break;
           case 'snow_get_flow_execution':
-            return await this.getFlowExecution(args);
+            result = await this.getFlowExecution(args);
+            break;
           case 'snow_discover_flows':
-            return await this.discoverFlows(args);
+            result = await this.discoverFlows(args);
+            break;
             
           // Agent Workspace
           case 'snow_create_workspace':
-            return await this.createWorkspace(args);
+            result = await this.createWorkspace(args);
+            break;
           case 'snow_create_workspace_tab':
-            return await this.createWorkspaceTab(args);
+            result = await this.createWorkspaceTab(args);
+            break;
           case 'snow_create_workspace_list':
-            return await this.createWorkspaceList(args);
+            result = await this.createWorkspaceList(args);
+            break;
           case 'snow_create_contextual_panel':
-            return await this.createContextualPanel(args);
+            result = await this.createContextualPanel(args);
+            break;
           case 'snow_configure_workspace_notifications':
-            return await this.configureWorkspaceNotifications(args);
+            result = await this.configureWorkspaceNotifications(args);
+            break;
           case 'snow_discover_workspaces':
-            return await this.discoverWorkspaces(args);
+            result = await this.discoverWorkspaces(args);
+            break;
             
           // Mobile
           case 'snow_configure_mobile_app':
-            return await this.configureMobileApp(args);
+            result = await this.configureMobileApp(args);
+            break;
           case 'snow_create_mobile_layout':
-            return await this.createMobileLayout(args);
+            result = await this.createMobileLayout(args);
+            break;
           case 'snow_send_push_notification':
-            return await this.sendPushNotification(args);
+            result = await this.sendPushNotification(args);
+            break;
           case 'snow_configure_offline_sync':
-            return await this.configureOfflineSync(args);
+            result = await this.configureOfflineSync(args);
+            break;
           case 'snow_create_mobile_action':
-            return await this.createMobileAction(args);
+            result = await this.createMobileAction(args);
+            break;
           case 'snow_get_mobile_analytics':
-            return await this.getMobileAnalytics(args);
+            result = await this.getMobileAnalytics(args);
+            break;
           case 'snow_discover_mobile_configs':
-            return await this.discoverMobileConfigs(args);
+            result = await this.discoverMobileConfigs(args);
+            break;
             
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -440,6 +468,7 @@ class ServiceNowFlowWorkspaceMobileMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_hub_flow', 1);
       const response = await this.client.createRecord('sys_hub_flow', flowData);
 
       if (!response.success) {
@@ -481,6 +510,7 @@ class ServiceNowFlowWorkspaceMobileMCP {
         condition: args.condition || ''
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_hub_action_instance', 1);
       const response = await this.client.createRecord('sys_hub_action_instance', actionData);
 
       if (!response.success) {
@@ -701,6 +731,7 @@ ${executionList}
         query += 'active=true';
       }
 
+      this.logger.trackAPICall('SEARCH', 'sys_hub_flow', 50);
       const response = await this.client.searchRecords('sys_hub_flow', query, 50);
       if (!response.success) {
         throw new Error('Failed to discover flows');
@@ -761,6 +792,7 @@ ${args.include_subflows && subflows.length ? `\n🔄 Subflows:\n\n${subflowList}
         roles: args.roles ? args.roles.join(',') : ''
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_aw_workspace', 1);
       const response = await this.client.createRecord('sys_aw_workspace', workspaceData);
 
       if (!response.success) {
@@ -1016,6 +1048,7 @@ ${workspaceList.join('\n\n')}
         push_enabled: args.push_enabled !== false
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_mobile_config', 1);
       const response = await this.client.createRecord('sys_mobile_config', mobileConfig);
 
       if (!response.success) {

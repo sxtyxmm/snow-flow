@@ -16,12 +16,12 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 class ServiceNowChangeVirtualAgentPAMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -38,7 +38,7 @@ class ServiceNowChangeVirtualAgentPAMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowChangeVirtualAgentPAMCP');
+    this.logger = new MCPLogger('ServiceNowChangeVirtualAgentPAMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -357,59 +357,86 @@ class ServiceNowChangeVirtualAgentPAMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           // Change Management
           case 'snow_create_change_request':
-            return await this.createChangeRequest(args);
+            result = await this.createChangeRequest(args);
+            break;
           case 'snow_create_change_task':
-            return await this.createChangeTask(args);
+            result = await this.createChangeTask(args);
+            break;
           case 'snow_get_change_request':
-            return await this.getChangeRequest(args);
+            result = await this.getChangeRequest(args);
+            break;
           case 'snow_update_change_state':
-            return await this.updateChangeState(args);
+            result = await this.updateChangeState(args);
+            break;
           case 'snow_schedule_cab_meeting':
-            return await this.scheduleCABMeeting(args);
+            result = await this.scheduleCABMeeting(args);
+            break;
           case 'snow_search_change_requests':
-            return await this.searchChangeRequests(args);
+            result = await this.searchChangeRequests(args);
+            break;
             
           // Virtual Agent
           case 'snow_create_va_topic':
-            return await this.createVATopic(args);
+            result = await this.createVATopic(args);
+            break;
           case 'snow_create_va_topic_block':
-            return await this.createVATopicBlock(args);
+            result = await this.createVATopicBlock(args);
+            break;
           case 'snow_get_va_conversation':
-            return await this.getVAConversation(args);
+            result = await this.getVAConversation(args);
+            break;
           case 'snow_send_va_message':
-            return await this.sendVAMessage(args);
+            result = await this.sendVAMessage(args);
+            break;
           case 'snow_handoff_to_agent':
-            return await this.handoffToAgent(args);
+            result = await this.handoffToAgent(args);
+            break;
           case 'snow_discover_va_topics':
-            return await this.discoverVATopics(args);
+            result = await this.discoverVATopics(args);
+            break;
             
           // Performance Analytics
           case 'snow_create_pa_indicator':
-            return await this.createPAIndicator(args);
+            result = await this.createPAIndicator(args);
+            break;
           case 'snow_create_pa_widget':
-            return await this.createPAWidget(args);
+            result = await this.createPAWidget(args);
+            break;
           case 'snow_create_pa_breakdown':
-            return await this.createPABreakdown(args);
+            result = await this.createPABreakdown(args);
+            break;
           case 'snow_get_pa_scores':
-            return await this.getPAScores(args);
+            result = await this.getPAScores(args);
+            break;
           case 'snow_create_pa_threshold':
-            return await this.createPAThreshold(args);
+            result = await this.createPAThreshold(args);
+            break;
           case 'snow_collect_pa_data':
-            return await this.collectPAData(args);
+            result = await this.collectPAData(args);
+            break;
           case 'snow_discover_pa_indicators':
-            return await this.discoverPAIndicators(args);
+            result = await this.discoverPAIndicators(args);
+            break;
             
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -442,6 +469,7 @@ class ServiceNowChangeVirtualAgentPAMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'change_request', 1);
       const response = await this.client.createRecord('change_request', changeData);
 
       if (!response.success) {
@@ -495,6 +523,7 @@ class ServiceNowChangeVirtualAgentPAMCP {
         order: args.order || 100
       };
 
+      this.logger.trackAPICall('CREATE', 'change_task', 1);
       const response = await this.client.createRecord('change_task', taskData);
 
       if (!response.success) {
@@ -708,6 +737,7 @@ ${args.close_code ? `✅ Close Code: ${args.close_code}` : ''}
       }
 
       const limit = args.limit || 20;
+      this.logger.trackAPICall('SEARCH', 'change_request', limit);
       const response = await this.client.searchRecords('change_request', query, limit);
 
       if (!response.success) {
@@ -762,6 +792,7 @@ ${changeList}
         live_agent_enabled: args.live_agent_enabled || false
       };
 
+      this.logger.trackAPICall('CREATE', 'sys_cs_topic', 1);
       const response = await this.client.createRecord('sys_cs_topic', topicData);
 
       if (!response.success) {
@@ -1051,6 +1082,7 @@ ${topicList}
         thresholds: args.thresholds ? JSON.stringify(args.thresholds) : ''
       };
 
+      this.logger.trackAPICall('CREATE', 'pa_indicators', 1);
       const response = await this.client.createRecord('pa_indicators', indicatorData);
 
       if (!response.success) {

@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 interface SecurityPolicy {
   name: string;
@@ -37,7 +37,7 @@ interface ComplianceRule {
 class ServiceNowSecurityComplianceMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -54,7 +54,7 @@ class ServiceNowSecurityComplianceMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowSecurityComplianceMCP');
+    this.logger = new MCPLogger('ServiceNowSecurityComplianceMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -233,37 +233,56 @@ class ServiceNowSecurityComplianceMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           case 'snow_create_security_policy':
-            return await this.createSecurityPolicy(args);
+            result = await this.createSecurityPolicy(args);
+            break;
           case 'snow_create_compliance_rule':
-            return await this.createComplianceRule(args);
+            result = await this.createComplianceRule(args);
+            break;
           case 'snow_create_audit_rule':
-            return await this.createAuditRule(args);
+            result = await this.createAuditRule(args);
+            break;
           case 'snow_create_access_control':
-            return await this.createAccessControl(args);
+            result = await this.createAccessControl(args);
+            break;
           case 'snow_create_data_policy':
-            return await this.createDataPolicy(args);
+            result = await this.createDataPolicy(args);
+            break;
           case 'snow_create_vulnerability_scan':
-            return await this.createVulnerabilityScan(args);
+            result = await this.createVulnerabilityScan(args);
+            break;
           case 'snow_discover_security_frameworks':
-            return await this.discoverSecurityFrameworks(args);
+            result = await this.discoverSecurityFrameworks(args);
+            break;
           case 'snow_discover_security_policies':
-            return await this.discoverSecurityPolicies(args);
+            result = await this.discoverSecurityPolicies(args);
+            break;
           case 'snow_run_compliance_scan':
-            return await this.runComplianceScan(args);
+            result = await this.runComplianceScan(args);
+            break;
           case 'snow_audit_trail__analysis':
-            return await this.auditTrailAnalysis(args);
+            result = await this.auditTrailAnalysis(args);
+            break;
           case 'snow_security_risk_assessment':
-            return await this.securityRiskAssessment(args);
+            result = await this.securityRiskAssessment(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -307,6 +326,7 @@ class ServiceNowSecurityComplianceMCP {
       
       for (const tableName of possibleTables) {
         try {
+          this.logger.trackAPICall('CREATE', tableName, 1);
           response = await this.client.createRecord(tableName, policyData);
           if (response.success) {
             this.logger.info(`Security policy created in table: ${tableName}`);
@@ -713,6 +733,7 @@ class ServiceNowSecurityComplianceMCP {
 
       // Discover Security Frameworks
       if (type === 'all' || type === 'security') {
+        this.logger.trackAPICall('SEARCH', 'sys_security_framework', 50);
         const securityFrameworks = await this.client.searchRecords('sys_security_framework', '', 50);
         if (securityFrameworks.success) {
           frameworks.push({
@@ -729,6 +750,7 @@ class ServiceNowSecurityComplianceMCP {
 
       // Discover Compliance Frameworks
       if (type === 'all' || type === 'compliance') {
+        this.logger.trackAPICall('SEARCH', 'sys_compliance_framework', 50);
         const complianceFrameworks = await this.client.searchRecords('sys_compliance_framework', '', 50);
         if (complianceFrameworks.success) {
           frameworks.push({
@@ -774,6 +796,7 @@ class ServiceNowSecurityComplianceMCP {
         query += query ? `^active=${args.active}` : `active=${args.active}`;
       }
 
+      this.logger.trackAPICall('SEARCH', 'sys_security_policy', 50);
       const policies = await this.client.searchRecords('sys_security_policy', query, 50);
       if (!policies.success) {
         throw new Error('Failed to discover security policies');
@@ -865,6 +888,7 @@ class ServiceNowSecurityComplianceMCP {
         query += query ? `^table=${args.table}` : `table=${args.table}`;
       }
 
+      this.logger.trackAPICall('SEARCH', 'sys_audit', 100);
       const auditRecords = await this.client.searchRecords('sys_audit', query, 100);
       if (!auditRecords.success) {
         throw new Error('Failed to retrieve audit records');

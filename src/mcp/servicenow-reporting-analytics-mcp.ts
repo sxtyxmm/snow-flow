@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 import { validateRealData, generateDataReport } from '../utils/anti-mock-data-validator.js';
 
 interface ReportDefinition {
@@ -39,7 +39,7 @@ interface DashboardWidget {
 class ServiceNowReportingAnalyticsMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -56,7 +56,7 @@ class ServiceNowReportingAnalyticsMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowReportingAnalyticsMCP');
+    this.logger = new MCPLogger('ServiceNowReportingAnalyticsMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -250,37 +250,56 @@ class ServiceNowReportingAnalyticsMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           case 'snow_create_report':
-            return await this.createReport(args);
+            result = await this.createReport(args);
+            break;
           case 'snow_create_dashboard':
-            return await this.createDashboard(args);
+            result = await this.createDashboard(args);
+            break;
           case 'snow_create_kpi':
-            return await this.createKPI(args);
+            result = await this.createKPI(args);
+            break;
           case 'snow_create_data_visualization':
-            return await this.createDataVisualization(args);
+            result = await this.createDataVisualization(args);
+            break;
           case 'snow_create_performance_analytics':
-            return await this.createPerformanceAnalytics(args);
+            result = await this.createPerformanceAnalytics(args);
+            break;
           case 'snow_create_scheduled_report':
-            return await this.createScheduledReport(args);
+            result = await this.createScheduledReport(args);
+            break;
           case 'snow_discover_reporting_tables':
-            return await this.discoverReportingTables(args);
+            result = await this.discoverReportingTables(args);
+            break;
           case 'snow_discover_report_fields':
-            return await this.discoverReportFields(args);
+            result = await this.discoverReportFields(args);
+            break;
           case 'snow_analyze_data_quality':
-            return await this.analyzeDataQuality(args);
+            result = await this.analyzeDataQuality(args);
+            break;
           case 'snow_generate_insights':
-            return await this.generateInsights(args);
+            result = await this.generateInsights(args);
+            break;
           case 'snow_export_report_data':
-            return await this.exportReportData(args);
+            result = await this.exportReportData(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -337,6 +356,7 @@ class ServiceNowReportingAnalyticsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', 'sys_report', 1);
       const response = await this.client.createRecord('sys_report', reportData);
       
       if (!response.success) {
@@ -372,6 +392,7 @@ class ServiceNowReportingAnalyticsMCP {
       const updateSetResult = await this.client.ensureUpdateSet();
       
       // Try Performance Analytics dashboard first (pa_dashboards)
+      this.logger.trackAPICall('CREATE', 'pa_dashboards', 1);
       let response = await this.client.createRecord('pa_dashboards', {
         name: args.name,
         title: args.name,
@@ -491,6 +512,7 @@ class ServiceNowReportingAnalyticsMCP {
 
       const updateSetResult = await this.client.ensureUpdateSet();
       // Try pa_indicators (Performance Analytics) for KPIs
+      this.logger.trackAPICall('CREATE', 'pa_indicators', 1);
       let response = await this.client.createRecord('pa_indicators', {
         name: args.name,
         label: args.name,
@@ -755,6 +777,7 @@ class ServiceNowReportingAnalyticsMCP {
         query = `sys_class_name=${args.category}`;
       }
 
+      this.logger.trackAPICall('SEARCH', 'sys_db_object', 100);
       const tables = await this.client.searchRecords('sys_db_object', query, 100);
       if (!tables.success) {
         throw new Error('Failed to discover reporting tables');
@@ -813,6 +836,7 @@ class ServiceNowReportingAnalyticsMCP {
         query += `^internal_type=${args.fieldType}`;
       }
 
+      this.logger.trackAPICall('SEARCH', 'sys_dictionary', 100);
       const fields = await this.client.searchRecords('sys_dictionary', query, 100);
       if (!fields.success) {
         throw new Error('Failed to discover report fields');
@@ -856,6 +880,7 @@ class ServiceNowReportingAnalyticsMCP {
       }
 
       // Get REAL data for analysis (increased from sample to comprehensive dataset)
+      this.logger.trackAPICall('SEARCH', args.table, 1000);
       const sampleData = await this.client.searchRecords(args.table, '', 1000); // Get up to 1000 records for REAL analysis
       if (!sampleData.success) {
         throw new Error('Failed to retrieve sample data');

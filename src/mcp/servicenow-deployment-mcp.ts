@@ -14,7 +14,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 import { ScopeManager, DeploymentContext } from '../managers/scope-manager.js';
 import { GlobalScopeStrategy, ScopeType } from '../strategies/global-scope-strategy.js';
 import { artifactTracker } from '../utils/artifact-tracker.js';
@@ -27,7 +27,7 @@ class ServiceNowDeploymentMCP {
   private server: Server;
   private client: ServiceNowClient;
   private oauth: ServiceNowOAuth;
-  private logger: Logger;
+  private logger: MCPLogger;
   private scopeManager: ScopeManager;
   private globalScopeStrategy: GlobalScopeStrategy;
   private deploymentAuthManager: DeploymentAuthManager;
@@ -47,7 +47,7 @@ class ServiceNowDeploymentMCP {
 
     this.client = new ServiceNowClient();
     this.oauth = new ServiceNowOAuth();
-    this.logger = new Logger('ServiceNowDeploymentMCP');
+    this.logger = new MCPLogger('ServiceNowDeploymentMCP');
     this.deploymentAuthManager = new DeploymentAuthManager();
     
     // Initialize global scope management
@@ -351,45 +351,67 @@ class ServiceNowDeploymentMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+        
         // Note: Authentication check moved to individual tool methods
         // This allows the MCP server to start without credentials
         // and fail gracefully when tools are actually used
 
+        let result;
         switch (name) {
           case 'snow_validate_deployment':
-            return await this.validateDeployment(args);
+            result = await this.validateDeployment(args);
+            break;
           case 'snow_rollback_deployment':
-            return await this.rollbackDeployment(args);
+            result = await this.rollbackDeployment(args);
+            break;
           case 'snow_deployment_status':
-            return await this.getDeploymentStatus(args);
+            result = await this.getDeploymentStatus(args);
+            break;
           case 'snow_export_artifact':
-            return await this.exportArtifact(args);
+            result = await this.exportArtifact(args);
+            break;
           case 'snow_import_artifact':
-            return await this.importArtifact(args);
+            result = await this.importArtifact(args);
+            break;
           case 'snow_clone_instance_artifact':
-            return await this.cloneInstanceArtifact(args);
+            result = await this.cloneInstanceArtifact(args);
+            break;
           case 'snow_validate_sysid':
-            return await this.validateSysId(args);
+            result = await this.validateSysId(args);
+            break;
           case 'snow_deployment_debug':
-            return await this.getDeploymentDebug(args);
+            result = await this.getDeploymentDebug(args);
+            break;
           case 'snow_auth_diagnostics':
-            return await this.runAuthDiagnostics(args);
+            result = await this.runAuthDiagnostics(args);
+            break;
           case 'snow_preview_widget':
-            return await this.previewWidget(args);
+            result = await this.previewWidget(args);
+            break;
           case 'snow_widget_test':
-            return await this.testWidget(args);
+            result = await this.testWidget(args);
+            break;
           case 'snow_create_solution_package':
-            return await this.createSolutionPackage(args);
+            result = await this.createSolutionPackage(args);
+            break;
           case 'snow_deploy':
-            return await this.unifiedDeploy(args);
+            result = await this.unifiedDeploy(args);
+            break;
           case 'snow_update':
-            return await this.updateArtifact(args);
+            result = await this.updateArtifact(args);
+            break;
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
               `Unknown tool: ${name}`
             );
         }
+        
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Tool execution failed: ${name}`, error);
         throw new McpError(
@@ -432,6 +454,7 @@ class ServiceNowDeploymentMCP {
 5. snow_update_set_complete()
     `);
     const updateSetName = `Auto: ${artifactType} - ${artifactName} - ${new Date().toISOString().split('T')[0]}`;
+    this.logger.trackAPICall('CREATE', 'sys_update_set', 1);
     const createResult = await this.client.createUpdateSet({
       name: updateSetName,
       description: `Automatically created for ${artifactType} deployment: ${artifactName}`,
@@ -463,6 +486,7 @@ class ServiceNowDeploymentMCP {
   private async createRecordWithRetry(table: string, data: any): Promise<any> {
     try {
       // First attempt
+      this.logger.trackAPICall('CREATE', table, 1);
       return await this.client.createRecord(table, data);
     } catch (error: any) {
       // Check if it's a 403 error

@@ -14,11 +14,9 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 import { SnowOAuth } from '../utils/snow-oauth.js';
 import { z } from 'zod';
-
-const logger = new Logger('ServiceNowSystemProperties');
 
 /**
  * ServiceNow System Properties MCP Server
@@ -28,6 +26,7 @@ export class ServiceNowSystemPropertiesMCP {
   private server: Server;
   private client: ServiceNowClient;
   private oauth: SnowOAuth;
+  private logger: MCPLogger;
   private propertyCache: Map<string, any> = new Map();
   
   constructor() {
@@ -45,6 +44,7 @@ export class ServiceNowSystemPropertiesMCP {
 
     this.client = new ServiceNowClient();
     this.oauth = new SnowOAuth();
+    this.logger = new MCPLogger('ServiceNowSystemProperties');
     this.setupHandlers();
     this.setupTools();
   }
@@ -336,6 +336,9 @@ export class ServiceNowSystemPropertiesMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+        
         // Ensure authentication
         const isAuthenticated = await this.oauth.isAuthenticated();
         if (!isAuthenticated) {
@@ -345,36 +348,53 @@ export class ServiceNowSystemPropertiesMCP {
           );
         }
 
+        let result;
         switch (name) {
           case 'snow_property_get':
-            return await this.getProperty(args);
+            result = await this.getProperty(args);
+            break;
           case 'snow_property_set':
-            return await this.setProperty(args);
+            result = await this.setProperty(args);
+            break;
           case 'snow_property_list':
-            return await this.listProperties(args);
+            result = await this.listProperties(args);
+            break;
           case 'snow_property_delete':
-            return await this.deleteProperty(args);
+            result = await this.deleteProperty(args);
+            break;
           case 'snow_property_search':
-            return await this.searchProperties(args);
+            result = await this.searchProperties(args);
+            break;
           case 'snow_property_bulk_get':
-            return await this.bulkGetProperties(args);
+            result = await this.bulkGetProperties(args);
+            break;
           case 'snow_property_bulk_set':
-            return await this.bulkSetProperties(args);
+            result = await this.bulkSetProperties(args);
+            break;
           case 'snow_property_export':
-            return await this.exportProperties(args);
+            result = await this.exportProperties(args);
+            break;
           case 'snow_property_import':
-            return await this.importProperties(args);
+            result = await this.importProperties(args);
+            break;
           case 'snow_property_validate':
-            return await this.validateProperty(args);
+            result = await this.validateProperty(args);
+            break;
           case 'snow_property_categories':
-            return await this.getCategories(args);
+            result = await this.getCategories(args);
+            break;
           case 'snow_property_history':
-            return await this.getPropertyHistory(args);
+            result = await this.getPropertyHistory(args);
+            break;
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+        
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
-        logger.error(`Tool execution failed: ${name}`, error);
+        this.logger.error(`Tool execution failed: ${name}`, error);
         throw new McpError(
           ErrorCode.InternalError,
           error instanceof Error ? error.message : String(error)
@@ -389,9 +409,10 @@ export class ServiceNowSystemPropertiesMCP {
   private async getProperty(args: any) {
     const { name, include_metadata = false } = args;
     
-    logger.info(`Getting property: ${name}`);
+    this.logger.info(`Getting property: ${name}`);
     
     try {
+      this.logger.trackAPICall('SEARCH', 'sys_properties', 1);
       const response = await this.client.searchRecords(
         'sys_properties',
         `name=${name}`,
@@ -438,7 +459,7 @@ export class ServiceNowSystemPropertiesMCP {
         };
       }
     } catch (error) {
-      logger.error('Failed to get property:', error);
+      this.logger.error('Failed to get property:', error);
       throw error;
     }
   }
@@ -449,10 +470,11 @@ export class ServiceNowSystemPropertiesMCP {
   private async setProperty(args: any) {
     const { name, value, description, type = 'string', choices, is_private = false, suffix } = args;
     
-    logger.info(`Setting property: ${name} = ${value}`);
+    this.logger.info(`Setting property: ${name} = ${value}`);
     
     try {
       // Check if property exists
+      this.logger.trackAPICall('SEARCH', 'sys_properties', 1);
       const existing = await this.client.searchRecords(
         'sys_properties',
         `name=${name}`,
@@ -463,6 +485,7 @@ export class ServiceNowSystemPropertiesMCP {
       if (existing.success && existing.data?.result?.length > 0) {
         // Update existing property
         const sys_id = existing.data.result[0].sys_id;
+        this.logger.trackAPICall('UPDATE', 'sys_properties', 1);
         result = await this.client.updateRecord('sys_properties', sys_id, {
           value,
           ...(description && { description }),
@@ -472,9 +495,10 @@ export class ServiceNowSystemPropertiesMCP {
           is_private: is_private ? 'true' : 'false'
         });
         
-        logger.info(`Updated property: ${name}`);
+        this.logger.info(`Updated property: ${name}`);
       } else {
         // Create new property
+        this.logger.trackAPICall('CREATE', 'sys_properties', 1);
         result = await this.client.createRecord('sys_properties', {
           name,
           value,
@@ -485,7 +509,7 @@ export class ServiceNowSystemPropertiesMCP {
           suffix: suffix || 'global'
         });
         
-        logger.info(`Created new property: ${name}`);
+        this.logger.info(`Created new property: ${name}`);
       }
       
       if (!result.success) {
@@ -511,7 +535,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
         }]
       };
     } catch (error) {
-      logger.error('Failed to set property:', error);
+      this.logger.error('Failed to set property:', error);
       throw error;
     }
   }
@@ -522,7 +546,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
   private async listProperties(args: any) {
     const { pattern, category, is_private, limit = 100, include_values = true } = args;
     
-    logger.info('Listing properties', { pattern, category, limit });
+    this.logger.info('Listing properties', { pattern, category, limit });
     
     try {
       let query = '';
@@ -592,7 +616,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
         }]
       };
     } catch (error) {
-      logger.error('Failed to list properties:', error);
+      this.logger.error('Failed to list properties:', error);
       throw error;
     }
   }
@@ -616,7 +640,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
       };
     }
     
-    logger.info(`Deleting property: ${name}`);
+    this.logger.info(`Deleting property: ${name}`);
     
     try {
       // Find the property
@@ -654,7 +678,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
         }]
       };
     } catch (error) {
-      logger.error('Failed to delete property:', error);
+      this.logger.error('Failed to delete property:', error);
       throw error;
     }
   }
@@ -665,7 +689,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
   private async searchProperties(args: any) {
     const { search_term, search_in = 'all', limit = 50 } = args;
     
-    logger.info(`Searching properties for: ${search_term}`);
+    this.logger.info(`Searching properties for: ${search_term}`);
     
     try {
       let query = '';
@@ -725,7 +749,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
         }]
       };
     } catch (error) {
-      logger.error('Search failed:', error);
+      this.logger.error('Search failed:', error);
       throw error;
     }
   }
@@ -736,7 +760,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
   private async bulkGetProperties(args: any) {
     const { names, include_metadata = false } = args;
     
-    logger.info(`Bulk getting ${names.length} properties`);
+    this.logger.info(`Bulk getting ${names.length} properties`);
     
     const results: Record<string, any> = {};
     const errors: string[] = [];
@@ -764,7 +788,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
           errors.push(name);
         }
       } catch (error) {
-        logger.error(`Failed to get property ${name}:`, error);
+        this.logger.error(`Failed to get property ${name}:`, error);
         results[name] = null;
         errors.push(name);
       }
@@ -798,7 +822,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
   private async bulkSetProperties(args: any) {
     const { properties } = args;
     
-    logger.info(`Bulk setting ${properties.length} properties`);
+    this.logger.info(`Bulk setting ${properties.length} properties`);
     
     const results = {
       created: [],
@@ -832,6 +856,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
           }
         } else {
           // Create
+          this.logger.trackAPICall('CREATE', 'sys_properties', 1);
           result = await this.client.createRecord('sys_properties', {
             name: prop.name,
             value: prop.value,
@@ -849,7 +874,7 @@ ${choices ? `**Choices:** ${choices}` : ''}
         // Clear cache
         this.propertyCache.delete(prop.name);
       } catch (error) {
-        logger.error(`Failed to set property ${prop.name}:`, error);
+        this.logger.error(`Failed to set property ${prop.name}:`, error);
         results.failed.push(`${prop.name}: ${error}`);
       }
     }
@@ -878,7 +903,7 @@ Total processed: ${properties.length}`
   private async exportProperties(args: any) {
     const { pattern, include_system = false, include_private = false } = args;
     
-    logger.info('Exporting properties', { pattern, include_system, include_private });
+    this.logger.info('Exporting properties', { pattern, include_system, include_private });
     
     try {
       let query = '';
@@ -940,7 +965,7 @@ ${JSON.stringify(exportData, null, 2)}
         }]
       };
     } catch (error) {
-      logger.error('Export failed:', error);
+      this.logger.error('Export failed:', error);
       throw error;
     }
   }
@@ -951,7 +976,7 @@ ${JSON.stringify(exportData, null, 2)}
   private async importProperties(args: any) {
     const { properties, overwrite = false, dry_run = false } = args;
     
-    logger.info('Importing properties', { count: Object.keys(properties).length, overwrite, dry_run });
+    this.logger.info('Importing properties', { count: Object.keys(properties).length, overwrite, dry_run });
     
     const results = {
       would_create: [],
@@ -1011,6 +1036,7 @@ ${JSON.stringify(exportData, null, 2)}
           }
         } else {
           // Create
+          this.logger.trackAPICall('CREATE', 'sys_properties', 1);
           const result = await this.client.createRecord('sys_properties', {
             name,
             value: propertyData.value,
@@ -1031,7 +1057,7 @@ ${JSON.stringify(exportData, null, 2)}
         // Clear cache
         this.propertyCache.delete(name);
       } catch (error) {
-        logger.error(`Failed to import property ${name}:`, error);
+        this.logger.error(`Failed to import property ${name}:`, error);
         results.failed.push(`${name}: ${error}`);
       }
     }
@@ -1077,7 +1103,7 @@ Total processed: ${Object.keys(properties).length}`
   private async validateProperty(args: any) {
     const { name, value } = args;
     
-    logger.info(`Validating property: ${name} = ${value}`);
+    this.logger.info(`Validating property: ${name} = ${value}`);
     
     try {
       // Get property metadata
@@ -1162,7 +1188,7 @@ ${validationResults.join('\n')}
         }]
       };
     } catch (error) {
-      logger.error('Validation failed:', error);
+      this.logger.error('Validation failed:', error);
       throw error;
     }
   }
@@ -1173,7 +1199,7 @@ ${validationResults.join('\n')}
   private async getCategories(args: any) {
     const { include_counts = true } = args;
     
-    logger.info('Getting property categories');
+    this.logger.info('Getting property categories');
     
     try {
       // Get distinct suffixes (categories)
@@ -1216,7 +1242,7 @@ ${validationResults.join('\n')}
         }]
       };
     } catch (error) {
-      logger.error('Failed to get categories:', error);
+      this.logger.error('Failed to get categories:', error);
       throw error;
     }
   }
@@ -1227,7 +1253,7 @@ ${validationResults.join('\n')}
   private async getPropertyHistory(args: any) {
     const { name, limit = 10 } = args;
     
-    logger.info(`Getting history for property: ${name}`);
+    this.logger.info(`Getting history for property: ${name}`);
     
     try {
       // First, get the property to get its sys_id
@@ -1282,7 +1308,7 @@ ${validationResults.join('\n')}
         }]
       };
     } catch (error) {
-      logger.error('Failed to get history:', error);
+      this.logger.error('Failed to get history:', error);
       // Audit might not be available
       return {
         content: [{
@@ -1298,7 +1324,7 @@ Note: Audit history requires sys_audit to be enabled for sys_properties table.`
   async start() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    logger.info('ServiceNow System Properties MCP Server started');
+    this.logger.info('ServiceNow System Properties MCP Server started');
   }
 }
 

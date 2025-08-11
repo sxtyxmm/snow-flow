@@ -16,12 +16,12 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPLogger } from '../shared/mcp-logger.js';
 
 class ServiceNowCMDBEventHRCSMDevOpsMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private logger: Logger;
+  private logger: MCPLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -38,7 +38,7 @@ class ServiceNowCMDBEventHRCSMDevOpsMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.logger = new Logger('ServiceNowCMDBEventHRCSMDevOpsMCP');
+    this.logger = new MCPLogger('ServiceNowCMDBEventHRCSMDevOpsMCP');
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -428,71 +428,102 @@ class ServiceNowCMDBEventHRCSMDevOpsMCP {
       try {
         const { name, arguments: args } = request.params;
 
+        // Start operation with token tracking
+        this.logger.operationStart(name, args);
+
         const authResult = await mcpAuth.ensureAuthenticated();
         if (!authResult.success) {
           throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
         }
 
+        let result;
         switch (name) {
           // CMDB & Discovery
           case 'snow_create_ci':
-            return await this.createCI(args);
+            result = await this.createCI(args);
+            break;
           case 'snow_create_ci_relationship':
-            return await this.createCIRelationship(args);
+            result = await this.createCIRelationship(args);
+            break;
           case 'snow_run_discovery':
-            return await this.runDiscovery(args);
+            result = await this.runDiscovery(args);
+            break;
           case 'snow_get_ci_details':
-            return await this.getCIDetails(args);
+            result = await this.getCIDetails(args);
+            break;
           case 'snow_search_cmdb':
-            return await this.searchCMDB(args);
+            result = await this.searchCMDB(args);
+            break;
           case 'snow_impact_analysis':
-            return await this.impactAnalysis(args);
+            result = await this.impactAnalysis(args);
+            break;
             
           // Event Management
           case 'snow_create_event':
-            return await this.createEvent(args);
+            result = await this.createEvent(args);
+            break;
           case 'snow_create_alert':
-            return await this.createAlert(args);
+            result = await this.createAlert(args);
+            break;
           case 'snow_create_alert_rule':
-            return await this.createAlertRule(args);
+            result = await this.createAlertRule(args);
+            break;
           case 'snow_get_event_correlation':
-            return await this.getEventCorrelation(args);
+            result = await this.getEventCorrelation(args);
+            break;
             
           // HR Service Delivery
           case 'snow_create_hr_case':
-            return await this.createHRCase(args);
+            result = await this.createHRCase(args);
+            break;
           case 'snow_create_hr_task':
-            return await this.createHRTask(args);
+            result = await this.createHRTask(args);
+            break;
           case 'snow_employee_onboarding':
-            return await this.employeeOnboarding(args);
+            result = await this.employeeOnboarding(args);
+            break;
           case 'snow_employee_offboarding':
-            return await this.employeeOffboarding(args);
+            result = await this.employeeOffboarding(args);
+            break;
             
           // Customer Service Management
           case 'snow_create_customer_case':
-            return await this.createCustomerCase(args);
+            result = await this.createCustomerCase(args);
+            break;
           case 'snow_create_customer_account':
-            return await this.createCustomerAccount(args);
+            result = await this.createCustomerAccount(args);
+            break;
           case 'snow_create_entitlement':
-            return await this.createEntitlement(args);
+            result = await this.createEntitlement(args);
+            break;
           case 'snow_get_customer_history':
-            return await this.getCustomerHistory(args);
+            result = await this.getCustomerHistory(args);
+            break;
             
           // DevOps
           case 'snow_create_devops_pipeline':
-            return await this.createDevOpsPipeline(args);
+            result = await this.createDevOpsPipeline(args);
+            break;
           case 'snow_track_deployment':
-            return await this.trackDeployment(args);
+            result = await this.trackDeployment(args);
+            break;
           case 'snow_create_devops_change':
-            return await this.createDevOpsChange(args);
+            result = await this.createDevOpsChange(args);
+            break;
           case 'snow_get_devops_insights':
-            return await this.getDevOpsInsights(args);
+            result = await this.getDevOpsInsights(args);
+            break;
           case 'snow_velocity_tracking':
-            return await this.velocityTracking(args);
+            result = await this.velocityTracking(args);
+            break;
             
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+
+        // Complete operation with token tracking
+        this.logger.operationComplete(name, result);
+        return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
         throw error;
@@ -519,6 +550,7 @@ class ServiceNowCMDBEventHRCSMDevOpsMCP {
       };
 
       const updateSetResult = await this.client.ensureUpdateSet();
+      this.logger.trackAPICall('CREATE', ciTable, 1);
       const response = await this.client.createRecord(ciTable, ciData);
 
       if (!response.success) {
@@ -558,6 +590,7 @@ ${args.asset_tag ? `🏷️ Asset Tag: ${args.asset_tag}` : ''}
         description: args.description || ''
       };
 
+      this.logger.trackAPICall('CREATE', 'cmdb_rel_ci', 1);
       const response = await this.client.createRecord('cmdb_rel_ci', relationshipData);
 
       if (!response.success) {
@@ -694,6 +727,7 @@ ${args.patterns ? `📋 Patterns: ${args.patterns.join(', ')}` : ''}
       }
 
       const limit = args.limit || 50;
+      this.logger.trackAPICall('SEARCH', 'cmdb_ci', limit);
       const response = await this.client.searchRecords('cmdb_ci', query, limit);
 
       if (!response.success) {
@@ -796,6 +830,7 @@ ${mockImpact.recommendations.map(r => `  ✓ ${r}`).join('\n')}
         resolution_state: args.resolution_state || 'New'
       };
 
+      this.logger.trackAPICall('CREATE', 'em_event', 1);
       const response = await this.client.createRecord('em_event', eventData);
 
       if (!response.success) {
@@ -961,6 +996,7 @@ ${mockCorrelation.correlation_rules_applied.map(r => `  - ${r}`).join('\n')}
         confidential: args.confidential || false
       };
 
+      this.logger.trackAPICall('CREATE', 'sn_hr_core_case', 1);
       const response = await this.client.createRecord('sn_hr_core_case', caseData);
 
       if (!response.success) {
