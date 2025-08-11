@@ -142,6 +142,10 @@ ServiceNow uses the Rhino JavaScript engine which supports only ES5. Modern Java
 - `for...of` loops - use traditional `for` loops
 - Default parameters - use `typeof` checks
 - `async/await` - use callbacks or GlideAjax
+- `enum` - use object literals with constants instead
+- Classes - use function constructors with prototypes
+- Spread operator `...` - use Array methods or loops
+- Array methods like `map`, `filter`, `reduce` - use for loops
 
 **Always Use:**
 ```javascript
@@ -154,6 +158,21 @@ var message = 'Hello ' + userName;
 for (var i = 0; i < array.length; i++) {
   var item = array[i];
 }
+
+// Instead of enum, use object literals:
+var Status = {
+  PENDING: 'pending',
+  ACTIVE: 'active',
+  COMPLETED: 'completed'
+};
+
+// Instead of class, use function constructor:
+function MyClass(name) {
+  this.name = name;
+}
+MyClass.prototype.getName = function() {
+  return this.name;
+};
 ```
 
 ### Rule 2: Background Scripts as Primary Debug Tool
