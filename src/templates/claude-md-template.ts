@@ -83,7 +83,33 @@ for (var i = 0; i < array.length; i++) {
 - ✅ Use \`snow_update\` to directly modify widget records
 - ❌ Do NOT try to import server scripts into client scripts via background scripts
 
-Background scripts are excellent for verification and debugging, but widget updates must go through proper MCP tools:
+Background scripts are excellent for verification and debugging, but widget updates must go through proper MCP tools.
+
+**NEW: Auto-Confirm Mode for Background Scripts (v3.4.10+)**
+You can now skip the human-in-the-loop confirmation for trusted scripts:
+
+\`\`\`javascript
+// Standard mode - requires user confirmation
+snow_execute_background_script({
+  script: "var gr = new GlideRecord('incident'); gr.query();",
+  description: "Query incidents",
+  allowDataModification: false
+});
+
+// Auto-confirm mode - executes immediately ⚠️ USE WITH CAUTION!
+snow_execute_background_script({
+  script: "var gr = new GlideRecord('incident'); gr.query();",
+  description: "Query incidents",
+  allowDataModification: false,
+  autoConfirm: true  // ⚠️ Bypasses user confirmation!
+});
+\`\`\`
+
+**⚠️ Security Warning:**
+- Only use \`autoConfirm: true\` for verified, safe scripts
+- High-risk operations will still be logged
+- All auto-executions are tracked with audit IDs
+- Default behavior (without autoConfirm) remains unchanged
 
 \`\`\`javascript
 // Universal verification pattern
@@ -286,6 +312,8 @@ Snow-Flow includes 16+ specialized MCP servers with over 200 tools for comprehen
 **Purpose:** Script execution and automation
 
 **Key Tools:**
+- \`snow_execute_background_script\` - Execute background scripts (with optional autoConfirm)
+- \`snow_confirm_script_execution\` - Confirm script execution after user approval
 - \`snow_execute_script_with_output\` - Execute scripts with output capture
 - \`snow_get_script_output\` - Retrieve script execution history
 - \`snow_execute_script_sync\` - Synchronous script execution

@@ -208,7 +208,7 @@ class ServiceNowAutomationMCP {
         },
         {
           name: 'snow_execute_background_script',
-          description: '🚨 REQUIRES USER CONFIRMATION: Executes a JavaScript background script in ServiceNow. Script runs in server-side context with full API access. ALWAYS asks for user approval before execution.',
+          description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Executes a JavaScript background script in ServiceNow. Script runs in server-side context with full API access. By default asks for user approval.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -218,7 +218,7 @@ class ServiceNowAutomationMCP {
               },
               description: { 
                 type: 'string', 
-                description: 'Clear description of what the script does (shown to user for approval)'
+                description: 'Clear description of what the script does (shown to user for approval unless autoConfirm=true)'
               },
               runAsUser: { 
                 type: 'string', 
@@ -227,6 +227,11 @@ class ServiceNowAutomationMCP {
               allowDataModification: {
                 type: 'boolean',
                 description: 'Whether script is allowed to modify data (CREATE/UPDATE/DELETE operations)',
+                default: false
+              },
+              autoConfirm: {
+                type: 'boolean',
+                description: '⚠️ DANGEROUS: Skip user confirmation and execute immediately. Only use for trusted/verified scripts!',
                 default: false
               }
             },
@@ -1098,19 +1103,39 @@ class ServiceNowAutomationMCP {
   }
 
   /**
-   * Execute Background Script with User Confirmation
-   * 🚨 SECURITY: Always requires user approval before execution
+   * Execute Background Script with User Confirmation (unless autoConfirm=true)
+   * 🚨 SECURITY: Requires user approval by default, can be bypassed with autoConfirm=true
    */
   private async executeBackgroundScript(args: any) {
     try {
-      const { script, description, runAsUser, allowDataModification = false } = args;
+      const { script, description, runAsUser, allowDataModification = false, autoConfirm = false } = args;
 
-      this.logger.info('Background script execution requested');
+      this.logger.info('Background script execution requested', { autoConfirm });
 
       // 🛡️ SECURITY ANALYSIS: Analyze script for dangerous operations
       const securityAnalysis = this.analyzeScriptSecurity(script);
       
-      // 🚨 USER CONFIRMATION REQUIRED
+      // ⚠️ AUTO-CONFIRM MODE: Skip user confirmation if explicitly requested
+      if (autoConfirm === true) {
+        this.logger.warn('⚠️ AUTO-CONFIRM MODE: Executing script without user confirmation');
+        
+        // Log the auto-execution for audit trail
+        const executionId = `snow_flow_exec_auto_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        this.logger.info(`Auto-executing script with ID: ${executionId}`, {
+          description,
+          riskLevel: securityAnalysis.riskLevel,
+          dataModification: allowDataModification
+        });
+        
+        // Directly execute the script
+        return await this.confirmScriptExecution({
+          script,
+          executionId,
+          userConfirmed: true  // Auto-confirmed
+        });
+      }
+      
+      // 🚨 STANDARD MODE: Require user confirmation
       const confirmationPrompt = this.generateConfirmationPrompt({
         script,
         description,
