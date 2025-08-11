@@ -75,9 +75,15 @@ for (var i = 0; i < array.length; i++) {
 }
 \`\`\`
 
-### Rule 2: Background Scripts as Primary Debug Tool
+### Rule 2: Background Scripts for Verification Only (Not Widget Updates!)
 
-Background scripts provide immediate, factual feedback from the actual ServiceNow instance. Use them extensively for verification and debugging.
+**CRITICAL DISTINCTION:**
+- ✅ Use background scripts for TESTING and VERIFICATION
+- ❌ Do NOT use background scripts to UPDATE widget fields
+- ✅ Use \`snow_update\` to directly modify widget records
+- ❌ Do NOT try to import server scripts into client scripts via background scripts
+
+Background scripts are excellent for verification and debugging, but widget updates must go through proper MCP tools:
 
 \`\`\`javascript
 // Universal verification pattern
@@ -190,12 +196,47 @@ Follow this systematic approach for all debugging:
 - Implement proper error handling
 - Add meaningful logging with gs.info/warn/error
 - Test in scoped applications when applicable
+- **NEVER use background scripts to update widget fields - use \`snow_update\` instead**
 
 ### Widget Development
-- Ensure HTML/Client/Server coherence
-- Use Angular providers correctly
+
+**CRITICAL: Direct Widget Updates (Not Background Scripts!)**
+- Use \`snow_update({ type: 'widget', identifier: 'widget_name', config: { /* fields to update */ }})\` 
+- Updates widget fields DIRECTLY on the widget record
+- Do NOT use background scripts to update widget fields
+- Do NOT try to import server scripts into client scripts
+
+**Widget Coherence Requirements:**
+- Ensure HTML/Client/Server scripts communicate properly
+- Use Angular providers correctly  
 - Implement proper data binding
 - Test across different themes and portals
+
+**Creating New Widgets:**
+\`\`\`javascript
+snow_deploy({
+  type: 'widget',
+  config: {
+    name: 'my_widget',
+    title: 'My Widget',  // Required for display
+    template: '<div>{{data.message}}</div>',  // Required HTML
+    server_script: 'data.message = "Hello";',
+    client_script: 'function($scope) { var c = this; }'
+  }
+})
+\`\`\`
+
+**Updating Existing Widgets:**
+\`\`\`javascript
+snow_update({
+  type: 'widget',
+  identifier: 'my_widget',  // Name or sys_id
+  config: {
+    template: '<div>Updated HTML</div>',  // Only update what changes
+    server_script: 'data.updated = true;'
+  }
+})
+\`\`\`
 
 ### Flow Development
 - Use proper trigger conditions
@@ -205,18 +246,18 @@ Follow this systematic approach for all debugging:
 
 ## MCP Server Capabilities
 
-Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNow capabilities:
+Snow-Flow includes 16+ specialized MCP servers with over 200 tools for comprehensive ServiceNow integration:
 
 ### 1. ServiceNow Deployment Server
 **Purpose:** Widget and artifact deployment with coherence validation
 
 **Key Tools:**
-- \`snow_deploy_widget\` - Deploy widgets with HTML/Client/Server validation
-- \`snow_deploy_portal_page\` - Deploy portal pages
-- \`snow_deploy_flow\` - Deploy Flow Designer flows
-- \`snow_create_update_set\` - Create update sets
+- \`snow_deploy\` - Create NEW artifacts (widgets, pages, etc.) - use with \`type: 'widget'\`
+- \`snow_update\` - UPDATE existing artifacts - use for widget field updates
 - \`snow_validate_deployment\` - Validate deployed artifacts
 - \`snow_rollback_deployment\` - Rollback failed deployments
+- \`snow_preview_widget\` - Preview widget before deployment
+- \`snow_widget_test\` - Test widget functionality
 
 **Special Features:**
 - Automatic widget coherence validation
@@ -229,11 +270,11 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 
 **Key Tools:**
 - \`snow_query_table\` - Universal table querying with pagination
-- \`snow_create_incident\` - Create and manage incidents
-- \`snow_update_record\` - Update any table record
-- \`snow_delete_record\` - Delete records with validation
-- \`snow_discover_table_fields\` - Discover table schema
+- \`snow_query_incidents\` - Query and analyze incidents
 - \`snow_cmdb_search\` - Search Configuration Management Database
+- \`snow_user_lookup\` - Find and manage users
+- \`snow_operational_metrics\` - Get operational metrics
+- \`snow_knowledge_search\` - Search knowledge base
 
 **Features:**
 - Full CRUD operations on any table
@@ -265,12 +306,12 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 **Purpose:** Platform development artifacts
 
 **Key Tools:**
+- \`snow_create_ui_page\` - Create UI pages
 - \`snow_create_script_include\` - Create reusable scripts
 - \`snow_create_business_rule\` - Create business rules
 - \`snow_create_client_script\` - Create client-side scripts
 - \`snow_create_ui_policy\` - Create UI policies
 - \`snow_create_ui_action\` - Create UI actions
-- \`snow_create_ui_page\` - Create UI pages
 
 **Features:**
 - Full artifact creation
@@ -316,11 +357,12 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 **Purpose:** Change management and deployment
 
 **Key Tools:**
-- \`snow_create_update_set\` - Create new update sets
-- \`snow_switch_update_set\` - Switch active update set
-- \`snow_complete_update_set\` - Mark as complete
-- \`snow_preview_update_set\` - Preview changes
-- \`snow_export_update_set\` - Export as XML
+- \`snow_update_set_create\` - Create new update sets
+- \`snow_update_set_switch\` - Switch active update set
+- \`snow_update_set_current\` - Get current update set
+- \`snow_update_set_complete\` - Mark as complete
+- \`snow_update_set_export\` - Export as XML
+- \`snow_ensure_active_update_set\` - Ensure update set is active
 
 **Features:**
 - Full update set lifecycle
@@ -329,13 +371,15 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 - Conflict detection
 
 ### 8. ServiceNow Development Assistant Server
-**Purpose:** Code generation and best practices
+**Purpose:** Intelligent artifact search, editing and development assistance
 
 **Key Tools:**
-- \`snow_generate_code\` - Generate ServiceNow code
-- \`snow_suggest_pattern\` - Suggest design patterns
-- \`snow_review_code\` - Code review and analysis
-- \`snow_optimize_performance\` - Performance recommendations
+- \`snow_find_artifact\` - Find any ServiceNow artifact by name/type
+- \`snow_edit_artifact\` - Edit existing artifacts intelligently
+- \`snow_get_by_sysid\` - Get artifact by sys_id
+- \`snow_analyze_artifact\` - Analyze artifact structure and dependencies
+- \`snow_comprehensive_search\` - Deep search across all tables
+- \`snow_analyze_requirements\` - Analyze development requirements
 
 **Features:**
 - Pattern-based code generation
@@ -376,14 +420,15 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 - Scheduled delivery
 
 ### 11. ServiceNow Machine Learning Server
-**Purpose:** AI/ML capabilities
+**Purpose:** AI/ML capabilities with TensorFlow.js and native ML integration
 
 **Key Tools:**
-- \`snow_train_classifier\` - Train incident classifier
-- \`snow_predict_change_risk\` - Predict change risks
-- \`snow_detect_anomalies\` - Anomaly detection
-- \`snow_forecast_incidents\` - Incident forecasting
-- \`snow_optimize_process\` - Process optimization
+- \`ml_train_incident_classifier\` - Train incident classifier with LSTM neural networks
+- \`ml_predict_change_risk\` - Predict change risks
+- \`ml_detect_anomalies\` - Anomaly detection
+- \`ml_forecast_incidents\` - Incident forecasting with time series
+- \`ml_performance_analytics\` - Native Performance Analytics ML
+- \`ml_hybrid_recommendation\` - Hybrid ML recommendations
 
 **Features:**
 - Predictive analytics
@@ -395,12 +440,22 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 **Purpose:** Multi-agent coordination and task management
 
 **Key Tools:**
-- \`snow_swarm_init\` - Initialize agent swarms
-- \`snow_agent_spawn\` - Create specialized agents
-- \`snow_task_orchestrate\` - Orchestrate complex tasks
-- \`snow_memory_store\` - Persistent memory storage
-- \`snow_neural_train\` - Train neural networks
-- \`snow_performance_analyze\` - Performance analysis
+- \`swarm_init\` - Initialize agent swarms
+- \`agent_spawn\` - Create specialized agents
+- \`task_orchestrate\` - Orchestrate complex tasks
+- \`memory_search\` - Search persistent memory
+- \`neural_train\` - Train neural networks with TensorFlow.js
+- \`performance_report\` - Generate performance reports
+
+### Additional Servers:
+
+**ServiceNow CMDB/Event/HR/CSM/DevOps Server** - CI management, event correlation, HR processes, customer service, DevOps pipelines
+
+**ServiceNow Knowledge & Catalog Server** - Knowledge articles, service catalog items, catalog variables and policies
+
+**ServiceNow Change/Virtual Agent/PA Server** - Change management, virtual agent NLU, predictive analytics
+
+**ServiceNow Flow/Workspace/Mobile Server** - Flow Designer, workspace configuration, mobile app management
 
 **Features:**
 - Multi-agent coordination
