@@ -3790,7 +3790,7 @@ export { ServiceNowOperationsMCP };
 if (require.main === module) {
   const server = new ServiceNowOperationsMCP();
   server.run().catch((error) => {
-    logger.error('Failed to start ServiceNow Operations MCP server:', error);
+    console.error('Failed to start ServiceNow Operations MCP server:', error);
     process.exit(1);
   });
 }

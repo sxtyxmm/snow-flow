@@ -739,6 +739,285 @@ pre code {
     margin-top: 1rem;
 }
 
+/* Dynamic MCP Cards */
+.mcp-filter {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.5rem 1.5rem;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.filter-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.mcp-grid-dynamic {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.mcp-card-dynamic {
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.mcp-card-dynamic:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.mcp-card-dynamic.expanded {
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-color);
+}
+
+.mcp-card-header {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mcp-title {
+    flex: 1;
+}
+
+.mcp-title h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.mcp-badge {
+    background: var(--gradient-secondary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.mcp-expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    color: var(--text-secondary);
+    margin-left: 1rem;
+}
+
+.mcp-expand-btn:hover {
+    background: var(--light-bg);
+    color: var(--primary-color);
+}
+
+.mcp-expand-btn.expanded svg {
+    transform: rotate(180deg);
+}
+
+.mcp-expand-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.mcp-description {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.mcp-tools-container {
+    border-top: 1px solid var(--border-color);
+    background: #f9fafb;
+}
+
+.mcp-tools-grid {
+    padding: 1.5rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.tool-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.tool-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,102,204,0.1);
+}
+
+.tool-header {
+    margin-bottom: 0.5rem;
+}
+
+.tool-name {
+    background: #f7fafc;
+    color: var(--primary-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}
+
+.tool-description {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Enhanced Search */
+.mcp-search {
+    transition: all 0.3s ease !important;
+}
+
+.mcp-search:focus {
+    outline: none;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(0,102,204,0.1) !important;
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fadeIn {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Loading States */
+.mcp-grid-dynamic.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.mcp-grid-dynamic.loading::after {
+    content: "Loading tools...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+/* Tool Count Indicators */
+.server-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-icon {
+    width: 16px;
+    height: 16px;
+    background: var(--gradient-secondary);
+    border-radius: 50%;
+}
+
+/* Responsive Design for Dynamic Cards */
+@media (max-width: 1024px) {
+    .mcp-grid-dynamic {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .mcp-grid-dynamic {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .mcp-card-header {
+        padding: 1rem;
+    }
+    
+    .mcp-description {
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .mcp-tools-grid {
+        padding: 1rem;
+    }
+    
+    .mcp-filter {
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .tool-item {
+        padding: 0.75rem;
+    }
+    
+    .tool-name {
+        font-size: 0.8rem;
+    }
+    
+    .tool-description {
+        font-size: 0.85rem;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-menu {

@@ -315,9 +315,165 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.add('loaded');
     });
 
+    // Dynamic MCP Server Generation
+    function generateMCPCards() {
+        const mcpGrid = document.getElementById('mcp-grid');
+        if (!mcpGrid || !window.snowFlowTools) return;
+
+        mcpGrid.innerHTML = '';
+        
+        Object.keys(window.snowFlowTools).forEach(serverId => {
+            const server = window.snowFlowTools[serverId];
+            
+            const mcpCard = document.createElement('div');
+            mcpCard.className = 'mcp-card-dynamic';
+            mcpCard.setAttribute('data-server', serverId);
+            
+            mcpCard.innerHTML = `
+                <div class="mcp-card-header">
+                    <div class="mcp-title">
+                        <h3>${server.name}</h3>
+                        <span class="mcp-badge">${server.badge}</span>
+                    </div>
+                    <button class="mcp-expand-btn" aria-label="Toggle tools">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <p class="mcp-description">${server.description}</p>
+                <div class="mcp-tools-container" style="display: none;">
+                    <div class="mcp-tools-grid">
+                        ${server.tools.map(tool => `
+                            <div class="tool-item">
+                                <div class="tool-header">
+                                    <code class="tool-name">${tool.name}</code>
+                                </div>
+                                <p class="tool-description">${tool.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            mcpGrid.appendChild(mcpCard);
+        });
+
+        // Add click handlers for expand/collapse
+        const expandButtons = document.querySelectorAll('.mcp-expand-btn');
+        expandButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.mcp-card-dynamic');
+                const toolsContainer = card.querySelector('.mcp-tools-container');
+                const isExpanded = toolsContainer.style.display !== 'none';
+                
+                if (isExpanded) {
+                    toolsContainer.style.display = 'none';
+                    this.classList.remove('expanded');
+                    card.classList.remove('expanded');
+                } else {
+                    toolsContainer.style.display = 'block';
+                    this.classList.add('expanded');
+                    card.classList.add('expanded');
+                    
+                    // Smooth animation
+                    toolsContainer.style.maxHeight = '0px';
+                    toolsContainer.style.overflow = 'hidden';
+                    toolsContainer.style.transition = 'max-height 0.4s ease-in-out';
+                    
+                    setTimeout(() => {
+                        toolsContainer.style.maxHeight = toolsContainer.scrollHeight + 'px';
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        toolsContainer.style.maxHeight = 'none';
+                        toolsContainer.style.overflow = 'visible';
+                    }, 450);
+                }
+            });
+        });
+
+        // Add observer for new cards
+        const newCards = document.querySelectorAll('.mcp-card-dynamic');
+        newCards.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    }
+
+    // MCP Filter Functionality
+    function setupMCPFilter() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                // Update active button
+                filterButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter cards
+                const cards = document.querySelectorAll('.mcp-card-dynamic');
+                cards.forEach(card => {
+                    const serverId = card.getAttribute('data-server');
+                    const shouldShow = filter === 'all' || 
+                                    (filter === 'deployment' && serverId.includes('deployment')) ||
+                                    (filter === 'automation' && (serverId.includes('automation') || serverId.includes('flow'))) ||
+                                    (filter === 'ml' && serverId.includes('machine-learning')) ||
+                                    (filter === 'security' && serverId.includes('security'));
+                    
+                    if (shouldShow) {
+                        card.style.display = 'block';
+                        card.style.animation = 'fadeIn 0.3s ease';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    }
+
+    // Enhanced Search for Dynamic Cards
+    function updateSearchForDynamicCards() {
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const mcpCards = document.querySelectorAll('.mcp-card-dynamic');
+                
+                mcpCards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        card.style.display = 'block';
+                        card.style.animation = 'fadeIn 0.3s ease';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+    }
+
+    // Initialize MCP functionality when tools are loaded
+    function initializeMCP() {
+        if (window.snowFlowTools) {
+            generateMCPCards();
+            setupMCPFilter();
+            updateSearchForDynamicCards();
+        } else {
+            // Retry after a short delay if tools aren't loaded yet
+            setTimeout(initializeMCP, 100);
+        }
+    }
+
+    // Initialize MCP functionality
+    initializeMCP();
+
     // Console Easter Egg
-    console.log('%c🏔️❄️ Snow-Flow', 'font-size: 30px; font-weight: bold; background: linear-gradient(135deg, #0066cc 0%, #00d4ff 100%); color: white; padding: 10px 20px; border-radius: 10px;');
+    console.log('%c🏔️ Snow-Flow', 'font-size: 30px; font-weight: bold; background: linear-gradient(135deg, #0066cc 0%, #00d4ff 100%); color: white; padding: 10px 20px; border-radius: 10px;');
     console.log('%cAdvanced ServiceNow Development Framework', 'font-size: 14px; color: #666;');
-    console.log('%cVersion 3.4.14 | MIT License', 'font-size: 12px; color: #999;');
+    console.log('%cVersion 3.4.16 | MIT License', 'font-size: 12px; color: #999;');
     console.log('%cInterested in contributing? Visit: https://github.com/groeimetai/snow-flow', 'font-size: 12px; color: #0066cc;');
 });

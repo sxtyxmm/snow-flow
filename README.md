@@ -1,4 +1,4 @@
-# 🏔️❄️ Snow-Flow
+# 🏔️ Snow-Flow
 
 [![NPM Version](https://img.shields.io/npm/v/snow-flow.svg)](https://www.npmjs.com/package/snow-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -702,4 +702,4 @@ Special thanks to:
 
 **Built with ❤️ for ServiceNow developers by developers who understand the struggle.**
 
-*Snow-Flow - Where ServiceNow development meets artificial intelligence.* 🏔️❄️
+*Snow-Flow - Where ServiceNow development meets artificial intelligence.* 🏔️

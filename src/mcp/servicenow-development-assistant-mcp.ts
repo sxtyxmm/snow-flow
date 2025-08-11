@@ -15,7 +15,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { MCPLogger } from '../shared/mcp-logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 import { widgetTemplateGenerator } from '../utils/widget-template-generator.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -23,7 +23,7 @@ import { SelfDocumentingSystem } from '../documentation/self-documenting-system.
 import { CostOptimizationEngine } from '../optimization/cost-optimization-engine.js';
 import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system.js';
 import { SelfHealingSystem } from '../healing/self-healing-system.js';
-import { MemorySystem } from '../memory/memory-system.js';
+import { QueenMemorySystem } from '../queen/queen-memory-system.js';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';
@@ -58,7 +58,7 @@ export class ServiceNowDevelopmentAssistantMCP {
   private costOptimizationEngine: CostOptimizationEngine;
   private complianceSystem: AdvancedComplianceSystem;
   private selfHealingSystem: SelfHealingSystem;
-  private memorySystem: MemorySystem;
+  private memorySystem: QueenMemorySystem;
   private memoryIndex: Map<string, any> = new Map();
 
   constructor() {
@@ -85,13 +85,13 @@ export class ServiceNowDevelopmentAssistantMCP {
   private async initializeSystems(): Promise<void> {
     try {
       // Initialize systems synchronously during server startup
-      this.memorySystem = new MemorySystem({
+      this.memorySystem = new QueenMemorySystem({
         dbPath: './.snow-flow/data/intelligent-mcp.db',
         cache: { enabled: true, maxSize: 100, ttl: 3600 },
         ttl: { default: 3600, session: 7200, artifact: 86400, metric: 604800 }
       });
       
-      await this.memorySystem.initialize();
+      // await this.memorySystem.initialize(); // QueenMemorySystem doesn't have initialize method
       this.logger.info('Memory system initialized');
       
       this.documentationSystem = new SelfDocumentingSystem(this.client, this.memorySystem);
@@ -103,8 +103,8 @@ export class ServiceNowDevelopmentAssistantMCP {
     } catch (error) {
       this.logger.error('Failed to initialize systems:', error);
       // Initialize minimal fallback systems
-      this.memorySystem = new MemorySystem({ dbPath: './.snow-flow/data/intelligent-mcp.db' });
-      await this.memorySystem.initialize();
+      this.memorySystem = new QueenMemorySystem({ dbPath: './.snow-flow/data/intelligent-mcp.db' });
+      // await this.memorySystem.initialize(); // QueenMemorySystem doesn't have initialize method
     }
   }
 

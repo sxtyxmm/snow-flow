@@ -1,4 +1,4 @@
-# Snow-Flow Website 🏔️❄️
+# Snow-Flow Website 🏔️
 
 Official documentation website for Snow-Flow - Advanced ServiceNow Development Framework.
 
@@ -104,7 +104,7 @@ Edit the CSS variables in `css/style.css`:
 ```
 
 ### Logo
-The logo uses emojis (🏔️❄️). To change it, update all instances in:
+The logo uses emojis (🏔️). To change it, update all instances in:
 - `index.html`
 - `docs/api-full.html`
 
