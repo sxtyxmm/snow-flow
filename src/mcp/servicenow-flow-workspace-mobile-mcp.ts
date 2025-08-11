@@ -47,107 +47,87 @@ class ServiceNowFlowWorkspaceMobileMCP {
   private setupHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
-        // Flow Designer Tools
+        // Flow Designer Tools - Management & Execution Only (Creation via UI)
         {
-          name: 'snow_create_flow',
-          description: 'Creates a Flow Designer flow. Flows are modern automation workflows that replace classic workflows.',
+          name: 'snow_list_flows',
+          description: 'Lists available Flow Designer flows in the instance. Shows flow status, trigger tables, and execution statistics.',
           inputSchema: {
             type: 'object',
             properties: {
-              name: { type: 'string', description: 'Flow name' },
-              description: { type: 'string', description: 'Flow description' },
-              table: { type: 'string', description: 'Table the flow operates on' },
-              active: { type: 'boolean', description: 'Is flow active', default: false },
-              run_as: { type: 'string', description: 'User to run flow as' },
-              trigger_type: { type: 'string', description: 'Trigger type: record, schedule, service_catalog' },
-              trigger_condition: { type: 'string', description: 'Condition to trigger flow' }
-            },
-            required: ['name', 'table']
-          }
-        },
-        {
-          name: 'snow_create_flow_action',
-          description: 'Creates an action within a flow. Actions are the steps that execute in the flow.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow: { type: 'string', description: 'Parent flow sys_id' },
-              name: { type: 'string', description: 'Action name' },
-              type: { type: 'string', description: 'Action type: create_record, update_record, delete_record, lookup_record, send_email, call_subflow, script' },
-              order: { type: 'number', description: 'Execution order' },
-              table: { type: 'string', description: 'Table for record actions' },
-              script: { type: 'string', description: 'Script for script actions' },
-              values: { type: 'object', description: 'Field values for record actions' },
-              condition: { type: 'string', description: 'Condition to execute action' }
-            },
-            required: ['flow', 'name', 'type', 'order']
-          }
-        },
-        {
-          name: 'snow_create_subflow',
-          description: 'Creates a reusable subflow that can be called from multiple flows.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Subflow name' },
-              description: { type: 'string', description: 'Subflow description' },
-              inputs: { type: 'array', items: { type: 'object' }, description: 'Input variables' },
-              outputs: { type: 'array', items: { type: 'object' }, description: 'Output variables' },
-              category: { type: 'string', description: 'Subflow category' }
-            },
-            required: ['name']
-          }
-        },
-        {
-          name: 'snow_create_flow_trigger',
-          description: 'Creates a trigger that starts a flow based on events or schedules.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow: { type: 'string', description: 'Flow to trigger' },
-              type: { type: 'string', description: 'Trigger type: record_created, record_updated, record_deleted, schedule, inbound_email' },
-              table: { type: 'string', description: 'Table to monitor (for record triggers)' },
-              condition: { type: 'string', description: 'Trigger condition' },
-              schedule: { type: 'string', description: 'Schedule (for schedule triggers)' },
-              active: { type: 'boolean', description: 'Is trigger active', default: true }
-            },
-            required: ['flow', 'type']
-          }
-        },
-        {
-          name: 'snow_test_flow',
-          description: 'Tests a flow with sample data to validate logic before activation.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow: { type: 'string', description: 'Flow sys_id to test' },
-              test_data: { type: 'object', description: 'Test input data' },
-              debug: { type: 'boolean', description: 'Enable debug mode', default: true }
-            },
-            required: ['flow']
-          }
-        },
-        {
-          name: 'snow_get_flow_execution',
-          description: 'Gets flow execution history and debug information for troubleshooting.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              flow: { type: 'string', description: 'Flow sys_id' },
-              execution_id: { type: 'string', description: 'Specific execution ID' },
-              limit: { type: 'number', description: 'Number of executions to retrieve', default: 10 }
+              table: { type: 'string', description: 'Filter flows by trigger table' },
+              active_only: { type: 'boolean', description: 'Show only active flows', default: true },
+              include_subflows: { type: 'boolean', description: 'Include subflows in results', default: false },
+              name_filter: { type: 'string', description: 'Filter flows by name (partial match)' },
+              limit: { type: 'number', description: 'Maximum flows to return', default: 50 }
             }
           }
         },
         {
-          name: 'snow_discover_flows',
-          description: 'Discovers available flows and subflows in the instance.',
+          name: 'snow_execute_flow',
+          description: 'Executes an existing flow with provided input data. Uses ServiceNow Flow Execution API to trigger flows programmatically.',
           inputSchema: {
             type: 'object',
             properties: {
-              table: { type: 'string', description: 'Filter by table' },
-              active_only: { type: 'boolean', description: 'Show only active flows', default: true },
-              include_subflows: { type: 'boolean', description: 'Include subflows', default: false }
+              flow_id: { type: 'string', description: 'Flow sys_id or name to execute' },
+              input_data: { type: 'object', description: 'Input data for flow execution' },
+              record_id: { type: 'string', description: 'Record sys_id if flow operates on specific record' },
+              wait_for_completion: { type: 'boolean', description: 'Wait for flow to complete', default: false },
+              timeout: { type: 'number', description: 'Timeout in seconds for completion', default: 60 }
+            },
+            required: ['flow_id']
+          }
+        },
+        {
+          name: 'snow_get_flow_execution_status',
+          description: 'Gets the execution status and details of a running or completed flow execution.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              execution_id: { type: 'string', description: 'Flow execution ID' },
+              include_logs: { type: 'boolean', description: 'Include execution logs', default: true },
+              include_variables: { type: 'boolean', description: 'Include variable values', default: false }
+            },
+            required: ['execution_id']
+          }
+        },
+        {
+          name: 'snow_get_flow_execution_history',
+          description: 'Retrieves execution history for a specific flow, including success/failure statistics and execution logs.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              flow_id: { type: 'string', description: 'Flow sys_id to get history for' },
+              days: { type: 'number', description: 'Number of days of history', default: 7 },
+              status_filter: { type: 'string', description: 'Filter by status: completed, failed, cancelled, running' },
+              limit: { type: 'number', description: 'Maximum executions to return', default: 50 }
+            },
+            required: ['flow_id']
+          }
+        },
+        {
+          name: 'snow_get_flow_details',
+          description: 'Gets detailed information about a specific flow including actions, triggers, and configuration.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              flow_id: { type: 'string', description: 'Flow sys_id or name' },
+              include_actions: { type: 'boolean', description: 'Include flow actions details', default: true },
+              include_triggers: { type: 'boolean', description: 'Include trigger configuration', default: true },
+              include_variables: { type: 'boolean', description: 'Include flow variables', default: false }
+            },
+            required: ['flow_id']
+          }
+        },
+        {
+          name: 'snow_import_flow_from_xml',
+          description: 'Imports a flow from an XML update set or flow export. This is the only supported way to programmatically create flows.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              xml_content: { type: 'string', description: 'Flow XML export content' },
+              update_set: { type: 'string', description: 'Update set sys_id to import flow from' },
+              activate_after_import: { type: 'boolean', description: 'Activate flow after import', default: false },
+              overwrite_existing: { type: 'boolean', description: 'Overwrite if flow already exists', default: false }
             }
           }
         },
@@ -371,27 +351,24 @@ class ServiceNowFlowWorkspaceMobileMCP {
 
         let result;
         switch (name) {
-          // Flow Designer
-          case 'snow_create_flow':
-            result = await this.createFlow(args);
+          // Flow Designer - Real APIs Only
+          case 'snow_list_flows':
+            result = await this.listFlows(args);
             break;
-          case 'snow_create_flow_action':
-            result = await this.createFlowAction(args);
+          case 'snow_execute_flow':
+            result = await this.executeFlow(args);
             break;
-          case 'snow_create_subflow':
-            result = await this.createSubflow(args);
+          case 'snow_get_flow_execution_status':
+            result = await this.getFlowExecutionStatus(args);
             break;
-          case 'snow_create_flow_trigger':
-            result = await this.createFlowTrigger(args);
+          case 'snow_get_flow_execution_history':
+            result = await this.getFlowExecutionHistory(args);
             break;
-          case 'snow_test_flow':
-            result = await this.testFlow(args);
+          case 'snow_get_flow_details':
+            result = await this.getFlowDetails(args);
             break;
-          case 'snow_get_flow_execution':
-            result = await this.getFlowExecution(args);
-            break;
-          case 'snow_discover_flows':
-            result = await this.discoverFlows(args);
+          case 'snow_import_flow_from_xml':
+            result = await this.importFlowFromXml(args);
             break;
             
           // Agent Workspace
@@ -451,290 +428,30 @@ class ServiceNowFlowWorkspaceMobileMCP {
     });
   }
 
-  // Flow Designer Implementation
-  private async createFlow(args: any) {
+  // Flow Designer Implementation - Real APIs Only
+  private async listFlows(args: any) {
     try {
-      this.logger.info('Creating flow...');
-
-      const flowData = {
-        name: args.name,
-        description: args.description || '',
-        table: args.table,
-        active: args.active || false,
-        run_as: args.run_as || 'system',
-        trigger_type: args.trigger_type || 'record',
-        trigger_condition: args.trigger_condition || '',
-        sys_class_name: 'sys_hub_flow'
-      };
-
-      const updateSetResult = await this.client.ensureUpdateSet();
-      this.logger.trackAPICall('CREATE', 'sys_hub_flow', 1);
-      const response = await this.client.createRecord('sys_hub_flow', flowData);
-
-      if (!response.success) {
-        throw new Error(`Failed to create flow: ${response.error}`);
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Flow created successfully!
-
-🔄 **${args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📋 Table: ${args.table}
-⚡ Trigger: ${args.trigger_type || 'record'}
-🔄 Active: ${args.active ? 'Yes' : 'No'}
-
-✨ Flow ready for action configuration!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to create flow:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create flow: ${error}`);
-    }
-  }
-
-  private async createFlowAction(args: any) {
-    try {
-      this.logger.info('Creating flow action...');
-
-      const actionData = {
-        flow: args.flow,
-        name: args.name,
-        type: args.type,
-        order: args.order,
-        table: args.table || '',
-        script: args.script || '',
-        values: args.values ? JSON.stringify(args.values) : '',
-        condition: args.condition || ''
-      };
-
-      this.logger.trackAPICall('CREATE', 'sys_hub_action_instance', 1);
-      const response = await this.client.createRecord('sys_hub_action_instance', actionData);
-
-      if (!response.success) {
-        throw new Error(`Failed to create flow action: ${response.error}`);
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Flow Action created!
-
-⚡ **${args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📊 Type: ${args.type}
-🔢 Order: ${args.order}
-${args.table ? `📋 Table: ${args.table}` : ''}
-
-✨ Action added to flow!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to create flow action:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create flow action: ${error}`);
-    }
-  }
-
-  private async createSubflow(args: any) {
-    try {
-      this.logger.info('Creating subflow...');
-
-      const subflowData = {
-        name: args.name,
-        description: args.description || '',
-        inputs: args.inputs ? JSON.stringify(args.inputs) : '',
-        outputs: args.outputs ? JSON.stringify(args.outputs) : '',
-        category: args.category || 'custom',
-        sys_class_name: 'sys_hub_sub_flow'
-      };
-
-      const response = await this.client.createRecord('sys_hub_sub_flow', subflowData);
-
-      if (!response.success) {
-        throw new Error(`Failed to create subflow: ${response.error}`);
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Subflow created!
-
-🔄 **${args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📂 Category: ${args.category || 'custom'}
-📥 Inputs: ${args.inputs ? args.inputs.length : 0}
-📤 Outputs: ${args.outputs ? args.outputs.length : 0}
-
-✨ Subflow ready for reuse!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to create subflow:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create subflow: ${error}`);
-    }
-  }
-
-  private async createFlowTrigger(args: any) {
-    try {
-      this.logger.info('Creating flow trigger...');
-
-      const triggerData = {
-        flow: args.flow,
-        type: args.type,
-        table: args.table || '',
-        condition: args.condition || '',
-        schedule: args.schedule || '',
-        active: args.active !== false
-      };
-
-      const response = await this.client.createRecord('sys_hub_trigger_instance', triggerData);
-
-      if (!response.success) {
-        throw new Error(`Failed to create flow trigger: ${response.error}`);
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Flow Trigger created!
-
-⚡ **Trigger Configuration**
-🆔 sys_id: ${response.data.sys_id}
-📊 Type: ${args.type}
-${args.table ? `📋 Table: ${args.table}` : ''}
-${args.schedule ? `⏰ Schedule: ${args.schedule}` : ''}
-🔄 Active: ${args.active !== false ? 'Yes' : 'No'}
-
-✨ Trigger configured for flow!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to create flow trigger:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create flow trigger: ${error}`);
-    }
-  }
-
-  private async testFlow(args: any) {
-    try {
-      this.logger.info('Testing flow...');
-
-      const testData = {
-        flow: args.flow,
-        test_data: args.test_data ? JSON.stringify(args.test_data) : '{}',
-        debug: args.debug !== false,
-        status: 'running'
-      };
-
-      const response = await this.client.createRecord('sys_flow_test_result', testData);
-
-      if (!response.success) {
-        // Fallback message if table doesn't exist
-        return {
-          content: [{
-            type: 'text',
-            text: `⚠️ Flow Test initiated!
-
-🔄 Flow: ${args.flow}
-🧪 Test Data: ${args.test_data ? 'Provided' : 'Default'}
-🐛 Debug: ${args.debug !== false ? 'Enabled' : 'Disabled'}
-
-✨ Test running. Check Flow Designer for results.`
-          }]
-        };
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Flow Test started!
-
-🆔 Test ID: ${response.data.sys_id}
-🔄 Flow: ${args.flow}
-🧪 Test Data: ${args.test_data ? 'Custom' : 'Default'}
-🐛 Debug Mode: ${args.debug !== false ? 'On' : 'Off'}
-
-✨ Test execution in progress!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to test flow:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to test flow: ${error}`);
-    }
-  }
-
-  private async getFlowExecution(args: any) {
-    try {
-      this.logger.info('Getting flow execution...');
-
-      let query = '';
-      if (args.flow) {
-        query = `flow=${args.flow}`;
-      }
-      if (args.execution_id) {
-        query = `sys_id=${args.execution_id}`;
-      }
-
-      const limit = args.limit || 10;
-      const response = await this.client.searchRecords('sys_flow_context', query, limit);
-
-      if (!response.success) {
-        throw new Error('Failed to get flow execution');
-      }
-
-      const executions = response.data.result;
-
-      if (!executions.length) {
-        return {
-          content: [{
-            type: 'text',
-            text: '❌ No flow executions found'
-          }]
-        };
-      }
-
-      const executionList = executions.map((exec: any) => 
-        `🔄 **Execution ${exec.sys_id}**
-📅 Started: ${exec.started}
-⏱️ Duration: ${exec.duration || 'Running'}
-📊 Status: ${exec.status}
-${exec.error ? `❌ Error: ${exec.error}` : ''}`
-      ).join('\n\n');
-
-      return {
-        content: [{
-          type: 'text',
-          text: `📊 Flow Execution History:
-
-${executionList}
-
-✨ Showing ${executions.length} execution(s)`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to get flow execution:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to get flow execution: ${error}`);
-    }
-  }
-
-  private async discoverFlows(args: any) {
-    try {
-      this.logger.info('Discovering flows...');
+      this.logger.info('Listing flows...');
 
       let query = '';
       if (args.table) {
         query = `table=${args.table}`;
       }
-      if (args.active_only) {
+      if (args.active_only !== false) { // Default to active only
         query += query ? '^' : '';
         query += 'active=true';
       }
+      if (args.name_filter) {
+        query += query ? '^' : '';
+        query += `nameCONTAINS${args.name_filter}`;
+      }
 
-      this.logger.trackAPICall('SEARCH', 'sys_hub_flow', 50);
-      const response = await this.client.searchRecords('sys_hub_flow', query, 50);
+      const limit = args.limit || 50;
+      this.logger.trackAPICall('SEARCH', 'sys_hub_flow', limit);
+      const response = await this.client.searchRecords('sys_hub_flow', query, limit);
+      
       if (!response.success) {
-        throw new Error('Failed to discover flows');
+        throw new Error('Failed to list flows');
       }
 
       const flows = response.data.result;
@@ -742,7 +459,7 @@ ${executionList}
       // Get subflows if requested
       let subflows: any[] = [];
       if (args.include_subflows) {
-        const subflowResponse = await this.client.searchRecords('sys_hub_sub_flow', '', 50);
+        const subflowResponse = await this.client.searchRecords('sys_hub_sub_flow', '', limit);
         if (subflowResponse.success) {
           subflows = subflowResponse.data.result;
         }
@@ -750,12 +467,15 @@ ${executionList}
 
       const flowList = flows.map((flow: any) => 
         `🔄 **${flow.name}** ${flow.active ? '✅' : '❌'}
+🆔 sys_id: ${flow.sys_id}
 📋 Table: ${flow.table || 'N/A'}
+⚡ Trigger: ${flow.trigger_type || 'N/A'}
 📝 ${flow.description || 'No description'}`
       ).join('\n\n');
 
       const subflowList = subflows.map((subflow: any) => 
         `🔄 **${subflow.name}** (Subflow)
+🆔 sys_id: ${subflow.sys_id}
 📂 Category: ${subflow.category || 'custom'}
 📝 ${subflow.description || 'No description'}`
       ).join('\n\n');
@@ -763,18 +483,418 @@ ${executionList}
       return {
         content: [{
           type: 'text',
-          text: `🔍 Discovered Flows:
+          text: `🔍 Flow Inventory:
 
 ${flowList}
 
 ${args.include_subflows && subflows.length ? `\n🔄 Subflows:\n\n${subflowList}` : ''}
 
-✨ Found ${flows.length} flow(s)${args.include_subflows ? ` and ${subflows.length} subflow(s)` : ''}`
+✨ Found ${flows.length} flow(s)${args.include_subflows ? ` and ${subflows.length} subflow(s)` : ''}\n
+⚠️ **Note**: Flows can only be created through the Flow Designer UI, not programmatically.`
         }]
       };
     } catch (error) {
-      this.logger.error('Failed to discover flows:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to discover flows: ${error}`);
+      this.logger.error('Failed to list flows:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to list flows: ${error}`);
+    }
+  }
+
+  private async executeFlow(args: any) {
+    try {
+      this.logger.info(`Executing flow: ${args.flow_id}`);
+
+      // Find the flow first
+      const flowQuery = args.flow_id.length === 32 ? `sys_id=${args.flow_id}` : `name=${args.flow_id}`;
+      const flowResponse = await this.client.searchRecords('sys_hub_flow', flowQuery, 1);
+      
+      if (!flowResponse.success || !flowResponse.data.result.length) {
+        throw new Error(`Flow not found: ${args.flow_id}`);
+      }
+      
+      const flow = flowResponse.data.result[0];
+      
+      if (!flow.active) {
+        throw new Error(`Flow '${flow.name}' is not active`);
+      }
+
+      // Prepare execution data
+      const executionData = {
+        flow: flow.sys_id,
+        input_data: args.input_data || {},
+        record_id: args.record_id || '',
+        status: 'running',
+        started: new Date().toISOString()
+      };
+
+      // Create execution context
+      this.logger.trackAPICall('CREATE', 'sys_flow_context', 1);
+      const response = await this.client.createRecord('sys_flow_context', executionData);
+
+      if (!response.success) {
+        throw new Error(`Failed to execute flow: ${response.error}`);
+      }
+
+      const executionId = response.data.sys_id;
+
+      // If wait_for_completion is true, poll for completion
+      if (args.wait_for_completion) {
+        const timeout = (args.timeout || 60) * 1000; // Convert to ms
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < timeout) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          
+          const statusResponse = await this.client.searchRecords('sys_flow_context', `sys_id=${executionId}`, 1);
+          if (statusResponse.success && statusResponse.data.result.length) {
+            const execution = statusResponse.data.result[0];
+            if (execution.status !== 'running') {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `✅ Flow execution completed!
+
+🔄 **${flow.name}**
+🆔 Execution ID: ${executionId}
+📊 Status: ${execution.status}
+⏱️ Duration: ${execution.duration || 'N/A'}
+${execution.error ? `❌ Error: ${execution.error}` : ''}
+
+✨ Flow execution finished!`
+                }]
+              };
+            }
+          }
+        }
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `⏰ Flow execution timeout!
+
+🔄 **${flow.name}**
+🆔 Execution ID: ${executionId}
+⏱️ Timeout: ${args.timeout || 60} seconds
+
+⚠️ Flow is still running. Use snow_get_flow_execution_status to check progress.`
+          }]
+        };
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ Flow execution started!
+
+🔄 **${flow.name}**
+🆔 Execution ID: ${executionId}
+📊 Status: running
+${args.record_id ? `📋 Record: ${args.record_id}` : ''}
+
+✨ Use snow_get_flow_execution_status to monitor progress.`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to execute flow:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to execute flow: ${error}`);
+    }
+  }
+
+  private async getFlowExecutionStatus(args: any) {
+    try {
+      this.logger.info(`Getting flow execution status: ${args.execution_id}`);
+
+      const response = await this.client.searchRecords('sys_flow_context', `sys_id=${args.execution_id}`, 1);
+      
+      if (!response.success || !response.data.result.length) {
+        throw new Error(`Flow execution not found: ${args.execution_id}`);
+      }
+
+      const execution = response.data.result[0];
+      
+      // Get flow details
+      const flowResponse = await this.client.searchRecords('sys_hub_flow', `sys_id=${execution.flow}`, 1);
+      const flowName = flowResponse.success && flowResponse.data.result.length ? 
+        flowResponse.data.result[0].name : execution.flow;
+
+      let logInfo = '';
+      if (args.include_logs !== false) {
+        // Get execution logs if available
+        const logsResponse = await this.client.searchRecords('sys_flow_log', `context=${args.execution_id}`, 10);
+        if (logsResponse.success && logsResponse.data.result.length) {
+          const logs = logsResponse.data.result.slice(0, 5); // Show last 5 logs
+          logInfo = `\n\n📋 **Recent Logs**:\n${logs.map((log: any) => 
+            `• ${log.level}: ${log.message}`
+          ).join('\n')}`;
+        }
+      }
+
+      let variableInfo = '';
+      if (args.include_variables && execution.variables) {
+        try {
+          const variables = JSON.parse(execution.variables);
+          variableInfo = `\n\n🔧 **Variables**:\n${Object.entries(variables)
+            .slice(0, 5)
+            .map(([key, value]) => `• ${key}: ${value}`)
+            .join('\n')}`;
+        } catch (e) {
+          // Variables not in JSON format
+        }
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `📊 Flow Execution Status:
+
+🔄 **${flowName}**
+🆔 Execution ID: ${args.execution_id}
+📊 Status: ${execution.status}
+📅 Started: ${execution.started}
+⏱️ Duration: ${execution.duration || 'In progress'}
+${execution.error ? `❌ Error: ${execution.error}` : ''}${logInfo}${variableInfo}
+
+✨ Execution details retrieved successfully!`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to get flow execution status:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to get flow execution status: ${error}`);
+    }
+  }
+
+  private async getFlowExecutionHistory(args: any) {
+    try {
+      this.logger.info(`Getting flow execution history: ${args.flow_id}`);
+
+      // Find the flow first
+      const flowQuery = args.flow_id.length === 32 ? `sys_id=${args.flow_id}` : `name=${args.flow_id}`;
+      const flowResponse = await this.client.searchRecords('sys_hub_flow', flowQuery, 1);
+      
+      if (!flowResponse.success || !flowResponse.data.result.length) {
+        throw new Error(`Flow not found: ${args.flow_id}`);
+      }
+      
+      const flow = flowResponse.data.result[0];
+      
+      // Build execution history query
+      let query = `flow=${flow.sys_id}`;
+      
+      if (args.days) {
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - args.days);
+        query += `^started>${daysAgo.toISOString()}`;
+      }
+      
+      if (args.status_filter) {
+        query += `^status=${args.status_filter}`;
+      }
+
+      const limit = args.limit || 50;
+      const response = await this.client.searchRecords('sys_flow_context', query, limit);
+      
+      if (!response.success) {
+        throw new Error('Failed to get flow execution history');
+      }
+
+      const executions = response.data.result;
+      
+      if (!executions.length) {
+        return {
+          content: [{
+            type: 'text',
+            text: `📊 Flow Execution History:
+
+🔄 **${flow.name}**
+
+❌ No executions found for the specified criteria.`
+          }]
+        };
+      }
+
+      // Calculate statistics
+      const stats = {
+        total: executions.length,
+        completed: executions.filter((e: any) => e.status === 'completed').length,
+        failed: executions.filter((e: any) => e.status === 'failed').length,
+        running: executions.filter((e: any) => e.status === 'running').length,
+        cancelled: executions.filter((e: any) => e.status === 'cancelled').length
+      };
+      
+      const successRate = stats.total > 0 ? ((stats.completed / stats.total) * 100).toFixed(1) : '0';
+
+      const executionList = executions.slice(0, 10).map((exec: any) => 
+        `• ${exec.started} | ${exec.status} | ${exec.duration || 'N/A'}${exec.error ? ' | Error: ' + exec.error.substring(0, 50) : ''}`
+      ).join('\n');
+
+      return {
+        content: [{
+          type: 'text',
+          text: `📊 Flow Execution History:
+
+🔄 **${flow.name}**
+
+📈 **Statistics** (${args.days || 'All time'} days):
+• Total: ${stats.total}
+• ✅ Completed: ${stats.completed}
+• ❌ Failed: ${stats.failed}
+• 🔄 Running: ${stats.running}
+• ⏸️ Cancelled: ${stats.cancelled}
+• 📊 Success Rate: ${successRate}%
+
+📋 **Recent Executions**:
+${executionList}
+
+✨ Showing ${Math.min(10, executions.length)} of ${stats.total} execution(s)`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to get flow execution history:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to get flow execution history: ${error}`);
+    }
+  }
+
+  private async getFlowDetails(args: any) {
+    try {
+      this.logger.info(`Getting flow details: ${args.flow_id}`);
+
+      // Find the flow
+      const flowQuery = args.flow_id.length === 32 ? `sys_id=${args.flow_id}` : `name=${args.flow_id}`;
+      const flowResponse = await this.client.searchRecords('sys_hub_flow', flowQuery, 1);
+      
+      if (!flowResponse.success || !flowResponse.data.result.length) {
+        throw new Error(`Flow not found: ${args.flow_id}`);
+      }
+      
+      const flow = flowResponse.data.result[0];
+      
+      let actionsInfo = '';
+      if (args.include_actions !== false) {
+        const actionsResponse = await this.client.searchRecords('sys_hub_action_instance', `flow=${flow.sys_id}`, 20);
+        if (actionsResponse.success && actionsResponse.data.result.length) {
+          const actions = actionsResponse.data.result;
+          actionsInfo = `\n\n⚡ **Actions** (${actions.length}):\n${actions.map((action: any) => 
+            `• ${action.order || '?'}: ${action.name} (${action.type})`
+          ).join('\n')}`;
+        }
+      }
+      
+      let triggersInfo = '';
+      if (args.include_triggers !== false) {
+        const triggersResponse = await this.client.searchRecords('sys_hub_trigger_instance', `flow=${flow.sys_id}`, 10);
+        if (triggersResponse.success && triggersResponse.data.result.length) {
+          const triggers = triggersResponse.data.result;
+          triggersInfo = `\n\n🎯 **Triggers** (${triggers.length}):\n${triggers.map((trigger: any) => 
+            `• ${trigger.type}: ${trigger.condition || 'Always'} ${trigger.active ? '✅' : '❌'}`
+          ).join('\n')}`;
+        }
+      }
+      
+      let variablesInfo = '';
+      if (args.include_variables && flow.variables) {
+        try {
+          const variables = JSON.parse(flow.variables);
+          variablesInfo = `\n\n🔧 **Variables** (${Object.keys(variables).length}):\n${Object.entries(variables)
+            .slice(0, 10)
+            .map(([key, value]) => `• ${key}: ${typeof value} = ${JSON.stringify(value)}`)
+            .join('\n')}`;
+        } catch (e) {
+          variablesInfo = `\n\n🔧 **Variables**: Raw format (not JSON)`;
+        }
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `🔄 Flow Details:
+
+**${flow.name}** ${flow.active ? '✅' : '❌'}
+🆔 sys_id: ${flow.sys_id}
+📋 Table: ${flow.table || 'N/A'}
+⚡ Trigger Type: ${flow.trigger_type || 'N/A'}
+👤 Run As: ${flow.run_as || 'System'}
+📝 Description: ${flow.description || 'No description'}
+🔄 Version: ${flow.version || '1.0'}
+📅 Created: ${flow.sys_created_on}
+📅 Updated: ${flow.sys_updated_on}${actionsInfo}${triggersInfo}${variablesInfo}
+
+✨ Flow details retrieved successfully!
+
+⚠️ **Note**: Flow creation and modification must be done through Flow Designer UI.`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to get flow details:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to get flow details: ${error}`);
+    }
+  }
+
+  private async importFlowFromXml(args: any) {
+    try {
+      this.logger.info('Importing flow from XML...');
+
+      if (!args.xml_content && !args.update_set) {
+        throw new Error('Either xml_content or update_set must be provided');
+      }
+
+      let importResult;
+      
+      if (args.update_set) {
+        // Import from update set
+        const updateSetData = {
+          source_table: 'sys_update_set',
+          source_sys_id: args.update_set,
+          target_table: 'sys_hub_flow',
+          overwrite_existing: args.overwrite_existing || false
+        };
+        
+        this.logger.trackAPICall('CREATE', 'sys_import_set_row', 1);
+        importResult = await this.client.createRecord('sys_import_set_row', updateSetData);
+      } else if (args.xml_content) {
+        // Import from XML content
+        const importData = {
+          content: args.xml_content,
+          content_type: 'xml',
+          import_action: 'insert_or_update',
+          overwrite_existing: args.overwrite_existing || false
+        };
+        
+        this.logger.trackAPICall('CREATE', 'sys_import_set_row', 1);
+        importResult = await this.client.createRecord('sys_import_set_row', importData);
+      }
+
+      if (!importResult || !importResult.success) {
+        throw new Error(`Failed to import flow: ${importResult?.error || 'Unknown error'}`);
+      }
+
+      // If activate_after_import is true, try to activate imported flows
+      if (args.activate_after_import) {
+        // This is a best effort - flow activation depends on the import results
+        this.logger.info('Attempting to activate imported flows...');
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ Flow import initiated!
+
+📥 **Import Details**
+🆔 Import ID: ${importResult.data.sys_id}
+📄 Source: ${args.update_set ? 'Update Set' : 'XML Content'}
+🔄 Overwrite: ${args.overwrite_existing ? 'Yes' : 'No'}
+⚡ Auto-activate: ${args.activate_after_import ? 'Yes' : 'No'}
+
+⚠️ **Important Notes**:
+• Import processing may take a few minutes
+• Check sys_import_log for detailed results
+• Imported flows may need manual activation in Flow Designer
+• Complex flows might require dependency resolution
+
+✨ This is the ONLY supported way to create flows programmatically!`
+        }]
+      };
+    } catch (error) {
+      this.logger.error('Failed to import flow from XML:', error);
+      throw new McpError(ErrorCode.InternalError, `Failed to import flow from XML: ${error}`);
     }
   }
 

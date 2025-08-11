@@ -35,9 +35,13 @@ Specializes in creating ServiceNow Flow Designer workflows.
 - Error handling design
 
 **MCP Tools Used:**
-- `snow_create_flow` - Create flows from natural language
-- `snow_test_flow_with_mock` - Test flows with mock data
+- `snow_list_flows` - Discover existing flows
+- `snow_execute_flow` - Execute flows programmatically  
+- `snow_get_flow_execution_status` - Monitor flow execution
+- `snow_import_flow_from_xml` - Import flows from XML (only creation method)
 - `snow_link_catalog_to_flow` - Link flows to catalog items
+
+**Note:** Flow creation must be done through Flow Designer UI, not programmatically
 
 ### 3. Script Writer Agent (`script-writer-agent.ts`)
 Specializes in creating ServiceNow scripts.

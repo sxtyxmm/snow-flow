@@ -531,13 +531,18 @@ Snow-Flow includes 17 specialized MCP servers, each providing comprehensive Serv
 **Purpose:** Flow Designer, Workspace configuration, and Mobile app management
 
 **Key Tools:**
-- `snow_create_flow` - Create Flow Designer flows
-- `snow_create_flow_action` - Create flow actions
-- `snow_test_flow` - Test flows
+- `snow_list_flows` - List and discover Flow Designer flows
+- `snow_execute_flow` - Execute existing flows programmatically
+- `snow_get_flow_execution_status` - Monitor flow execution status
+- `snow_get_flow_execution_history` - View flow execution history
+- `snow_get_flow_details` - Get detailed flow configuration
+- `snow_import_flow_from_xml` - Import flows from XML (only programmatic creation method)
 - `snow_create_workspace` - Create workspaces
 - `snow_configure_mobile_app` - Configure mobile app
 - `snow_send_push_notification` - Send push notifications
 - `snow_configure_offline_sync` - Configure offline sync
+
+**Important:** Flow creation is only supported through Flow Designer UI, not programmatically
 
 **Features:**
 - Flow Designer automation

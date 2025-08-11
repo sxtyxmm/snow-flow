@@ -326,8 +326,12 @@ Change management, Virtual Agent, and Performance Analytics
 
 ### 14. 📱 **Flow, Workspace & Mobile Server** (20+ tools)
 Flow Designer, Workspace, and Mobile app management
-- `snow_create_flow` - Create flows
-- `snow_test_flow` - Test flows
+- `snow_list_flows` - List and discover flows
+- `snow_execute_flow` - Execute existing flows
+- `snow_get_flow_execution_status` - Monitor flow execution
+- `snow_get_flow_execution_history` - View execution history
+- `snow_get_flow_details` - Get flow configuration details
+- `snow_import_flow_from_xml` - Import flows from XML (only programmatic creation method)
 - `snow_create_workspace` - Create workspaces
 - `snow_configure_mobile_app` - Mobile config
 - `snow_send_push_notification` - Push notifications

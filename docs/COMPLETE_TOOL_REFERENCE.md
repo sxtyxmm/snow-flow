@@ -145,7 +145,12 @@
 | snow_create_email_template | Email template | sysevent_email_template |
 | snow_create_sla | SLA definition | contract_sla |
 | snow_create_workflow | Workflow | wf_workflow |
-| snow_create_flow | Flow | sys_hub_flow |
+| snow_list_flows | List flows | sys_hub_flow |
+| snow_execute_flow | Execute flow | sys_flow_context |
+| snow_get_flow_execution_status | Flow execution status | sys_flow_context |
+| snow_get_flow_execution_history | Flow execution history | sys_flow_context |
+| snow_get_flow_details | Flow details | sys_hub_flow |
+| snow_import_flow_from_xml | Import flow from XML | sys_import_set_row |
 | snow_create_transform_map | Transform map | sys_transform_map |
 | snow_create_import_set | Import set | sys_import_set |
 | snow_create_data_source | Data source | sys_data_source |

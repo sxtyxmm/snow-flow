@@ -46,9 +46,10 @@
     - Reporting and analytics tools for creating reports, dashboards, and KPIs
     - Includes data visualization and performance analytics
 
-12. **servicenow-flow-composer**
-    - Flow Designer capabilities for creating and managing flows
-    - Natural language flow creation with intelligent analysis
+12. **servicenow-flow-workspace-mobile**
+    - Flow Designer management tools (execution, monitoring, history)
+    - Agent Workspace and Mobile app configuration
+    - Note: Flow creation only supported through Flow Designer UI, not programmatically
 
 13. **snow-flow**
     - Core orchestration MCP server for Snow-Flow system

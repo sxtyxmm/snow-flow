@@ -84,13 +84,14 @@ This document verifies that all 83 new ServiceNow MCP tools use the correct offi
 
 | Tool | ServiceNow Table | Verified | Notes |
 |------|------------------|----------|-------|
-| snow_create_flow | sys_hub_flow | ✅ | Official flow table |
-| snow_create_flow_action | sys_hub_action_instance | ✅ | Flow action table |
-| snow_create_subflow | sys_hub_sub_flow | ✅ | Reusable subflow table |
-| snow_add_flow_trigger | sys_hub_trigger_instance | ✅ | Flow trigger table |
-| snow_publish_flow | sys_hub_flow | ✅ | Activates flow |
-| snow_test_flow | sys_flow_context | ✅ | Test execution context |
-| snow_get_flow_execution_details | sys_flow_context | ✅ | Execution history |
+| snow_list_flows | sys_hub_flow | ✅ | Lists existing flows |
+| snow_execute_flow | sys_flow_context | ✅ | Executes flows programmatically |
+| snow_get_flow_execution_status | sys_flow_context | ✅ | Gets execution status |
+| snow_get_flow_execution_history | sys_flow_context | ✅ | Retrieves execution history |
+| snow_get_flow_details | sys_hub_flow | ✅ | Gets flow configuration details |
+| snow_import_flow_from_xml | sys_import_set_row | ✅ | Imports flows from XML (only creation method) |
+
+**Important:** Flow creation is only supported through Flow Designer UI, not programmatically.
 
 ## Agent Workspace Tools
 **Server:** servicenow-flow-workspace-mobile-mcp.ts
