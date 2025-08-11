@@ -858,7 +858,7 @@ All agents MUST use this simple memory coordination:
 
 \`\`\`javascript
 // Agent initialization
-const agentId = \`agent_\${agentType}_${sessionId}\`;
+const agentId = \`agent_\${agentType}_\${sessionId}\`;
 
 // Agent stores progress
 Memory.store(\`\${agentId}_progress\`, JSON.stringify({
@@ -869,7 +869,7 @@ Memory.store(\`\${agentId}_progress\`, JSON.stringify({
 }));
 
 // Agent reads other agent's work when needed
-const primaryWork = Memory.get("agent_${taskAnalysis.primaryAgent}_output");
+const primaryWork = Memory.get("agent_\${taskAnalysis.primaryAgent}_output");
 
 // Agent signals completion
 Memory.store(\`\${agentId}_complete\`, JSON.stringify({
