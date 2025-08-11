@@ -150,7 +150,8 @@ export class MCPLogger {
    */
   public operationStart(operation: string, params?: any) {
     this.startTime = Date.now();
-    this.info(`🚀 Starting: ${operation} (tokens reset)`, params);
+    this.resetTokens(); // Actually reset tokens when starting new operation!
+    this.info(`🚀 Starting: ${operation}`, params);
   }
 
   /**
@@ -182,6 +183,22 @@ export class MCPLogger {
    */
   public getTokenUsage(): TokenUsage {
     return { ...this.tokenUsage };
+  }
+  
+  /**
+   * Add token usage to MCP response
+   * Helper method to append token usage to tool response
+   */
+  public addTokenUsageToResponse(result: any): any {
+    const tokenUsage = this.getTokenUsage();
+    if (result && result.content && Array.isArray(result.content) && tokenUsage.total > 0) {
+      // Append token usage info to the last content item
+      const lastContent = result.content[result.content.length - 1];
+      if (lastContent && lastContent.type === 'text') {
+        lastContent.text += `\n\n📊 Token Usage: ${tokenUsage.total} (Input: ${tokenUsage.input}, Output: ${tokenUsage.output})`;
+      }
+    }
+    return result;
   }
 
   /**

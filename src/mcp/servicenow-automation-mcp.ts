@@ -550,6 +550,10 @@ class ServiceNowAutomationMCP {
         
         // Complete operation with token tracking
         this.logger.operationComplete(name, result);
+        
+        // Add token usage to response
+        result = this.logger.addTokenUsageToResponse(result);
+        
         return result;
       } catch (error) {
         this.logger.error(`Error in ${request.params.name}:`, error);
