@@ -94,6 +94,8 @@ program
   .option('--no-autonomous-healing', 'Disable autonomous self-healing capabilities')
   .option('--autonomous-all', 'Force enable all autonomous systems (overrides individual --no- flags)')
   .option('--no-autonomous-all', 'Disable all autonomous systems (overrides individual settings)')
+  .option('--auto-confirm', 'Auto-confirm background script executions (bypasses human-in-the-loop)')
+  .option('--no-auto-confirm', 'Force confirmation for all background scripts (default behavior)')
   .option('--verbose', 'Show detailed execution information')
   .action(async (objective: string, options) => {
     // Check for flow deprecation first
@@ -117,6 +119,17 @@ program
       cliLogger.info(`  🔄 Auto Rollback: ${options.autoRollback ? '✅ Yes' : '❌ No'}`);
       cliLogger.info(`  💾 Shared Memory: ${options.sharedMemory ? '✅ Yes' : '❌ No'}`);
       cliLogger.info(`  📊 Progress Monitoring: ${options.progressMonitoring ? '✅ Yes' : '❌ No'}`);
+      
+      // Show script execution preferences
+      const autoConfirmEnabled = options.autoConfirm === true;
+      const noAutoConfirm = options.autoConfirm === false;
+      let scriptConfirmStatus = 'Default (Ask for confirmation)';
+      if (autoConfirmEnabled) {
+        scriptConfirmStatus = '⚠️ AUTO-CONFIRM ENABLED (No user confirmation)';
+      } else if (noAutoConfirm) {
+        scriptConfirmStatus = '🔒 FORCE CONFIRM (Always ask)';
+      }
+      cliLogger.info(`  📝 Script Execution: ${scriptConfirmStatus}`);
       
       // Calculate actual autonomous system states (with override logic)
       // Commander.js converts --no-autonomous-all to autonomousAll: false
@@ -875,13 +888,17 @@ ${hasIntelligentFeatures ? `✅ **INTELLIGENT MODE ACTIVE** - The following feat
 - **🚀 Auto Deploy**: ${options.autoDeploy ? '⚠️ WILL DEPLOY TO SERVICENOW AUTOMATICALLY' : '✅ Planning mode - no deployment'}
 - **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Will rollback on any failures' : '❌ No automatic rollback'}
 - **💾 Shared Memory**: ${options.sharedMemory ? '✅ Agents share context via Memory' : '❌ Isolated agent execution'}
-- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Real-time progress tracking' : '❌ No progress monitoring'}` : '❌ **STANDARD MODE** - Use manual coordination patterns'}
+- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Real-time progress tracking' : '❌ No progress monitoring'}
+- **📝 Script Execution**: ${options.autoConfirm ? '⚠️ AUTO-CONFIRM - Background scripts execute without user confirmation' : options.autoConfirm === false ? '🔒 FORCE CONFIRM - Always ask for script confirmation' : '🤚 DEFAULT - Ask for confirmation on risky scripts'}` : '❌ **STANDARD MODE** - Use manual coordination patterns'}
 
 ## 🎯 ServiceNow Execution Strategy
 
 ### 🚀 MANDATORY: Live ServiceNow Development First!
 
 **CRITICAL RULE**: All agents MUST attempt to use ServiceNow MCP tools first, regardless of authentication status.
+
+### 📝 Background Script Execution Settings
+${options.autoConfirm ? '⚠️ **AUTO-CONFIRM MODE ENABLED**: When calling snow_execute_background_script, ALWAYS add autoConfirm: true parameter to skip user confirmation.\n```javascript\nsnow_execute_background_script({\n  script: "your ES5 script here",\n  description: "Clear description",\n  autoConfirm: true  // ⚠️ User enabled auto-confirm mode\n})\n```' : options.autoConfirm === false ? '🔒 **FORCE CONFIRM MODE**: All background scripts will require user confirmation, even simple ones.' : '🤚 **DEFAULT MODE**: Background scripts will ask for user confirmation based on risk level.'}
 
 #### Current MCP Tools Available (Snow-Flow v3.3.4)
 ${isAuthenticated ? '✅ Authentication detected - full deployment capabilities' : '⚠️ No authentication detected - MCP tools will provide specific instructions if auth needed'}
@@ -1805,6 +1822,7 @@ program
   snow-flow mcp status  # Check MCP server status
   snow-flow swarm "create a widget for incident management"
   snow-flow swarm "create approval flow"  # 🔧 Auto-detects Flow Designer and uses XML!
+  snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
   snow-flow spawn widget-builder --name "IncidentWidget"
   snow-flow monitor --duration 120
   snow-flow memory store "project" "incident_system"

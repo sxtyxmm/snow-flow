@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "3.4.10",
+  "version": "3.4.11",
   "description": "ServiceNow development framework with MCP server integration. Executes background scripts using ES5 JavaScript only (ServiceNow Rhino engine requirement). Provides 12 MCP servers for ServiceNow operations including widget deployment with coherence validation, table operations, script execution, and system property management.",
   "main": "dist/index.js",
   "type": "commonjs",
