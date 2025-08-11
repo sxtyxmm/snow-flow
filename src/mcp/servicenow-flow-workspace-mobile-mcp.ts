@@ -16,7 +16,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { MCPLogger } from '../shared/mcp-logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 
 class ServiceNowFlowWorkspaceMobileMCP {
   private server: Server;

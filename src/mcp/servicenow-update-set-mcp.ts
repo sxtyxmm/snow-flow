@@ -14,7 +14,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
-import { MCPLogger } from '../shared/mcp-logger.js';
+import { MCPLogger } from './shared/mcp-logger.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
