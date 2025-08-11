@@ -187,15 +187,27 @@ export class MCPLogger {
   
   /**
    * Add token usage to MCP response
-   * Helper method to append token usage to tool response
+   * Helper method to append token usage to tool response via _meta field
    */
   public addTokenUsageToResponse(result: any): any {
     const tokenUsage = this.getTokenUsage();
-    if (result && result.content && Array.isArray(result.content) && tokenUsage.total > 0) {
-      // Append token usage info to the last content item
-      const lastContent = result.content[result.content.length - 1];
-      if (lastContent && lastContent.type === 'text') {
-        lastContent.text += `\n\n📊 Token Usage: ${tokenUsage.total} (Input: ${tokenUsage.input}, Output: ${tokenUsage.output})`;
+    if (tokenUsage.total > 0) {
+      // Add token usage to _meta field for Claude Code UI
+      if (!result._meta) {
+        result._meta = {};
+      }
+      result._meta.tokenUsage = {
+        input: tokenUsage.input,
+        output: tokenUsage.output,
+        total: tokenUsage.total
+      };
+      
+      // Also keep text display for compatibility
+      if (result && result.content && Array.isArray(result.content)) {
+        const lastContent = result.content[result.content.length - 1];
+        if (lastContent && lastContent.type === 'text') {
+          lastContent.text += `\n\n📊 Token Usage: ${tokenUsage.total} (Input: ${tokenUsage.input}, Output: ${tokenUsage.output})`;
+        }
       }
     }
     return result;
