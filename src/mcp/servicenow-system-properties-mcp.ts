@@ -15,7 +15,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { MCPLogger } from './shared/mcp-logger.js';
-import { SnowOAuth } from '../utils/snow-oauth.js';
+import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { z } from 'zod';
 
 /**
@@ -25,7 +25,7 @@ import { z } from 'zod';
 export class ServiceNowSystemPropertiesMCP {
   private server: Server;
   private client: ServiceNowClient;
-  private oauth: SnowOAuth;
+  private oauth: ServiceNowOAuth;
   private logger: MCPLogger;
   private propertyCache: Map<string, any> = new Map();
   
@@ -43,7 +43,7 @@ export class ServiceNowSystemPropertiesMCP {
     );
 
     this.client = new ServiceNowClient();
-    this.oauth = new SnowOAuth();
+    this.oauth = new ServiceNowOAuth();
     this.logger = new MCPLogger('ServiceNowSystemProperties');
     this.setupHandlers();
     this.setupTools();

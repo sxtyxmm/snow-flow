@@ -942,7 +942,7 @@ class ServiceNowOperationsMCP {
         (fields && fields.length <= 2); // Minimal fields = analytics
       
       if (isAnalyticsContext) {
-        logger.info(`📊 Analytics context detected - NO LIMIT applied for complete analysis`);
+        this.logger.info(`📊 Analytics context detected - NO LIMIT applied for complete analysis`);
         return undefined; // No limit - get ALL records
       }
       
@@ -953,24 +953,24 @@ class ServiceNowOperationsMCP {
         table?.toLowerCase().includes('train');
       
       if (isMLContext) {
-        logger.info(`🧠 ML context detected - using ML-optimized limit: 5000`);
+        this.logger.info(`🧠 ML context detected - using ML-optimized limit: 5000`);
         return 5000; // ML training needs substantial data
       }
       
       // 📈 Count-only queries - efficient
       if (!includeContent) {
-        logger.info(`📈 Count-only query - can handle large datasets efficiently`);
+        this.logger.info(`📈 Count-only query - can handle large datasets efficiently`);
         return 10000; // Count queries are very memory-efficient
       }
       
       // 🖥️ Display context - limited data needed
       if (includeContent && fields && fields.length > 5) {
-        logger.info(`🖥️ Display context detected - limiting to viewable records`);
+        this.logger.info(`🖥️ Display context detected - limiting to viewable records`);
         return 100; // Display queries need less data
       }
       
       // Default: moderate limit
-      logger.info(`⚠️ No specific context detected - using conservative limit. Consider specifying limit for your use case!`);
+      this.logger.info(`⚠️ No specific context detected - using conservative limit. Consider specifying limit for your use case!`);
       return 500; // Conservative default
     };
     
@@ -1002,10 +1002,10 @@ class ServiceNowOperationsMCP {
                                args.limit !== undefined && args.limit < 1000;
     
     if (isMLTrainingContext && limit < 1000) {
-      logger.warn(`⚠️  ML Training detected with low limit (${limit}). Consider setting limit=5000+ for better training data!`);
+      this.logger.warn(`⚠️  ML Training detected with low limit (${limit}). Consider setting limit=5000+ for better training data!`);
     }
     
-    logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit === undefined ? 'UNLIMITED' : limit}, offset: ${offset}, include_content: ${include_content})`);
+    this.logger.info(`Universal query on table '${table}' with: ${query} (limit: ${limit === undefined ? 'UNLIMITED' : limit}, offset: ${offset}, include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
@@ -1059,7 +1059,7 @@ class ServiceNowOperationsMCP {
             const exists = sampleRecord.hasOwnProperty(field) || 
                           sampleRecord.hasOwnProperty(`${field}_display_value`);
             if (!exists) {
-              logger.warn(`⚠️ Field '${field}' not found in table '${table}'`);
+              this.logger.warn(`⚠️ Field '${field}' not found in table '${table}'`);
             }
             return exists;
           });
@@ -1150,7 +1150,7 @@ class ServiceNowOperationsMCP {
       };
     } catch (error: any) {
       // ✅ IMPROVED: Better error messages
-      logger.error(`Error querying ${table}:`, error);
+      this.logger.error(`Error querying ${table}:`, error);
       
       if (error.code === 'ECONNREFUSED') {
         throw new McpError(ErrorCode.InternalError, `Cannot connect to ServiceNow. Please check your instance URL and network connection.`);
@@ -1205,7 +1205,7 @@ class ServiceNowOperationsMCP {
       include_content = false  // 🎯 NEW: Explicit control over returning full incident data
     } = args;
     
-    logger.info(`Querying incidents with: ${query} (include_content: ${include_content})`);
+    this.logger.info(`Querying incidents with: ${query} (include_content: ${include_content})`);
     
     try {
       // Convert natural language to ServiceNow query if needed
@@ -1268,7 +1268,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error querying incidents:', error);
+      this.logger.error('Error querying incidents:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to query incidents: ${error}`);
     }
   }
@@ -1276,7 +1276,7 @@ class ServiceNowOperationsMCP {
   private async handleAnalyzeIncident(args: any) {
     const { incident_id, include_similar = true, suggest_resolution = true } = args;
     
-    logger.info(`Analyzing incident: ${incident_id}`);
+    this.logger.info(`Analyzing incident: ${incident_id}`);
     
     try {
       // Get incident details
@@ -1297,7 +1297,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error analyzing incident:', error);
+      this.logger.error('Error analyzing incident:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to analyze incident: ${error}`);
     }
   }
@@ -1305,7 +1305,7 @@ class ServiceNowOperationsMCP {
   private async handleAutoResolveIncident(args: any) {
     const { incident_id, dry_run = true } = args;
     
-    logger.info(`Auto-resolving incident: ${incident_id} (dry_run: ${dry_run})`);
+    this.logger.info(`Auto-resolving incident: ${incident_id} (dry_run: ${dry_run})`);
     
     try {
       // Get incident details
@@ -1342,7 +1342,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error auto-resolving incident:', error);
+      this.logger.error('Error auto-resolving incident:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to auto-resolve incident: ${error}`);
     }
   }
@@ -1350,7 +1350,7 @@ class ServiceNowOperationsMCP {
   private async handleQueryRequests(args: any) {
     const { query, limit = 10, include_items = false } = args;
     
-    logger.info(`Querying requests with: ${query}`);
+    this.logger.info(`Querying requests with: ${query}`);
     
     try {
       const processedQuery = this.processNaturalLanguageQuery(query, 'request');
@@ -1376,7 +1376,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error querying requests:', error);
+      this.logger.error('Error querying requests:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to query requests: ${error}`);
     }
   }
@@ -1384,7 +1384,7 @@ class ServiceNowOperationsMCP {
   private async handleQueryProblems(args: any) {
     const { query, limit = 10, include_incidents = false } = args;
     
-    logger.info(`Querying problems with: ${query}`);
+    this.logger.info(`Querying problems with: ${query}`);
     
     try {
       const processedQuery = this.processNaturalLanguageQuery(query, 'problem');
@@ -1410,7 +1410,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error querying problems:', error);
+      this.logger.error('Error querying problems:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to query problems: ${error}`);
     }
   }
@@ -1418,7 +1418,7 @@ class ServiceNowOperationsMCP {
   private async handleCMDBSearch(args: any) {
     const { query, ci_type = 'any', limit = 10, include_relationships = false } = args;
     
-    logger.info(`Searching CMDB with: ${query}, type: ${ci_type}`);
+    this.logger.info(`Searching CMDB with: ${query}, type: ${ci_type}`);
     
     try {
       const ciTable = ci_type === 'any' ? 'cmdb_ci' : (operationalTableMapping as any)[ci_type] || 'cmdb_ci';
@@ -1447,7 +1447,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error searching CMDB:', error);
+      this.logger.error('Error searching CMDB:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to search CMDB: ${error}`);
     }
   }
@@ -1455,7 +1455,7 @@ class ServiceNowOperationsMCP {
   private async handleUserLookup(args: any) {
     const { identifier, include_roles = true, include_groups = true } = args;
     
-    logger.info(`Looking up user: ${identifier}`);
+    this.logger.info(`Looking up user: ${identifier}`);
     
     try {
       // Try different user lookup strategies
@@ -1501,7 +1501,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error looking up user:', error);
+      this.logger.error('Error looking up user:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to lookup user: ${error}`);
     }
   }
@@ -1509,7 +1509,7 @@ class ServiceNowOperationsMCP {
   private async handleOperationalMetrics(args: any) {
     const { timeframe = 'week', metric_types = [] } = args;
     
-    logger.info(`Getting operational metrics for timeframe: ${timeframe}`);
+    this.logger.info(`Getting operational metrics for timeframe: ${timeframe}`);
     
     try {
       const metrics = await this.calculateOperationalMetrics(timeframe, metric_types);
@@ -1523,7 +1523,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error getting operational metrics:', error);
+      this.logger.error('Error getting operational metrics:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to get operational metrics: ${error}`);
     }
   }
@@ -1531,7 +1531,7 @@ class ServiceNowOperationsMCP {
   private async handlePatternAnalysis(args: any) {
     const { analysis_type, timeframe = 'week' } = args;
     
-    logger.info(`Performing pattern _analysis: ${analysis_type} for ${timeframe}`);
+    this.logger.info(`Performing pattern _analysis: ${analysis_type} for ${timeframe}`);
     
     try {
       const patterns = await this.analyzePatterns(analysis_type, timeframe);
@@ -1545,7 +1545,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error analyzing patterns:', error);
+      this.logger.error('Error analyzing patterns:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to analyze patterns: ${error}`);
     }
   }
@@ -1553,7 +1553,7 @@ class ServiceNowOperationsMCP {
   private async handleKnowledgeSearch(args: any) {
     const { query, match_incident, limit = 5 } = args;
     
-    logger.info(`Searching knowledge base with: ${query}`);
+    this.logger.info(`Searching knowledge base with: ${query}`);
     
     try {
       const processedQuery = this.processNaturalLanguageQuery(query, 'knowledge');
@@ -1582,7 +1582,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error searching knowledge base:', error);
+      this.logger.error('Error searching knowledge base:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to search knowledge base: ${error}`);
     }
   }
@@ -1590,7 +1590,7 @@ class ServiceNowOperationsMCP {
   private async handlePredictiveAnalysis(args: any) {
     const { prediction_type, timeframe = 'week' } = args;
     
-    logger.info(`Performing predictive _analysis: ${prediction_type} for ${timeframe}`);
+    this.logger.info(`Performing predictive _analysis: ${prediction_type} for ${timeframe}`);
     
     try {
       const predictions = await this.performPredictiveAnalysis(prediction_type, timeframe);
@@ -1604,7 +1604,7 @@ class ServiceNowOperationsMCP {
         ]
       };
     } catch (error) {
-      logger.error('Error performing predictive _analysis:', error);
+      this.logger.error('Error performing predictive _analysis:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to perform predictive _analysis: ${error}`);
     }
   }
@@ -1617,7 +1617,7 @@ class ServiceNowOperationsMCP {
     
     // If already a ServiceNow encoded query, return as-is
     if (query.includes('=') || query.includes('!=') || query.includes('^') || query.includes('LIKE')) {
-      logger.info(`Using raw ServiceNow query: ${query}`);
+      this.logger.info(`Using raw ServiceNow query: ${query}`);
       return query;
     }
     
@@ -1827,7 +1827,7 @@ class ServiceNowOperationsMCP {
     for (const action of actions) {
       try {
         // This would integrate with actual automation systems
-        logger.info(`Executing action: ${action} for incident ${incident_id}`);
+        this.logger.info(`Executing action: ${action} for incident ${incident_id}`);
         executed.push(`✅ ${action}`);
       } catch (error) {
         executed.push(`❌ ${action}: ${error}`);
@@ -1875,7 +1875,7 @@ class ServiceNowOperationsMCP {
           relationships: ciRelationships
         });
       } catch (error) {
-        logger.error(`Error getting relationships for CI ${ci.sys_id}:`, error);
+        this.logger.error(`Error getting relationships for CI ${ci.sys_id}:`, error);
       }
     }
     
@@ -1936,7 +1936,7 @@ class ServiceNowOperationsMCP {
         .map(([category, count]) => `${category}: ${count}`);
       
     } catch (error) {
-      logger.error('Error calculating operational metrics:', error);
+      this.logger.error('Error calculating operational metrics:', error);
     }
     
     return metrics;
@@ -2418,7 +2418,7 @@ class ServiceNowOperationsMCP {
   private async handleCatalogItemManager(args: any) {
     const { action, item_id, ...params } = args;
     
-    logger.info(`Catalog item manager action: ${action}`, { item_id, params });
+    this.logger.info(`Catalog item manager action: ${action}`, { item_id, params });
     
     try {
       switch (action) {
@@ -2437,12 +2437,12 @@ class ServiceNowOperationsMCP {
             
             if (defaultCatalogResult.success && defaultCatalogResult.data?.result?.length > 0) {
               catalogId = defaultCatalogResult.data.result[0].sys_id;
-              logger.info('Using default catalog:', { 
+              this.logger.info('Using default catalog:', { 
                 catalogId, 
                 catalogName: defaultCatalogResult.data.result[0].title 
               });
             } else {
-              logger.warn('No catalogs found, catalog item may not be visible');
+              this.logger.warn('No catalogs found, catalog item may not be visible');
             }
           }
           
@@ -2456,7 +2456,7 @@ class ServiceNowOperationsMCP {
             
             if (defaultCategoryResult.success && defaultCategoryResult.data?.result?.length > 0) {
               categoryId = defaultCategoryResult.data.result[0].sys_id;
-              logger.info('Using default category:', { 
+              this.logger.info('Using default category:', { 
                 categoryId, 
                 categoryName: defaultCategoryResult.data.result[0].title 
               });
@@ -2661,7 +2661,7 @@ class ServiceNowOperationsMCP {
           throw new Error(`Unknown action: ${action}`);
       }
     } catch (error) {
-      logger.error('Error in catalog item manager:', error);
+      this.logger.error('Error in catalog item manager:', error);
       throw new McpError(ErrorCode.InternalError, `Catalog item manager error: ${error}`);
     }
   }
@@ -2703,7 +2703,7 @@ class ServiceNowOperationsMCP {
   private async handleCatalogItemSearch(args: any) {
     const { query, include_inactive = false, fuzzy_match = true, category_filter, limit = 50, include_variables = false } = args;
     
-    logger.info(`Searching catalog items for: ${query}`, { fuzzy_match, category_filter, limit });
+    this.logger.info(`Searching catalog items for: ${query}`, { fuzzy_match, category_filter, limit });
     
     try {
       // Build search queries
@@ -2863,7 +2863,7 @@ class ServiceNowOperationsMCP {
         }]
       };
     } catch (error) {
-      logger.error('Error searching catalog items:', error);
+      this.logger.error('Error searching catalog items:', error);
       throw new McpError(ErrorCode.InternalError, `Catalog search error: ${error}`);
     }
   }
@@ -3022,7 +3022,7 @@ class ServiceNowOperationsMCP {
       update_set_filter
     } = args;
     
-    logger.info('Starting test artifact cleanup', {
+    this.logger.info('Starting test artifact cleanup', {
       artifact_types,
       test_patterns,
       max_age_hours,
@@ -3157,7 +3157,7 @@ class ServiceNowOperationsMCP {
       };
       
     } catch (error: any) {
-      logger.error('Error during test artifact cleanup:', error);
+      this.logger.error('Error during test artifact cleanup:', error);
       return {
         content: [{
           type: 'text',
@@ -3315,7 +3315,7 @@ class ServiceNowOperationsMCP {
   private async handleCreateUserGroup(args: any) {
     const { name, description, email, manager, parent, type, active = true } = args;
     
-    logger.info(`Creating user group: ${name}`);
+    this.logger.info(`Creating user group: ${name}`);
     
     try {
       // Check if group already exists
@@ -3349,7 +3349,7 @@ class ServiceNowOperationsMCP {
         if (managerUser) {
           groupData.manager = managerUser.sys_id;
         } else {
-          logger.warn(`Manager "${manager}" not found, creating group without manager`);
+          this.logger.warn(`Manager "${manager}" not found, creating group without manager`);
         }
       }
       
@@ -3359,7 +3359,7 @@ class ServiceNowOperationsMCP {
         if (parentGroup) {
           groupData.parent = parentGroup.sys_id;
         } else {
-          logger.warn(`Parent group "${parent}" not found, creating group without parent`);
+          this.logger.warn(`Parent group "${parent}" not found, creating group without parent`);
         }
       }
       
@@ -3404,7 +3404,7 @@ class ServiceNowOperationsMCP {
       password 
     } = args;
     
-    logger.info(`Creating user: ${user_name}`);
+    this.logger.info(`Creating user: ${user_name}`);
     
     try {
       // Check if user already exists
@@ -3441,7 +3441,7 @@ class ServiceNowOperationsMCP {
         if (managerUser) {
           userData.manager = managerUser.sys_id;
         } else {
-          logger.warn(`Manager "${manager}" not found, creating user without manager`);
+          this.logger.warn(`Manager "${manager}" not found, creating user without manager`);
         }
       }
       
@@ -3451,7 +3451,7 @@ class ServiceNowOperationsMCP {
         if (dept) {
           userData.department = dept.sys_id;
         } else {
-          logger.warn(`Department "${department}" not found, creating user without department`);
+          this.logger.warn(`Department "${department}" not found, creating user without department`);
         }
       }
       
@@ -3461,7 +3461,7 @@ class ServiceNowOperationsMCP {
         if (loc) {
           userData.location = loc.sys_id;
         } else {
-          logger.warn(`Location "${location}" not found, creating user without location`);
+          this.logger.warn(`Location "${location}" not found, creating user without location`);
         }
       }
       
@@ -3494,7 +3494,7 @@ class ServiceNowOperationsMCP {
   private async handleAssignUserToGroup(args: any) {
     const { user, group } = args;
     
-    logger.info(`Assigning user ${user} to group ${group}`);
+    this.logger.info(`Assigning user ${user} to group ${group}`);
     
     try {
       // Find the user
@@ -3564,7 +3564,7 @@ class ServiceNowOperationsMCP {
   private async handleRemoveUserFromGroup(args: any) {
     const { user, group } = args;
     
-    logger.info(`Removing user ${user} from group ${group}`);
+    this.logger.info(`Removing user ${user} from group ${group}`);
     
     try {
       // Find the user
@@ -3627,7 +3627,7 @@ class ServiceNowOperationsMCP {
   private async handleListGroupMembers(args: any) {
     const { group, active_only = true } = args;
     
-    logger.info(`Listing members of group: ${group}`);
+    this.logger.info(`Listing members of group: ${group}`);
     
     try {
       // Find the group
@@ -3671,7 +3671,7 @@ class ServiceNowOperationsMCP {
         
         // Defensive programming: check if user object exists and has required fields
         if (!u || !u.user_name) {
-          logger.warn(`Group member ${index + 1} has invalid user data:`, member);
+          this.logger.warn(`Group member ${index + 1} has invalid user data:`, member);
           response += `${index + 1}. **Invalid User Data** - ${member.sys_id || 'Unknown ID'}\n\n`;
           return;
         }
@@ -3779,7 +3779,7 @@ class ServiceNowOperationsMCP {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    logger.info('ServiceNow Operations MCP Server started');
+    this.logger.info('ServiceNow Operations MCP Server started');
   }
 }
 
