@@ -18,8 +18,7 @@ export class MCPLogger {
 
   constructor(name: string) {
     this.name = name;
-    // Start progress indicator
-    this.startProgressIndicator();
+    // Don't start progress indicator automatically - only start when needed
   }
 
   /**
@@ -53,13 +52,13 @@ export class MCPLogger {
    * Start progress indicator for long-running operations
    */
   private startProgressIndicator() {
-    // Send progress every 2 seconds
+    // Send progress every 5 seconds (reduced frequency)
     this.progressInterval = setInterval(() => {
       const duration = Math.round((Date.now() - this.startTime) / 1000);
-      if (duration > 0) {
+      if (duration > 3) { // Only show progress after 3+ seconds
         this.progress(`Operation in progress... (${duration}s elapsed, ${this.tokenUsage.total} tokens used)`);
       }
-    }, 2000);
+    }, 5000);
   }
 
   /**
@@ -96,6 +95,18 @@ export class MCPLogger {
       name: error.name
     } : error;
     this.log('ERROR', message, errorData);
+  }
+  
+  /**
+   * Log operation error - ensures progress indicator is stopped
+   */
+  public operationError(operation: string, error: any) {
+    const duration = Math.round((Date.now() - this.startTime) / 1000);
+    
+    // Always stop progress indicator when operation fails
+    this.stopProgress();
+    
+    this.error(`❌ Failed: ${operation} (${duration}s)`, error);
   }
 
   /**
@@ -152,6 +163,13 @@ export class MCPLogger {
     this.startTime = Date.now();
     this.resetTokens(); // Actually reset tokens when starting new operation!
     this.info(`🚀 Starting: ${operation}`, params);
+    
+    // Start progress indicator after 3 seconds (only for long operations)
+    setTimeout(() => {
+      if (!this.progressInterval) {
+        this.startProgressIndicator();
+      }
+    }, 3000);
   }
 
   /**
@@ -159,22 +177,15 @@ export class MCPLogger {
    */
   public operationComplete(operation: string, result?: any) {
     const duration = Math.round((Date.now() - this.startTime) / 1000);
+    
+    // Always stop progress indicator first
     this.stopProgress();
+    
     this.info(`✅ Completed: ${operation} (${duration}s, ${this.tokenUsage.total} tokens)`, result);
     
-    // Send final token report
-    if (this.tokenUsage.total > 0) {
-      console.error(`
-═══════════════════════════════════════════════════════════
-📊 ${this.name} - Operation Complete
-─────────────────────────────────────────────────────────
-⏱️  Duration: ${duration} seconds
-🔢 Tokens Used: ${this.tokenUsage.total}
-   ├─ Input: ${this.tokenUsage.input}
-   └─ Output: ${this.tokenUsage.output}
-🎯 Operation: ${operation}
-═══════════════════════════════════════════════════════════
-      `);
+    // Only show token report for operations with actual token usage
+    if (this.tokenUsage.total > 0 && duration > 1) {
+      console.error(`📊 [${this.name}] ${operation} completed: ${duration}s, ${this.tokenUsage.total} tokens`);
     }
   }
 

@@ -923,7 +923,7 @@ class ServiceNowOperationsMCP {
         
         return result;
       } catch (error) {
-        this.logger.error(`Error executing tool ${name}:`, error);
+        this.logger.operationError(name, error);
         throw new McpError(ErrorCode.InternalError, `Failed to execute ${name}: ${error}`);
       }
     });
