@@ -305,7 +305,7 @@ Follow this systematic approach for all debugging:
 
 ## MCP Server Capabilities
 
-Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNow capabilities:
+Snow-Flow includes 17 specialized MCP servers, each providing comprehensive ServiceNow capabilities:
 
 ### 1. ServiceNow Deployment Server
 **Purpose:** Widget and artifact deployment with coherence validation
@@ -491,7 +491,100 @@ Snow-Flow includes 12 specialized MCP servers, each providing specific ServiceNo
 - Anomaly detection
 - Process optimization
 
-### 12. Snow-Flow Orchestration Server
+### 12. ServiceNow Knowledge & Catalog Server
+**Purpose:** Knowledge base and service catalog management
+
+**Key Tools:**
+- `snow_create_knowledge_article` - Create knowledge articles
+- `snow_search_knowledge` - Search knowledge base
+- `snow_create_catalog_item` - Create catalog items
+- `snow_create_catalog_variable` - Create catalog variables
+- `snow_create_catalog_ui_policy` - Create UI policies
+- `snow_order_catalog_item` - Order catalog items
+- `snow_discover_catalogs` - Discover available catalogs
+
+**Features:**
+- Knowledge article management
+- Service catalog configuration
+- Catalog item ordering
+- Variable and policy management
+
+### 13. ServiceNow Change, Virtual Agent & PA Server
+**Purpose:** Change management, Virtual Agent, and Performance Analytics
+
+**Key Tools:**
+- `snow_create_change_request` - Create change requests
+- `snow_schedule_cab_meeting` - Schedule CAB meetings
+- `snow_create_va_topic` - Create Virtual Agent topics
+- `snow_send_va_message` - Send VA messages
+- `snow_create_pa_indicator` - Create PA indicators
+- `snow_create_pa_widget` - Create PA widgets
+- `snow_get_pa_scores` - Get performance scores
+
+**Features:**
+- Change management workflows
+- Virtual Agent configuration
+- Performance Analytics setup
+- CAB meeting management
+
+### 14. ServiceNow Flow, Workspace & Mobile Server
+**Purpose:** Flow Designer, Workspace configuration, and Mobile app management
+
+**Key Tools:**
+- `snow_create_flow` - Create Flow Designer flows
+- `snow_create_flow_action` - Create flow actions
+- `snow_test_flow` - Test flows
+- `snow_create_workspace` - Create workspaces
+- `snow_configure_mobile_app` - Configure mobile app
+- `snow_send_push_notification` - Send push notifications
+- `snow_configure_offline_sync` - Configure offline sync
+
+**Features:**
+- Flow Designer automation
+- Workspace configuration
+- Mobile app management
+- Push notification system
+
+### 15. ServiceNow CMDB, Event, HR, CSM & DevOps Server
+**Purpose:** CMDB management, Event processing, HR services, Customer Service, and DevOps
+
+**Key Tools:**
+- `snow_create_ci` - Create Configuration Items
+- `snow_create_ci_relationship` - Create CI relationships
+- `snow_run_discovery` - Run discovery
+- `snow_create_event` - Create events
+- `snow_create_hr_case` - Create HR cases
+- `snow_employee_onboarding` - Employee onboarding
+- `snow_create_customer_case` - Create customer cases
+- `snow_create_devops_pipeline` - Create DevOps pipelines
+
+**Features:**
+- CMDB management
+- Event correlation
+- HR case management
+- Customer service management
+- DevOps pipeline integration
+
+### 16. ServiceNow Advanced Features Server
+**Purpose:** Advanced capabilities for optimization and analysis
+
+**Key Tools:**
+- `snow_batch_api` - Batch API operations (80% API reduction)
+- `snow_get_table_relationships` - Analyze table relationships
+- `snow_analyze_query` - Query optimization
+- `snow_detect_code_patterns` - Code pattern detection
+- `snow_discover_process` - Process discovery
+- `snow_analyze_workflow_execution` - Workflow analysis
+- `snow_generate_documentation` - Auto-documentation
+
+**Features:**
+- Batch operations for performance
+- Advanced analytics
+- Process mining
+- Code optimization
+- Automatic documentation
+
+### 17. Snow-Flow Orchestration Server
 **Purpose:** Multi-agent coordination and task management
 
 **Key Tools:**

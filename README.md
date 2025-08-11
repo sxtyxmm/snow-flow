@@ -231,9 +231,9 @@ const prediction = await snow_predict({
 // Result: { category: "Email", confidence: 0.94 }
 ```
 
-## 🔧 16+ Specialized MCP Servers
+## 🔧 17 Specialized MCP Servers
 
-Snow-Flow includes 16+ MCP servers, each providing specialized tools for different aspects of ServiceNow development:
+Snow-Flow includes exactly 17 MCP servers, each providing specialized tools for different aspects of ServiceNow development:
 
 ### 1. 🚀 **Deployment Server** (40+ tools)
 Deploy artifacts with automatic validation and rollback capabilities
@@ -308,7 +308,47 @@ Advanced reporting and visualization
 - `snow_define_kpi` - KPI management
 - `snow_analyze_data_quality` - Data validation
 
-### 12. 👑 **Orchestration Server** (25+ tools)
+### 12. 📚 **Knowledge & Catalog Server** (14+ tools)
+Knowledge base and service catalog management
+- `snow_create_knowledge_article` - Create articles
+- `snow_search_knowledge` - Search knowledge base
+- `snow_create_catalog_item` - Create catalog items
+- `snow_create_catalog_variable` - Catalog variables
+- `snow_order_catalog_item` - Order items
+
+### 13. 🔄 **Change, Virtual Agent & PA Server** (19+ tools)
+Change management, Virtual Agent, and Performance Analytics
+- `snow_create_change_request` - Change requests
+- `snow_schedule_cab_meeting` - CAB meetings
+- `snow_create_va_topic` - Virtual Agent topics
+- `snow_create_pa_indicator` - PA indicators
+- `snow_get_pa_scores` - Performance scores
+
+### 14. 📱 **Flow, Workspace & Mobile Server** (20+ tools)
+Flow Designer, Workspace, and Mobile app management
+- `snow_create_flow` - Create flows
+- `snow_test_flow` - Test flows
+- `snow_create_workspace` - Create workspaces
+- `snow_configure_mobile_app` - Mobile config
+- `snow_send_push_notification` - Push notifications
+
+### 15. 🗄️ **CMDB, Event, HR, CSM & DevOps Server** (23+ tools)
+Configuration, Events, HR, Customer Service, DevOps
+- `snow_create_ci` - Create CIs
+- `snow_run_discovery` - Run discovery
+- `snow_create_event` - Create events
+- `snow_employee_onboarding` - HR onboarding
+- `snow_create_devops_pipeline` - DevOps pipelines
+
+### 16. ⚡ **Advanced Features Server** (14+ tools)
+Advanced optimization and analysis capabilities
+- `snow_batch_api` - Batch operations (80% API reduction)
+- `snow_get_table_relationships` - Table analysis
+- `snow_discover_process` - Process mining
+- `snow_analyze_workflow_execution` - Workflow analysis
+- `snow_generate_documentation` - Auto-documentation
+
+### 17. 👑 **Orchestration Server** (25+ tools)
 Multi-agent coordination
 - `snow_swarm_init` - Initialize swarms
 - `snow_agent_spawn` - Create agents
