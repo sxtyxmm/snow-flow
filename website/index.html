@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow-Flow - Advanced ServiceNow Development Framework</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo">🏔️❄️</span>
+                <span class="brand-name">Snow-Flow</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#mcp-servers" class="nav-link">MCP Servers</a></li>
+                <li><a href="#installation" class="nav-link">Installation</a></li>
+                <li><a href="#examples" class="nav-link">Examples</a></li>
+                <li><a href="#api" class="nav-link">API</a></li>
+                <li><a href="https://github.com/groeimetai/snow-flow" class="nav-link github">GitHub</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-logo">🏔️❄️</div>
+                <h1 class="hero-title">Snow-Flow</h1>
+                <p class="hero-subtitle">Advanced ServiceNow Development Framework with AI-Powered Automation</p>
+                <p class="hero-description">
+                    Snow-Flow is a cutting-edge development framework that revolutionizes ServiceNow development through 
+                    intelligent automation, multi-agent coordination, and the Model Context Protocol (MCP).
+                </p>
+                <div class="hero-buttons">
+                    <a href="#installation" class="btn btn-primary">Get Started</a>
+                    <a href="#features" class="btn btn-secondary">Learn More</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">16+</span>
+                        <span class="stat-label">MCP Servers</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">200+</span>
+                        <span class="stat-label">Tools</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">80%</span>
+                        <span class="stat-label">API Reduction</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Real Data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What is Snow-Flow -->
+    <section class="what-is">
+        <div class="container">
+            <h2 class="section-title">What is Snow-Flow?</h2>
+            <div class="what-is-grid">
+                <div class="what-is-card">
+                    <div class="card-icon">🤖</div>
+                    <h3>AI-Powered Development</h3>
+                    <p>Snow-Flow integrates Claude AI for intelligent code generation, pattern recognition, and automated development workflows. It understands ServiceNow's ES5 JavaScript requirements and generates production-ready code.</p>
+                </div>
+                <div class="what-is-card">
+                    <div class="card-icon">🔄</div>
+                    <h3>Multi-Agent Orchestration</h3>
+                    <p>Coordinate multiple specialized agents working in parallel. From researchers to coders, testers to deployers - Snow-Flow manages complex development tasks through intelligent agent swarms.</p>
+                </div>
+                <div class="what-is-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>MCP Integration</h3>
+                    <p>Built on the Model Context Protocol, Snow-Flow provides 16+ specialized MCP servers that handle everything from widget deployment to machine learning, each with dedicated tools for ServiceNow operations.</p>
+                </div>
+                <div class="what-is-card">
+                    <div class="card-icon">📊</div>
+                    <h3>Real-Time Analytics</h3>
+                    <p>No mock data ever! Snow-Flow connects directly to your ServiceNow instance, providing real-time analytics, performance monitoring, and data-driven insights from actual production data.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Core Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Instant Deployment</h3>
+                    <p>Deploy widgets, flows, and applications directly to ServiceNow with automatic coherence validation and rollback capabilities.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Machine Learning</h3>
+                    <p>Built-in TensorFlow.js integration for incident classification, anomaly detection, and predictive analytics.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✅</div>
+                    <h3>ES5 Validation</h3>
+                    <p>Automatic conversion and validation of JavaScript code to ensure compatibility with ServiceNow's Rhino engine.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📝</div>
+                    <h3>Script Execution</h3>
+                    <p>Execute background scripts with full output capture, including gs.print, gs.info, gs.warn, and gs.error messages.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Smart Discovery</h3>
+                    <p>Automatically discover tables, fields, relationships, and dependencies in your ServiceNow instance.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Security & Compliance</h3>
+                    <p>Built-in security scanning, compliance checking, and access control validation for SOX, GDPR, and HIPAA.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MCP Servers Section -->
+    <section id="mcp-servers" class="mcp-servers">
+        <div class="container">
+            <h2 class="section-title">MCP Servers & Tools</h2>
+            <p class="section-subtitle">Snow-Flow includes 16+ specialized MCP servers, each providing powerful tools for ServiceNow development</p>
+            
+            <div class="mcp-grid">
+                <!-- ServiceNow Deployment MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🚀 Deployment Server</h3>
+                        <span class="mcp-badge">40+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Widget and artifact deployment with automatic coherence validation</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_deploy_widget</code> - Deploy widgets with validation</li>
+                            <li><code>snow_deploy_portal_page</code> - Deploy portal pages</li>
+                            <li><code>snow_deploy_flow</code> - Deploy Flow Designer flows</li>
+                            <li><code>snow_create_update_set</code> - Create update sets</li>
+                            <li><code>snow_validate_deployment</code> - Validate deployments</li>
+                            <li><code>snow_rollback_deployment</code> - Rollback on failure</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Operations MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>⚙️ Operations Server</h3>
+                        <span class="mcp-badge">30+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Core ServiceNow operations and CRUD functionality</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_query_table</code> - Universal table querying</li>
+                            <li><code>snow_create_incident</code> - Create incidents</li>
+                            <li><code>snow_update_record</code> - Update any record</li>
+                            <li><code>snow_discover_table_fields</code> - Discover schema</li>
+                            <li><code>snow_cmdb_search</code> - Search CMDB</li>
+                            <li><code>snow_get_by_sysid</code> - Get record by sys_id</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Automation MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🤖 Automation Server</h3>
+                        <span class="mcp-badge">25+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Script execution and automation with output capture</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_execute_script_with_output</code> - Execute with output</li>
+                            <li><code>snow_get_script_output</code> - Retrieve execution history</li>
+                            <li><code>snow_execute_script_sync</code> - Synchronous execution</li>
+                            <li><code>snow_get_logs</code> - Access system logs</li>
+                            <li><code>snow_test_rest_connection</code> - Test REST APIs</li>
+                            <li><code>snow_trace_execution</code> - Trace execution</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Machine Learning MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🧠 Machine Learning Server</h3>
+                        <span class="mcp-badge">20+ Tools</span>
+                    </div>
+                    <p class="mcp-description">AI/ML capabilities with TensorFlow.js integration</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_train_classifier</code> - Train incident classifier</li>
+                            <li><code>snow_predict_change_risk</code> - Predict risks</li>
+                            <li><code>snow_detect_anomalies</code> - Anomaly detection</li>
+                            <li><code>snow_forecast_incidents</code> - Incident forecasting</li>
+                            <li><code>snow_optimize_process</code> - Process optimization</li>
+                            <li><code>snow_sentiment_analysis</code> - Analyze sentiment</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Platform Development MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>💻 Platform Development Server</h3>
+                        <span class="mcp-badge">20+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Create platform artifacts and custom applications</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_create_script_include</code> - Create Script Includes</li>
+                            <li><code>snow_create_business_rule</code> - Create Business Rules</li>
+                            <li><code>snow_create_client_script</code> - Create Client Scripts</li>
+                            <li><code>snow_create_ui_policy</code> - Create UI Policies</li>
+                            <li><code>snow_create_ui_action</code> - Create UI Actions</li>
+                            <li><code>snow_create_ui_page</code> - Create UI Pages</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Integration MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🔗 Integration Server</h3>
+                        <span class="mcp-badge">15+ Tools</span>
+                    </div>
+                    <p class="mcp-description">REST/SOAP integrations and data transformations</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_create_rest_message</code> - Create REST integrations</li>
+                            <li><code>snow_create_transform_map</code> - Data transformations</li>
+                            <li><code>snow_create_import_set</code> - Manage import sets</li>
+                            <li><code>snow_test_web_service</code> - Test web services</li>
+                            <li><code>snow_configure_email</code> - Email configuration</li>
+                            <li><code>snow_create_oauth_profile</code> - OAuth setup</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow System Properties MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>⚙️ System Properties Server</h3>
+                        <span class="mcp-badge">10+ Tools</span>
+                    </div>
+                    <p class="mcp-description">System property management and configuration</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_property_get</code> - Get property values</li>
+                            <li><code>snow_property_set</code> - Set property values</li>
+                            <li><code>snow_property_list</code> - List by pattern</li>
+                            <li><code>snow_property_bulk_update</code> - Bulk operations</li>
+                            <li><code>snow_property_export</code> - Export to JSON</li>
+                            <li><code>snow_property_import</code> - Import from JSON</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Update Set MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>📦 Update Set Server</h3>
+                        <span class="mcp-badge">10+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Change management and update set operations</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_create_update_set</code> - Create update sets</li>
+                            <li><code>snow_switch_update_set</code> - Switch active set</li>
+                            <li><code>snow_complete_update_set</code> - Mark complete</li>
+                            <li><code>snow_preview_update_set</code> - Preview changes</li>
+                            <li><code>snow_export_update_set</code> - Export as XML</li>
+                            <li><code>snow_import_update_set</code> - Import XML</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Development Assistant MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🎯 Development Assistant Server</h3>
+                        <span class="mcp-badge">15+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Code generation and best practices enforcement</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_generate_code</code> - Generate ServiceNow code</li>
+                            <li><code>snow_suggest_pattern</code> - Design patterns</li>
+                            <li><code>snow_review_code</code> - Code review</li>
+                            <li><code>snow_optimize_performance</code> - Performance tips</li>
+                            <li><code>snow_convert_to_es5</code> - ES5 conversion</li>
+                            <li><code>snow_generate_documentation</code> - Auto docs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Security & Compliance MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>🔒 Security & Compliance Server</h3>
+                        <span class="mcp-badge">15+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Security scanning and compliance validation</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_create_security_policy</code> - Security policies</li>
+                            <li><code>snow_audit_compliance</code> - Compliance audit</li>
+                            <li><code>snow_scan_vulnerabilities</code> - Vulnerability scan</li>
+                            <li><code>snow_assess_risk</code> - Risk assessment</li>
+                            <li><code>snow_review_access_control</code> - ACL review</li>
+                            <li><code>snow_gdpr_compliance_check</code> - GDPR check</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ServiceNow Reporting & Analytics MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>📊 Reporting & Analytics Server</h3>
+                        <span class="mcp-badge">20+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Advanced reporting and data visualization</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_create_report</code> - Create reports</li>
+                            <li><code>snow_create_dashboard</code> - Build dashboards</li>
+                            <li><code>snow_define_kpi</code> - Define KPIs</li>
+                            <li><code>snow_schedule_report</code> - Schedule delivery</li>
+                            <li><code>snow_analyze_data_quality</code> - Data quality</li>
+                            <li><code>snow_create_performance_dashboard</code> - Performance</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Snow-Flow Orchestration MCP -->
+                <div class="mcp-card">
+                    <div class="mcp-header">
+                        <h3>👑 Orchestration Server</h3>
+                        <span class="mcp-badge">25+ Tools</span>
+                    </div>
+                    <p class="mcp-description">Multi-agent coordination and task management</p>
+                    <div class="mcp-tools">
+                        <h4>Key Tools:</h4>
+                        <ul>
+                            <li><code>snow_swarm_init</code> - Initialize agent swarms</li>
+                            <li><code>snow_agent_spawn</code> - Create specialized agents</li>
+                            <li><code>snow_task_orchestrate</code> - Orchestrate tasks</li>
+                            <li><code>snow_memory_store</code> - Persistent memory</li>
+                            <li><code>snow_neural_train</code> - Train neural networks</li>
+                            <li><code>snow_performance_analyze</code> - Performance analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How Snow-Flow Works</h2>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <h3>Initialize</h3>
+                    <p>Install Snow-Flow and authenticate with your ServiceNow instance using OAuth</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <h3>Command</h3>
+                    <p>Use natural language or CLI commands to describe what you want to build</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <h3>Orchestrate</h3>
+                    <p>Snow-Flow coordinates multiple agents and MCP servers to complete the task</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <h3>Deploy</h3>
+                    <p>Automatically deploy validated artifacts directly to ServiceNow</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2 class="section-title">Installation & Setup</h2>
+            
+            <div class="install-tabs">
+                <button class="tab-btn active" data-tab="npm">NPM Install</button>
+                <button class="tab-btn" data-tab="git">Git Clone</button>
+                <button class="tab-btn" data-tab="config">Configuration</button>
+            </div>
+
+            <div class="tab-content active" id="npm">
+                <h3>Install via NPM</h3>
+                <pre><code class="language-bash"># Install Snow-Flow globally
+npm install -g snow-flow
+
+# Initialize Snow-Flow in your project
+snow-flow init
+
+# Authenticate with ServiceNow
+snow-flow auth login</code></pre>
+            </div>
+
+            <div class="tab-content" id="git">
+                <h3>Install from GitHub</h3>
+                <pre><code class="language-bash"># Clone the repository
+git clone https://github.com/groeimetai/snow-flow.git
+
+# Navigate to directory
+cd snow-flow
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Link globally
+npm link
+
+# Initialize
+snow-flow init</code></pre>
+            </div>
+
+            <div class="tab-content" id="config">
+                <h3>Configuration</h3>
+                <pre><code class="language-javascript">// .snow-flow.config.json
+{
+  "instance": "https://your-instance.service-now.com",
+  "auth": {
+    "type": "oauth",
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret"
+  },
+  "mcp": {
+    "servers": ["all"], // or specific servers
+    "timeout": 30000,
+    "maxRetries": 3
+  },
+  "development": {
+    "es5Validation": true,
+    "autoTest": true,
+    "coherenceCheck": true
+  }
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="examples">
+        <div class="container">
+            <h2 class="section-title">Real-World Examples</h2>
+            <p class="section-subtitle">See Snow-Flow in action with these practical ServiceNow development scenarios</p>
+            
+            <div class="example-grid">
+                <!-- Example 1: Widget Deployment -->
+                <div class="example-card">
+                    <h3>Deploy a Dashboard Widget</h3>
+                    <pre><code class="language-javascript">// Create and deploy an incident dashboard widget
+await snow_deploy_widget({
+  name: "Incident Dashboard",
+  template: `
+    &lt;div class="dashboard"&gt;
+      &lt;div ng-repeat="incident in data.incidents"&gt;
+        &lt;span&gt;{{incident.number}}&lt;/span&gt;
+        &lt;span&gt;{{incident.short_description}}&lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  `,
+  server_script: `
+    (function() {
+      var gr = new GlideRecord('incident');
+      gr.addActiveQuery();
+      gr.query();
+      data.incidents = [];
+      while(gr.next()) {
+        data.incidents.push({
+          number: gr.getValue('number'),
+          short_description: gr.getValue('short_description')
+        });
+      }
+    })();
+  `,
+  client_script: `
+    function($scope) {
+      var c = this;
+      // Client logic here
+    }
+  `
+});</code></pre>
+                </div>
+
+                <!-- Example 2: Script Execution -->
+                <div class="example-card">
+                    <h3>Execute Background Script</h3>
+                    <pre><code class="language-javascript">// Execute script with full output capture
+const result = await snow_execute_script_with_output({
+  script: `
+    gs.info('Starting incident analysis...');
+    
+    var stats = {};
+    var gr = new GlideRecord('incident');
+    gr.addActiveQuery();
+    gr.query();
+    
+    stats.total = gr.getRowCount();
+    
+    var priority = new GlideAggregate('incident');
+    priority.addActiveQuery();
+    priority.groupBy('priority');
+    priority.addAggregate('COUNT');
+    priority.query();
+    
+    stats.byPriority = {};
+    while(priority.next()) {
+      var p = priority.getValue('priority');
+      stats.byPriority[p] = priority.getAggregate('COUNT');
+    }
+    
+    gs.print('Analysis complete: ' + JSON.stringify(stats));
+    return stats;
+  `
+});
+
+console.log('Execution Output:', result.output);
+console.log('Returned Data:', result.returnValue);</code></pre>
+                </div>
+
+                <!-- Example 3: Multi-Agent Task -->
+                <div class="example-card">
+                    <h3>Multi-Agent Development</h3>
+                    <pre><code class="language-bash"># Use swarm coordination for complex tasks
+snow-flow swarm "Build complete incident management system with SLA tracking, automated assignment, and reporting dashboard" \
+  --strategy development \
+  --mode hierarchical \
+  --max-agents 8 \
+  --monitor
+
+# The swarm will:
+# 1. Research best practices
+# 2. Design the architecture
+# 3. Develop components in parallel
+# 4. Test everything
+# 5. Deploy to ServiceNow
+# 6. Generate documentation</code></pre>
+                </div>
+
+                <!-- Example 4: Machine Learning -->
+                <div class="example-card">
+                    <h3>Train Incident Classifier</h3>
+                    <pre><code class="language-javascript">// Train ML model for incident classification
+const model = await snow_train_classifier({
+  type: 'incident_category',
+  training_data: {
+    table: 'incident',
+    fields: ['short_description', 'description'],
+    label: 'category',
+    limit: 1000
+  },
+  model_config: {
+    type: 'lstm',
+    epochs: 50,
+    batch_size: 32
+  }
+});
+
+// Use the trained model
+const prediction = await snow_predict({
+  model_id: model.id,
+  input: {
+    short_description: "Cannot access email",
+    description: "Outlook is not connecting to server"
+  }
+});
+
+console.log('Predicted category:', prediction.category);
+console.log('Confidence:', prediction.confidence);</code></pre>
+                </div>
+
+                <!-- User Examples Placeholder -->
+                <div class="example-card user-examples">
+                    <h3>📝 Your Examples</h3>
+                    <div class="user-examples-placeholder">
+                        <p>This section is reserved for your ServiceNow developer instance examples.</p>
+                        <p>Add your own real-world implementations here!</p>
+                        <div class="example-template">
+                            <pre><code class="language-javascript">// Your custom example code
+// From your ServiceNow developer instance
+// Show real implementations and use cases</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Reference -->
+    <section id="api" class="api-reference">
+        <div class="container">
+            <h2 class="section-title">API Reference</h2>
+            <div class="api-categories">
+                <div class="api-category">
+                    <h3>CLI Commands</h3>
+                    <ul class="api-list">
+                        <li><code>snow-flow init</code> - Initialize project</li>
+                        <li><code>snow-flow auth login</code> - Authenticate</li>
+                        <li><code>snow-flow start</code> - Start orchestration</li>
+                        <li><code>snow-flow agent spawn &lt;type&gt;</code> - Create agent</li>
+                        <li><code>snow-flow swarm "&lt;task&gt;"</code> - Multi-agent task</li>
+                        <li><code>snow-flow memory store</code> - Store data</li>
+                        <li><code>snow-flow sparc &lt;mode&gt;</code> - SPARC modes</li>
+                    </ul>
+                </div>
+                <div class="api-category">
+                    <h3>JavaScript API</h3>
+                    <ul class="api-list">
+                        <li><code>snow_deploy_widget()</code> - Deploy widgets</li>
+                        <li><code>snow_execute_script()</code> - Run scripts</li>
+                        <li><code>snow_query_table()</code> - Query data</li>
+                        <li><code>snow_create_flow()</code> - Create flows</li>
+                        <li><code>snow_train_classifier()</code> - Train ML</li>
+                        <li><code>snow_test_rest_connection()</code> - Test APIs</li>
+                        <li><code>snow_property_manager()</code> - Properties</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Best Practices -->
+    <section class="best-practices">
+        <div class="container">
+            <h2 class="section-title">Best Practices</h2>
+            <div class="practices-grid">
+                <div class="practice">
+                    <h3>🔍 Always Verify First</h3>
+                    <p>Never assume something doesn't exist. Always verify with background scripts before making changes.</p>
+                </div>
+                <div class="practice">
+                    <h3>📝 Use ES5 JavaScript</h3>
+                    <p>ServiceNow uses Rhino engine. Always write ES5-compatible code - no arrow functions, const/let, or template literals.</p>
+                </div>
+                <div class="practice">
+                    <h3>🔄 Sync User Changes</h3>
+                    <p>When users modify artifacts in ServiceNow, always fetch the latest version before making additional changes.</p>
+                </div>
+                <div class="practice">
+                    <h3>✅ Widget Coherence</h3>
+                    <p>Ensure perfect communication between HTML template, client script, and server script in widgets.</p>
+                </div>
+                <div class="practice">
+                    <h3>📊 Use Real Data</h3>
+                    <p>Snow-Flow never uses mock data. Always test with real ServiceNow instance data.</p>
+                </div>
+                <div class="practice">
+                    <h3>🚀 Leverage MCP Servers</h3>
+                    <p>Use specialized MCP servers for specific tasks - each is optimized for its domain.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Snow-Flow</h4>
+                    <p>Advanced ServiceNow Development Framework</p>
+                    <div class="footer-logo">🏔️❄️</div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#mcp-servers">MCP Servers</a></li>
+                        <li><a href="#examples">Examples</a></li>
+                        <li><a href="#api">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+                        <li><a href="https://www.npmjs.com/package/snow-flow">NPM Package</a></li>
+                        <li><a href="docs/claude-md.html">CLAUDE.md</a></li>
+                        <li><a href="docs/api-full.html">Full API Docs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Version</h4>
+                    <p>v3.4.14</p>
+                    <p>MIT License</p>
+                    <p>&copy; 2024 Snow-Flow Team</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>
