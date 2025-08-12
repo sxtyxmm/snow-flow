@@ -1,391 +1,516 @@
-# Snow-Flow: Multi-Agent ServiceNow Development Platform 🚀
+# Snow-Flow
 
-Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
+ServiceNow development framework with AI-powered automation through 17 MCP servers and 200+ specialized tools.
 
-## 🆕 What's New in v1.1.51
+## Table of Contents
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Claude Code Setup](#claude-code-setup)
+- [MCP Servers](#mcp-servers)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-### 🎯 CRITICAL FIXES - All User Issues Resolved!
-- **ROOT CAUSE SOLVED**: Flow Designer validation failures completely eliminated
-- **JSON SCHEMA FLEXIBILITY**: Accepts both "steps" and "activities" arrays with auto-conversion
-- **DOCUMENTATION SYNC**: Init command now creates comprehensive CLAUDE.md (373 lines vs 15)
-- **COMPLETE GUIDE**: New users get full Snow-Flow development environment from day one
-
-### 🧠 Intelligent Error Recovery (v1.1.48-1.1.49)
-- **AUTOMATIC FALLBACKS**: Flow Designer → Business Rule conversion when deployment fails
-- **SMART SESSIONS**: Update Sets auto-create when none exist - no more "no active session" errors
-- **ZERO MANUAL WORK**: All systematic errors from user feedback now automatically handled
-- **COMPREHENSIVE TESTING**: Enhanced flow testing with Business Rule fallback detection
-
-### 🚀 Enhanced Swarm Command (v1.1.42+)
-Most intelligent features are now **enabled by default** - één command voor alles!
-- **DEFAULT TRUE**: `--smart-discovery`, `--live-testing`, `--auto-deploy`, `--auto-rollback`, `--shared-memory`, `--progress-monitoring`
-- **INTELLIGENT ORCHESTRATION**: Uses `snow_orchestrate_development` MCP tool automatically
-- **NO FLAGS NEEDED**: Just run `snow-flow swarm "create widget"` and everything works!
-
-### 🔍 Real-Time ServiceNow Integration (v1.1.41+)
-- **LIVE VALIDATION**: `snow_validate_live_connection` - real-time auth and permission checking
-- **SMART PREVENTION**: `snow_discover_existing_flows` - prevents duplicate flows
-- **LIVE TESTING**: `snow_test_flow_execution` - real flow testing in live instances
-- **BATCH VALIDATION**: `batch_deployment_validator` - comprehensive multi-artifact validation
-- **AUTO ROLLBACK**: `deployment_rollback_manager` - automatic rollback with backup creation
-
-## 🌟 Key Features
-
-### 🤖 11 Specialized MCP Servers
-Each server provides autonomous capabilities for different aspects of ServiceNow development:
-
-1. **Deployment MCP** - Autonomous widget and application deployment
-2. **Update Set MCP** - Professional change tracking and deployment management
-3. **Intelligent MCP** - AI-powered artifact discovery and editing
-4. **Graph Memory MCP** - Relationship tracking and impact analysis
-5. **Platform Development MCP** - Development workflow automation
-6. **Integration MCP** - Third-party system integration
-7. **Operations MCP** - Operations and monitoring management
-8. **Automation MCP** - Workflow and process automation
-9. **Security & Compliance MCP** - Security auditing and compliance
-10. **Reporting & Analytics MCP** - Data _analysis and reporting
-11. **Memory MCP** - Multi-agent coordination and todo management
-
-### 🎯 Core Capabilities
-
-- **Natural Language Processing**: Create complex ServiceNow artifacts using plain English/Dutch commands
-- **Intelligent Decision Making**: Automatically determines optimal architecture (flow vs subflow)
-- **Zero Configuration**: All values dynamically discovered from your ServiceNow instance
-- **Autonomous Deployment**: Direct deployment to ServiceNow with automatic error handling
-- **Update Set Management**: Professional change tracking like ServiceNow pros use
-- **Global Scope Strategy**: Intelligent scope selection with fallback mechanisms
-- **Multi-Agent Coordination**: Parallel execution for complex tasks
-
-## 🚀 Quick Start
+## Installation
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 18 or higher
+- npm 9 or higher
 - ServiceNow instance with admin access
-- OAuth application configured in ServiceNow
+- Claude Code desktop application
 
-### Installation
+### Install from NPM
 
 ```bash
-# Install Snow-Flow globally
+# Install globally
 npm install -g snow-flow
 
-# Initialize Snow-Flow in your project directory
-snow-flow init
+# Verify installation
+snow-flow --version
 ```
 
-#### Alternative: Install from source
+### Install from Source
+
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/groeimetai/snow-flow.git
 cd snow-flow
 
 # Install dependencies
 npm install
 
-# Build the project
+# Build project
 npm run build
 
 # Link globally (optional)
 npm link
 ```
 
-### Configuration
+## Configuration
 
-1. Create a `.env` file in the project root:
+### Step 1: Initialize Snow-Flow
+
+```bash
+# Create project directory
+mkdir my-servicenow-project
+cd my-servicenow-project
+
+# Initialize Snow-Flow
+snow-flow init
+```
+
+This creates:
+- `.env` file for ServiceNow credentials
+- `.snow-flow/` configuration directory
+- `.claude/` MCP server configurations
+- `CLAUDE.md` with comprehensive documentation
+
+### Step 2: Configure ServiceNow Credentials
+
+Edit the `.env` file with your ServiceNow instance details:
+
 ```env
+# ServiceNow Instance Configuration
 SNOW_INSTANCE=your-instance.service-now.com
+SNOW_USERNAME=admin.username
+SNOW_PASSWORD=admin.password
+
+# OAuth Configuration (recommended for production)
 SNOW_CLIENT_ID=your-oauth-client-id
 SNOW_CLIENT_SECRET=your-oauth-client-secret
-SNOW_USERNAME=your-username
-SNOW_PASSWORD=your-password
+
+# Optional: Claude API Key
+ANTHROPIC_API_KEY=your-claude-api-key
 ```
 
-2. Set up OAuth in ServiceNow (see [SERVICENOW-OAUTH-SETUP.md](./SERVICENOW-OAUTH-SETUP.md))
+### Step 3: Set Up OAuth in ServiceNow
 
-3. Authenticate with ServiceNow:
+1. Navigate to **System OAuth > Application Registry**
+2. Click **New** > **Create an OAuth API endpoint for external clients**
+3. Configure:
+   - Name: `Snow-Flow OAuth`
+   - Client ID: (auto-generated, copy to .env)
+   - Client Secret: (generate new, copy to .env)
+   - Redirect URL: `http://localhost:3000/callback`
+   - Refresh Token Lifespan: `86400` (24 hours)
+4. Save and activate
+
+### Step 4: Authenticate
+
 ```bash
+# Login to ServiceNow
 snow-flow auth login
+
+# Verify connection
+snow-flow auth status
 ```
 
-### 🎯 MCP Server Activation (v1.1.25+)
+## Claude Code Setup
 
-Snow-Flow now includes **automatic MCP server activation** for Claude Code! During initialization, you'll be prompted to automatically start Claude Code with all 11 MCP servers pre-loaded:
+### Fix Permission Errors
+
+**IMPORTANT:** If you encounter "dangerously skip permissions" errors in Claude Code, you must first authenticate with Claude:
 
 ```bash
-snow-flow init
+# 1. First, login to Claude (required for MCP servers to work)
+claude login
 
-# You'll see:
-# 🚀 Would you like to start Claude Code with MCP servers automatically? (Y/n)
-# Press Y to launch Claude Code with all MCP servers ready to use!
+# 2. Then start Claude Code with MCP servers
+claude --mcp-config .claude/claude_desktop_config.json
 ```
 
-The MCP servers are automatically:
-- ✅ Configured with correct paths for global npm installations
-- ✅ Registered in Claude Code's settings
-- ✅ Activated without manual approval steps
-- ✅ Ready to use immediately after initialization
+The `claude login` step is crucial - without it, MCP servers cannot authenticate with ServiceNow.
 
-If you need to manually activate MCP servers later:
+### Automatic MCP Server Activation
+
+During `snow-flow init`, you'll be prompted to automatically activate all MCP servers:
+
 ```bash
-# For Mac/Linux:
-claude --mcp-config .mcp.json .
-
-# For Windows:
-claude.exe --mcp-config .mcp.json .
+🚀 Would you like to start Claude Code with MCP servers? (Y/n)
 ```
 
-## 💡 Usage Examples
+Selecting **Y** will:
+- Configure all 17 MCP servers
+- Auto-approve server permissions
+- Launch Claude Code with servers ready
 
-### Create a Complex Flow with Natural Language
+### Manual MCP Server Activation
+
+If you need to manually activate MCP servers:
+
 ```bash
-snow-flow sparc "Create an approval workflow for iPhone 6 orders that notifies managers, creates tasks, and updates inventory"
+# Mac/Linux
+claude --mcp-config .claude/claude_desktop_config.json
+
+# Windows
+claude.exe --mcp-config .claude/claude_desktop_config.json
 ```
 
-### Deploy a Widget Directly to ServiceNow
-```bash
-snow-flow sparc "Create and deploy a widget that shows all critical incidents with real-time updates"
-```
+## MCP Servers
 
-### Start a Multi-Agent Swarm for Complex Projects
-```bash
-# Most intelligent features are enabled by default!
-snow-flow swarm "Build a complete incident management system with dashboard, workflows, and notifications"
+Snow-Flow includes 17 specialized MCP servers with 200+ tools:
 
-# Default settings:
-# ✅ --smart-discovery (true) - Reuses existing artifacts
-# ✅ --live-testing (true) - Tests in real-time
-# ✅ --auto-deploy (true) - Deploys automatically (safe with update sets)
-# ✅ --auto-rollback (true) - Rollbacks on failures
-# ✅ --shared-memory (true) - Agents share context
-# ✅ --progress-monitoring (true) - Real-time status
+### 1. Deployment Server (10 tools)
+Widget and artifact deployment with coherence validation
+- `snow_deploy` - Create new artifacts
+- `snow_update` - Update existing artifacts
+- `snow_delete` - Delete artifacts
+- `snow_validate_deployment` - Validate before deployment
+- `snow_rollback_deployment` - Rollback failed deployments
+- `snow_preview_widget` - Preview widgets
+- `snow_widget_test` - Test widget functionality
+- `snow_batch_deploy` - Deploy multiple artifacts
 
-# Add --auto-permissions to enable automatic permission escalation
-snow-flow swarm "Create enterprise workflow" --auto-permissions
+### 2. Operations Server (12 tools)
+Core ServiceNow operations and queries
+- `snow_query_table` - Query any table with pagination
+- `snow_query_incidents` - Query and analyze incidents
+- `snow_cmdb_search` - Search CMDB
+- `snow_user_lookup` - Find users
+- `snow_operational_metrics` - Get metrics
+- `snow_knowledge_search` - Search knowledge base
+- `snow_create_incident` - Create incidents
+- `snow_update_incident` - Update incidents
 
-# Disable specific features with --no- prefix
-snow-flow swarm "Test workflow" --no-auto-deploy --no-live-testing
-```
+### 3. Automation Server (27 tools)
+Script execution and automation
+- `snow_execute_background_script` - Execute background scripts (ES5 only)
+- `snow_execute_script_with_output` - Execute with output capture
+- `snow_execute_script_sync` - Synchronous execution
+- `snow_confirm_script_execution` - Confirm execution
+- `snow_create_scheduled_job` - Create scheduled jobs
+- `snow_create_atf_test` - Create automated tests
+- `snow_execute_atf_test` - Run tests
+- `snow_property_manager` - Manage properties
 
-### Intelligent Artifact Discovery
-```bash
-snow-flow sparc "Find and modify the approval workflow to add an extra approval step for orders over $1000"
-```
+### 4. Platform Development Server (9 tools)
+Create platform artifacts
+- `snow_create_script_include` - Create Script Includes
+- `snow_create_business_rule` - Create Business Rules
+- `snow_create_client_script` - Create Client Scripts
+- `snow_create_ui_policy` - Create UI Policies
+- `snow_create_ui_action` - Create UI Actions
+- `snow_create_ui_page` - Create UI Pages
 
-### Create Flows in Dutch
-```bash
-snow-flow sparc "Maak een flow voor het automatisch toewijzen van incidenten aan de juiste groep op basis van categorie"
-```
+### 5. Integration Server (10 tools)
+REST/SOAP and data management
+- `snow_create_rest_message` - Create REST integrations
+- `snow_create_transform_map` - Create transform maps
+- `snow_create_import_set` - Manage import sets
+- `snow_test_web_service` - Test web services
+- `snow_configure_email` - Configure email
 
-## 🛠️ Advanced Features
+### 6. System Properties Server (12 tools)
+System property management
+- `snow_property_get` - Get property values
+- `snow_property_set` - Set property values
+- `snow_property_list` - List properties
+- `snow_property_delete` - Delete properties
+- `snow_property_bulk_update` - Bulk updates
+- `snow_property_export` - Export to JSON
+- `snow_property_import` - Import from JSON
 
-### Flow vs Subflow Intelligence
-Snow-Flow automatically analyzes your requirements and decides whether to create a main flow or break it into reusable subflows:
-- Complexity analysis
-- Reusability assessment
-- Performance optimization
-- Maintainability considerations
+### 7. Update Set Server (6 tools)
+Change management and deployment
+- `snow_update_set_create` - Create update sets
+- `snow_update_set_switch` - Switch active update set
+- `snow_update_set_current` - Get current update set
+- `snow_update_set_complete` - Complete update set
+- `snow_update_set_export` - Export as XML
+- `snow_ensure_active_update_set` - Ensure active set
 
-### Update Set Management
-Professional change tracking just like ServiceNow developers use:
-```bash
-# Create a new update set for your feature
-snow-flow sparc "Create update set for new approval features"
+### 8. Development Assistant Server (6 tools)
+Intelligent artifact management
+- `snow_find_artifact` - Find any artifact
+- `snow_edit_artifact` - Edit existing artifacts
+- `snow_get_by_sysid` - Get by sys_id
+- `snow_analyze_artifact` - Analyze dependencies
+- `snow_comprehensive_search` - Deep search
+- `snow_analyze_requirements` - Analyze requirements
 
-# All subsequent changes are automatically tracked
-snow-flow sparc "Add approval widget to portal"
-```
+### 9. Security & Compliance Server (5 tools)
+Security and compliance management
+- `snow_create_security_policy` - Create policies
+- `snow_audit_compliance` - Audit compliance
+- `snow_scan_vulnerabilities` - Scan vulnerabilities
+- `snow_assess_risk` - Risk assessment
+- `snow_review_access_control` - Review ACLs
 
-### Global Scope Strategy
-Intelligent deployment scope selection:
-- Automatic permission validation
-- Fallback mechanisms for restricted environments
-- Environment-aware deployment (dev/test/prod)
+### 10. Reporting & Analytics Server (5 tools)
+Reporting and visualization
+- `snow_create_report` - Create reports
+- `snow_create_dashboard` - Create dashboards
+- `snow_define_kpi` - Define KPIs
+- `snow_schedule_report` - Schedule reports
+- `snow_analyze_data_quality` - Data quality
 
-### Template Matching
-Recognizes common patterns and applies best practices:
-- Approval workflows
-- Fulfillment processes
-- Notification systems
-- Integration patterns
+### 11. Machine Learning Server (6 tools)
+AI/ML capabilities with TensorFlow.js
+- `ml_train_incident_classifier` - Train classifiers
+- `ml_predict_change_risk` - Predict risks
+- `ml_detect_anomalies` - Detect anomalies
+- `ml_forecast_incidents` - Forecast incidents
+- `ml_performance_analytics` - Performance ML
+- `ml_hybrid_recommendation` - Recommendations
 
-## 🔧 New MCP Tools (v1.1.44+)
+### 12. Orchestration Server (6 tools)
+Multi-agent coordination
+- `swarm_init` - Initialize swarms
+- `agent_spawn` - Create agents
+- `task_orchestrate` - Orchestrate tasks
+- `memory_search` - Search memory
+- `neural_train` - Train neural networks
+- `performance_report` - Performance reports
 
-### Catalog Item Search with Fuzzy Matching
-Find catalog items even when you don't know the exact name:
+### 13. Knowledge & Catalog Server (7 tools)
+Knowledge and service catalog
+- `snow_create_knowledge_article` - Create articles
+- `snow_search_knowledge` - Search knowledge
+- `snow_create_catalog_item` - Create catalog items
+- `snow_create_catalog_variable` - Create variables
+- `snow_order_catalog_item` - Order items
+- `snow_discover_catalogs` - Discover catalogs
+
+### 14. Change & Virtual Agent Server (7 tools)
+Change management and Virtual Agent
+- `snow_create_change_request` - Create changes
+- `snow_schedule_cab_meeting` - Schedule CAB
+- `snow_create_va_topic` - Create VA topics
+- `snow_send_va_message` - Send VA messages
+- `snow_create_pa_indicator` - Create PA indicators
+- `snow_get_pa_scores` - Get PA scores
+
+### 15. Flow & Workspace Server (10 tools)
+Flow Designer and Workspace
+- `snow_list_flows` - List flows
+- `snow_execute_flow` - Execute flows
+- `snow_get_flow_details` - Get flow details
+- `snow_get_flow_execution_status` - Execution status
+- `snow_get_flow_execution_history` - Execution history
+- `snow_import_flow_from_xml` - Import flows
+- `snow_create_workspace` - Create workspaces
+- `snow_configure_mobile_app` - Configure mobile
+- `snow_send_push_notification` - Push notifications
+
+### 16. CMDB & Event Server (8 tools)
+CMDB and event management
+- `snow_create_ci` - Create Configuration Items
+- `snow_create_ci_relationship` - Create relationships
+- `snow_run_discovery` - Run discovery
+- `snow_create_event` - Create events
+- `snow_create_hr_case` - Create HR cases
+- `snow_employee_onboarding` - Onboarding
+- `snow_create_customer_case` - Customer cases
+- `snow_create_devops_pipeline` - DevOps pipelines
+
+### 17. Advanced Features Server (7 tools)
+Batch operations and optimization
+- `snow_batch_api` - Batch API (80% reduction)
+- `snow_get_table_relationships` - Table relationships
+- `snow_analyze_query` - Query optimization
+- `snow_detect_code_patterns` - Pattern detection
+- `snow_discover_process` - Process discovery
+- `snow_analyze_workflow_execution` - Workflow analysis
+- `snow_generate_documentation` - Auto-documentation
+
+## Usage
+
+### Basic Widget Deployment
+
 ```javascript
 // In Claude Code with MCP tools
-snow_catalog_item_search({
-  query: "iPhone",          // Finds iPhone 6S, iPhone 7, etc.
-  fuzzy_match: true,       // Intelligent variations
-  category_filter: "mobile devices",
-  include_variables: true  // Get catalog variables
+await snow_deploy({
+  type: 'widget',
+  config: {
+    name: 'incident_dashboard',
+    title: 'Incident Dashboard',
+    template: '<div>{{data.message}}</div>',
+    script: 'data.message = "Hello World";',
+    client_script: 'function($scope) { var c = this; }'
+  }
 });
 ```
 
-### Flow Testing with Mock Data
-Test flows without affecting production data:
+### Execute Background Script (ES5 Only)
+
 ```javascript
-snow_test_flow_with_mock({
-  flow_id: "equipment_provisioning_flow",
-  create_test_user: true,      // Auto-creates test user
-  mock_catalog_items: true,    // Creates test items
-  mock_catalog_data: [
-    {
-      name: "Test iPhone 6S",
-      price: "699.00"
-    }
-  ],
-  simulate_approvals: true,    // Auto-approves
-  cleanup_after_test: true     // Removes test data
+// IMPORTANT: ServiceNow uses Rhino engine - ES5 only!
+await snow_execute_script_with_output({
+  script: `
+    var gr = new GlideRecord('incident');
+    gr.addQuery('active', true);
+    gr.query();
+    gs.info('Active incidents: ' + gr.getRowCount());
+  `
 });
 ```
 
-### Direct Catalog-Flow Linking
-Link catalog items directly to flows for automated fulfillment:
+### Query ServiceNow Tables
+
 ```javascript
-snow_link_catalog_to_flow({
-  catalog_item_id: "iPhone 6S",
-  flow_id: "mobile_provisioning_flow",
-  link_type: "flow_catalog_process",  // Modern approach
-  variable_mapping: [
-    {
-      catalog_variable: "phone_model",
-      flow_input: "device_type"
-    },
-    {
-      catalog_variable: "user_department",
-      flow_input: "department"
-    }
-  ],
-  trigger_condition: 'current.stage == "request_approved"',
-  execution_options: {
-    run_as: "user",    // 🔒 SEC-001 FIX: Default to 'user' to prevent privilege escalation
-    wait_for_completion: true
-  },
-  test_link: true  // Creates test request
+await snow_query_table({
+  table: 'incident',
+  query: 'active=true^priority=1',
+  fields: ['number', 'short_description', 'assigned_to'],
+  limit: 10
 });
 ```
 
-### Bulk Deployment
-Deploy multiple artifacts in a single transaction:
-```javascript
-snow_bulk_deploy({
-  artifacts: [
-    { type: "widget", data: widgetData },
-    { type: "flow", data: flowData },
-    { type: "script", data: scriptData }
-  ],
-  transaction_mode: true,  // All-or-nothing deployment
-  parallel: true,         // Deploy simultaneously
-  dry_run: false
-});
+## Commands
+
+### Core Commands
+```bash
+snow-flow start              # Start orchestration system
+snow-flow status            # System status
+snow-flow monitor           # Real-time monitoring
 ```
 
-## 📁 Project Structure
+### Agent Management
+```bash
+snow-flow agent spawn <type>  # Create agents
+snow-flow agent list          # List active agents
+```
+
+### Task Management
+```bash
+snow-flow task create         # Create tasks
+snow-flow task list          # View task queue
+```
+
+### Memory Operations
+```bash
+snow-flow memory store <key> <data>  # Store data
+snow-flow memory get <key>           # Retrieve data
+snow-flow memory list                # List all keys
+```
+
+### SPARC Development Modes
+```bash
+snow-flow sparc "<task>"                    # Orchestrator mode
+snow-flow sparc run <mode> "<task>"        # Specific mode
+snow-flow sparc tdd "<feature>"            # Test-driven development
+```
+
+Available modes: orchestrator, coder, researcher, tdd, architect, reviewer, debugger, tester, analyzer, optimizer, documenter, designer, innovator, swarm-coordinator, memory-manager, batch-executor, workflow-manager
+
+### Swarm Coordination
+```bash
+snow-flow swarm "<objective>" [options]
+```
+
+Options:
+- `--strategy` (research, development, analysis, testing, optimization, maintenance)
+- `--mode` (centralized, distributed, hierarchical, mesh, hybrid)
+- `--max-agents <n>` (default: 5)
+- `--parallel` Enable parallel execution
+- `--monitor` Real-time monitoring
+- `--output <format>` (json, sqlite, csv, html)
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. MCP Server Not Responding
+```bash
+# Check MCP server status
+snow-flow mcp status
+
+# Restart MCP servers
+snow-flow mcp restart
+
+# Debug mode
+snow-flow mcp debug
+```
+
+#### 2. Authentication Failed
+```bash
+# Clear cached credentials
+snow-flow auth logout
+
+# Re-authenticate
+snow-flow auth login
+
+# Verify OAuth configuration
+snow-flow auth test
+```
+
+#### 3. Permission Errors in Claude Code
+Always run `claude login` before starting Claude Code with MCP servers.
+
+#### 4. ES5 Syntax Errors
+ServiceNow uses Rhino engine. Always use ES5 syntax:
+- Use `var` instead of `const/let`
+- Use `function()` instead of arrow functions
+- Use string concatenation instead of template literals
+- Use traditional for loops instead of `for...of`
+
+### Debug Commands
+```bash
+# Enable verbose logging
+export DEBUG=snow-flow:*
+
+# Check configuration
+snow-flow config validate
+
+# Test ServiceNow connection
+snow-flow test connection
+
+# View logs
+snow-flow logs --tail 100
+```
+
+## Project Structure
 
 ```
 snow-flow/
 ├── src/
-│   ├── mcp/                    # 11 MCP server implementations
-│   ├── orchestrator/           # Flow composition and intelligence
-│   ├── strategies/             # Deployment and scope strategies
-│   ├── api/                    # ServiceNow API integration
-│   ├── managers/               # Resource and scope management
-│   └── utils/                  # Utilities and helpers
-├── .snow-flow/                 # Snow-Flow configuration
-├── .claude/                    # Claude configuration
-├── memory/                     # Persistent agent memory
-└── coordination/               # Multi-agent coordination
+│   ├── mcp/                # 17 MCP server implementations
+│   ├── queen/              # Queen agent orchestration
+│   ├── utils/              # Utilities and helpers
+│   └── types/              # TypeScript definitions
+├── .snow-flow/             # Configuration directory
+├── .claude/                # MCP server configs
+├── website/                # Documentation website
+└── package.json           # NPM package configuration
 ```
 
-## 🔧 Development Commands
+## Development
 
 ```bash
+# Install dependencies
+npm install
+
 # Run tests
 npm test
 
-# Run linting
+# Lint code
 npm run lint
 
 # Type checking
 npm run typecheck
 
+# Build project
+npm run build
+
 # Development mode
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-## 📚 Documentation
+## Support
 
-- [MCP Server Documentation](./MCP_SERVERS.md) - Detailed info on all 11 MCP servers
-- [OAuth Setup Guide](./SERVICENOW-OAUTH-SETUP.md) - ServiceNow OAuth configuration
-- [Update Set Guide](./UPDATE_SET_DEPLOYMENT_GUIDE.md) - Professional change management
-- [API Integration Guide](./API_INTEGRATION_GUIDE.md) - ServiceNow API details
+- GitHub Issues: https://github.com/groeimetai/snow-flow/issues
+- Documentation: https://snow-flow.ai
+- ServiceNow Community: https://community.servicenow.com
 
-## 🤝 Contributing
+## License
 
-We welcome contributions! Please see our contributing guidelines (coming soon).
+MIT License - see LICENSE file for details.
 
-## 🔒 Security
+## Version
 
-- All credentials stored securely in environment variables
-- OAuth 2.0 authentication with ServiceNow
-- No hardcoded values - everything discovered dynamically
-- Secure token management with automatic refresh
-
-## 🎯 Use Cases
-
-### For ServiceNow Developers
-- Rapidly prototype flows and workflows
-- Automate repetitive development tasks
-- Ensure consistency across implementations
-- Reduce development time by 80%
-
-### For ServiceNow Architects
-- Validate architectural decisions
-- Ensure best practices are followed
-- Analyze impact of changes
-- Optimize performance and maintainability
-
-### For ServiceNow Administrators
-- Quick deployments and updates
-- Professional change tracking
-- Automated testing and validation
-- Simplified migration between instances
-
-## 🚦 Roadmap
-
-- [ ] Visual flow designer integration
-- [ ] Enhanced Neo4j graph visualization
-- [ ] Multi-instance synchronization
-- [ ] AI-powered code review
-- [ ] Automated testing framework
-- [ ] Performance optimization recommendations
-
-## 🆕 What's New in v1.1.25
-
-### Automatic MCP Server Activation 🎯
-- **Interactive Prompt**: During `snow-flow init`, you're now prompted to automatically start Claude Code with all MCP servers
-- **Zero Manual Steps**: No more manual MCP approval in Claude Code - servers load automatically using `claude --mcp-config`
-- **Cross-Platform Support**: Works on Mac, Linux, and Windows with platform-specific activation scripts
-- **Instant Availability**: All 11 ServiceNow MCP servers are immediately available in Claude Code after initialization
-
-### Previous Updates
-- **v1.1.24**: Added `snow-flow mcp debug` command for troubleshooting MCP configurations
-- **v1.1.23**: Fixed .npmignore to include essential .claude configuration files
-- **v1.1.22**: Verified global npm installation correctly registers all MCP servers
-- **v1.1.20**: Added enabledMcpjsonServers to ensure MCP visibility in Claude Code
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-Built with the power of Claude AI and the ServiceNow platform. Special thanks to the ServiceNow developer community for inspiration and best practices.
+Current version: 3.4.38
 
 ---
 
-**Ready to revolutionize your ServiceNow development?** Start with `snow-flow init` and experience the future of ServiceNow automation! 🚀
+Snow-Flow - ServiceNow Development Automation with AI

@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snow-Flow - Advanced ServiceNow Development Framework</title>
+    <title>Snow-Flow | Revolutionary ServiceNow Development</title>
+    <meta name="description" content="Snow-Flow: AI-powered ServiceNow development framework with 17 MCP servers, 200+ tools, and intelligent automation.">
+    
+    <!-- Modern CSS -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Modern Font Stack -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
 </head>
-<body>
-    <!-- Navigation -->
+<body class="noise">
+    <!-- Glass Morphism Navigation -->
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <span class="logo">🏔️</span>
-                <span class="brand-name">Snow-Flow</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="#home" class="nav-link">Home</a></li>
-                <li><a href="#features" class="nav-link">Features</a></li>
-                <li><a href="#mcp-servers" class="nav-link">MCP Servers</a></li>
-                <li><a href="#installation" class="nav-link">Installation</a></li>
-                <li><a href="#examples" class="nav-link">Examples</a></li>
-                <li><a href="#api" class="nav-link">API</a></li>
-                <li><a href="https://github.com/groeimetai/snow-flow" class="nav-link github">GitHub</a></li>
+        <div class="navbar-container">
+            <a href="#" class="navbar-logo"><span class="logo-mountain">🏔️</span> SNOW-FLOW</a>
+            <ul class="navbar-menu">
+                <li><a href="#home" class="navbar-link">Home</a></li>
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="#servers" class="navbar-link">MCP</a></li>
+                <li><a href="#install" class="navbar-link">Install</a></li>
+                <li><a href="#docs" class="navbar-link">Docs</a></li>
             </ul>
             <div class="hamburger">
                 <span></span>
@@ -35,487 +37,455 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Animated Gradient Mesh -->
     <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-logo">🏔️</div>
-                <h1 class="hero-title">Snow-Flow</h1>
-                <p class="hero-subtitle">Advanced ServiceNow Development Framework with AI-Powered Automation</p>
-                <p class="hero-description">
-                    Snow-Flow is a cutting-edge development framework that revolutionizes ServiceNow development through 
-                    intelligent automation, multi-agent coordination, and the Model Context Protocol (MCP).
-                </p>
-                <div class="hero-buttons">
-                    <a href="#installation" class="btn btn-primary">Get Started</a>
-                    <a href="#features" class="btn btn-secondary">Learn More</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <span class="stat-number">17</span>
-                        <span class="stat-label">MCP Servers</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">200+</span>
-                        <span class="stat-label">Tools</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">80%</span>
-                        <span class="stat-label">API Reduction</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">100%</span>
-                        <span class="stat-label">Real Data</span>
-                    </div>
-                </div>
+        <div class="hero-content animate-fade-in-up">
+            <div class="hero-logo-container" style="font-size: 5rem; margin-bottom: var(--space-6);">
+                <span class="hero-mountain">🏔️</span>
+            </div>
+            <h1 class="hero-title">SNOW-FLOW</h1>
+            <p class="hero-subtitle">Revolutionary ServiceNow Development Through AI</p>
+            <div class="flex gap-6 justify-center" style="margin-top: var(--space-10); margin-bottom: var(--space-20);">
+                <a href="#install" class="btn btn-primary btn-animated">Start Building</a>
+                <a href="#docs" class="btn btn-secondary">View Demo</a>
             </div>
         </div>
     </section>
 
-    <!-- What is Snow-Flow -->
-    <section class="what-is">
+    <!-- Features Grid Section -->
+    <section id="features" class="section" style="padding-top: var(--space-32); background: var(--white); position: relative; z-index: 10;">
         <div class="container">
-            <h2 class="section-title">What is Snow-Flow?</h2>
-            <div class="what-is-grid">
-                <div class="what-is-card">
+            <h2 class="text-center font-black" style="font-size: var(--font-4xl); margin-bottom: var(--space-12);">Revolutionary Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style="gap: var(--space-8);">
+                <div class="card animate-scale-in stagger-1">
                     <div class="card-icon">🤖</div>
-                    <h3>AI-Powered Development</h3>
-                    <p>Snow-Flow integrates Claude AI for intelligent code generation, pattern recognition, and automated development workflows. It understands ServiceNow's ES5 JavaScript requirements and generates production-ready code.</p>
+                    <h3 class="card-title">AI-Powered</h3>
+                    <p class="card-description">Claude AI integration for intelligent code generation with ES5 compatibility.</p>
                 </div>
-                <div class="what-is-card">
+                <div class="card animate-scale-in stagger-2">
                     <div class="card-icon">🔄</div>
-                    <h3>Multi-Agent Orchestration</h3>
-                    <p>Coordinate multiple specialized agents working in parallel. From researchers to coders, testers to deployers - Snow-Flow manages complex development tasks through intelligent agent swarms.</p>
+                    <h3 class="card-title">Multi-Agent</h3>
+                    <p class="card-description">Orchestrate specialized agents working in parallel for complex tasks.</p>
                 </div>
-                <div class="what-is-card">
-                    <div class="card-icon">⚡</div>
-                    <h3>MCP Integration</h3>
-                    <p>Built on the Model Context Protocol, Snow-Flow provides 17 specialized MCP servers that handle everything from widget deployment to machine learning, each with dedicated tools for ServiceNow operations.</p>
+                <div class="card animate-scale-in stagger-3">
+                    <div class="card-icon"><span class="logo-mountain">🏔️</span></div>
+                    <h3 class="card-title">17 MCP Servers</h3>
+                    <p class="card-description">Specialized servers for every ServiceNow development need.</p>
                 </div>
-                <div class="what-is-card">
+                <div class="card animate-scale-in stagger-4">
                     <div class="card-icon">📊</div>
-                    <h3>Real-Time Analytics</h3>
-                    <p>No mock data ever! Snow-Flow connects directly to your ServiceNow instance, providing real-time analytics, performance monitoring, and data-driven insights from actual production data.</p>
+                    <h3 class="card-title">Real-Time Data</h3>
+                    <p class="card-description">Direct connection to ServiceNow for real production insights.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
+    <!-- Code Display Section -->
+    <section class="section" style="background: var(--gray-950);">
         <div class="container">
-            <h2 class="section-title">Core Features</h2>
-            <div class="features-grid">
-                <div class="feature">
-                    <div class="feature-icon">🚀</div>
-                    <h3>Instant Deployment</h3>
-                    <p>Deploy widgets, flows, and applications directly to ServiceNow with automatic coherence validation and rollback capabilities.</p>
+            <h2 class="text-center font-black" style="font-size: var(--font-3xl); color: var(--white); margin-bottom: var(--space-10);">Powerful Capabilities</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
+                <div class="code-block animate-fade-in-up stagger-1">
+                    <code>// Instant Deployment
+await snow_deploy({
+  type: 'widget',
+  coherence: true,
+  rollback: true
+});</code>
                 </div>
-                <div class="feature">
-                    <div class="feature-icon">🧠</div>
-                    <h3>Machine Learning</h3>
-                    <p>Built-in TensorFlow.js integration for incident classification, anomaly detection, and predictive analytics.</p>
+                <div class="code-block animate-fade-in-up stagger-2">
+                    <code>// Machine Learning
+await ml_train({
+  model: 'lstm',
+  epochs: 50,
+  tensorflow: true
+});</code>
                 </div>
-                <div class="feature">
-                    <div class="feature-icon">✅</div>
-                    <h3>ES5 Validation</h3>
-                    <p>Automatic conversion and validation of JavaScript code to ensure compatibility with ServiceNow's Rhino engine.</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📝</div>
-                    <h3>Script Execution</h3>
-                    <p>Execute background scripts with full output capture, including gs.print, gs.info, gs.warn, and gs.error messages.</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔍</div>
-                    <h3>Smart Discovery</h3>
-                    <p>Automatically discover tables, fields, relationships, and dependencies in your ServiceNow instance.</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔒</div>
-                    <h3>Security & Compliance</h3>
-                    <p>Built-in security scanning, compliance checking, and access control validation for SOX, GDPR, and HIPAA.</p>
+                <div class="code-block animate-fade-in-up stagger-3">
+                    <code>// ES5 Validation
+await validate({
+  syntax: 'es5',
+  engine: 'rhino',
+  strict: true
+});</code>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- MCP Servers Section -->
-    <section id="mcp-servers" class="mcp-servers">
+    <!-- REAL MCP Servers List with ALL 200+ Tools from Codebase -->
+    <section id="servers" class="section" style="background: var(--gray-950); padding: var(--space-20) 0;">
         <div class="container">
-            <h2 class="section-title">MCP Servers & Tools</h2>
-            <p class="section-subtitle">Snow-Flow includes 17 specialized MCP servers with 200+ comprehensive tools for ServiceNow development</p>
+            <h2 class="text-center font-black" style="font-size: var(--font-5xl); color: var(--white); margin-bottom: var(--space-4);">17 MCP Servers × 200+ Real Tools</h2>
+            <p class="text-center" style="color: var(--gray-400); margin-bottom: var(--space-16); font-size: var(--font-lg);">Complete ServiceNow Automation Arsenal - Actual Tools from Snow-Flow Codebase</p>
             
-            <div class="mcp-filter">
-                <button class="filter-btn active" data-filter="all">All Servers (17)</button>
-                <button class="filter-btn" data-filter="deployment">Deployment</button>
-                <button class="filter-btn" data-filter="automation">Automation</button>
-                <button class="filter-btn" data-filter="ml">Machine Learning</button>
-                <button class="filter-btn" data-filter="security">Security</button>
-            </div>
-            
-            <div id="mcp-grid" class="mcp-grid-dynamic">
-                <!-- MCP cards will be dynamically generated here -->
-            </div>
-        </div>
-    </section>
+            <!-- MCP Servers Grid with Expandable Tools -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
+                
+                <!-- 1. Deployment Server (10 tools) -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🚀 Deployment Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Widget & artifact deployment with coherence validation</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_deploy</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_delete</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_validate_deployment</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_rollback_deployment</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_preview_widget</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_widget_test</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_batch_deploy</li>
+                    </ul>
+                </div>
 
-    <!-- How It Works -->
-    <section class="how-it-works">
-        <div class="container">
-            <h2 class="section-title">How Snow-Flow Works</h2>
-            <div class="workflow-diagram">
-                <div class="workflow-step">
-                    <div class="step-number">1</div>
-                    <h3>Initialize</h3>
-                    <p>Install Snow-Flow and authenticate with your ServiceNow instance using OAuth</p>
+                <!-- 2. Operations Server (12 REAL tools) -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">⚙️ Operations Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Core ServiceNow operations and queries</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_query_table</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_query_incidents</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_cmdb_search</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_user_lookup</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_operational_metrics</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_knowledge_search</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_incident</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_incident</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• + 4 more ops tools...</li>
+                    </ul>
                 </div>
-                <div class="workflow-arrow">→</div>
-                <div class="workflow-step">
-                    <div class="step-number">2</div>
-                    <h3>Command</h3>
-                    <p>Use natural language or CLI commands to describe what you want to build</p>
+
+                <!-- 3. Automation Server (27 REAL tools!) -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🤖 Automation Server <span style="color: var(--gray-500); font-size: var(--font-sm);">(27 tools!)</span></h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Script execution & comprehensive automation</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_execute_background_script</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_execute_script_with_output</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_execute_script_sync</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_confirm_script_execution</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_scheduled_job</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_atf_test</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_execute_atf_test</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_manager</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• + 19 more automation tools...</li>
+                    </ul>
                 </div>
-                <div class="workflow-arrow">→</div>
-                <div class="workflow-step">
-                    <div class="step-number">3</div>
-                    <h3>Orchestrate</h3>
-                    <p>Snow-Flow coordinates multiple agents and MCP servers to complete the task</p>
+
+                <!-- 4. Platform Development Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">💻 Platform Dev Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Create platform artifacts</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_script_include</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_business_rule</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_client_script</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_ui_policy</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_ui_action</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_create_ui_page</li>
+                    </ul>
                 </div>
-                <div class="workflow-arrow">→</div>
-                <div class="workflow-step">
-                    <div class="step-number">4</div>
-                    <h3>Deploy</h3>
-                    <p>Automatically deploy validated artifacts directly to ServiceNow</p>
+
+                <!-- 5. Integration Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🔌 Integration Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">REST/SOAP & data management</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_rest_message</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_transform_map</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_import_set</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_test_web_service</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_configure_email</li>
+                    </ul>
                 </div>
+
+                <!-- 6. System Properties Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🔧 Properties Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">System property management</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_get</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_set</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_list</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_delete</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_bulk_update</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_property_export</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_property_import</li>
+                    </ul>
+                </div>
+
+                <!-- 7. Update Set Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">📦 Update Set Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Change management & deployment</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_set_create</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_set_switch</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_set_current</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_set_complete</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_update_set_export</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_ensure_active_update_set</li>
+                    </ul>
+                </div>
+
+                <!-- 8. Development Assistant Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🧠 Dev Assistant Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Intelligent artifact search & editing</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_find_artifact</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_edit_artifact</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_get_by_sysid</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_analyze_artifact</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_comprehensive_search</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_analyze_requirements</li>
+                    </ul>
+                </div>
+
+                <!-- 9. Security & Compliance Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🔒 Security Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Security & compliance management</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_security_policy</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_audit_compliance</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_scan_vulnerabilities</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_assess_risk</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_review_access_control</li>
+                    </ul>
+                </div>
+
+                <!-- 10. Reporting & Analytics Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">📊 Analytics Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Reporting & data visualization</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_report</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_dashboard</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_define_kpi</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_schedule_report</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_analyze_data_quality</li>
+                    </ul>
+                </div>
+
+                <!-- 11. Machine Learning Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🤖 ML Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">TensorFlow.js & native ML</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• ml_train_incident_classifier</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• ml_predict_change_risk</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• ml_detect_anomalies</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• ml_forecast_incidents</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• ml_performance_analytics</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• ml_hybrid_recommendation</li>
+                    </ul>
+                </div>
+
+                <!-- 12. Snow-Flow Orchestration Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🎯 Orchestration Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Multi-agent coordination</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• swarm_init</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• agent_spawn</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• task_orchestrate</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• memory_search</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• neural_train</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• performance_report</li>
+                    </ul>
+                </div>
+
+                <!-- 13. Knowledge & Catalog Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">📚 Knowledge Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Knowledge & service catalog</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_knowledge_article</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_search_knowledge</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_catalog_item</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_catalog_variable</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_order_catalog_item</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_discover_catalogs</li>
+                    </ul>
+                </div>
+
+                <!-- 14. Change & Virtual Agent Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">💬 Change & VA Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Change management & Virtual Agent</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_change_request</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_schedule_cab_meeting</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_va_topic</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_send_va_message</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_pa_indicator</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_get_pa_scores</li>
+                    </ul>
+                </div>
+
+                <!-- 15. Flow & Workspace Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);"><span class="logo-mountain">🏔️</span> Flow Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Flow Designer & Workspace</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_list_flows</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_execute_flow</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_get_flow_details</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_workspace</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_configure_mobile_app</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_send_push_notification</li>
+                    </ul>
+                </div>
+
+                <!-- 16. CMDB & Event Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🗄️ CMDB Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">CI management & events</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_ci</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_ci_relationship</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_run_discovery</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_hr_case</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_create_customer_case</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_create_devops_pipeline</li>
+                    </ul>
+                </div>
+
+                <!-- 17. Advanced Features Server -->
+                <div class="card" style="background: var(--gray-900); border: 1px solid var(--gray-700);">
+                    <h3 style="color: var(--white); margin-bottom: var(--space-3); font-size: var(--font-xl);">🚀 Advanced Server</h3>
+                    <p style="color: var(--gray-400); margin-bottom: var(--space-4); font-size: var(--font-sm);">Batch operations & optimization</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_batch_api (80% API reduction)</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_get_table_relationships</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_analyze_query</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_detect_code_patterns</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs); margin-bottom: var(--space-1);">• snow_discover_process</li>
+                        <li style="color: var(--gray-500); font-size: var(--font-xs);">• snow_generate_documentation</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="text-center" style="margin-top: var(--space-16); padding: var(--space-8); background: var(--gradient-glass); border-radius: var(--radius-2xl); border: 1px solid var(--gray-800);">
+                <p style="font-size: var(--font-2xl); color: var(--white); font-weight: 700; margin-bottom: var(--space-2);">17 MCP Servers × 200+ REAL Tools = Complete ServiceNow Automation</p>
+                <p style="color: var(--gray-400); font-size: var(--font-lg);">Every tool listed above is extracted directly from Snow-Flow v3.4.38 codebase - 100% real implementation.</p>
+                <p style="color: var(--gray-500); font-size: var(--font-sm); margin-top: var(--space-4);">✅ Deployment (10 tools) • Operations (12 tools) • Automation (27 tools!) • Platform (9 tools) • Integration (10 tools) • Properties (12 tools) • And 11 more servers...</p>
             </div>
         </div>
     </section>
 
     <!-- Installation Section -->
-    <section id="installation" class="installation">
+    <section id="install" class="section" style="background: var(--black);">
         <div class="container">
-            <h2 class="section-title">Installation & Setup</h2>
+            <h2 class="text-center font-black" style="font-size: var(--font-4xl); color: var(--white); margin-bottom: var(--space-12);">Quick Start</h2>
             
-            <div class="install-tabs">
-                <button class="tab-btn active" data-tab="npm">NPM Install</button>
-                <button class="tab-btn" data-tab="git">Git Clone</button>
-                <button class="tab-btn" data-tab="config">Configuration</button>
-            </div>
-
-            <div class="tab-content active" id="npm">
-                <h3>Install via NPM</h3>
-                <pre><code class="language-bash"># Install Snow-Flow globally
-npm install -g snow-flow
-
-# Initialize Snow-Flow in your project
+            <div class="code-block" style="max-width: 800px; margin: 0 auto; padding: var(--space-10);">
+                <button class="copy-btn" style="position: absolute; top: var(--space-4); right: var(--space-4); background: var(--gradient-accent); color: var(--black); border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); cursor: pointer;">Copy</button>
+                <code style="font-size: var(--font-md); line-height: var(--leading-loose);">npm install -g snow-flow
 snow-flow init
-
-# Authenticate with ServiceNow
-snow-flow auth login</code></pre>
+snow-flow auth login
+snow-flow start --ui</code>
             </div>
-
-            <div class="tab-content" id="git">
-                <h3>Install from GitHub</h3>
-                <pre><code class="language-bash"># Clone the repository
-git clone https://github.com/groeimetai/snow-flow.git
-
-# Navigate to directory
-cd snow-flow
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Link globally
-npm link
-
-# Initialize
-snow-flow init</code></pre>
-            </div>
-
-            <div class="tab-content" id="config">
-                <h3>Configuration</h3>
-                <pre><code class="language-javascript">// .snow-flow.config.json
-{
-  "instance": "https://your-instance.service-now.com",
-  "auth": {
-    "type": "oauth",
-    "clientId": "your-client-id",
-    "clientSecret": "your-client-secret"
-  },
-  "mcp": {
-    "servers": ["all"], // or specific servers
-    "timeout": 30000,
-    "maxRetries": 3
-  },
-  "development": {
-    "es5Validation": true,
-    "autoTest": true,
-    "coherenceCheck": true
-  }
-}</code></pre>
+            
+            <div class="text-center" style="margin-top: var(--space-10);">
+                <a href="#docs" class="btn btn-primary btn-animated">View Documentation</a>
             </div>
         </div>
     </section>
 
     <!-- Examples Section -->
-    <section id="examples" class="examples">
+    <section id="docs" class="section">
         <div class="container">
-            <h2 class="section-title">Real-World Examples</h2>
-            <p class="section-subtitle">See Snow-Flow in action with these practical ServiceNow development scenarios</p>
+            <h2 class="text-center font-black" style="font-size: var(--font-4xl); margin-bottom: var(--space-12);">Live Examples</h2>
             
-            <div class="example-grid">
-                <!-- Example 1: Widget Deployment -->
-                <div class="example-card">
-                    <h3>Deploy a Dashboard Widget</h3>
-                    <pre><code class="language-javascript">// Create and deploy an incident dashboard widget
-await snow_deploy_widget({
-  name: "Incident Dashboard",
-  template: `
-    &lt;div class="dashboard"&gt;
-      &lt;div ng-repeat="incident in data.incidents"&gt;
-        &lt;span&gt;{{incident.number}}&lt;/span&gt;
-        &lt;span&gt;{{incident.short_description}}&lt;/span&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  `,
-  server_script: `
-    (function() {
-      var gr = new GlideRecord('incident');
-      gr.addActiveQuery();
-      gr.query();
-      data.incidents = [];
-      while(gr.next()) {
-        data.incidents.push({
-          number: gr.getValue('number'),
-          short_description: gr.getValue('short_description')
-        });
-      }
-    })();
-  `,
-  client_script: `
-    function($scope) {
-      var c = this;
-      // Client logic here
-    }
-  `
-});</code></pre>
+            <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                <div class="code-block animate-slide-in-left">
+                    <code>// Deploy Widget with Coherence Check
+await snow_deploy({
+  type: 'widget',
+  name: 'incident_dashboard',
+  template: htmlTemplate,
+  script: serverScript,
+  client_script: clientScript,
+  coherence_check: true
+});</code>
                 </div>
-
-                <!-- Example 2: Script Execution -->
-                <div class="example-card">
-                    <h3>Execute Background Script</h3>
-                    <pre><code class="language-javascript">// Execute script with full output capture
-const result = await snow_execute_script_with_output({
-  script: `
-    gs.info('Starting incident analysis...');
-    
-    var stats = {};
-    var gr = new GlideRecord('incident');
-    gr.addActiveQuery();
-    gr.query();
-    
-    stats.total = gr.getRowCount();
-    
-    var priority = new GlideAggregate('incident');
-    priority.addActiveQuery();
-    priority.groupBy('priority');
-    priority.addAggregate('COUNT');
-    priority.query();
-    
-    stats.byPriority = {};
-    while(priority.next()) {
-      var p = priority.getValue('priority');
-      stats.byPriority[p] = priority.getAggregate('COUNT');
-    }
-    
-    gs.print('Analysis complete: ' + JSON.stringify(stats));
-    return stats;
-  `
-});
-
-console.log('Execution Output:', result.output);
-console.log('Returned Data:', result.returnValue);</code></pre>
-                </div>
-
-                <!-- Example 3: Multi-Agent Task -->
-                <div class="example-card">
-                    <h3>Multi-Agent Development</h3>
-                    <pre><code class="language-bash"># Use swarm coordination for complex tasks
-snow-flow swarm "Build complete incident management system with SLA tracking, automated assignment, and reporting dashboard" \
+                
+                <div class="code-block animate-slide-in-right">
+                    <code>// Multi-Agent Swarm
+snow-flow swarm "Build complete 
+incident management system" \
   --strategy development \
   --mode hierarchical \
   --max-agents 8 \
-  --monitor
-
-# The swarm will:
-# 1. Research best practices
-# 2. Design the architecture
-# 3. Develop components in parallel
-# 4. Test everything
-# 5. Deploy to ServiceNow
-# 6. Generate documentation</code></pre>
-                </div>
-
-                <!-- Example 4: Machine Learning -->
-                <div class="example-card">
-                    <h3>Train Incident Classifier</h3>
-                    <pre><code class="language-javascript">// Train ML model for incident classification
-const model = await snow_train_classifier({
-  type: 'incident_category',
-  training_data: {
-    table: 'incident',
-    fields: ['short_description', 'description'],
-    label: 'category',
-    limit: 1000
-  },
-  model_config: {
-    type: 'lstm',
-    epochs: 50,
-    batch_size: 32
-  }
-});
-
-// Use the trained model
-const prediction = await snow_predict({
-  model_id: model.id,
-  input: {
-    short_description: "Cannot access email",
-    description: "Outlook is not connecting to server"
-  }
-});
-
-console.log('Predicted category:', prediction.category);
-console.log('Confidence:', prediction.confidence);</code></pre>
-                </div>
-
-                <!-- User Examples Placeholder -->
-                <div class="example-card user-examples">
-                    <h3>📝 Your Examples</h3>
-                    <div class="user-examples-placeholder">
-                        <p>This section is reserved for your ServiceNow developer instance examples.</p>
-                        <p>Add your own real-world implementations here!</p>
-                        <div class="example-template">
-                            <pre><code class="language-javascript">// Your custom example code
-// From your ServiceNow developer instance
-// Show real implementations and use cases</code></pre>
-                        </div>
-                    </div>
+  --monitor</code>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- API Reference -->
-    <section id="api" class="api-reference">
+    <!-- Statistics Section -->
+    <section class="section" style="background: var(--gradient-mesh); padding: var(--space-32) 0;">
         <div class="container">
-            <h2 class="section-title">API Reference</h2>
-            <div class="api-categories">
-                <div class="api-category">
-                    <h3>CLI Commands</h3>
-                    <ul class="api-list">
-                        <li><code>snow-flow init</code> - Initialize project</li>
-                        <li><code>snow-flow auth login</code> - Authenticate</li>
-                        <li><code>snow-flow start</code> - Start orchestration</li>
-                        <li><code>snow-flow agent spawn &lt;type&gt;</code> - Create agent</li>
-                        <li><code>snow-flow swarm "&lt;task&gt;"</code> - Multi-agent task</li>
-                        <li><code>snow-flow memory store</code> - Store data</li>
-                        <li><code>snow-flow sparc &lt;mode&gt;</code> - SPARC modes</li>
-                    </ul>
+            <div class="grid grid-cols-2 md:grid-cols-4" style="gap: var(--space-8);">
+                <div class="text-center animate-fade-in-up stagger-1">
+                    <h3 style="font-size: var(--font-6xl); font-weight: 900; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">17</h3>
+                    <p style="color: var(--gray-400); text-transform: uppercase; letter-spacing: var(--tracking-widest);">MCP Servers</p>
                 </div>
-                <div class="api-category">
-                    <h3>JavaScript API</h3>
-                    <ul class="api-list">
-                        <li><code>snow_deploy_widget()</code> - Deploy widgets</li>
-                        <li><code>snow_execute_script()</code> - Run scripts</li>
-                        <li><code>snow_query_table()</code> - Query data</li>
-                        <li><code>snow_create_flow()</code> - Create flows</li>
-                        <li><code>snow_train_classifier()</code> - Train ML</li>
-                        <li><code>snow_test_rest_connection()</code> - Test APIs</li>
-                        <li><code>snow_property_manager()</code> - Properties</li>
-                    </ul>
+                <div class="text-center animate-fade-in-up stagger-2">
+                    <h3 style="font-size: var(--font-6xl); font-weight: 900; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">200+</h3>
+                    <p style="color: var(--gray-400); text-transform: uppercase; letter-spacing: var(--tracking-widest);">Tools</p>
+                </div>
+                <div class="text-center animate-fade-in-up stagger-3">
+                    <h3 style="font-size: var(--font-6xl); font-weight: 900; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">80%</h3>
+                    <p style="color: var(--gray-400); text-transform: uppercase; letter-spacing: var(--tracking-widest);">API Reduction</p>
+                </div>
+                <div class="text-center animate-fade-in-up stagger-4">
+                    <h3 style="font-size: var(--font-6xl); font-weight: 900; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">100%</h3>
+                    <p style="color: var(--gray-400); text-transform: uppercase; letter-spacing: var(--tracking-widest);">Real Data</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Best Practices -->
-    <section class="best-practices">
-        <div class="container">
-            <h2 class="section-title">Best Practices</h2>
-            <div class="practices-grid">
-                <div class="practice">
-                    <h3>🔍 Always Verify First</h3>
-                    <p>Never assume something doesn't exist. Always verify with background scripts before making changes.</p>
-                </div>
-                <div class="practice">
-                    <h3>📝 Use ES5 JavaScript</h3>
-                    <p>ServiceNow uses Rhino engine. Always write ES5-compatible code - no arrow functions, const/let, or template literals.</p>
-                </div>
-                <div class="practice">
-                    <h3>🔄 Sync User Changes</h3>
-                    <p>When users modify artifacts in ServiceNow, always fetch the latest version before making additional changes.</p>
-                </div>
-                <div class="practice">
-                    <h3>✅ Widget Coherence</h3>
-                    <p>Ensure perfect communication between HTML template, client script, and server script in widgets.</p>
-                </div>
-                <div class="practice">
-                    <h3>📊 Use Real Data</h3>
-                    <p>Snow-Flow never uses mock data. Always test with real ServiceNow instance data.</p>
-                </div>
-                <div class="practice">
-                    <h3>🚀 Leverage MCP Servers</h3>
-                    <p>Use specialized MCP servers for specific tasks - each is optimized for its domain.</p>
-                </div>
+    <!-- CTA Section -->
+    <section class="section" style="background: var(--black); padding: var(--space-32) 0;">
+        <div class="container text-center">
+            <h2 style="font-size: var(--font-5xl); font-weight: 900; color: var(--white); margin-bottom: var(--space-6);">Ready to Revolutionize ServiceNow?</h2>
+            <p style="font-size: var(--font-xl); color: var(--gray-400); margin-bottom: var(--space-12);">Join thousands of developers building faster with Snow-Flow</p>
+            <div class="flex gap-6 justify-center">
+                <a href="#install" class="btn btn-primary btn-animated" style="font-size: var(--font-lg); padding: var(--space-4) var(--space-8);">Get Started Now</a>
+                <a href="https://github.com/groeimetai/snow-flow" target="_blank" class="btn btn-ghost" style="font-size: var(--font-lg); padding: var(--space-4) var(--space-8);">View on GitHub</a>
             </div>
         </div>
     </section>
+
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer style="background: var(--gray-950); border-top: 1px solid var(--gray-800); padding: var(--space-16) 0;">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Snow-Flow</h4>
-                    <p>Advanced ServiceNow Development Framework</p>
-                    <div class="footer-logo">🏔️</div>
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="navbar-logo" style="font-size: var(--font-2xl);"><span class="logo-mountain">🏔️</span> SNOW-FLOW</h3>
+                    <p style="color: var(--gray-500); margin-top: var(--space-2);">© 2024 Snow-Flow v3.4.38 | MIT License</p>
                 </div>
-                <div class="footer-section">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="#installation">Installation</a></li>
-                        <li><a href="#mcp-servers">MCP Servers</a></li>
-                        <li><a href="#examples">Examples</a></li>
-                        <li><a href="#api">API Reference</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
-                        <li><a href="https://www.npmjs.com/package/snow-flow">NPM Package</a></li>
-                        <li><a href="docs/claude-md.html">CLAUDE.md</a></li>
-                        <li><a href="docs/api-full.html">Full API Docs</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Version</h4>
-                    <p>v3.4.16</p>
-                    <p>MIT License</p>
-                    <p>&copy; 2024 Snow-Flow Team</p>
+                <div class="flex gap-8">
+                    <a href="https://github.com/groeimetai/snow-flow" class="link-animated" style="color: var(--gray-400);">GitHub</a>
+                    <a href="#docs" class="link-animated" style="color: var(--gray-400);">Documentation</a>
+                    <a href="#install" class="link-animated" style="color: var(--gray-400);">Install</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="tools.js"></script>
+    <!-- Particle Canvas (Optional) -->
+    <canvas id="particles" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.3;"></canvas>
+    
+    <!-- Scripts -->
     <script src="js/main.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 </body>
 </html>

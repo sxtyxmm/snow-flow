@@ -1,15 +1,27 @@
-// Snow-Flow Website JavaScript
+/* =========================================
+   SNOW-FLOW MODERN BLACK/WHITE JAVASCRIPT
+   =========================================
+   Version: 3.0.0
+   Theme: Minimalist Black/White with Animations
+   ========================================= */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile Navigation Toggle
+    
+    /* =========================================
+       1. GLASS MORPHISM NAVBAR
+       ========================================= */
+    const navbar = document.querySelector('.navbar');
     const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
+    const navMenu = document.querySelector('.navbar-menu');
+    let lastScroll = 0;
 
+    // Mobile Navigation Toggle
     if (hamburger) {
         hamburger.addEventListener('click', function() {
             navMenu.classList.toggle('active');
+            hamburger.classList.toggle('active');
             
-            // Animate hamburger
+            // Animate hamburger lines
             const spans = hamburger.querySelectorAll('span');
             if (navMenu.classList.contains('active')) {
                 spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
@@ -23,12 +35,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Smooth Scrolling for Navigation Links
-    const navLinks = document.querySelectorAll('.nav-link');
+    // Glass Morphism on Scroll
+    window.addEventListener('scroll', function() {
+        const currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+
+        // Hide/Show navbar on scroll
+        if (currentScroll > lastScroll && currentScroll > 500) {
+            navbar.style.transform = 'translateY(-100%)';
+        } else {
+            navbar.style.transform = 'translateY(0)';
+        }
+        
+        lastScroll = currentScroll;
+    });
+
+    /* =========================================
+       2. SMOOTH SCROLLING
+       ========================================= */
+    const navLinks = document.querySelectorAll('.navbar-link, .nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
-            if (href.startsWith('#')) {
+            if (href && href.startsWith('#')) {
                 e.preventDefault();
                 const target = document.querySelector(href);
                 if (target) {
@@ -41,12 +75,157 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Close mobile menu if open
                     navMenu.classList.remove('active');
+                    hamburger?.classList.remove('active');
                 }
             }
         });
     });
 
-    // Tab Functionality for Installation Section
+    /* =========================================
+       3. HERO SECTION ANIMATIONS
+       ========================================= */
+    const hero = document.querySelector('.hero');
+    const heroTitle = document.querySelector('.hero-title');
+    const heroSubtitle = document.querySelector('.hero-subtitle');
+    
+    // Parallax effect on scroll
+    if (hero) {
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const parallaxSpeed = 0.5;
+            hero.style.transform = `translateY(${scrolled * parallaxSpeed}px)`;
+        });
+    }
+
+    // Typewriter effect for hero subtitle
+    if (heroSubtitle) {
+        const text = heroSubtitle.textContent;
+        heroSubtitle.textContent = '';
+        let i = 0;
+        
+        function typeWriter() {
+            if (i < text.length) {
+                heroSubtitle.textContent += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, 50);
+            }
+        }
+        
+        setTimeout(typeWriter, 1000);
+    }
+
+    /* =========================================
+       4. INTERSECTION OBSERVER ANIMATIONS
+       ========================================= */
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                
+                // Add stagger effect for children
+                const children = entry.target.querySelectorAll('.stagger-item');
+                children.forEach((child, index) => {
+                    setTimeout(() => {
+                        child.classList.add('visible');
+                    }, index * 100);
+                });
+            }
+        });
+    }, observerOptions);
+
+    // Observe all animated elements
+    const animatedElements = document.querySelectorAll('.animate-fade-in-up, .animate-fade-in-down, .animate-scale-in, .animate-slide-in-left, .animate-slide-in-right, .card, .feature, .section');
+    animatedElements.forEach(el => {
+        observer.observe(el);
+    });
+
+    /* =========================================
+       5. CARD HOVER EFFECTS
+       ========================================= */
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            this.style.setProperty('--mouse-x', `${x}px`);
+            this.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+
+    /* =========================================
+       6. BUTTON CLICK HANDLERS & SMOOTH SCROLL
+       ========================================= */
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+        // Only add click handler for buttons with href starting with #
+        const href = btn.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = href.substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    const offset = 80; // Navbar height
+                    const targetPosition = targetElement.offsetTop - offset;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                // Add subtle click feedback
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        }
+        
+        // Prevent the shimmer effect from getting too big
+        btn.addEventListener('mouseenter', function() {
+            this.style.transition = 'all 200ms ease';
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            this.style.transition = '';
+        });
+    });
+
+    /* =========================================
+       7. COPY TO CLIPBOARD
+       ========================================= */
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const codeBlock = this.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = this.textContent;
+                this.textContent = '✓ Copied!';
+                this.style.color = 'var(--white)';
+                
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.style.color = '';
+                }, 2000);
+            });
+        });
+    });
+
+    /* =========================================
+       8. TAB FUNCTIONALITY
+       ========================================= */
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
@@ -63,417 +242,165 @@ document.addEventListener('DOMContentLoaded', function() {
             const activeContent = document.getElementById(tabName);
             if (activeContent) {
                 activeContent.classList.add('active');
+                activeContent.classList.add('animate-fade-in-up');
             }
         });
     });
 
-    // Navbar Background on Scroll
-    const navbar = document.querySelector('.navbar');
-    let lastScroll = 0;
-
-    window.addEventListener('scroll', function() {
-        const currentScroll = window.pageYOffset;
-        
-        if (currentScroll > 100) {
-            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-            navbar.style.backdropFilter = 'blur(10px)';
-            navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
-        } else {
-            navbar.style.background = 'white';
-            navbar.style.backdropFilter = 'none';
-            navbar.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)';
-        }
-
-        // Hide/Show navbar on scroll
-        if (currentScroll > lastScroll && currentScroll > 500) {
-            navbar.style.transform = 'translateY(-100%)';
-        } else {
-            navbar.style.transform = 'translateY(0)';
-        }
-        
-        lastScroll = currentScroll;
-    });
-
-    // Animate Elements on Scroll
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -100px 0px'
-    };
-
-    const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-                
-                // Add stagger effect for grid items
-                if (entry.target.classList.contains('feature') || 
-                    entry.target.classList.contains('mcp-card') ||
-                    entry.target.classList.contains('what-is-card')) {
-                    const siblings = entry.target.parentElement.children;
-                    Array.from(siblings).forEach((sibling, index) => {
-                        setTimeout(() => {
-                            sibling.style.opacity = '1';
-                            sibling.style.transform = 'translateY(0)';
-                        }, index * 100);
-                    });
-                }
-            }
-        });
-    }, observerOptions);
-
-    // Observe elements for animation
-    const animateElements = document.querySelectorAll('.feature, .mcp-card, .what-is-card, .workflow-step, .example-card, .practice');
-    animateElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(el);
-    });
-
-    // Copy Code Functionality
-    const codeBlocks = document.querySelectorAll('pre code');
-    codeBlocks.forEach(block => {
-        const wrapper = block.parentElement;
-        
-        // Create copy button
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.textContent = 'Copy';
-        copyBtn.style.cssText = `
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        `;
-        
-        wrapper.style.position = 'relative';
-        wrapper.appendChild(copyBtn);
-        
-        copyBtn.addEventListener('click', function() {
-            const text = block.textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                copyBtn.textContent = 'Copied!';
-                copyBtn.style.background = '#48bb78';
-                copyBtn.style.borderColor = '#48bb78';
-                
-                setTimeout(() => {
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.style.background = 'rgba(255,255,255,0.1)';
-                    copyBtn.style.borderColor = 'rgba(255,255,255,0.2)';
-                }, 2000);
-            });
-        });
-        
-        // Show copy button on hover
-        wrapper.addEventListener('mouseenter', () => {
-            copyBtn.style.opacity = '1';
-        });
-        
-        wrapper.addEventListener('mouseleave', () => {
-            if (copyBtn.textContent === 'Copy') {
-                copyBtn.style.opacity = '0.7';
-            }
-        });
-    });
-
-    // Active Section Highlighting in Navigation
-    const sections = document.querySelectorAll('section[id]');
+    /* =========================================
+       9. SEARCH FUNCTIONALITY
+       ========================================= */
+    const searchInput = document.querySelector('.search-input');
+    const searchResults = document.querySelector('.search-results');
     
-    function highlightNavigation() {
-        const scrollPosition = window.scrollY + 100;
-        
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            const sectionId = section.getAttribute('id');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
             
-            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${sectionId}`) {
-                        link.classList.add('active');
-                    }
-                });
+            if (query.length > 2) {
+                // Simulate search results
+                searchResults.classList.add('active');
+                searchResults.innerHTML = `
+                    <div class="search-result">
+                        <span class="search-result-title">Getting Started with Snow-Flow</span>
+                        <span class="search-result-description">Learn how to install and configure Snow-Flow</span>
+                    </div>
+                    <div class="search-result">
+                        <span class="search-result-title">MCP Server Integration</span>
+                        <span class="search-result-description">Complete guide to MCP server setup</span>
+                    </div>
+                `;
+            } else {
+                searchResults.classList.remove('active');
+            }
+        });
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.remove('active');
             }
         });
     }
 
-    window.addEventListener('scroll', highlightNavigation);
-
-    // Typing Effect for Hero Title
-    const heroTitle = document.querySelector('.hero-title');
-    if (heroTitle) {
-        const text = heroTitle.textContent;
-        heroTitle.textContent = '';
-        let index = 0;
-        
-        function typeText() {
-            if (index < text.length) {
-                heroTitle.textContent += text.charAt(index);
-                index++;
-                setTimeout(typeText, 100);
-            }
-        }
-        
-        // Start typing after a short delay
-        setTimeout(typeText, 500);
-    }
-
-    // Counter Animation for Stats
-    const stats = document.querySelectorAll('.stat-number');
-    const statsObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
-                entry.target.classList.add('counted');
-                const target = entry.target;
-                const value = target.textContent;
-                
-                // Extract number from string (e.g., "16+" -> 16)
-                const number = parseInt(value.replace(/\D/g, ''));
-                const suffix = value.replace(/\d/g, '');
-                const duration = 2000; // 2 seconds
-                const increment = number / (duration / 16); // 60fps
-                let current = 0;
-                
-                const counter = setInterval(() => {
-                    current += increment;
-                    if (current >= number) {
-                        target.textContent = number + suffix;
-                        clearInterval(counter);
-                    } else {
-                        target.textContent = Math.floor(current) + suffix;
-                    }
-                }, 16);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    stats.forEach(stat => {
-        statsObserver.observe(stat);
+    /* =========================================
+       10. LOADING ANIMATIONS
+       ========================================= */
+    // Simulate loading for demo
+    const loadingElements = document.querySelectorAll('[data-loading]');
+    loadingElements.forEach(el => {
+        setTimeout(() => {
+            el.classList.remove('skeleton');
+            el.classList.add('animate-fade-in-up');
+        }, Math.random() * 2000 + 500);
     });
 
-    // Search Functionality for MCP Tools
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Search MCP tools...';
-    searchInput.className = 'mcp-search';
-    searchInput.style.cssText = `
-        width: 100%;
-        max-width: 400px;
-        margin: 0 auto 2rem;
-        display: block;
-        padding: 12px 20px;
-        border: 2px solid #e2e8f0;
-        border-radius: 25px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    `;
-
-    const mcpSection = document.querySelector('#mcp-servers .container');
-    if (mcpSection) {
-        const subtitle = mcpSection.querySelector('.section-subtitle');
-        if (subtitle) {
-            subtitle.insertAdjacentElement('afterend', searchInput);
+    /* =========================================
+       11. PARTICLE BACKGROUND (SUBTLE)
+       ========================================= */
+    function createParticle() {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDuration = Math.random() * 20 + 10 + 's';
+        particle.style.opacity = Math.random() * 0.5;
+        particle.style.animationDelay = Math.random() * 5 + 's';
+        
+        document.querySelector('.hero')?.appendChild(particle);
+        
+        setTimeout(() => {
+            particle.remove();
+        }, 30000);
+    }
+    
+    // Create particles periodically
+    if (document.querySelector('.hero')) {
+        setInterval(createParticle, 3000);
+        
+        // Create initial particles
+        for (let i = 0; i < 5; i++) {
+            setTimeout(createParticle, i * 500);
         }
-
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const mcpCards = document.querySelectorAll('.mcp-card');
-            
-            mcpCards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    card.style.display = 'block';
-                    card.style.animation = 'fadeIn 0.3s ease';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
-
-        searchInput.addEventListener('focus', function() {
-            this.style.borderColor = '#0066cc';
-            this.style.boxShadow = '0 0 0 3px rgba(0,102,204,0.1)';
-        });
-
-        searchInput.addEventListener('blur', function() {
-            this.style.borderColor = '#e2e8f0';
-            this.style.boxShadow = 'none';
-        });
     }
 
-    // Add Loading Animation
-    window.addEventListener('load', function() {
-        document.body.classList.add('loaded');
+    /* =========================================
+       12. CONSOLE EASTER EGG
+       ========================================= */
+    console.log('%c🏔️ Snow-Flow', 'font-size: 50px; font-weight: bold; background: linear-gradient(135deg, #000 0%, #fff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
+    console.log('%cWelcome to Snow-Flow - The ServiceNow Development Revolution', 'font-size: 14px; color: #666;');
+    console.log('%c17 MCP Servers | 200+ Tools | Unlimited Possibilities', 'font-size: 12px; color: #999;');
+    console.log('%cJoin us: https://github.com/groeimetai/snow-flow', 'font-size: 12px; color: #666; text-decoration: underline;');
+
+    /* =========================================
+       13. PERFORMANCE OPTIMIZATION
+       ========================================= */
+    // Throttle scroll events
+    let scrollTimeout;
+    window.addEventListener('scroll', function() {
+        if (scrollTimeout) {
+            window.cancelAnimationFrame(scrollTimeout);
+        }
+        scrollTimeout = window.requestAnimationFrame(function() {
+            // Handle scroll events
+        });
+    }, { passive: true });
+
+    /* =========================================
+       14. ACCESSIBILITY ENHANCEMENTS
+       ========================================= */
+    // Add keyboard navigation for interactive elements
+    const interactiveElements = document.querySelectorAll('.btn, .card, .tab-btn, .navbar-link');
+    interactiveElements.forEach(el => {
+        el.setAttribute('tabindex', '0');
+        el.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
     });
 
-    // Dynamic MCP Server Generation
-    function generateMCPCards() {
-        const mcpGrid = document.getElementById('mcp-grid');
-        if (!mcpGrid || !window.snowFlowTools) return;
+    // Skip to content link
+    const skipLink = document.createElement('a');
+    skipLink.href = '#main-content';
+    skipLink.className = 'skip-to-content';
+    skipLink.textContent = 'Skip to content';
+    document.body.insertBefore(skipLink, document.body.firstChild);
 
-        mcpGrid.innerHTML = '';
-        
-        Object.keys(window.snowFlowTools).forEach(serverId => {
-            const server = window.snowFlowTools[serverId];
-            
-            const mcpCard = document.createElement('div');
-            mcpCard.className = 'mcp-card-dynamic';
-            mcpCard.setAttribute('data-server', serverId);
-            
-            mcpCard.innerHTML = `
-                <div class="mcp-card-header">
-                    <div class="mcp-title">
-                        <h3>${server.name}</h3>
-                        <span class="mcp-badge">${server.badge}</span>
-                    </div>
-                    <button class="mcp-expand-btn" aria-label="Toggle tools">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6,9 12,15 18,9"></polyline>
-                        </svg>
-                    </button>
-                </div>
-                <p class="mcp-description">${server.description}</p>
-                <div class="mcp-tools-container" style="display: none;">
-                    <div class="mcp-tools-grid">
-                        ${server.tools.map(tool => `
-                            <div class="tool-item">
-                                <div class="tool-header">
-                                    <code class="tool-name">${tool.name}</code>
-                                </div>
-                                <p class="tool-description">${tool.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            
-            mcpGrid.appendChild(mcpCard);
-        });
-
-        // Add click handlers for expand/collapse
-        const expandButtons = document.querySelectorAll('.mcp-expand-btn');
-        expandButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const card = this.closest('.mcp-card-dynamic');
-                const toolsContainer = card.querySelector('.mcp-tools-container');
-                const isExpanded = toolsContainer.style.display !== 'none';
-                
-                if (isExpanded) {
-                    toolsContainer.style.display = 'none';
-                    this.classList.remove('expanded');
-                    card.classList.remove('expanded');
-                } else {
-                    toolsContainer.style.display = 'block';
-                    this.classList.add('expanded');
-                    card.classList.add('expanded');
-                    
-                    // Smooth animation
-                    toolsContainer.style.maxHeight = '0px';
-                    toolsContainer.style.overflow = 'hidden';
-                    toolsContainer.style.transition = 'max-height 0.4s ease-in-out';
-                    
-                    setTimeout(() => {
-                        toolsContainer.style.maxHeight = toolsContainer.scrollHeight + 'px';
-                    }, 10);
-                    
-                    setTimeout(() => {
-                        toolsContainer.style.maxHeight = 'none';
-                        toolsContainer.style.overflow = 'visible';
-                    }, 450);
-                }
-            });
-        });
-
-        // Add observer for new cards
-        const newCards = document.querySelectorAll('.mcp-card-dynamic');
-        newCards.forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(el);
-        });
-    }
-
-    // MCP Filter Functionality
-    function setupMCPFilter() {
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const filter = this.getAttribute('data-filter');
-                
-                // Update active button
-                filterButtons.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Filter cards
-                const cards = document.querySelectorAll('.mcp-card-dynamic');
-                cards.forEach(card => {
-                    const serverId = card.getAttribute('data-server');
-                    const shouldShow = filter === 'all' || 
-                                    (filter === 'deployment' && serverId.includes('deployment')) ||
-                                    (filter === 'automation' && (serverId.includes('automation') || serverId.includes('flow'))) ||
-                                    (filter === 'ml' && serverId.includes('machine-learning')) ||
-                                    (filter === 'security' && serverId.includes('security'));
-                    
-                    if (shouldShow) {
-                        card.style.display = 'block';
-                        card.style.animation = 'fadeIn 0.3s ease';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        });
-    }
-
-    // Enhanced Search for Dynamic Cards
-    function updateSearchForDynamicCards() {
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase();
-                const mcpCards = document.querySelectorAll('.mcp-card-dynamic');
-                
-                mcpCards.forEach(card => {
-                    const text = card.textContent.toLowerCase();
-                    if (text.includes(searchTerm)) {
-                        card.style.display = 'block';
-                        card.style.animation = 'fadeIn 0.3s ease';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        }
-    }
-
-    // Initialize MCP functionality when tools are loaded
-    function initializeMCP() {
-        if (window.snowFlowTools) {
-            generateMCPCards();
-            setupMCPFilter();
-            updateSearchForDynamicCards();
-        } else {
-            // Retry after a short delay if tools aren't loaded yet
-            setTimeout(initializeMCP, 100);
-        }
-    }
-
-    // Initialize MCP functionality
-    initializeMCP();
-
-    // Console Easter Egg
-    console.log('%c🏔️ Snow-Flow', 'font-size: 30px; font-weight: bold; background: linear-gradient(135deg, #0066cc 0%, #00d4ff 100%); color: white; padding: 10px 20px; border-radius: 10px;');
-    console.log('%cAdvanced ServiceNow Development Framework', 'font-size: 14px; color: #666;');
-    console.log('%cVersion 3.4.16 | MIT License', 'font-size: 12px; color: #999;');
-    console.log('%cInterested in contributing? Visit: https://github.com/groeimetai/snow-flow', 'font-size: 12px; color: #0066cc;');
+    /* =========================================
+       15. INITIALIZATION COMPLETE
+       ========================================= */
+    document.body.classList.add('loaded');
+    console.log('✨ Snow-Flow initialized successfully');
 });
+
+/* =========================================
+   16. UTILITY FUNCTIONS
+   ========================================= */
+// Debounce function for performance
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Check if element is in viewport
+function isInViewport(element) {
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
+/* =========================================
+   END OF SNOW-FLOW JAVASCRIPT
+   ========================================= */
