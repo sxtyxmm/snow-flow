@@ -20,12 +20,13 @@ export class Logger {
       ),
       defaultMeta: { agent: agentName },
       transports: [
-        // Console transport
+        // Console transport - use stderr to keep stdout clean for JSON-RPC
         new winston.transports.Console({
           format: winston.format.combine(
             winston.format.colorize(),
             winston.format.simple()
-          )
+          ),
+          stderrLevels: ['error', 'warn', 'info', 'debug', 'verbose', 'silly'] // All levels to stderr
         }),
         // File transport
         new winston.transports.File({
