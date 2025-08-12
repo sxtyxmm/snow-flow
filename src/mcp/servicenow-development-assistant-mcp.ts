@@ -136,7 +136,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         },
         {
           name: 'snow_get_by_sysid',
-          description: 'Retrieves artifacts by sys_id for precise, fast lookups. More reliable than text-based searches when sys_id is known.',
+          description: 'Retrieves artifacts by sys_id for precise, fast lookups. Auto-detects large responses and suggests efficient field-specific queries using snow_query_table when needed. More reliable than text-based searches when sys_id is known.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -2367,6 +2367,56 @@ export class ServiceNowDevelopmentAssistantMCP {
         ...artifact
       };
 
+      // Estimate token count (rough estimate: 1 token ≈ 4 characters)
+      const jsonString = JSON.stringify(formattedArtifact, null, 2);
+      const estimatedTokens = Math.ceil(jsonString.length / 4);
+      const maxTokens = 25000; // MCP response limit
+
+      let responseText: string;
+      
+      if (estimatedTokens > maxTokens) {
+        // Response too large - return essential fields only and suggest specific field access
+        const essentialFields = {
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.title || 'Unknown',
+          table: args.table,
+          sys_updated_on: artifact.sys_updated_on,
+          sys_created_on: artifact.sys_created_on,
+          sys_updated_by: artifact.sys_updated_by,
+          active: artifact.active,
+          // Table-specific key fields
+          ...(args.table === 'sp_widget' && {
+            id: artifact.id,
+            title: artifact.title,
+            template: artifact.template ? `${artifact.template.substring(0, 200)}...` : null,
+            script: artifact.script ? `${artifact.script.substring(0, 200)}...` : null,
+            client_script: artifact.client_script ? `${artifact.client_script.substring(0, 200)}...` : null,
+            css: artifact.css ? `${artifact.css.substring(0, 200)}...` : null
+          }),
+          ...(args.table === 'wf_workflow' && {
+            title: artifact.title,
+            workflow_version: artifact.workflow_version,
+            stage: artifact.stage
+          }),
+          ...(args.table === 'sys_script_include' && {
+            api_name: artifact.api_name,
+            client_callable: artifact.client_callable,
+            script: artifact.script ? `${artifact.script.substring(0, 200)}...` : null
+          })
+        };
+
+        const availableFields = Object.keys(artifact).filter(key => 
+          !essentialFields.hasOwnProperty(key)
+        );
+
+        responseText = `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n\n⚠️ **Response size limited (${estimatedTokens} tokens > ${maxTokens} limit)**\n\n**Essential Fields:**\n${JSON.stringify(essentialFields, null, 2)}\n\n🎯 **RECOMMENDATION: Get specific fields instead**\n\nUse snow_query_table with specific fields for better performance:\n\`\`\`\nsnow_query_table({\n  table: "${args.table}",\n  query: "sys_id=${args.sys_id}",\n  fields: ["field1", "field2", "field3"],  // Only fields you need\n  limit: 1\n})\n\`\`\`\n\n**Available fields to choose from:**\n${availableFields.slice(0, 20).join(', ')}${availableFields.length > 20 ? `, and ${availableFields.length - 20} more...` : ''}\n\n💡 **Example for ${args.table}:**\n${args.table === 'sp_widget' ? `snow_query_table({ table: "sp_widget", query: "sys_id=${args.sys_id}", fields: ["name", "title", "template", "client_script", "script"], limit: 1 })` : 
+          args.table === 'wf_workflow' ? `snow_query_table({ table: "wf_workflow", query: "sys_id=${args.sys_id}", fields: ["name", "title", "workflow_version", "stage"], limit: 1 })` :
+          `snow_query_table({ table: "${args.table}", query: "sys_id=${args.sys_id}", fields: ["name", "sys_updated_on"], limit: 1 })`}`;
+      } else {
+        // Response size is acceptable
+        responseText = `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n\n**All Fields:**\n${jsonString}`;
+      }
+
       // Skip memory indexing for now - it might be causing timeouts
       // TODO: Investigate why memory indexing causes timeouts
       /*
@@ -2383,7 +2433,7 @@ export class ServiceNowDevelopmentAssistantMCP {
         content: [
           {
             type: 'text',
-            text: `✅ Found artifact by sys_id!\n\n🎯 **${formattedArtifact.name}**\n🆔 sys_id: ${args.sys_id}\n📊 Table: ${args.table}\n\n**All Fields:**\n${JSON.stringify(formattedArtifact, null, 2)}`,
+            text: responseText,
           },
         ],
       };
