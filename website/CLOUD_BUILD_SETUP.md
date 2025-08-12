@@ -78,8 +78,9 @@ gcloud alpha builds triggers connect github \
      - Repository: `groeimetai/snow-flow`
      - Branch: `^main$`
    - **Configuration:**
-     - Type: Cloud Build configuration file
+     - Type: **Cloud Build configuration file (YAML or JSON)**
      - Location: `website/cloudbuild.yaml`
+     - ⚠️ **NOT "Docker" - use "Cloud Build configuration file"**
    - **Advanced (Optional):**
      - Substitution variables:
        ```
@@ -88,6 +89,18 @@ gcloud alpha builds triggers connect github \
        ```
 
 4. Click **"Create"**
+
+### ⚠️ Important: Build Configuration Type
+
+**CORRECT:** Cloud Build configuration file (YAML or JSON)
+- Uses our `website/cloudbuild.yaml` with multi-step pipeline
+- Builds Docker image + deploys to Cloud Run
+- Full CI/CD automation
+
+**WRONG:** Docker  
+- Only builds Docker image, no deployment
+- Ignores our cloudbuild.yaml pipeline
+- Manual deployment required
 
 ### Using Command Line
 
