@@ -3785,7 +3785,8 @@ class ServiceNowOperationsMCP {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    this.logger.info('ServiceNow Operations MCP Server started');
+    // Use stderr for logs to keep stdout clean for JSON-RPC
+    console.error('ServiceNow Operations MCP Server running on stdio');
   }
 }
 
