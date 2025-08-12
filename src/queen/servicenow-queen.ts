@@ -60,13 +60,43 @@ export class ServiceNowQueen {
   }
 
   /**
-   * Main entry point: Execute ServiceNow objective with MCP-FIRST workflow
+   * Main entry point: Execute ServiceNow objective with STRATEGIC ORCHESTRATION
+   * 
+   * This is where the Queen Agent demonstrates true helicopter-view thinking:
+   * - Deep problem analysis beyond surface requirements
+   * - Strategic risk assessment and mitigation planning  
+   * - Holistic solution architecture considering all stakeholders
+   * - Proactive bottleneck identification and resolution
+   * - Comprehensive orchestration of specialized agents
    */
   async executeObjective(objective: string): Promise<any> {
     const taskId = this.generateTaskId();
     const startTime = Date.now();
 
     try {
+      // 🧠 STRATEGIC PHASE 1: DEEP PROBLEM ANALYSIS
+      this.logger.info(`👑 QUEEN STRATEGIC ANALYSIS INITIATED`);
+      this.logger.info(`🎯 Objective: ${objective}`);
+      this.logger.info(`🧠 Analyzing: What is the REAL problem we're solving here?`);
+      
+      // Analyze what the user ACTUALLY needs vs what they asked for
+      const problemAnalysis = await this.performDeepProblemAnalysis(objective);
+      this.logger.info(`📊 Problem Complexity: ${problemAnalysis.complexity} | Business Impact: ${problemAnalysis.businessImpact}`);
+      this.logger.info(`🎯 Core Problem: ${problemAnalysis.coreProblem}`);
+      this.logger.info(`👥 Stakeholders: ${problemAnalysis.stakeholders.join(', ')}`);
+      
+      // 🧠 STRATEGIC PHASE 2: RISK & CONSTRAINT ASSESSMENT  
+      this.logger.info(`🔍 STRATEGIC RISK ASSESSMENT`);
+      const riskAssessment = await this.performRiskAssessment(objective, problemAnalysis);
+      this.logger.info(`⚠️ Risk Level: ${riskAssessment.overallRisk} | Critical Risks: ${riskAssessment.criticalRisks.length}`);
+      
+      if (riskAssessment.criticalRisks.length > 0) {
+        this.logger.info(`🚨 CRITICAL RISKS IDENTIFIED:`);
+        riskAssessment.criticalRisks.forEach(risk => {
+          this.logger.info(`  • ${risk.description} (Impact: ${risk.impact}, Likelihood: ${risk.likelihood})`);
+        });
+      }
+
       if (this.config.debugMode) {
         this.logger.info(`🎯 Queen analyzing objective: ${objective}`);
         this.logger.info(`🚨 ENFORCING MCP-FIRST WORKFLOW`);
@@ -144,54 +174,21 @@ export class ServiceNowQueen {
       };
       this.activeTasks.set(taskId, task);
 
-      // 🚨 PHASE 5: INTELLIGENT GAP ANALYSIS (Beyond MCP Tools)
-      this.logger.info('🧠 Step 4: Running Intelligent Gap Analysis...');
-      // Gap analysis now integrated into MCP workflow
+      // 🧠 PHASE 5: STRATEGIC SOLUTION ARCHITECTURE
+      this.logger.info(`🧠 Strategic Solution Architecture based on analysis...`);
+      this.logger.info(`🎯 Mitigation Strategies: ${riskAssessment.mitigationStrategies.join(', ')}`);
       
-      try {
-        // Gap analysis handled by MCP tools directly
-          autoPermissions: this.config.autoPermissions,
-          environment: 'development',
-          enableAutomation: true,
-          includeManualGuides: true,
-          riskTolerance: 'medium'
-        });
-
-        this.logger.info(`📊 Gap Analysis Complete:`);
-        this.logger.info(`  • Total Requirements: ${gapAnalysisResult.totalRequirements}`);
-        this.logger.info(`  • MCP Coverage: ${gapAnalysisResult.mcpCoverage.coveragePercentage}%`);
-        this.logger.info(`  • Automated: ${gapAnalysisResult.summary.successfulAutomation} configurations`);
-        this.logger.info(`  • Manual Work: ${gapAnalysisResult.summary.requiresManualWork} items`);
-
-        // Display manual instructions if needed
-        if (gapAnalysisResult.summary.requiresManualWork > 0) {
-          this.logger.info('\n📋 Manual Configuration Required:');
-          gapAnalysisResult.nextSteps.manual.forEach(step => this.logger.info(`  • ${step}`));
-          
-          if (gapAnalysisResult.manualGuides) {
-            this.logger.info('\n📚 Detailed manual guides available in gap _analysis result');
-          }
-        }
-
-        // Display automation successes
-        if (gapAnalysisResult.summary.successfulAutomation > 0) {
-          this.logger.info('\n✅ Automated Configurations:');
-          gapAnalysisResult.nextSteps.automated.forEach(step => this.logger.info(`  • ${step}`));
-        }
-
-        // Display recommendations
-        if (gapAnalysisResult.nextSteps.recommendations.length > 0) {
-          this.logger.info('\n💡 Recommendations:');
-          gapAnalysisResult.nextSteps.recommendations.forEach(rec => this.logger.info(`  • ${rec}`));
-        }
-
-        // Store gap _analysis result in task for later reference
-        (task as any).gapAnalysis = gapAnalysisResult;
-
-      } catch (gapError) {
-        console.warn(`⚠️ Gap Analysis failed: ${gapError instanceof Error ? gapError.message : 'Unknown error'}`);
-        this.logger.info('🔄 Continuing with standard MCP workflow...');
-      }
+      // Strategic solution design based on deep analysis
+      const solutionArchitecture = await this.designSolutionArchitecture(problemAnalysis, riskAssessment);
+      this.logger.info(`🏗️ Solution Architecture: ${solutionArchitecture.approach}`);
+      this.logger.info(`👥 Recommended Team: ${solutionArchitecture.recommendedAgents.join(', ')}`);
+      
+      // Store strategic analysis in task
+      (task as any).strategicAnalysis = {
+        problemAnalysis,
+        riskAssessment,
+        solutionArchitecture
+      };
 
       // Phase 6: Spawn optimal agent swarm
       const agents = this.spawnOptimalSwarm(task, _analysis);
@@ -937,8 +934,10 @@ function($scope) {
    * Get all manual guides from gap _analysis for a task
    */
   getManualConfigurationGuides(taskId: string): any {
-    // Gap analysis integrated into MCP workflow
-    return gapAnalysis?.manualGuides || null;
+    // Get strategic analysis from task
+    const task = this.activeTasks.get(taskId);
+    const strategicAnalysis = (task as any)?.strategicAnalysis;
+    return strategicAnalysis?.problemAnalysis?.hiddenRequirements || null;
   }
 
   getHiveMindStatus(): any {
@@ -1025,5 +1024,463 @@ function($scope) {
     
     // Close memory system
     this.memory.close();
+  }
+
+  /**
+   * STRATEGIC ORCHESTRATION METHODS
+   * These methods implement the Queen Agent's strategic thinking capabilities
+   */
+
+  /**
+   * Perform deep problem analysis to understand what user ACTUALLY needs
+   */
+  private async performDeepProblemAnalysis(objective: string): Promise<any> {
+    this.logger.info('🧠 Deep Problem Analysis: Looking beyond surface requirements...');
+    
+    // Analyze the objective for hidden complexity and real business needs
+    const analysis = {
+      coreProblem: this.extractCoreProblem(objective),
+      complexity: this.assessObjectiveComplexity(objective),
+      businessImpact: this.assessBusinessImpact(objective),
+      stakeholders: this.identifyStakeholders(objective),
+      hiddenRequirements: this.identifyHiddenRequirements(objective),
+      successCriteria: this.defineSuccessCriteria(objective)
+    };
+
+    this.logger.info(`🎯 Core Problem Identified: ${analysis.coreProblem}`);
+    this.logger.info(`📈 Success Criteria: ${analysis.successCriteria.join(', ')}`);
+    
+    return analysis;
+  }
+
+  /**
+   * Perform comprehensive risk assessment
+   */
+  private async performRiskAssessment(objective: string, problemAnalysis: any): Promise<any> {
+    this.logger.info('⚠️ Strategic Risk Assessment: Identifying all potential failure points...');
+    
+    const risks = [
+      ...this.identifyTechnicalRisks(objective, problemAnalysis),
+      ...this.identifyBusinessRisks(objective, problemAnalysis),
+      ...this.identifyOperationalRisks(objective, problemAnalysis),
+      ...this.identifyComplianceRisks(objective, problemAnalysis)
+    ];
+
+    const criticalRisks = risks.filter(risk => risk.impact === 'high' && risk.likelihood === 'high');
+    const overallRisk = this.calculateOverallRisk(risks);
+
+    return {
+      risks,
+      criticalRisks,
+      overallRisk,
+      mitigationStrategies: this.developMitigationStrategies(criticalRisks)
+    };
+  }
+
+  /**
+   * Extract the core business problem from user request
+   */
+  private extractCoreProblem(objective: string): string {
+    const objective_lower = objective.toLowerCase();
+    
+    // Analyze patterns to understand underlying need
+    if (objective_lower.includes('widget') || objective_lower.includes('dashboard')) {
+      return 'Users need better access to information or functionality through improved interface';
+    } else if (objective_lower.includes('workflow') || objective_lower.includes('process')) {
+      return 'Business process efficiency and automation needs improvement';
+    } else if (objective_lower.includes('integration') || objective_lower.includes('api')) {
+      return 'Systems need to communicate effectively to eliminate manual work';
+    } else if (objective_lower.includes('report') || objective_lower.includes('analytics')) {
+      return 'Decision makers need better visibility into business performance';
+    } else if (objective_lower.includes('notification') || objective_lower.includes('alert')) {
+      return 'Stakeholders need timely awareness of important events or status changes';
+    } else {
+      return 'Business capability needs enhancement through ServiceNow platform optimization';
+    }
+  }
+
+  /**
+   * Assess objective complexity
+   */
+  private assessObjectiveComplexity(objective: string): 'low' | 'medium' | 'high' {
+    let complexity_score = 0;
+    
+    const high_complexity_indicators = ['integration', 'multiple', 'complex', 'enterprise', 'automated', 'workflow'];
+    const medium_complexity_indicators = ['dashboard', 'report', 'widget', 'form', 'approval'];
+    
+    high_complexity_indicators.forEach(indicator => {
+      if (objective.toLowerCase().includes(indicator)) complexity_score += 2;
+    });
+    
+    medium_complexity_indicators.forEach(indicator => {
+      if (objective.toLowerCase().includes(indicator)) complexity_score += 1;
+    });
+    
+    if (objective.length > 100) complexity_score += 1;
+    if (objective.split(' ').length > 20) complexity_score += 1;
+    
+    if (complexity_score >= 4) return 'high';
+    if (complexity_score >= 2) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Assess business impact
+   */
+  private assessBusinessImpact(objective: string): 'low' | 'medium' | 'high' {
+    const high_impact_keywords = ['critical', 'urgent', 'production', 'enterprise', 'compliance', 'security'];
+    const medium_impact_keywords = ['efficiency', 'automation', 'improvement', 'optimization', 'user experience'];
+    
+    const objective_lower = objective.toLowerCase();
+    
+    if (high_impact_keywords.some(keyword => objective_lower.includes(keyword))) return 'high';
+    if (medium_impact_keywords.some(keyword => objective_lower.includes(keyword))) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Identify stakeholders affected by the change
+   */
+  private identifyStakeholders(objective: string): string[] {
+    const stakeholders = new Set<string>();
+    const objective_lower = objective.toLowerCase();
+    
+    // Default stakeholders for any ServiceNow change
+    stakeholders.add('End Users');
+    stakeholders.add('System Administrators');
+    
+    // Add specific stakeholders based on objective
+    if (objective_lower.includes('approval')) stakeholders.add('Approvers');
+    if (objective_lower.includes('manager')) stakeholders.add('Managers');
+    if (objective_lower.includes('report') || objective_lower.includes('dashboard')) stakeholders.add('Business Analysts');
+    if (objective_lower.includes('integration')) stakeholders.add('IT Operations');
+    if (objective_lower.includes('security') || objective_lower.includes('compliance')) stakeholders.add('Security Team');
+    if (objective_lower.includes('catalog') || objective_lower.includes('service')) stakeholders.add('Service Desk');
+    
+    return Array.from(stakeholders);
+  }
+
+  /**
+   * Identify hidden requirements not explicitly stated
+   */
+  private identifyHiddenRequirements(objective: string): string[] {
+    const hiddenReqs: string[] = [];
+    const objective_lower = objective.toLowerCase();
+    
+    // Universal hidden requirements
+    hiddenReqs.push('Solution must be maintainable by current team');
+    hiddenReqs.push('Performance must not degrade existing system');
+    hiddenReqs.push('Solution must be scalable for future growth');
+    
+    // Context-specific hidden requirements
+    if (objective_lower.includes('widget') || objective_lower.includes('portal')) {
+      hiddenReqs.push('Must work across all browsers and devices');
+      hiddenReqs.push('Must meet accessibility standards');
+    }
+    
+    if (objective_lower.includes('integration')) {
+      hiddenReqs.push('Must handle integration failures gracefully');
+      hiddenReqs.push('Must maintain data consistency');
+    }
+    
+    if (objective_lower.includes('workflow') || objective_lower.includes('automation')) {
+      hiddenReqs.push('Must handle exceptions and edge cases');
+      hiddenReqs.push('Must provide clear audit trail');
+    }
+    
+    return hiddenReqs;
+  }
+
+  /**
+   * Define clear success criteria
+   */
+  private defineSuccessCriteria(objective: string): string[] {
+    const criteria: string[] = [];
+    const objective_lower = objective.toLowerCase();
+    
+    // Universal success criteria
+    criteria.push('Solution deployed without system disruption');
+    criteria.push('All stakeholders can use the solution effectively');
+    criteria.push('Performance meets or exceeds baseline requirements');
+    
+    // Specific success criteria based on objective
+    if (objective_lower.includes('widget') || objective_lower.includes('dashboard')) {
+      criteria.push('Users can access information faster than before');
+      criteria.push('User satisfaction with interface is positive');
+    }
+    
+    if (objective_lower.includes('workflow') || objective_lower.includes('automation')) {
+      criteria.push('Process time reduced compared to manual process');
+      criteria.push('Error rate is lower than manual process');
+    }
+    
+    if (objective_lower.includes('integration')) {
+      criteria.push('Data flows correctly between systems');
+      criteria.push('Integration performs within SLA requirements');
+    }
+    
+    return criteria;
+  }
+
+  /**
+   * Identify technical risks
+   */
+  private identifyTechnicalRisks(objective: string, analysis: any): any[] {
+    const risks = [];
+    const objective_lower = objective.toLowerCase();
+    
+    if (objective_lower.includes('integration')) {
+      risks.push({
+        type: 'technical',
+        description: 'Integration points may fail or perform poorly',
+        impact: 'high',
+        likelihood: 'medium',
+        mitigation: 'Implement robust error handling and monitoring'
+      });
+    }
+    
+    if (objective_lower.includes('widget') || objective_lower.includes('custom')) {
+      risks.push({
+        type: 'technical', 
+        description: 'Custom code may conflict with platform updates',
+        impact: 'medium',
+        likelihood: 'medium',
+        mitigation: 'Follow platform best practices and test thoroughly'
+      });
+    }
+    
+    if (analysis.complexity === 'high') {
+      risks.push({
+        type: 'technical',
+        description: 'High complexity increases chance of defects',
+        impact: 'high',
+        likelihood: 'high',
+        mitigation: 'Break down into smaller phases with thorough testing'
+      });
+    }
+    
+    return risks;
+  }
+
+  /**
+   * Identify business risks
+   */
+  private identifyBusinessRisks(objective: string, analysis: any): any[] {
+    const risks = [];
+    
+    if (analysis.businessImpact === 'high') {
+      risks.push({
+        type: 'business',
+        description: 'High business impact means high visibility and pressure',
+        impact: 'high',
+        likelihood: 'medium',
+        mitigation: 'Ensure thorough testing and stakeholder communication'
+      });
+    }
+    
+    if (analysis.stakeholders.length > 5) {
+      risks.push({
+        type: 'business',
+        description: 'Many stakeholders increase coordination complexity',
+        impact: 'medium', 
+        likelihood: 'high',
+        mitigation: 'Establish clear communication plan and change management'
+      });
+    }
+    
+    return risks;
+  }
+
+  /**
+   * Identify operational risks
+   */
+  private identifyOperationalRisks(objective: string, analysis: any): any[] {
+    const risks = [];
+    const objective_lower = objective.toLowerCase();
+    
+    if (objective_lower.includes('automation') || objective_lower.includes('workflow')) {
+      risks.push({
+        type: 'operational',
+        description: 'Automated processes may fail and require manual intervention',
+        impact: 'medium',
+        likelihood: 'medium',
+        mitigation: 'Build in manual override capabilities and monitoring'
+      });
+    }
+    
+    return risks;
+  }
+
+  /**
+   * Identify compliance risks
+   */
+  private identifyComplianceRisks(objective: string, analysis: any): any[] {
+    const risks = [];
+    const objective_lower = objective.toLowerCase();
+    
+    if (objective_lower.includes('data') || objective_lower.includes('integration')) {
+      risks.push({
+        type: 'compliance',
+        description: 'Data handling may not meet privacy or security requirements',
+        impact: 'high',
+        likelihood: 'low',
+        mitigation: 'Review with security and compliance teams'
+      });
+    }
+    
+    return risks;
+  }
+
+  /**
+   * Calculate overall risk level
+   */
+  private calculateOverallRisk(risks: any[]): 'low' | 'medium' | 'high' {
+    const high_risk_count = risks.filter(r => r.impact === 'high' && r.likelihood === 'high').length;
+    const medium_risk_count = risks.filter(r => 
+      (r.impact === 'high' && r.likelihood === 'medium') || 
+      (r.impact === 'medium' && r.likelihood === 'high')
+    ).length;
+    
+    if (high_risk_count > 0) return 'high';
+    if (medium_risk_count > 1) return 'high';
+    if (medium_risk_count > 0 || risks.length > 3) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Develop mitigation strategies for critical risks
+   */
+  private developMitigationStrategies(criticalRisks: any[]): string[] {
+    const strategies = criticalRisks.map(risk => risk.mitigation);
+    
+    // Add general mitigation strategies
+    strategies.push('Implement comprehensive testing at each phase');
+    strategies.push('Establish rollback procedures before deployment');
+    strategies.push('Monitor solution performance post-deployment');
+    
+    return [...new Set(strategies)]; // Remove duplicates
+  }
+
+  /**
+   * Design solution architecture based on strategic analysis
+   */
+  private async designSolutionArchitecture(problemAnalysis: any, riskAssessment: any): Promise<any> {
+    this.logger.info('🏗️ Designing Strategic Solution Architecture...');
+    
+    // Determine optimal approach based on complexity and risks
+    let approach = 'standard';
+    let recommendedAgents = ['researcher', 'widget-creator', 'tester'];
+    
+    if (problemAnalysis.complexity === 'high' || riskAssessment.overallRisk === 'high') {
+      approach = 'phased-implementation';
+      recommendedAgents = ['researcher', 'app-architect', 'widget-creator', 'security-specialist', 'tester'];
+    }
+    
+    if (riskAssessment.criticalRisks.length > 2) {
+      approach = 'risk-first-architecture';
+      recommendedAgents.unshift('security-specialist');
+    }
+    
+    // Add specialized agents based on problem domain
+    const objective_lower = problemAnalysis.coreProblem.toLowerCase();
+    if (objective_lower.includes('integration')) {
+      recommendedAgents.push('integration-specialist');
+    }
+    if (objective_lower.includes('workflow') || objective_lower.includes('process')) {
+      recommendedAgents.push('flow-builder');
+    }
+    if (objective_lower.includes('performance')) {
+      recommendedAgents.push('performance-specialist');
+    }
+    
+    return {
+      approach,
+      recommendedAgents: [...new Set(recommendedAgents)], // Remove duplicates
+      implementationSteps: this.generateImplementationSteps(approach, problemAnalysis),
+      qualityGates: this.defineQualityGates(problemAnalysis, riskAssessment),
+      monitoringStrategy: this.defineMonitoringStrategy(problemAnalysis)
+    };
+  }
+
+  /**
+   * Generate implementation steps based on approach
+   */
+  private generateImplementationSteps(approach: string, problemAnalysis: any): string[] {
+    const baseSteps = [
+      'Validate requirements with stakeholders',
+      'Create proof of concept',
+      'Implement core functionality',
+      'Conduct security review',
+      'Perform comprehensive testing',
+      'Deploy with monitoring'
+    ];
+    
+    if (approach === 'phased-implementation') {
+      return [
+        'Phase 1: Research and architecture design',
+        'Phase 2: Build minimal viable solution',
+        'Phase 3: Add advanced features',
+        'Phase 4: Performance optimization',
+        'Phase 5: Full deployment and monitoring'
+      ];
+    } else if (approach === 'risk-first-architecture') {
+      return [
+        'Risk mitigation planning',
+        'Security architecture review',
+        ...baseSteps,
+        'Post-deployment risk validation'
+      ];
+    }
+    
+    return baseSteps;
+  }
+
+  /**
+   * Define quality gates based on analysis
+   */
+  private defineQualityGates(problemAnalysis: any, riskAssessment: any): string[] {
+    const gates = [
+      'Requirements validation complete',
+      'Architecture review passed',
+      'Code review completed',
+      'Security scan passed',
+      'Performance benchmarks met'
+    ];
+    
+    if (riskAssessment.overallRisk === 'high') {
+      gates.unshift('Risk mitigation plan approved');
+      gates.push('Rollback procedures tested');
+    }
+    
+    if (problemAnalysis.businessImpact === 'high') {
+      gates.push('Stakeholder sign-off obtained');
+      gates.push('Production readiness review passed');
+    }
+    
+    return gates;
+  }
+
+  /**
+   * Define monitoring strategy
+   */
+  private defineMonitoringStrategy(problemAnalysis: any): any {
+    return {
+      metrics: [
+        'System performance indicators',
+        'User experience metrics',
+        'Error rates and failure patterns',
+        'Business impact measurements'
+      ],
+      alerting: [
+        'Performance degradation alerts',
+        'Error threshold alerts',
+        'User satisfaction alerts'
+      ],
+      reporting: [
+        'Daily operational health reports',
+        'Weekly business impact reports',
+        'Monthly optimization recommendations'
+      ]
+    };
   }
 }

@@ -334,79 +334,161 @@ export class AgentFactory {
   private generateExecutionPlan(agentType: AgentType, instruction: string): string[] {
     const plans: Record<AgentType, (instruction: string) => string[]> = {
       'widget-creator': (instr) => [
-        'Analyze widget requirements from instruction',
-        'Create HTML template with proper structure',
-        'Develop CSS for responsive design',
-        'Implement client-side JavaScript functionality',
-        'Create server-side data processing script',
-        'Deploy widget using snow_deploy',
-        'Test widget functionality'
+        'DEEP ANALYZE: What is the core business problem this widget solves? What user pain points?',
+        'HOLISTIC VIEW: How does this widget fit into the broader ServiceNow ecosystem and user journey?',
+        'STRATEGIC QUESTIONS: What are the potential edge cases, scalability concerns, and integration points?',
+        'RISK ASSESSMENT: What could go wrong? What are the dependency risks and failure modes?',
+        'SOLUTION ARCHITECTURE: Design widget with proper structure, considering performance and maintainability',
+        'IMPLEMENTATION: Create HTML template with accessibility, responsiveness, and user experience in mind',
+        'ROBUST DEVELOPMENT: Implement client/server scripts with error handling, validation, and edge case coverage',
+        'DEPLOYMENT STRATEGY: Deploy using snow_deploy with rollback plan and monitoring',
+        'COMPREHENSIVE TESTING: Test functionality, performance, cross-browser compatibility, and user scenarios',
+        'REFLECTION: What lessons learned? How can this approach be improved for future widgets?'
       ],
       
       'flow-builder': (instr) => [
-        'Analyze process requirements from instruction',
-        'Design flow structure and decision points',
-        'Create flow using snow_create_flow',
-        'Configure triggers and conditions',
-        'Test flow with mock data using snow_test_flow_with_mock',
-        'Link to catalog if needed using snow_link_catalog_to_flow'
+        'PROCESS INTELLIGENCE: What is the complete end-to-end business process? Who are all stakeholders?',
+        'ROOT CAUSE ANALYSIS: Why does this process need automation? What inefficiencies exist?',
+        'ECOSYSTEM MAPPING: How does this flow integrate with existing workflows, approvals, and systems?',
+        'FAILURE MODE ANALYSIS: What can go wrong at each step? How do we handle exceptions and edge cases?',
+        'STRATEGIC DESIGN: Design flow structure considering scalability, maintainability, and user experience',
+        'IMPLEMENTATION: Create flow using best practices, proper error handling, and clear logic paths',
+        'INTEGRATION STRATEGY: Configure triggers, conditions, and integrate with catalog/notifications as needed',
+        'COMPREHENSIVE TESTING: Test with real data scenarios, edge cases, and failure conditions',
+        'PROCESS OPTIMIZATION: Identify improvement opportunities and performance optimizations'
       ],
       
       'script-writer': (instr) => [
-        'Analyze scripting requirements',
-        'Determine script type (business rule, script include, etc.)',
-        'Implement script logic with error handling',
-        'Deploy script using appropriate MCP tool',
-        'Validate script functionality'
+        'REQUIREMENTS DEEP DIVE: What is the exact business requirement? Why is custom code needed?',
+        'ARCHITECTURE ASSESSMENT: Should this be a business rule, script include, or something else? What\'s the optimal approach?',
+        'DEPENDENCY ANALYSIS: What other systems, tables, or processes will this impact? What are the risks?',
+        'ERROR SCENARIO PLANNING: What can go wrong? How do we handle failures gracefully?',
+        'SOLUTION DESIGN: Design script with proper error handling, logging, and performance considerations',
+        'ROBUST IMPLEMENTATION: Implement with ES5 compatibility, proper validation, and edge case handling',
+        'DEPLOYMENT STRATEGY: Deploy using appropriate MCP tool with testing and rollback plan',
+        'VALIDATION & MONITORING: Validate functionality and establish monitoring for ongoing health'
       ],
       
       'catalog-manager': (instr) => [
-        'Search for existing catalog items using snow_catalog_item_search',
-        'Design catalog item structure and variables',
-        'Create catalog item using snow_catalog_item_manager',
-        'Configure fulfillment process',
-        'Test catalog request flow'
+        'BUSINESS CONTEXT ANALYSIS: What business need does this catalog item fulfill? Who are the end users?',
+        'EXISTING SOLUTION AUDIT: Search for existing catalog items - can we reuse or improve existing?',
+        'USER EXPERIENCE DESIGN: What is the optimal user journey from request to fulfillment?',
+        'INTEGRATION COMPLEXITY: What backend systems need integration? What are the failure points?',
+        'FULFILLMENT STRATEGY: Design efficient fulfillment process with proper approvals and notifications',
+        'SOLUTION ARCHITECTURE: Create catalog item with optimal variables, validations, and user guidance',
+        'PROCESS IMPLEMENTATION: Implement fulfillment workflow with error handling and monitoring',
+        'END-TO-END TESTING: Test complete request flow including approvals, fulfillment, and notifications',
+        'CONTINUOUS IMPROVEMENT: Establish feedback mechanisms and optimization opportunities'
       ],
       
       'researcher': (instr) => [
-        'Search existing artifacts using snow_find_artifact',
-        'Analyze system requirements using snow_analyze_requirements',
-        'Discover dependencies and constraints',
-        'Provide recommendations and insights'
+        'COMPREHENSIVE DISCOVERY: Search ALL existing artifacts and solutions - what already exists?',
+        'PATTERN RECOGNITION: What patterns exist in similar implementations? What can we learn?',
+        'GAP ANALYSIS: What gaps exist between current state and desired outcome?',
+        'RISK & CONSTRAINT MAPPING: What technical, business, and regulatory constraints must we consider?',
+        'STAKEHOLDER IMPACT: Who will be affected by this change? What are their concerns?',
+        'SOLUTION OPTIONS: Generate multiple solution approaches with pros/cons analysis',
+        'RECOMMENDATION SYNTHESIS: Provide strategic recommendations with rationale and risk assessment',
+        'IMPLEMENTATION ROADMAP: Suggest phased implementation approach with milestones and success criteria'
       ],
       
       'tester': (instr) => [
-        'Create test scenarios based on requirements',
-        'Generate mock test data',
-        'Execute tests using appropriate snow_test tools',
-        'Validate results and report issues',
-        'Clean up test artifacts using snow_cleanup_test_artifacts'
+        'TESTING STRATEGY: What are ALL the ways this solution could fail? What are the critical user paths?',
+        'RISK-BASED APPROACH: What are the highest risk areas that need thorough testing?',
+        'REAL-WORLD SCENARIOS: Design test scenarios based on actual user behavior, not just happy paths',
+        'DATA STRATEGY: Generate realistic test data that covers edge cases and boundary conditions',
+        'COMPREHENSIVE EXECUTION: Execute tests covering functionality, performance, security, and integration points',
+        'FAILURE ANALYSIS: When tests fail, dig deep - is it the test, the requirement, or the implementation?',
+        'REGRESSION IMPACT: How do changes affect existing functionality? What regression tests are needed?',
+        'QUALITY METRICS: Establish clear quality gates and success criteria for release readiness',
+        'CLEANUP & DOCUMENTATION: Clean up test artifacts and document test results for future reference'
       ],
       
-      // Default plans for other agent types
-      'app-architect': (instr) => ['Analyze architecture requirements', 'Design system structure', 'Create deployment plan'],
-      'integration-specialist': (instr) => ['Analyze integration requirements', 'Design data flow', 'Implement integration'],
-      'ui-ux-specialist': (instr) => ['Analyze user experience requirements', 'Design interface mockups', 'Implement responsive design'],
-      'approval-specialist': (instr) => ['Design approval workflow', 'Configure approval rules', 'Test approval process'],
-      'security-specialist': (instr) => ['Analyze security requirements', 'Implement security controls', 'Perform security audit'],
-      'css-specialist': (instr) => ['Analyze styling requirements', 'Develop responsive CSS', 'Optimize visual design'],
-      'backend-specialist': (instr) => ['Analyze backend requirements', 'Implement server logic', 'Optimize performance'],
-      'frontend-specialist': (instr) => ['Analyze frontend requirements', 'Implement user interface', 'Ensure cross-browser compatibility'],
-      'performance-specialist': (instr) => ['Analyze performance requirements', 'Identify bottlenecks', 'Implement optimizations'],
+      // Enhanced strategic plans for other agent types  
+      'app-architect': (instr) => [
+        'BUSINESS ARCHITECTURE: What business capabilities does this app enable? How does it fit the enterprise strategy?',
+        'TECHNICAL ARCHITECTURE: Design scalable, maintainable system structure with proper separation of concerns',
+        'INTEGRATION LANDSCAPE: Map all integration points, data flows, and system dependencies',
+        'RISK MITIGATION: Identify architectural risks and design mitigation strategies',
+        'DEPLOYMENT STRATEGY: Create phased deployment plan with rollback capabilities and monitoring'
+      ],
+      'integration-specialist': (instr) => [
+        'INTEGRATION ECOSYSTEM: Map ALL systems involved - what talks to what? What are the data flows?',  
+        'FAILURE MODE ANALYSIS: What happens when integrations fail? How do we ensure data consistency?',
+        'PERFORMANCE IMPACT: How will this integration affect system performance? What are the bottlenecks?',
+        'SECURITY CONSIDERATIONS: What are the security implications? How do we secure data in transit?',
+        'MONITORING STRATEGY: How do we monitor integration health and detect issues proactively?'
+      ],
+      'ui-ux-specialist': (instr) => [
+        'USER JOURNEY MAPPING: What is the complete user experience from start to finish?',
+        'ACCESSIBILITY FIRST: Design for ALL users including those with disabilities',
+        'PERFORMANCE UX: How do loading times and performance affect user experience?', 
+        'MOBILE RESPONSIVENESS: Ensure optimal experience across all devices and screen sizes',
+        'USABILITY VALIDATION: Test with real users to validate design decisions and identify pain points'
+      ],
+      'approval-specialist': (instr) => [
+        'APPROVAL ECOSYSTEM: Who needs to approve what? What are the business rules and exceptions?',
+        'DELEGATION PATTERNS: How do approvals work when people are unavailable? What are escalation paths?',
+        'COMPLIANCE REQUIREMENTS: What regulatory or policy requirements must the approval process meet?',
+        'AUDIT TRAIL: How do we maintain complete audit trail for compliance and troubleshooting?',
+        'EXCEPTION HANDLING: What happens when approval processes break down or need emergency overrides?'
+      ],
+      'security-specialist': (instr) => [
+        'THREAT MODELING: What are ALL the ways this solution could be compromised or misused?',
+        'DATA PROTECTION: How do we protect sensitive data throughout its lifecycle?',
+        'ACCESS CONTROLS: Who should have access to what? How do we enforce least privilege?',
+        'COMPLIANCE ALIGNMENT: Does this solution meet all regulatory and policy requirements?',
+        'INCIDENT RESPONSE: How do we detect, respond to, and recover from security incidents?'
+      ],
+      'css-specialist': (instr) => [
+        'DESIGN SYSTEM ALIGNMENT: How does this CSS fit into the broader design system and brand guidelines?',
+        'RESPONSIVE STRATEGY: Ensure optimal display across all devices, screen sizes, and orientations',
+        'PERFORMANCE OPTIMIZATION: Minimize CSS footprint while maintaining visual quality',
+        'ACCESSIBILITY COMPLIANCE: Ensure styles support screen readers and accessibility requirements',
+        'MAINTAINABILITY: Structure CSS for easy maintenance and future modifications'
+      ],
+      'backend-specialist': (instr) => [
+        'DATA ARCHITECTURE: How should data be structured, stored, and accessed for optimal performance?',
+        'API DESIGN: Create robust APIs with proper error handling, validation, and documentation', 
+        'SCALABILITY PLANNING: How will this backend handle increased load and data growth?',
+        'SECURITY HARDENING: Implement proper authentication, authorization, and data protection',
+        'MONITORING & LOGGING: Establish comprehensive logging and monitoring for operational health'
+      ],
+      'frontend-specialist': (instr) => [
+        'USER EXPERIENCE OPTIMIZATION: Create intuitive, efficient interfaces that users love to use',
+        'PERFORMANCE FIRST: Optimize loading times, responsiveness, and smooth interactions',
+        'CROSS-BROWSER COMPATIBILITY: Ensure consistent experience across all browsers and versions',
+        'PROGRESSIVE ENHANCEMENT: Build robust solutions that work even when things go wrong',
+        'ACCESSIBILITY COMPLIANCE: Make interfaces usable by everyone, including assistive technologies'
+      ],
+      'performance-specialist': (instr) => [
+        'PERFORMANCE BASELINE: Establish current performance metrics and identify bottlenecks',
+        'HOLISTIC OPTIMIZATION: Look at database, network, client-side, and server-side performance',
+        'SCALABILITY ANALYSIS: How will performance change as data and users grow?',
+        'MONITORING STRATEGY: Implement continuous performance monitoring and alerting',
+        'OPTIMIZATION VALIDATION: Measure and validate that optimizations actually improve performance'
+      ],
       'page-designer': (instr) => [
-        'Analyze portal page requirements from instruction',
-        'Determine page layout (single column, multi-column, with sidebar)',
-        'Identify target portal (Service Portal or Employee Service Center)',
-        'Create portal page structure using snow_deploy',
-        'Configure containers, rows, and columns',
-        'Place widget instances on the page',
-        'Apply responsive CSS for page layout',
-        'Configure page permissions and navigation',
-        'Test page across devices and browsers'
+        'USER JOURNEY ANALYSIS: What is the user trying to accomplish on this page? What is their context and mindset?',
+        'INFORMATION ARCHITECTURE: How should information be organized and prioritized for optimal user flow?',
+        'PORTAL ECOSYSTEM: How does this page fit into the broader portal navigation and user experience?',
+        'RESPONSIVE DESIGN STRATEGY: Ensure optimal experience across desktop, tablet, and mobile devices',
+        'ACCESSIBILITY COMPLIANCE: Design for all users including screen readers and keyboard navigation',
+        'PERFORMANCE OPTIMIZATION: Balance visual appeal with fast loading times and smooth interactions',
+        'CONTENT STRATEGY: Place widgets and content strategically based on user priorities and business goals',
+        'NAVIGATION INTEGRATION: Ensure clear navigation paths and consistent user experience',
+        'CROSS-BROWSER TESTING: Validate consistent experience across all browsers and device types',
+        'USABILITY VALIDATION: Test with real users to ensure the page meets their needs effectively'
       ]
     };
 
-    return plans[agentType]?.(instruction) || ['Execute general task based on instruction'];
+    return plans[agentType]?.(instruction) || [
+      'STRATEGIC ANALYSIS: What is the core objective and how does it fit the bigger picture?',
+      'STAKEHOLDER MAPPING: Who is affected and what are their needs and constraints?',
+      'SOLUTION ARCHITECTURE: Design approach considering scalability, maintainability, and risk',
+      'IMPLEMENTATION STRATEGY: Execute with proper error handling, validation, and monitoring',
+      'VALIDATION & OPTIMIZATION: Test thoroughly and optimize based on real-world performance'
+    ];
   }
 
   // Send message between agents
