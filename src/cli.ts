@@ -477,7 +477,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
     const claudeArgs = hasMcpConfig 
-      ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
+      ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
       : ['--dangerously-skip-permissions'];
     
     cliLogger.info('🚀 Launching Claude Code automatically...');
@@ -593,7 +593,7 @@ async function executeWithClaude(claudeCommand: string, prompt: string, resolve:
   }
   
   const claudeArgs = hasMcpConfig 
-    ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
+    ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
     : ['--dangerously-skip-permissions'];
   
   if (hasMcpConfig) {
@@ -2052,10 +2052,10 @@ The MCP servers are automatically:
 If you need to manually activate MCP servers later:
 \`\`\`bash
 # For Mac/Linux:
-claude --mcp-config .mcp.json .
+claude --mcp-config .mcp.json
 
 # For Windows:
-claude.exe --mcp-config .mcp.json .
+claude.exe --mcp-config .mcp.json
 \`\`\`
 
 ## 💡 Usage Examples

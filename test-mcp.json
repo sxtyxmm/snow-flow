@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "servicenow-deployment": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/Projects/snow-flow-dev/snow-flow/dist/mcp/servicenow-deployment-mcp.js"
+      ],
+      "description": "Test deployment server"
+    }
+  }
+}
