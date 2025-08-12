@@ -21,6 +21,7 @@ import {
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
+import { ResponseLimiter } from './shared/response-limiter.js';
 
 export interface MCPServerConfig {
   name: string;
@@ -131,7 +132,34 @@ export abstract class BaseMCPServer {
         }
 
         // Execute tool with retry logic
-        const result = await this.executeWithRetry(name, args);
+        let result = await this.executeWithRetry(name, args);
+        
+        // Limit response size to prevent timeouts
+        const { limited, wasLimited, originalSize } = ResponseLimiter.limitResponse(result);
+        
+        if (wasLimited) {
+          this.logger.warn(`Response limited for ${name}: ${originalSize} bytes -> ${JSON.stringify(limited).length} bytes`);
+          
+          // If response was too large, return a summary
+          if (originalSize > 100000) { // > 100KB
+            result = ResponseLimiter.createSummaryResponse(result, name);
+          } else {
+            result = limited;
+          }
+        }
+        
+        // Add token tracking metadata
+        const responseSize = JSON.stringify(result).length;
+        const estimatedTokens = Math.ceil(responseSize / 4);
+        
+        if (result && typeof result === 'object') {
+          result._meta = {
+            ...result._meta,
+            tokenCount: estimatedTokens,
+            responseSize,
+            wasLimited
+          };
+        }
         
         // Update metrics
         metrics.totalTime += Date.now() - startTime;
@@ -578,6 +606,47 @@ export abstract class BaseMCPServer {
    */
   private getToolHandler(name: string): ((args: any) => Promise<any>) | undefined {
     return this.toolHandlers.get(name);
+  }
+
+  /**
+   * Execute tool with retry logic
+   */
+  private async executeWithRetry(name: string, args: any, maxRetries: number = 3): Promise<any> {
+    const handler = this.getToolHandler(name);
+    
+    if (!handler) {
+      throw new McpError(
+        ErrorCode.MethodNotFound,
+        `Tool '${name}' not found`
+      );
+    }
+
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Execute the tool handler
+        const result = await handler(args);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        
+        // Don't retry on non-retryable errors
+        if (error.code === ErrorCode.InvalidRequest || 
+            error.code === ErrorCode.MethodNotFound) {
+          throw error;
+        }
+        
+        // Log retry attempt
+        if (attempt < maxRetries) {
+          this.logger.warn(`Tool ${name} failed (attempt ${attempt}/${maxRetries}), retrying...`, error.message);
+          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * attempt, 5000)));
+        }
+      }
+    }
+    
+    // All retries failed
+    throw lastError;
   }
 
   /**
