@@ -703,7 +703,7 @@ class ServiceNowMCPServer {
     // Keep the server running
     await new Promise<void>((resolve) => {
       process.on('SIGINT', () => {
-        console.log('\nServiceNow MCP Server shutting down...');
+        console.error('\nServiceNow MCP Server shutting down...');
         resolve();
       });
     });

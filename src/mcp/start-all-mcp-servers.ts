@@ -17,7 +17,7 @@ async function startAllServers() {
   logger.warn('   Please use MCPServerManager or scripts/start-mcp-proper.js instead');
   logger.warn('   This provides proper process management and singleton protection');
   
-  console.log('\n🔄 Redirecting to proper MCPServerManager...\n');
+  console.error('\n🔄 Redirecting to proper MCPServerManager...\n');
   
   try {
     // Redirect to proper approach

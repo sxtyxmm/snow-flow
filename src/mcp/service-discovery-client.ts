@@ -253,7 +253,7 @@ export class ServiceDiscoveryClient {
    * COMPATIBILITY FIX: makeRequest method for phantom calls
    */
   async makeRequest(config: any): Promise<any> {
-    console.log('🔧 ServiceDiscoveryClient.makeRequest called with config:', config);
+    console.error('🔧 ServiceDiscoveryClient.makeRequest called with config:', config);
     
     try {
       // Route the request to the appropriate HTTP method
@@ -261,7 +261,7 @@ export class ServiceDiscoveryClient {
       const url = config.url || config.endpoint;
       const data = config.data || config.body;
       
-      console.log(`🔧 ServiceDiscovery routing ${method.toUpperCase()} request to: ${url}`);
+      console.error(`🔧 ServiceDiscovery routing ${method.toUpperCase()} request to: ${url}`);
       
       switch (method) {
         case 'get':

@@ -1327,16 +1327,17 @@ Note: Audit history requires sys_audit to be enabled for sys_properties table.`
     }
   }
 
-  async start() {
+  async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    this.logger.info('ServiceNow System Properties MCP Server started');
+    // Use stderr for logs to keep stdout clean for JSON-RPC
+    console.error('ServiceNow System Properties MCP Server running on stdio');
   }
 }
 
 // Start the server
 const server = new ServiceNowSystemPropertiesMCP();
-server.start().catch((error) => {
+server.run().catch((error) => {
   console.error('Failed to start ServiceNow System Properties MCP:', error);
   process.exit(1);
 });

@@ -558,7 +558,7 @@ class ServiceNowDeploymentMCP {
         const trackingResult = await this.client.createRecord('sys_update_xml', updateXmlData);
         
         if (trackingResult.success) {
-          console.log(`✅ Artifact tracked in Update Set: ${artifact.name} (${artifact.sys_id})`);
+          console.error(`✅ Artifact tracked in Update Set: ${artifact.name} (${artifact.sys_id})`);
         } else {
           console.warn(`⚠️ Failed to track artifact in Update Set: ${trackingResult.error}`);
         }
@@ -9164,7 +9164,7 @@ Use \`snow_deploy\` to create a new ${args.type} instead.`
 - "Change the title to 'New Widget Title'"
 - "Update the description to 'Updated description'"  
 - "Add this CSS: .my-class { color: blue; }"
-- "Change the script to: function() { console.log('updated'); }"
+- "Change the script to: function() { console.error('updated'); }"
 - "Set active to false"
 
 💡 **Or use the config parameter directly:**
@@ -9690,11 +9690,21 @@ c.$onInit = function() {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
   }
+
+  /**
+   * Run the MCP server
+   */
+  async run() {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    // Use stderr for logs to keep stdout clean for JSON-RPC
+    console.error('ServiceNow Deployment MCP server running on stdio');
+  }
 }
 
 // Start the server
 const server = new ServiceNowDeploymentMCP();
-server.start().catch((error) => {
+server.run().catch((error) => {
   console.error('Failed to start ServiceNow Deployment MCP:', error);
   process.exit(1);
 });

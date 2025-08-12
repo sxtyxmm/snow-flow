@@ -72,15 +72,15 @@ class ServiceNowUpdateSetMCP {
    * Test credentials on startup
    */
   private async testCredentials(): Promise<void> {
-    console.log('🔍 [UPDATE-SET MCP] Testing credentials...');
+    console.error('🔍 [UPDATE-SET MCP] Testing credentials...');
     try {
       const credentials = await this.oauth.loadCredentials();
       if (credentials) {
-        console.log('✅ [UPDATE-SET MCP] Credentials loaded successfully');
+        console.error('✅ [UPDATE-SET MCP] Credentials loaded successfully');
         const isAuth = await this.oauth.isAuthenticated();
-        console.log(`🔐 [UPDATE-SET MCP] Authentication status: ${isAuth ? '✅ Valid' : '❌ Expired'}`);
+        console.error(`🔐 [UPDATE-SET MCP] Authentication status: ${isAuth ? '✅ Valid' : '❌ Expired'}`);
       } else {
-        console.log('❌ [UPDATE-SET MCP] No credentials found');
+        console.error('❌ [UPDATE-SET MCP] No credentials found');
       }
     } catch (error) {
       console.error('❌ [UPDATE-SET MCP] Credential test failed:', error);

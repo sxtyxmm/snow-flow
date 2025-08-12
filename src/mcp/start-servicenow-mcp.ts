@@ -12,20 +12,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function startServiceNowMCPServer() {
-  console.log('🚀 Starting ServiceNow MCP Server...');
+  console.error('🚀 Starting ServiceNow MCP Server...');
   
   // Check if OAuth is configured
   const oauth = new ServiceNowOAuth();
   const isAuthenticated = await oauth.isAuthenticated();
   
   if (isAuthenticated) {
-    console.log('✅ ServiceNow OAuth authentication detected');
+    console.error('✅ ServiceNow OAuth authentication detected');
     const credentials = await oauth.loadCredentials();
-    console.log(`🏢 Instance: ${credentials?.instance}`);
+    console.error(`🏢 Instance: ${credentials?.instance}`);
   } else {
-    console.log('⚠️  ServiceNow OAuth not configured');
-    console.log('💡 Some tools will be unavailable until authentication is complete');
-    console.log('🔑 Run "snow-flow auth login" to authenticate');
+    console.error('⚠️  ServiceNow OAuth not configured');
+    console.error('💡 Some tools will be unavailable until authentication is complete');
+    console.error('🔑 Run "snow-flow auth login" to authenticate');
   }
   
   const config = {
@@ -38,21 +38,21 @@ async function startServiceNowMCPServer() {
     }
   };
   
-  console.log('🔧 MCP Server Configuration:');
-  console.log(`   📛 Name: ${config.name}`);
-  console.log(`   🏷️ Version: ${config.version}`);
-  console.log(`   🏢 Instance: ${config.oauth.instance || 'Not configured'}`);
-  console.log(`   🔑 Client ID: ${config.oauth.clientId ? '✅ Set' : '❌ Not set'}`);
-  console.log(`   🔐 Client Secret: ${config.oauth.clientSecret ? '✅ Set' : '❌ Not set'}`);
-  console.log('');
+  console.error('🔧 MCP Server Configuration:');
+  console.error(`   📛 Name: ${config.name}`);
+  console.error(`   🏷️ Version: ${config.version}`);
+  console.error(`   🏢 Instance: ${config.oauth.instance || 'Not configured'}`);
+  console.error(`   🔑 Client ID: ${config.oauth.clientId ? '✅ Set' : '❌ Not set'}`);
+  console.error(`   🔐 Client Secret: ${config.oauth.clientSecret ? '✅ Set' : '❌ Not set'}`);
+  console.error('');
   
   const server = new ServiceNowMCPServer(config);
   
-  console.log('🌐 ServiceNow MCP Server is running...');
-  console.log('💡 This server provides Claude Code with direct access to ServiceNow APIs');
-  console.log('🔧 Available tools depend on authentication status');
-  console.log('🛑 Press Ctrl+C to stop the server');
-  console.log('');
+  console.error('🌐 ServiceNow MCP Server is running...');
+  console.error('💡 This server provides Claude Code with direct access to ServiceNow APIs');
+  console.error('🔧 Available tools depend on authentication status');
+  console.error('🛑 Press Ctrl+C to stop the server');
+  console.error('');
   
   try {
     await server.run();

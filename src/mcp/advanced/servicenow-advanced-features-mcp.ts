@@ -8,6 +8,7 @@
 
 import { BaseMCPServer } from '../base-mcp-server.js';
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ServiceNowClient } from '../../utils/servicenow-client.js';
 import { ServiceNowMemoryManager } from '../../utils/snow-memory-manager.js';
 
@@ -16099,12 +16100,22 @@ function getIncidentsByUser(userSysId) {
       size: JSON.stringify(alertSummary).length
     };
   }
+
+  /**
+   * Run the MCP server
+   */
+  async run() {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    // Use stderr for logs to keep stdout clean for JSON-RPC
+    console.error('ServiceNow Advanced Features MCP server running on stdio');
+  }
 }
 
 // CLI entry point
 if (require.main === module) {
   const server = new ServiceNowAdvancedFeaturesMCP();
-  server.start().catch(console.error);
+  server.run().catch(console.error);
 }
 
 export default ServiceNowAdvancedFeaturesMCP;

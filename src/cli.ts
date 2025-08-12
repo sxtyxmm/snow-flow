@@ -97,9 +97,64 @@ program
   .option('--auto-confirm', 'Auto-confirm background script executions (bypasses human-in-the-loop)')
   .option('--no-auto-confirm', 'Force confirmation for all background scripts (default behavior)')
   .option('--verbose', 'Show detailed execution information')
+  .option('--debug', 'Enable debug mode (sets LOG_LEVEL=debug)')
+  .option('--trace', 'Enable trace mode (MAXIMUM debug output - sets LOG_LEVEL=trace)')
+  .option('--debug-mcp', 'Enable MCP server debug output')
+  .option('--debug-http', 'Enable HTTP request/response debugging')
+  .option('--debug-memory', 'Enable memory operation debugging')
+  .option('--debug-servicenow', 'Enable ServiceNow API debugging')
+  .option('--debug-all', 'Enable ALL debug output (WARNING: Very verbose!)')
   .action(async (objective: string, options) => {
     // Check for flow deprecation first
     checkFlowDeprecation('swarm', objective);
+    
+    // Set debug levels based on options
+    if (options.debugAll) {
+      process.env.DEBUG = '*';
+      process.env.LOG_LEVEL = 'trace';
+      process.env.SNOW_FLOW_DEBUG = 'true';
+      process.env.MCP_DEBUG = 'true';
+      process.env.MCP_LOG_LEVEL = 'trace';
+      process.env.HTTP_TRACE = 'true';
+      process.env.VERBOSE = 'true';
+      cliLogger.info('🔍 DEBUG MODE: ALL (Maximum verbosity enabled!)');
+    } else {
+      if (options.trace) {
+        process.env.LOG_LEVEL = 'trace';
+        process.env.SNOW_FLOW_TRACE = 'true';
+        cliLogger.info('🔍 TRACE MODE: Enabled (Maximum detail level)');
+      } else if (options.debug) {
+        process.env.LOG_LEVEL = 'debug';
+        process.env.SNOW_FLOW_DEBUG = 'true';
+        cliLogger.info('🔍 DEBUG MODE: Enabled');
+      }
+      
+      if (options.debugMcp) {
+        process.env.MCP_DEBUG = 'true';
+        process.env.MCP_LOG_LEVEL = 'trace';
+        cliLogger.info('🔍 MCP DEBUG: Enabled');
+      }
+      
+      if (options.debugHttp) {
+        process.env.HTTP_TRACE = 'true';
+        cliLogger.info('🔍 HTTP DEBUG: Enabled (Request/Response tracing)');
+      }
+      
+      if (options.debugMemory) {
+        process.env.DEBUG = process.env.DEBUG ? `${process.env.DEBUG},memory:*` : 'memory:*';
+        cliLogger.info('🔍 MEMORY DEBUG: Enabled');
+      }
+      
+      if (options.debugServicenow) {
+        process.env.DEBUG = process.env.DEBUG ? `${process.env.DEBUG},servicenow:*` : 'servicenow:*';
+        cliLogger.info('🔍 SERVICENOW DEBUG: Enabled');
+      }
+      
+      if (options.verbose) {
+        process.env.VERBOSE = 'true';
+        cliLogger.info('🔍 VERBOSE MODE: Enabled');
+      }
+    }
     
     // Always show essential info
     cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
@@ -480,9 +535,27 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
       : ['--dangerously-skip-permissions'];
     
+    // Add debug args if debug is enabled
+    if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.LOG_LEVEL === 'debug' || process.env.LOG_LEVEL === 'trace') {
+      claudeArgs.push('--verbose');
+      if (process.env.LOG_LEVEL === 'trace') {
+        claudeArgs.push('--trace');
+      }
+    }
+    
     cliLogger.info('🚀 Launching Claude Code automatically...');
     if (hasMcpConfig) {
       cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
+      if (process.env.MCP_DEBUG === 'true') {
+        cliLogger.info('🔍 MCP Debug Mode Active - Expect detailed connection logs');
+      }
+    }
+    
+    // Debug output if enabled
+    if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
+      cliLogger.info(`🔍 Claude Command: claude ${claudeArgs.join(' ')}`);
+      cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
+      cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
     }
     
     // Start Claude Code process in interactive mode with stdin piping
@@ -572,96 +645,6 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
   }, 5000); // Check every 5 seconds silently
   
   return monitoringInterval;
-}
-
-async function executeWithClaude(claudeCommand: string, prompt: string, resolve: (value: boolean) => void): Promise<void> {
-  cliLogger.info('🚀 Starting Claude Code execution...');
-  
-  // Write prompt to temporary file for large prompts
-  const tempFile = join(process.cwd(), '.snow-flow-prompt.tmp');
-  await fs.writeFile(tempFile, prompt);
-  
-  // Check if .mcp.json exists in current directory
-  const mcpConfigPath = join(process.cwd(), '.mcp.json');
-  let hasMcpConfig = false;
-  try {
-    await fs.access(mcpConfigPath);
-    hasMcpConfig = true;
-    cliLogger.info('✅ Found MCP configuration in current directory');
-  } catch {
-    cliLogger.warn('⚠️  No MCP configuration found. Run "snow-flow init" to set up MCP servers');
-  }
-  
-  const claudeArgs = hasMcpConfig 
-    ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
-    : ['--dangerously-skip-permissions'];
-  
-  if (hasMcpConfig) {
-    cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
-  }
-  
-  // Start Claude Code process in interactive mode
-  const claudeProcess = spawn(claudeCommand, claudeArgs, {
-    stdio: ['pipe', 'inherit', 'inherit'], // inherit stdout/stderr for interactive mode
-    cwd: process.cwd()
-  });
-  
-  // Send the prompt via stdin
-  cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
-  cliLogger.info('🚀 Claude Code interactive interface opening...\n');
-  
-  claudeProcess.stdin.write(prompt);
-  claudeProcess.stdin.end();
-  
-  // Start silent monitoring dashboard (doesn't interfere with Claude Code UI)
-  const monitoringInterval = startMonitoringDashboard(claudeProcess);
-  
-  claudeProcess.on('close', (code) => {
-    clearInterval(monitoringInterval);
-    if (code === 0) {
-      cliLogger.info('\n✅ Claude Code session completed successfully!');
-      resolve(true);
-    } else {
-      cliLogger.warn(`\n❌ Claude Code session ended with code: ${code}`);
-      resolve(false);
-    }
-  });
-  
-  claudeProcess.on('error', (error) => {
-    clearInterval(monitoringInterval);
-    cliLogger.error(`❌ Failed to start Claude Code: ${error.message}`);
-    resolve(false);
-  });
-  
-  // Set timeout for Claude Code execution (configurable via environment variable)
-  const timeoutMinutes = process.env.SNOW_FLOW_TIMEOUT_MINUTES ? parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES) : 60;
-  const timeoutMs = timeoutMinutes * 60 * 1000;
-  
-  cliLogger.info(`⏱️  Claude Code timeout set to ${timeoutMinutes} minutes (configure with SNOW_FLOW_TIMEOUT_MINUTES=0 for no timeout)`);
-  
-  let timeout: NodeJS.Timeout | null = null;
-  
-  // Only set timeout if not disabled (0 = no timeout)
-  if (timeoutMinutes > 0) {
-    timeout = setTimeout(() => {
-      clearInterval(monitoringInterval);
-      cliLogger.warn(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
-      claudeProcess.kill('SIGTERM');
-      
-      // Force kill if it doesn't respond
-      setTimeout(() => {
-        claudeProcess.kill('SIGKILL');
-      }, 2000);
-      
-      resolve(false);
-    }, timeoutMs);
-  }
-  
-  claudeProcess.on('close', () => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-  });
 }
 
 // Helper function to build Queen Agent orchestration prompt
