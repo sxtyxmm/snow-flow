@@ -2577,7 +2577,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
   
-  // Update the structure to use mcpServers instead of servers
+  // Keep the standard MCP structure that Claude Code expects
   const finalConfig = {
     "mcpServers": mcpConfig.servers
   };
