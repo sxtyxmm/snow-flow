@@ -104,13 +104,16 @@ Summary:
 - Token estimate: ${estimatedTokens}
 - Response limit: ${(this.MAX_RESPONSE_SIZE / 1024).toFixed(0)}KB
 
+🎯 Immediate Solution:
+Run \`/compact\` in Claude Code to clear context and prevent timeouts!
+
 💡 Tips to reduce response size:
 1. Use specific field queries instead of '*'
 2. Add pagination with smaller limits
 3. Filter results more specifically
 4. Use count operations instead of full data retrieval
 
-Note: You can increase limits via environment variables:
+📝 Advanced Config:
 - MCP_MAX_RESPONSE_SIZE (default: 500000 bytes)
 - MCP_MAX_ARRAY_ITEMS (default: 500 items)`
       }],
