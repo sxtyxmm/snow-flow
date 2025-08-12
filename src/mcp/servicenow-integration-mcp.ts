@@ -259,6 +259,7 @@ class ServiceNowIntegrationMCP {
         }
 
         // Complete operation with token tracking
+        result = this.logger.addTokenUsageToResponse(result);
         this.logger.operationComplete(name, result);
         return result;
       } catch (error) {

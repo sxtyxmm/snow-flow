@@ -410,6 +410,8 @@ class ServiceNowDeploymentMCP {
         }
         
         // Complete operation with token tracking
+        result = this.logger.addTokenUsageToResponse(result);
+        result = this.logger.addTokenUsageToResponse(result);
         this.logger.operationComplete(name, result);
         return result;
       } catch (error) {
