@@ -140,8 +140,9 @@ export abstract class BaseMCPServer {
         if (wasLimited) {
           this.logger.warn(`Response limited for ${name}: ${originalSize} bytes -> ${JSON.stringify(limited).length} bytes`);
           
-          // If response was too large, return a summary
-          if (originalSize > 100000) { // > 100KB
+          // Only create summary for EXTREMELY large responses (>2MB)
+          // Normal widgets/flows should pass through fine with 500KB limit
+          if (originalSize > 2000000) { // > 2MB - truly excessive
             result = ResponseLimiter.createSummaryResponse(result, name);
           } else {
             result = limited;

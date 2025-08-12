@@ -4,9 +4,10 @@
  */
 
 export class ResponseLimiter {
-  private static readonly MAX_RESPONSE_SIZE = 50000; // 50KB max per response
-  private static readonly MAX_ARRAY_ITEMS = 100;    // Max 100 items in arrays
-  private static readonly MAX_TOKEN_ESTIMATE = 12500; // ~50KB / 4 chars per token
+  // Configurable via environment variable, default to 500KB (reasonable for widgets/flows)
+  private static readonly MAX_RESPONSE_SIZE = parseInt(process.env.MCP_MAX_RESPONSE_SIZE || '500000'); // 500KB default
+  private static readonly MAX_ARRAY_ITEMS = parseInt(process.env.MCP_MAX_ARRAY_ITEMS || '500');    // 500 items default
+  private static readonly MAX_TOKEN_ESTIMATE = 125000; // ~500KB / 4 chars per token
 
   /**
    * Limit response size to prevent timeouts
@@ -46,9 +47,9 @@ export class ResponseLimiter {
 
     // Handle primitives
     if (typeof obj !== 'object') {
-      // Limit string length
-      if (typeof obj === 'string' && obj.length > 1000) {
-        return obj.substring(0, 1000) + '... [TRUNCATED]';
+      // Limit string length - 10KB per string field is reasonable
+      if (typeof obj === 'string' && obj.length > 10000) {
+        return obj.substring(0, 10000) + '... [TRUNCATED]';
       }
       return obj;
     }
@@ -99,15 +100,19 @@ Operation: ${operation}
 Status: Success (data limited to prevent timeout)
 
 Summary:
-- Original size: ${(originalSize / 1024).toFixed(1)}KB
+- Original size: ${(originalSize / 1024 / 1024).toFixed(2)}MB
 - Token estimate: ${estimatedTokens}
-- Limit: ${this.MAX_TOKEN_ESTIMATE} tokens
+- Response limit: ${(this.MAX_RESPONSE_SIZE / 1024).toFixed(0)}KB
 
 💡 Tips to reduce response size:
 1. Use specific field queries instead of '*'
 2. Add pagination with smaller limits
 3. Filter results more specifically
-4. Use count operations instead of full data retrieval`
+4. Use count operations instead of full data retrieval
+
+Note: You can increase limits via environment variables:
+- MCP_MAX_RESPONSE_SIZE (default: 500000 bytes)
+- MCP_MAX_ARRAY_ITEMS (default: 500 items)`
       }],
       _meta: {
         limited: true,
