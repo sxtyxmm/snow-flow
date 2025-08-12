@@ -2609,15 +2609,21 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     "enabledMcpjsonServers": [
       "snow-flow",
       "servicenow-deployment",
-      "servicenow-update-set",
-      "servicenow-intelligent",
-      "servicenow-memory",
       "servicenow-operations",
+      "servicenow-automation",
       "servicenow-platform-development",
       "servicenow-integration",
-      "servicenow-automation",
+      "servicenow-system-properties",
+      "servicenow-update-set",
+      "servicenow-development-assistant",
       "servicenow-security-compliance",
-      "servicenow-reporting-analytics"
+      "servicenow-reporting-analytics",
+      "servicenow-machine-learning",
+      "servicenow-knowledge-catalog",
+      "servicenow-change-virtualagent-pa",
+      "servicenow-flow-workspace-mobile",
+      "servicenow-cmdb-event-hr-csm-devops",
+      "servicenow-advanced-features"
     ],
     "permissions": {
       "allow": [

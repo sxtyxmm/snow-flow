@@ -84,38 +84,23 @@ export class MCPServerManager extends EventEmitter {
   async createDefaultConfiguration(): Promise<void> {
     const defaultServers: MCPServerConfig[] = [
       {
+        name: 'Snow-Flow MCP',
+        script: 'dist/mcp/snow-flow-mcp.js',
+        autoStart: true
+      },
+      {
         name: 'ServiceNow Deployment MCP',
         script: 'dist/mcp/servicenow-deployment-mcp.js',
-        autoStart: true,
-        env: {
-          'SNOW_INSTANCE': process.env.SNOW_INSTANCE || '',
-          'SNOW_CLIENT_ID': process.env.SNOW_CLIENT_ID || '',
-          'SNOW_CLIENT_SECRET': process.env.SNOW_CLIENT_SECRET || ''
-        }
-      },
-      {
-        name: 'ServiceNow Update Set MCP',
-        script: 'dist/mcp/servicenow-update-set-mcp.js',
         autoStart: true
-      },
-      {
-        name: 'ServiceNow Intelligent MCP',
-        script: 'dist/mcp/servicenow-intelligent-mcp.js',
-        autoStart: true
-      },
-      {
-        name: 'ServiceNow Graph Memory MCP',
-        script: 'dist/mcp/servicenow-graph-memory-mcp.js',
-        autoStart: true,
-        env: {
-          'NEO4J_URI': process.env.NEO4J_URI || '',
-          'NEO4J_USER': process.env.NEO4J_USER || '',
-          'NEO4J_PASSWORD': process.env.NEO4J_PASSWORD || ''
-        }
       },
       {
         name: 'ServiceNow Operations MCP',
         script: 'dist/mcp/servicenow-operations-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Automation MCP',
+        script: 'dist/mcp/servicenow-automation-mcp.js',
         autoStart: true
       },
       {
@@ -129,8 +114,18 @@ export class MCPServerManager extends EventEmitter {
         autoStart: true
       },
       {
-        name: 'ServiceNow Automation MCP',
-        script: 'dist/mcp/servicenow-automation-mcp.js',
+        name: 'ServiceNow System Properties MCP',
+        script: 'dist/mcp/servicenow-system-properties-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Update Set MCP',
+        script: 'dist/mcp/servicenow-update-set-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Development Assistant MCP',
+        script: 'dist/mcp/servicenow-development-assistant-mcp.js',
         autoStart: true
       },
       {
@@ -143,6 +138,36 @@ export class MCPServerManager extends EventEmitter {
         script: 'dist/mcp/servicenow-reporting-analytics-mcp.js',
         autoStart: true
       },
+      {
+        name: 'ServiceNow Machine Learning MCP',
+        script: 'dist/mcp/servicenow-machine-learning-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Knowledge & Catalog MCP',
+        script: 'dist/mcp/servicenow-knowledge-catalog-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Change, Virtual Agent & PA MCP',
+        script: 'dist/mcp/servicenow-change-virtualagent-pa-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Flow, Workspace & Mobile MCP',
+        script: 'dist/mcp/servicenow-flow-workspace-mobile-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow CMDB, Event, HR, CSM & DevOps MCP',
+        script: 'dist/mcp/servicenow-cmdb-event-hr-csm-devops-mcp.js',
+        autoStart: true
+      },
+      {
+        name: 'ServiceNow Advanced Features MCP',
+        script: 'dist/mcp/advanced/servicenow-advanced-features-mcp.js',
+        autoStart: true
+      }
     ];
 
     await this.saveConfiguration(defaultServers);
