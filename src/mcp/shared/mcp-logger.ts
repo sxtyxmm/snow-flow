@@ -137,9 +137,8 @@ export class MCPLogger {
     const message = `🔄 API Call: ${operation}${table ? ` on ${table}` : ''}${recordCount ? ` (${recordCount} records)` : ''}`;
     this.info(message);
     
-    // Estimate token usage (rough approximation)
-    const estimatedTokens = recordCount ? recordCount * 50 : 100;
-    this.addTokens(estimatedTokens, 50);
+    // NOTE: Removed automatic token estimation as it was inaccurate
+    // Real token usage should come from Claude Code's actual measurements
   }
 
   /**
@@ -150,8 +149,8 @@ export class MCPLogger {
     this.tokenUsage.output += output;
     this.tokenUsage.total = this.tokenUsage.input + this.tokenUsage.output;
     
-    // Report token usage
-    if (this.tokenUsage.total > 0) {
+    // Only log token usage in debug mode to avoid spam
+    if (process.env.MCP_DEBUG === 'true' && this.tokenUsage.total > 0) {
       console.error(`📊 [${this.name}] Tokens used: ${this.tokenUsage.total} (in: ${this.tokenUsage.input}, out: ${this.tokenUsage.output})`);
     }
   }
@@ -213,13 +212,8 @@ export class MCPLogger {
         total: tokenUsage.total
       };
       
-      // Also keep text display for compatibility
-      if (result && result.content && Array.isArray(result.content)) {
-        const lastContent = result.content[result.content.length - 1];
-        if (lastContent && lastContent.type === 'text') {
-          lastContent.text += `\n\n📊 Token Usage: ${tokenUsage.total} (Input: ${tokenUsage.input}, Output: ${tokenUsage.output})`;
-        }
-      }
+      // Token usage is available in _meta.tokenUsage for debugging
+      // We no longer automatically add it to response text to avoid pollution
     }
     return result;
   }
