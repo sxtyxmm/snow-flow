@@ -2601,6 +2601,10 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
   
   // Create comprehensive Claude Code settings file
+  // NOTE: Only include properties that Claude Code actually accepts
+  // Valid properties: apiKeyHelper, cleanupPeriodDays, env, includeCoAuthoredBy,
+  // permissions, hooks, model, statusLine, forceLoginMethod, enableAllProjectMcpServers,
+  // enabledMcpjsonServers, disabledMcpjsonServers, awsAuthRefresh, awsCredentialExport
   const claudeSettings = {
     "enabledMcpjsonServers": [
       "snow-flow",
@@ -2655,51 +2659,9 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "CLAUDE_CODE_EXECUTION_TIMEOUT": "0"
     },
     "cleanupPeriodDays": 90,
-    "includeCoAuthoredBy": true,
-    "automation": {
-      "enabled": true,
-      "defaultTimeout": 300000,
-      "maxRetries": 3,
-      "retryBackoff": 2000,
-      "parallelExecution": true,
-      "batchOperations": true,
-      "autoSaveMemory": true,
-      "autoCommit": false
-    },
-    "snowFlow": {
-      "version": "1.4.35",
-      "swarmDefaults": {
-        "maxAgents": 10,
-        "timeout": 0,
-        "parallel": true,
-        "monitor": true,
-        "outputFormat": "json"
-      },
-      "sparcDefaults": {
-        "timeout": 0,
-        "parallel": true,
-        "batch": true,
-        "memoryKey": "sparc_session"
-      },
-      "memoryDefaults": {
-        "maxSize": "5GB",
-        "autoCompress": true,
-        "autoCleanup": true,
-        "indexingEnabled": true,
-        "persistenceEnabled": true
-      }
-    },
-    "mcpServers": {
-      "servicenow": {
-        "command": "node",
-        "args": ["dist/mcp/start-servicenow-mcp.js"],
-        "env": {
-          "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-          "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-          "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
-        }
-      }
-    }
+    "includeCoAuthoredBy": true
+    // Removed invalid properties: automation, snowFlow, mcpServers
+    // These were causing "Property X is not allowed" errors in Claude Code
   };
   
   const claudeSettingsPath = join(targetDir, '.claude/settings.json');
