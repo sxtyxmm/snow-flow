@@ -905,7 +905,7 @@ Your widget is deployed and ready for testing in Service Portal.`
             template: args.template,
             css: args.css || '',
             client_script: args.client_script || '',
-            server_script: args.server_script || '',
+            script: args.server_script || '', // Map server_script to script field
             option_schema: args.option_schema || '[]',
             demo_data: args.demo_data || '{}',
             has_preview: true,

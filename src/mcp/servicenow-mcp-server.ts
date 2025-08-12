@@ -358,7 +358,7 @@ class ServiceNowMCPServer {
       template: args.template,
       css: args.css,
       client_script: args.client_script,
-      server_script: args.server_script,
+      script: args.server_script, // Map server_script to script field
       category: args.category || 'custom'
     });
 
@@ -464,7 +464,7 @@ class ServiceNowMCPServer {
                   `Template:\n${result.data?.template}\n\n` +
                   `CSS:\n${result.data?.css}\n\n` +
                   `Client Script:\n${result.data?.client_script}\n\n` +
-                  `Server Script:\n${result.data?.server_script}`
+                  `Server Script:\n${result.data?.script}` // ServiceNow uses 'script' field
           } as TextContent
         ]
       };

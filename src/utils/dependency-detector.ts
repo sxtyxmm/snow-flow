@@ -168,13 +168,13 @@ export class DependencyDetector {
     template?: string;
     css?: string;
     client_script?: string;
-    server_script?: string;
+    script?: string; // ServiceNow uses 'script' field, not 'server_script'
   }): DependencyInfo[] {
     const allCode = [
       widget.template || '',
       widget.css || '',
       widget.client_script || '',
-      widget.server_script || ''
+      widget.script || ''
     ].join('\n');
 
     return this.detectDependencies(allCode);

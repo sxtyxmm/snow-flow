@@ -404,7 +404,7 @@ export class ServiceNowQueen {
       template: this.generateWidgetTemplate(objective),
       css: this.generateWidgetCss(objective),
       client_script: this.generateClientScript(objective),
-      server_script: this.generateServerScript(objective),
+      script: this.generateServerScript(objective), // ServiceNow uses 'script' field, not 'server_script'
       demo_data: this.generateDemoData(objective)
     };
   }

@@ -5,7 +5,7 @@ export interface ServicePortalWidget {
   template: string;
   css?: string;
   client_script?: string;
-  server_script?: string;
+  script?: string; // ServiceNow uses 'script' field, not 'server_script'
   option_schema?: string;
   public?: boolean;
   roles?: string;

@@ -100,7 +100,7 @@ async function deployWidget(client: ServiceNowClient, config: ArtifactConfig) {
     template: config.config.template || '',
     css: config.config.css || '',
     client_script: config.config.client_script || '',
-    server_script: config.config.server_script || '',
+    script: config.config.script || '', // ServiceNow uses 'script' field
     option_schema: config.config.option_schema || '[]',
     demo_data: config.config.demo_data || '{}',
     has_preview: config.config.has_preview || false,
@@ -229,7 +229,7 @@ function getTemplate(type: string): any {
         template: '<div>{{c.data.message}}</div>',
         css: '.my-widget { padding: 20px; }',
         client_script: 'function() { var c = this; c.data.message = "Hello World"; }',
-        server_script: '(function() { data.message = "Server message"; })()',
+        script: '(function() { data.message = "Server message"; })()', // ServiceNow uses 'script' field
         option_schema: '[]',
         demo_data: '{}'
       }

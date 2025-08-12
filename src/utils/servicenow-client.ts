@@ -25,7 +25,7 @@ export interface ServiceNowWidget {
   template: string;
   css: string;
   client_script: string;
-  server_script: string;
+  script: string; // ServiceNow uses 'script' field, not 'server_script'
   option_schema?: string;
   demo_data?: string;
   has_preview?: boolean;
@@ -790,8 +790,8 @@ export class ServiceNowClient {
         if (!widget.client_script || widget.client_script.trim() === '') {
           widget.client_script = generatedWidget.clientScript;
         }
-        if (!widget.server_script || widget.server_script.trim() === '') {
-          widget.server_script = generatedWidget.serverScript;
+        if (!widget.script || widget.script.trim() === '') {
+          widget.script = generatedWidget.serverScript;
         }
         if (!widget.option_schema || widget.option_schema.trim() === '' || widget.option_schema === '[]') {
           widget.option_schema = generatedWidget.optionSchema;
@@ -812,7 +812,7 @@ export class ServiceNowClient {
         template: widget.template,
         css: widget.css || '',
         client_script: widget.client_script || '',
-        script: widget.server_script || '', // Service Portal uses 'script' not 'server_script'
+        script: widget.script || '', // Direct mapping to ServiceNow script field
         option_schema: widget.option_schema || '[]',
         demo_data: widget.demo_data || '{}',
         has_preview: widget.has_preview !== false, // Default to true
@@ -912,12 +912,8 @@ export class ServiceNowClient {
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated();
       
-      // Map fields for Service Portal widget API
+      // Widget is already in correct format for Service Portal API
       const mappedWidget: any = { ...widget };
-      if (mappedWidget.server_script !== undefined) {
-        mappedWidget.script = mappedWidget.server_script;
-        delete mappedWidget.server_script;
-      }
       
       const response = await this.client.patch(
         `${this.getBaseUrl()}/api/now/table/sp_widget/${sysId}`,

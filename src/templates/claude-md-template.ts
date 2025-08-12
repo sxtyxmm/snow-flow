@@ -392,7 +392,7 @@ snow_deploy({
     name: 'my_widget',
     title: 'My Widget',  // Required for display
     template: '<div>{{data.message}}</div>',  // Required HTML
-    server_script: 'data.message = "Hello";',
+    script: 'data.message = "Hello";', // ServiceNow uses 'script' field
     client_script: 'function($scope) { var c = this; }'
   }
 })
@@ -405,7 +405,7 @@ snow_update({
   identifier: 'my_widget',  // Name or sys_id
   config: {
     template: '<div>Updated HTML</div>',  // Only update what changes
-    server_script: 'data.updated = true;'
+    script: 'data.updated = true;' // ServiceNow uses 'script' field
   }
 })
 \`\`\`

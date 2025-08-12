@@ -14,7 +14,7 @@ export interface WidgetConfig {
   title: string;
   template: string;
   css?: string;
-  server_script?: string;
+  script?: string; // ServiceNow uses 'script' field, not 'server_script'
   client_script?: string;
   demo_data?: string;
   option_schema?: string;
@@ -150,7 +150,7 @@ export class WidgetDeploymentService {
       title: config.title,
       template: config.template || '<div>Widget Template</div>',
       css: config.css || '',
-      server_script: config.server_script || '',
+      script: config.script || '', // ServiceNow uses 'script' field
       client_controller: config.client_script || '',
       demo_data: config.demo_data || '{}',
       option_schema: config.option_schema || '[]',
