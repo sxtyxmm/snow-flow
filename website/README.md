@@ -60,7 +60,46 @@ Then open `http://localhost:8000` in your browser.
 
 ## Deployment
 
-The website is static HTML/CSS/JS and can be deployed to any static hosting service:
+### 🚀 Production (Google Cloud Run)
+
+**Live Website:** https://snow-flow-website-[hash]-ew.a.run.app
+
+**Automated CI/CD Pipeline:**
+- **Trigger:** Push to `main` branch on GitHub
+- **Build:** Google Cloud Build creates Docker image
+- **Deploy:** Automatically deploys to Cloud Run
+- **Monitor:** Health checks and logging enabled
+
+### Docker Deployment
+
+```bash
+# Build the Docker image
+docker build -t snow-flow-website .
+
+# Run locally
+docker run -p 8080:80 snow-flow-website
+
+# Test health check
+curl http://localhost:8080/health
+```
+
+### Cloud Run Manual Deploy
+
+```bash
+# Set project
+gcloud config set project YOUR_PROJECT_ID
+
+# Deploy directly from source
+gcloud run deploy snow-flow-website \
+  --source . \
+  --region europe-west1 \
+  --allow-unauthenticated
+
+# Or use Cloud Build
+gcloud builds submit --config cloudbuild.yaml .
+```
+
+### Static Hosting Options
 
 ### GitHub Pages
 1. Push to GitHub repository

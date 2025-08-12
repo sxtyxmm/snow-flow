@@ -87,28 +87,25 @@
             <h2 class="text-center font-black" style="font-size: var(--font-3xl); color: var(--white); margin-bottom: var(--space-10);">Powerful Capabilities</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
                 <div class="code-block animate-fade-in-up stagger-1">
-                    <code>// Instant Deployment
-await snow_deploy({
-  type: 'widget',
-  coherence: true,
-  rollback: true
-});</code>
+                    <code># AI Chatbot Widget
+snow-flow swarm "Create an intelligent chatbot widget 
+that helps users reset passwords, check incident 
+status, and request catalog items with NLU support" \
+  --strategy development --parallel --monitor</code>
                 </div>
                 <div class="code-block animate-fade-in-up stagger-2">
-                    <code>// Machine Learning
-await ml_train({
-  model: 'lstm',
-  epochs: 50,
-  tensorflow: true
-});</code>
+                    <code># Process Mining & Optimization
+snow-flow swarm "Analyze our incident resolution 
+process, identify bottlenecks, and create automated 
+workflows to reduce MTTR by 40%" \
+  --strategy analysis --output html</code>
                 </div>
                 <div class="code-block animate-fade-in-up stagger-3">
-                    <code>// ES5 Validation
-await validate({
-  syntax: 'es5',
-  engine: 'rhino',
-  strict: true
-});</code>
+                    <code># Predictive ML Model
+snow-flow swarm "Train an LSTM model to predict 
+incident priorities based on description, category 
+and historical patterns. Deploy as real-time API" \
+  --max-agents 8 --mode hierarchical</code>
                 </div>
             </div>
         </div>
@@ -388,7 +385,7 @@ await validate({
                 <code style="font-size: var(--font-md); line-height: var(--leading-loose);">npm install -g snow-flow
 snow-flow init
 snow-flow auth login
-snow-flow start --ui</code>
+snow-flow swarm "Create incident dashboard widget"</code>
             </div>
             
             <div class="text-center" style="margin-top: var(--space-10);">
@@ -397,33 +394,382 @@ snow-flow start --ui</code>
         </div>
     </section>
 
-    <!-- Examples Section -->
-    <section id="docs" class="section">
+    <!-- Comprehensive Documentation Section -->
+    <section id="docs" class="section" style="background: var(--white);">
         <div class="container">
-            <h2 class="text-center font-black" style="font-size: var(--font-4xl); margin-bottom: var(--space-12);">Live Examples</h2>
+            <h2 class="text-center font-black" style="font-size: var(--font-4xl); margin-bottom: var(--space-16);">Complete Documentation</h2>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
-                <div class="code-block animate-slide-in-left">
-                    <code>// Deploy Widget with Coherence Check
+            <!-- Documentation Navigation Tabs -->
+            <div class="tabs-container" style="margin-bottom: var(--space-12);">
+                <div class="tabs-nav" style="display: flex; justify-content: center; gap: var(--space-4); flex-wrap: wrap;">
+                    <button class="tab-btn active" data-tab="quickstart" style="padding: var(--space-3) var(--space-6); background: var(--black); color: var(--white); border: none; border-radius: var(--radius-lg); cursor: pointer;">Quick Start</button>
+                    <button class="tab-btn" data-tab="installation" style="padding: var(--space-3) var(--space-6); background: var(--gray-200); color: var(--black); border: none; border-radius: var(--radius-lg); cursor: pointer;">Installation</button>
+                    <button class="tab-btn" data-tab="claude-setup" style="padding: var(--space-3) var(--space-6); background: var(--gray-200); color: var(--black); border: none; border-radius: var(--radius-lg); cursor: pointer;">Claude Setup</button>
+                    <button class="tab-btn" data-tab="mcp-tools" style="padding: var(--space-3) var(--space-6); background: var(--gray-200); color: var(--black); border: none; border-radius: var(--radius-lg); cursor: pointer;">MCP Tools</button>
+                    <button class="tab-btn" data-tab="examples" style="padding: var(--space-3) var(--space-6); background: var(--gray-200); color: var(--black); border: none; border-radius: var(--radius-lg); cursor: pointer;">Examples</button>
+                    <button class="tab-btn" data-tab="troubleshooting" style="padding: var(--space-3) var(--space-6); background: var(--gray-200); color: var(--black); border: none; border-radius: var(--radius-lg); cursor: pointer;">Troubleshooting</button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tabs-content">
+                
+                <!-- Quick Start Tab -->
+                <div id="quickstart" class="tab-content active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                        <div>
+                            <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🚀 Get Started in 3 Minutes</h3>
+                            <div class="step-list">
+                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">1. Install Snow-Flow</h4>
+                                    <div class="code-block" style="margin: var(--space-2) 0;">
+                                        <code>npm install -g snow-flow</code>
+                                    </div>
+                                </div>
+                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">2. Initialize Project</h4>
+                                    <div class="code-block" style="margin: var(--space-2) 0;">
+                                        <code>snow-flow init</code>
+                                    </div>
+                                    <p style="color: var(--gray-600); font-size: var(--font-sm);">Creates .env, .claude/, and CLAUDE.md files</p>
+                                </div>
+                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">3. Authenticate</h4>
+                                    <div class="code-block" style="margin: var(--space-2) 0;">
+                                        <code>snow-flow auth login</code>
+                                    </div>
+                                    <p style="color: var(--gray-600); font-size: var(--font-sm);">Connect to your ServiceNow instance</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🎯 Your First Swarm</h3>
+                            <div class="code-block" style="height: 300px; overflow-y: auto;">
+                                <code># Create a complete incident dashboard
+snow-flow swarm "Build an incident dashboard widget 
+that shows:
+- Critical incidents by priority  
+- Assignment group workload
+- SLA breach predictions
+- Auto-refresh every 30 seconds
+- Click-through to incident details"
+
+# Result: Complete widget deployed to ServiceNow
+✅ Widget: incident_dashboard_v1
+✅ Client Script: Auto-refresh & click handlers  
+✅ Server Script: GlideRecord queries (ES5)
+✅ CSS: Modern responsive design
+✅ Portal Page: Added to Service Portal</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation Tab -->
+                <div id="installation" class="tab-content">
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">📦 Installation Guide</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Prerequisites</h4>
+                            <ul style="list-style: disc; margin-left: var(--space-6); margin-bottom: var(--space-6);">
+                                <li>Node.js 18+ (download from nodejs.org)</li>
+                                <li>npm 9+ (comes with Node.js)</li>
+                                <li>ServiceNow instance with admin access</li>
+                                <li>Claude Code desktop app</li>
+                            </ul>
+
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Global Installation</h4>
+                            <div class="code-block">
+                                <code># Install globally via NPM
+npm install -g snow-flow
+
+# Verify installation
+snow-flow --version
+# Expected: 3.4.39
+
+# Check available commands
+snow-flow --help</code>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">ServiceNow OAuth Setup</h4>
+                            <div class="step-list">
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                    <strong>1. Navigate to System OAuth → Application Registry</strong>
+                                </div>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                    <strong>2. Create OAuth endpoint for external clients</strong>
+                                </div>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                    <strong>3. Copy Client ID & Secret to .env</strong>
+                                </div>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                    <strong>4. Set redirect URL: http://localhost:3000/callback</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Claude Setup Tab -->
+                <div id="claude-setup" class="tab-content">
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🤖 Claude Code Setup</h3>
+                    
+                    <div class="alert" style="background: var(--yellow-100); border: 1px solid var(--yellow-400); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6);">
+                        <strong>⚠️ CRITICAL:</strong> Must run <code>claude login</code> first to fix "dangerously skip permissions" errors!
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Step-by-Step Setup</h4>
+                            <div class="code-block">
+                                <code># 1. Login to Claude (REQUIRED!)
+claude login
+
+# 2. Initialize Snow-Flow project  
+snow-flow init
+
+# 3. When prompted, select Y to auto-start Claude
+🚀 Would you like to start Claude Code with MCP servers? (Y/n)
+
+# 4. If manual setup needed:
+claude --mcp-config .claude/claude_desktop_config.json</code>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">What Gets Configured</h4>
+                            <ul style="list-style: disc; margin-left: var(--space-6); margin-bottom: var(--space-6);">
+                                <li><strong>17 MCP Servers</strong> - All ServiceNow automation tools</li>
+                                <li><strong>200+ Tools</strong> - Every function documented</li>
+                                <li><strong>Auto-Approval</strong> - No manual permission steps</li>
+                                <li><strong>Error Recovery</strong> - Automatic timeout handling</li>
+                                <li><strong>ES5 Validation</strong> - Rhino engine compatibility</li>
+                            </ul>
+
+                            <div style="background: var(--green-100); border: 1px solid var(--green-400); padding: var(--space-4); border-radius: var(--radius-md);">
+                                <strong>✅ Success Indicators:</strong><br>
+                                • Claude Code shows 17 MCP servers<br>
+                                • Tools like snow_deploy available<br>
+                                • No permission error messages
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCP Tools Tab -->
+                <div id="mcp-tools" class="tab-content">
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🛠️ 200+ MCP Tools Reference</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6); margin-bottom: var(--space-8);">
+                        <div class="tool-category" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg);">
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-3);">🚀 Deployment (10 tools)</h4>
+                            <div class="code-block" style="font-size: var(--font-xs);">
+                                <code>snow_deploy - Create artifacts
+snow_update - Update existing  
+snow_delete - Remove artifacts
+snow_validate_deployment
+snow_rollback_deployment
+snow_preview_widget
+snow_widget_test
+snow_batch_deploy</code>
+                            </div>
+                        </div>
+
+                        <div class="tool-category" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg);">
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-3);">🤖 Automation (27 tools)</h4>
+                            <div class="code-block" style="font-size: var(--font-xs);">
+                                <code>snow_execute_background_script
+snow_execute_script_with_output
+snow_execute_script_sync
+snow_create_scheduled_job
+snow_create_atf_test
+snow_execute_atf_test
++ 21 more automation tools</code>
+                            </div>
+                        </div>
+
+                        <div class="tool-category" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg);">
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-3);">🧠 Machine Learning (6 tools)</h4>
+                            <div class="code-block" style="font-size: var(--font-xs);">
+                                <code>ml_train_incident_classifier
+ml_predict_change_risk
+ml_detect_anomalies
+ml_forecast_incidents
+ml_performance_analytics
+ml_hybrid_recommendation</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Most Used Tools</h4>
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-6);">
+                        <div class="code-block">
+                            <code># Widget Deployment with Coherence Check
 await snow_deploy({
   type: 'widget',
-  name: 'incident_dashboard',
-  template: htmlTemplate,
-  script: serverScript,
-  client_script: clientScript,
-  coherence_check: true
+  config: {
+    name: 'my_dashboard',
+    title: 'My Dashboard',
+    template: '&lt;div&gt;{{data.message}}&lt;/div&gt;',
+    script: 'data.message = "Hello World";',
+    client_script: 'function($scope) { var c = this; }'
+  }
+});
+
+# Background Script (ES5 ONLY!)
+await snow_execute_script_with_output({
+  script: `
+    var gr = new GlideRecord('incident');
+    gr.addQuery('active', true);
+    gr.query();
+    gs.info('Found: ' + gr.getRowCount());
+  `
 });</code>
+                        </div>
+                        
+                        <div class="code-block">
+                            <code># Query ServiceNow Tables
+await snow_query_table({
+  table: 'incident',
+  query: 'active=true^priority=1',
+  fields: ['number', 'short_description'],
+  limit: 10
+});
+
+# Machine Learning Training
+await ml_train_incident_classifier({
+  dataset_size: 1000,
+  model_type: 'lstm',
+  epochs: 50,
+  validation_split: 0.2,
+  use_tensorflow: true
+});</code>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="code-block animate-slide-in-right">
-                    <code>// Multi-Agent Swarm
-snow-flow swarm "Build complete 
-incident management system" \
-  --strategy development \
-  --mode hierarchical \
-  --max-agents 8 \
-  --monitor</code>
+
+                <!-- Examples Tab -->
+                <div id="examples" class="tab-content">
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">💡 Real-World Examples</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                        <div class="code-block animate-slide-in-left">
+                            <h4 style="color: var(--white); margin-bottom: var(--space-3);">Complete ServiceNow Application</h4>
+                            <code>snow-flow swarm "Build a complete employee onboarding 
+application with approval workflows, automated account 
+provisioning, equipment requests, and dashboards for 
+HR managers to track onboarding progress"
+
+✨ Creates: Portal, Workflows, Catalog Items, Reports</code>
+                        </div>
+                        
+                        <div class="code-block animate-slide-in-right">
+                            <h4 style="color: var(--white); margin-bottom: var(--space-3);">Real-Time Incident Analysis</h4>
+                            <code>snow-flow swarm "Create a real-time incident analyzer 
+that uses ML to detect patterns, suggests resolutions 
+based on historical data, and auto-assigns to the 
+right team using CMDB relationships"
+
+🤖 Uses: TensorFlow.js, CMDB API, ML Models</code>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: var(--space-8);">
+                        <h4 style="font-weight: 600; margin-bottom: var(--space-4);">More Examples</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3" style="gap: var(--space-4);">
+                            <div class="code-block" style="height: 200px;">
+                                <code># AI Chatbot Widget
+snow-flow swarm "Create an intelligent 
+chatbot widget that helps users reset 
+passwords, check incident status, and 
+request catalog items with NLU support"</code>
+                            </div>
+                            <div class="code-block" style="height: 200px;">
+                                <code># Process Mining
+snow-flow swarm "Analyze our incident 
+resolution process, identify bottlenecks, 
+and create automated workflows to reduce 
+MTTR by 40%"</code>
+                            </div>
+                            <div class="code-block" style="height: 200px;">
+                                <code># Predictive ML Model  
+snow-flow swarm "Train an LSTM model to 
+predict incident priorities based on 
+description, category and historical 
+patterns. Deploy as real-time API"</code>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Troubleshooting Tab -->
+                <div id="troubleshooting" class="tab-content">
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🔧 Troubleshooting Guide</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Common Issues</h4>
+                            
+                            <div class="issue" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--red-300); border-radius: var(--radius-md);">
+                                <h5 style="color: var(--red-600); font-weight: 600; margin-bottom: var(--space-2);">❌ Permission Errors in Claude Code</h5>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);">"dangerously skip permissions" error</p>
+                                <div class="code-block" style="font-size: var(--font-xs);">
+                                    <code># SOLUTION: Login first!
+claude login
+claude --mcp-config .claude/claude_desktop_config.json</code>
+                                </div>
+                            </div>
+
+                            <div class="issue" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--red-300); border-radius: var(--radius-md);">
+                                <h5 style="color: var(--red-600); font-weight: 600; margin-bottom: var(--space-2);">❌ ES5 Syntax Errors</h5>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);">ServiceNow uses Rhino engine - ES6+ fails</p>
+                                <div class="code-block" style="font-size: var(--font-xs);">
+                                    <code># ❌ WRONG: Modern JavaScript
+const users = data.filter(u => u.active);
+
+# ✅ CORRECT: ES5 Only
+var users = [];
+for (var i = 0; i < data.length; i++) {
+  if (data[i].active) users.push(data[i]);
+}</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Debug Commands</h4>
+                            <div class="code-block">
+                                <code># Test ServiceNow connection
+snow-flow auth login
+
+# Verify authentication status  
+snow-flow auth status
+
+# Re-initialize if needed
+snow-flow init
+
+# Check version and help
+snow-flow --version
+snow-flow --help
+
+# Enable verbose logging
+export DEBUG=snow-flow:*</code>
+                            </div>
+
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4); margin-top: var(--space-6);">Quick Fixes</h4>
+                            <ul style="list-style: disc; margin-left: var(--space-6);">
+                                <li><strong>MCP not responding:</strong> Re-run <code>snow-flow init</code> and restart Claude Code</li>
+                                <li><strong>Auth failed:</strong> Run <code>snow-flow auth login</code> again</li>
+                                <li><strong>Widget deployment failed:</strong> Check ES5 syntax and field names</li>
+                                <li><strong>Claude permission errors:</strong> Always run <code>claude login</code> first</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>

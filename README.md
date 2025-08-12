@@ -361,9 +361,9 @@ await snow_query_table({
 
 ### Core Commands
 ```bash
-snow-flow start              # Start orchestration system
-snow-flow status            # System status
-snow-flow monitor           # Real-time monitoring
+snow-flow swarm "<objective>"  # Execute multi-agent swarm
+snow-flow auth login          # Authenticate with ServiceNow
+snow-flow init               # Initialize project
 ```
 
 ### Agent Management
@@ -450,14 +450,16 @@ ServiceNow uses Rhino engine. Always use ES5 syntax:
 # Enable verbose logging
 export DEBUG=snow-flow:*
 
-# Check configuration
-snow-flow config validate
+# Check version and help
+snow-flow --version
+snow-flow --help
 
-# Test ServiceNow connection
-snow-flow test connection
+# Test authentication
+snow-flow auth login
+snow-flow auth status
 
-# View logs
-snow-flow logs --tail 100
+# Re-initialize if needed
+snow-flow init
 ```
 
 ## Project Structure

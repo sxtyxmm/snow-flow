@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     /* =========================================
-       8. TAB FUNCTIONALITY
+       8. DOCUMENTATION TAB FUNCTIONALITY
        ========================================= */
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -244,8 +244,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeContent.classList.add('active');
                 activeContent.classList.add('animate-fade-in-up');
             }
+            
+            // Smooth scroll to docs section if not visible
+            const docsSection = document.getElementById('docs');
+            if (docsSection) {
+                const rect = docsSection.getBoundingClientRect();
+                if (rect.top < 0 || rect.bottom > window.innerHeight) {
+                    docsSection.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            }
         });
     });
+
+    // Initialize first tab as active
+    if (tabBtns.length > 0 && tabContents.length > 0) {
+        const firstTab = tabBtns[0];
+        const firstContent = document.getElementById(firstTab.getAttribute('data-tab'));
+        
+        if (!firstTab.classList.contains('active')) {
+            firstTab.classList.add('active');
+        }
+        if (firstContent && !firstContent.classList.contains('active')) {
+            firstContent.classList.add('active');
+        }
+    }
 
     /* =========================================
        9. SEARCH FUNCTIONALITY
