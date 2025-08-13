@@ -54,17 +54,72 @@ export class ArtifactLocalSync {
   private client: ServiceNowClient;
   private smartFetcher: SmartFieldFetcher;
   
-  constructor(client: ServiceNowClient) {
+  constructor(client: ServiceNowClient, customBaseDir?: string) {
     this.client = client;
     this.smartFetcher = new SmartFieldFetcher(client);
     
-    // Create base directory for Snow-Flow artifacts
-    this.baseDir = path.join(os.tmpdir(), 'snow-flow-artifacts');
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir, { recursive: true });
+    // Use custom directory, environment variable, or default to current project's servicenow folder
+    if (customBaseDir) {
+      this.baseDir = customBaseDir;
+    } else if (process.env.SNOW_FLOW_ARTIFACTS_DIR) {
+      this.baseDir = process.env.SNOW_FLOW_ARTIFACTS_DIR;
+    } else {
+      // Default to 'servicenow' folder in current working directory
+      this.baseDir = path.join(process.cwd(), 'servicenow');
     }
     
-    console.log(`📁 Snow-Flow local sync directory: ${this.baseDir}`);
+    // Create base directory if it doesn't exist
+    if (!fs.existsSync(this.baseDir)) {
+      fs.mkdirSync(this.baseDir, { recursive: true });
+      console.log(`📁 Created ServiceNow artifacts directory: ${this.baseDir}`);
+    } else {
+      console.log(`📁 Using ServiceNow artifacts directory: ${this.baseDir}`);
+    }
+    
+    // Create .gitignore if it doesn't exist to optionally exclude from version control
+    const gitignorePath = path.join(this.baseDir, '.gitignore');
+    if (!fs.existsSync(gitignorePath)) {
+      fs.writeFileSync(gitignorePath, 
+        '# ServiceNow Artifacts\n' +
+        '# Uncomment the following lines to exclude from version control:\n' +
+        '# *\n' +
+        '# !.gitignore\n' +
+        '# !README.md\n'
+      );
+    }
+    
+    // Create README if it doesn't exist
+    const readmePath = path.join(this.baseDir, 'README.md');
+    if (!fs.existsSync(readmePath)) {
+      fs.writeFileSync(readmePath, 
+        '# ServiceNow Artifacts Directory\n\n' +
+        'This directory contains ServiceNow artifacts synchronized from your instance for local development.\n\n' +
+        '## Structure\n\n' +
+        '```\n' +
+        'servicenow/\n' +
+        '├── widgets/          # Service Portal widgets\n' +
+        '├── script_includes/  # Script Includes\n' +
+        '├── business_rules/   # Business Rules\n' +
+        '├── flows/           # Flow Designer flows\n' +
+        '├── ui_pages/        # UI Pages\n' +
+        '└── ...              # Other artifact types\n' +
+        '```\n\n' +
+        '## Workflow\n\n' +
+        '1. **Pull artifacts**: `snow_pull_artifact` downloads artifacts here\n' +
+        '2. **Edit locally**: Use your IDE/editor to modify files\n' +
+        '3. **Push changes**: `snow_push_artifact` syncs changes back to ServiceNow\n' +
+        '4. **Clean up**: `snow_sync_cleanup` removes local files after sync\n\n' +
+        '## Version Control\n\n' +
+        'You can choose to:\n' +
+        '- **Track changes**: Keep artifacts in git for version history\n' +
+        '- **Ignore artifacts**: Edit `.gitignore` to exclude from git\n\n' +
+        '## Configuration\n\n' +
+        'Set custom location with environment variable:\n' +
+        '```bash\n' +
+        'export SNOW_FLOW_ARTIFACTS_DIR=/path/to/artifacts\n' +
+        '```\n'
+      );
+    }
   }
 
   /**
@@ -178,8 +233,12 @@ export class ArtifactLocalSync {
     
     this.artifacts.set(sys_id, artifact);
     
+    // Show relative path if in project directory
+    const relativePath = path.relative(process.cwd(), artifactPath);
+    const displayPath = relativePath.startsWith('..') ? artifactPath : relativePath;
+    
     console.log(`✅ ${config.displayName} synced to local files:`);
-    console.log(`📁 Location: ${artifactPath}`);
+    console.log(`📁 Location: ${displayPath}`);
     console.log(`📄 Files created:`);
     files.forEach(f => console.log(`   - ${f.filename} (${f.type})`));
     console.log(`\n💡 Claude Code can now use its native tools on these files!`);
@@ -195,133 +254,6 @@ export class ArtifactLocalSync {
    */
   async pullWidget(sys_id: string): Promise<LocalArtifact> {
     return this.pullArtifact('sp_widget', sys_id);
-    console.log(`\n🔄 Pulling widget ${sys_id} to local files...`);
-    
-    // Fetch widget with smart chunking
-    const widget = await this.smartFetcher.fetchWidget(sys_id);
-    
-    // Create local directory structure
-    const widgetName = this.sanitizeFilename(widget.name || `widget_${sys_id}`);
-    const widgetPath = path.join(this.baseDir, 'widgets', widgetName);
-    
-    // Clean up any existing files
-    if (fs.existsSync(widgetPath)) {
-      fs.rmSync(widgetPath, { recursive: true });
-    }
-    fs.mkdirSync(widgetPath, { recursive: true });
-    
-    // Create local files for each widget component
-    const files: LocalFile[] = [];
-    
-    // 1. HTML Template
-    if (widget.template) {
-      const htmlFile = this.createLocalFile(
-        widgetPath,
-        `${widgetName}.html`,
-        widget.template,
-        'template',
-        'html',
-        '<!-- ServiceNow Widget Template -->\n<!-- Widget: ' + widget.name + ' -->\n<!-- Bindings: {{data.x}} from server, ng-click calls client methods -->\n\n'
-      );
-      files.push(htmlFile);
-    }
-    
-    // 2. Server Script (ES5)
-    if (widget.script) {
-      const serverFile = this.createLocalFile(
-        widgetPath,
-        `${widgetName}.server.js`,
-        widget.script,
-        'script',
-        'js',
-        '/**\n * ServiceNow Widget Server Script (ES5 ONLY!)\n * Widget: ' + widget.name + '\n * \n * Available objects:\n * - data: Object to send to client\n * - input: Data from client\n * - options: Widget instance options\n * - gs: GlideSystem\n * - $sp: Service Portal API\n */\n\n(function() {\n',
-        '\n})();'
-      );
-      files.push(serverFile);
-    }
-    
-    // 3. Client Script (AngularJS)
-    if (widget.client_script) {
-      const clientFile = this.createLocalFile(
-        widgetPath,
-        `${widgetName}.client.js`,
-        widget.client_script,
-        'client_script',
-        'js',
-        '/**\n * ServiceNow Widget Client Controller (AngularJS)\n * Widget: ' + widget.name + '\n * \n * Available objects:\n * - c: Widget controller (this)\n * - c.data: Data from server\n * - c.server: Server communication\n * - $scope: Angular scope\n */\n\nfunction(' 
-      );
-      files.push(clientFile);
-    }
-    
-    // 4. CSS
-    if (widget.css) {
-      const cssFile = this.createLocalFile(
-        widgetPath,
-        `${widgetName}.css`,
-        widget.css,
-        'css',
-        'css',
-        '/* ServiceNow Widget Styles */\n/* Widget: ' + widget.name + ' */\n/* Prefix classes to avoid conflicts */\n\n'
-      );
-      files.push(cssFile);
-    }
-    
-    // 5. Widget Configuration (JSON)
-    const config = {
-      sys_id: widget.sys_id,
-      name: widget.name,
-      title: widget.title,
-      option_schema: widget.option_schema,
-      data_table: widget.data_table,
-      roles: widget.roles,
-      public: widget.public,
-      _coherence_hints: widget._coherence_hints || []
-    };
-    
-    const configFile = this.createLocalFile(
-      widgetPath,
-      `${widgetName}.config.json`,
-      JSON.stringify(config, null, 2),
-      'metadata',
-      'json'
-    );
-    files.push(configFile);
-    
-    // 6. README with context
-    const readmeContent = this.generateWidgetReadme(widget, files);
-    const readmeFile = this.createLocalFile(
-      widgetPath,
-      'README.md',
-      readmeContent,
-      'documentation',
-      'md'
-    );
-    files.push(readmeFile);
-    
-    // Create artifact record
-    const artifact: LocalArtifact = {
-      sys_id: widget.sys_id,
-      name: widget.name,
-      type: 'widget',
-      tableName: 'sp_widget',  // Added missing tableName
-      localPath: widgetPath,
-      files: files,
-      metadata: widget,
-      syncStatus: 'synced',
-      createdAt: new Date(),
-      lastSyncedAt: new Date()
-    };
-    
-    this.artifacts.set(sys_id, artifact);
-    
-    console.log(`✅ Widget synced to local files:`);
-    console.log(`📁 Location: ${widgetPath}`);
-    console.log(`📄 Files created:`);
-    files.forEach(f => console.log(`   - ${f.filename} (${f.type})`));
-    console.log(`\n💡 Claude Code can now use its native tools on these files!`);
-    console.log(`   Edit, search, refactor - then run 'pushWidget' to sync back.`);
-    
-    return artifact;
   }
 
   /**
@@ -447,71 +379,6 @@ export class ArtifactLocalSync {
    */
   async pushWidget(sys_id: string): Promise<boolean> {
     return this.pushArtifact(sys_id);
-    const artifact = this.artifacts.get(sys_id);
-    if (!artifact) {
-      throw new Error(`No local artifact found for ${sys_id}. Run pullWidget first.`);
-    }
-    
-    console.log(`\n🔄 Pushing local changes back to ServiceNow...`);
-    
-    // Read current content from all files
-    const updates: any = {};
-    let hasChanges = false;
-    
-    for (const file of artifact.files) {
-      if (fs.existsSync(file.path)) {
-        const currentContent = fs.readFileSync(file.path, 'utf8');
-        
-        // Strip our added headers/footers for comparison
-        const cleanContent = this.stripAddedWrappers(currentContent, file.type);
-        
-        if (cleanContent !== file.originalContent) {
-          hasChanges = true;
-          file.currentContent = cleanContent;
-          file.isModified = true;
-          
-          // Map back to ServiceNow field
-          if (file.field && file.field !== 'documentation' && file.field !== 'metadata') {
-            updates[file.field] = cleanContent;
-            console.log(`   📝 Changed: ${file.filename} (${file.field})`);
-          }
-        }
-      }
-    }
-    
-    if (!hasChanges) {
-      console.log(`✅ No changes detected. Widget is up to date.`);
-      return true;
-    }
-    
-    // Validate ES5 compliance for server script
-    if (updates.script) {
-      const es5Issues = this.validateES5(updates.script);
-      if (es5Issues.length > 0) {
-        console.log(`\n⚠️ ES5 Validation Issues in server script:`);
-        es5Issues.forEach(issue => console.log(`   - ${issue}`));
-        console.log(`\n❓ Continue with deployment anyway? (ServiceNow might fail)`);
-        // In real implementation, prompt for confirmation
-      }
-    }
-    
-    // Update in ServiceNow
-    try {
-      console.log(`\n📤 Updating widget in ServiceNow...`);
-      await this.client.updateRecord('sp_widget', sys_id, updates);
-      
-      artifact.syncStatus = 'synced';
-      artifact.lastSyncedAt = new Date();
-      
-      console.log(`✅ Widget successfully updated in ServiceNow!`);
-      console.log(`🔗 sys_id: ${sys_id}`);
-      
-      return true;
-    } catch (error) {
-      console.error(`❌ Failed to update widget:`, error);
-      artifact.syncStatus = 'pending_upload';
-      return false;
-    }
   }
 
   /**

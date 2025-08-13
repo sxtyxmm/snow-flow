@@ -54,7 +54,7 @@ export class ServiceNowClientWithTracking extends ServiceNowClient {
       // Estimate tokens based on fields requested
       const fieldCount = fields.length;
       const estimatedTokens = Math.min(fieldCount * 100, 1000); // Rough estimate
-      this.mcpLogger.trackTokens(estimatedTokens, 0);
+      this.mcpLogger.addTokens(estimatedTokens, 0);
       
       if (result?.data?.result?.length > 0) {
         this.mcpLogger.info(`Found ${result.data.result.length} records with ${fieldCount} fields`);
