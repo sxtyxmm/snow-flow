@@ -87,6 +87,124 @@ export class MCPToolRegistry {
       description: 'Authentication and permission diagnostics'
     });
 
+    // Local Development Sync Tools
+    this.registerTool({
+      canonicalName: 'pull_artifact',
+      aliases: [
+        'mcp__servicenow-local-development__snow_pull_artifact',
+        'snow_pull_artifact',
+        'pull_artifact',
+        'sync_artifact',
+        'local_sync'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_pull_artifact',
+      description: 'Pull any ServiceNow artifact to local files for editing'
+    });
+
+    this.registerTool({
+      canonicalName: 'push_artifact',
+      aliases: [
+        'mcp__servicenow-local-development__snow_push_artifact',
+        'snow_push_artifact',
+        'push_artifact',
+        'sync_back'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_push_artifact',
+      description: 'Push local artifact changes back to ServiceNow'
+    });
+
+    this.registerTool({
+      canonicalName: 'validate_artifact_coherence',
+      aliases: [
+        'mcp__servicenow-local-development__snow_validate_artifact_coherence',
+        'snow_validate_artifact_coherence',
+        'validate_coherence',
+        'check_coherence'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_validate_artifact_coherence',
+      description: 'Validate artifact coherence and relationships'
+    });
+
+    this.registerTool({
+      canonicalName: 'list_supported_artifacts',
+      aliases: [
+        'mcp__servicenow-local-development__snow_list_supported_artifacts',
+        'snow_list_supported_artifacts',
+        'supported_artifacts',
+        'artifact_types'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_list_supported_artifacts',
+      description: 'List all supported artifact types for local sync'
+    });
+
+    this.registerTool({
+      canonicalName: 'sync_status',
+      aliases: [
+        'mcp__servicenow-local-development__snow_sync_status',
+        'snow_sync_status',
+        'local_status',
+        'sync_check'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_sync_status',
+      description: 'Check sync status of local artifacts'
+    });
+
+    this.registerTool({
+      canonicalName: 'sync_cleanup',
+      aliases: [
+        'mcp__servicenow-local-development__snow_sync_cleanup',
+        'snow_sync_cleanup',
+        'cleanup_local',
+        'remove_local'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_sync_cleanup',
+      description: 'Clean up local artifact files'
+    });
+
+    this.registerTool({
+      canonicalName: 'convert_to_es5',
+      aliases: [
+        'mcp__servicenow-local-development__snow_convert_to_es5',
+        'snow_convert_to_es5',
+        'es5_convert',
+        'transpile_es5'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_convert_to_es5',
+      description: 'Convert modern JavaScript to ES5 for ServiceNow'
+    });
+
+    // Legacy widget/script tools (backward compatibility)
+    this.registerTool({
+      canonicalName: 'pull_widget',
+      aliases: [
+        'mcp__servicenow-local-development__snow_pull_widget',
+        'snow_pull_widget',
+        'pull_widget'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_pull_widget',
+      description: 'Pull widget to local files (legacy - use pull_artifact)'
+    });
+
+    this.registerTool({
+      canonicalName: 'push_widget',
+      aliases: [
+        'mcp__servicenow-local-development__snow_push_widget',
+        'snow_push_widget',
+        'push_widget'
+      ],
+      provider: 'servicenow-local-development',
+      actualTool: 'mcp__servicenow-local-development__snow_push_widget',
+      description: 'Push widget changes (legacy - use push_artifact)'
+    });
+
     // Catalog item management
     this.registerTool({
       canonicalName: 'catalog_item_manager',

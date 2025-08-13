@@ -8,6 +8,7 @@ import { QueenMemorySystem } from './queen-memory';
 import { NeuralLearning } from './neural-learning';
 import { AgentFactory } from './agent-factory';
 import { MCPExecutionBridge, AgentRecommendation } from './mcp-execution-bridge';
+import { QUEEN_KNOWLEDGE_BASE, determineOptimalApproach } from './queen-knowledge-base';
 import { ServicePortalThemeManager } from '../utils/theme-manager';
 import { DependencyDetector } from '../utils/dependency-detector';
 // Gap Analysis Engine removed - using direct MCP approach
@@ -358,6 +359,56 @@ export class ServiceNowQueen {
   }
 
   private createDeploymentPlan(task: ServiceNowTask, agentResults: any[], _analysis: TaskAnalysis): any {
+    // Determine optimal approach based on knowledge base
+    const hasExistingArtifact = task.objective.toLowerCase().includes('update') || 
+                               task.objective.toLowerCase().includes('edit') ||
+                               task.objective.toLowerCase().includes('modify') ||
+                               task.objective.toLowerCase().includes('change');
+    
+    const requiresRefactoring = task.objective.toLowerCase().includes('refactor') ||
+                               task.objective.toLowerCase().includes('rename') ||
+                               task.objective.toLowerCase().includes('reorganize');
+    
+    const userMentionedModifications = task.objective.toLowerCase().includes('i modified') ||
+                                      task.objective.toLowerCase().includes('i changed') ||
+                                      task.objective.toLowerCase().includes('i updated') ||
+                                      task.objective.toLowerCase().includes('aangepast') ||
+                                      task.objective.toLowerCase().includes('zelf');
+    
+    const approach = determineOptimalApproach(
+      task.objective,
+      task.type,
+      {
+        hasExistingArtifact,
+        complexity: _analysis.estimatedComplexity > 7 ? 'high' : 
+                   _analysis.estimatedComplexity > 4 ? 'medium' : 'low',
+        requiresRefactoring,
+        userMentionedModifications
+      }
+    );
+    
+    if (this.config.debugMode) {
+      this.logger.info(`🎨 Optimal approach: ${approach}`);
+      this.logger.info(`🔍 Artifact sync available: ${QUEEN_KNOWLEDGE_BASE.artifactCapabilities[this.getTableForType(task.type)]?.localSync}`);
+    }
+    
+    // If local sync is optimal and available
+    if (approach === 'Local Sync Development' && hasExistingArtifact) {
+      const table = this.getTableForType(task.type);
+      if (QUEEN_KNOWLEDGE_BASE.artifactCapabilities[table]?.localSync) {
+        return {
+          type: 'local-sync',
+          approach: approach,
+          mcpTool: 'snow_pull_artifact',
+          workflow: QUEEN_KNOWLEDGE_BASE.developmentPatterns.widgetDevelopment.approaches[0].workflow,
+          config: {
+            table: table,
+            sys_id: this.extractSysIdFromObjective(task.objective)
+          }
+        };
+      }
+    }
+    
     // Extract deployment instructions from agent results
     const widgetCreator = agentResults.find(r => r.agentType === 'widget-creator');
     const flowBuilder = agentResults.find(r => r.agentType === 'flow-builder');
@@ -679,6 +730,43 @@ function($scope) {
   }
 
   private async executeDeploymentPlan(plan: any): Promise<any> {
+    // Handle local sync workflow for artifact editing
+    if (plan.type === 'local-sync') {
+      if (this.config.debugMode) {
+        this.logger.info('🔄 Executing Local Sync Development workflow');
+        this.logger.info('📁 Artifact will be synced to local files for editing');
+      }
+      
+      // Create recommendation for local sync
+      const recommendation: AgentRecommendation = {
+        agentId: 'queen-agent',
+        agentType: 'queen',
+        action: 'local-sync',
+        tool: 'snow_pull_artifact',
+        server: 'servicenow-local-development',
+        params: plan.config,
+        reasoning: 'Syncing artifact to local files for advanced editing with Claude Code',
+        confidence: 0.95
+      };
+      
+      // Execute pull through MCP bridge
+      const result = await this.mcpBridge.executeAgentRecommendation(
+        { id: 'queen-agent', type: 'queen' },
+        recommendation
+      );
+      
+      if (result.success) {
+        return {
+          success: true,
+          type: 'local-sync',
+          approach: plan.approach,
+          message: 'Artifact synced to local files. Edit with Claude Code, then use snow_push_artifact to sync back.',
+          localPath: result.toolResult?.localPath,
+          files: result.toolResult?.files
+        };
+      }
+    }
+    
     // Execute real MCP tools through the bridge
     if (this.config.debugMode) {
       this.logger.info('🚀 Executing deployment plan with MCP Bridge');
@@ -1080,6 +1168,28 @@ function($scope) {
   /**
    * Extract the core business problem from user request
    */
+  private getTableForType(type: string): string {
+    const typeToTable: Record<string, string> = {
+      'widget': 'sp_widget',
+      'flow': 'sys_hub_flow',
+      'script': 'sys_script_include',
+      'business_rule': 'sys_script',
+      'ui_page': 'sys_ui_page',
+      'client_script': 'sys_script_client',
+      'ui_policy': 'sys_ui_policy',
+      'scheduled_job': 'sysauto_script',
+      'fix_script': 'sys_script_fix'
+    };
+    return typeToTable[type] || 'sys_metadata';
+  }
+  
+  private extractSysIdFromObjective(objective: string): string | undefined {
+    // Look for sys_id patterns in the objective
+    const sysIdPattern = /[a-f0-9]{32}/i;
+    const match = objective.match(sysIdPattern);
+    return match ? match[0] : undefined;
+  }
+  
   private extractCoreProblem(objective: string): string {
     const objective_lower = objective.toLowerCase();
     

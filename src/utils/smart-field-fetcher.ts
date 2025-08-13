@@ -6,6 +6,11 @@
  */
 
 import { ServiceNowClient } from './servicenow-client';
+import { 
+  ARTIFACT_REGISTRY,
+  ArtifactTypeConfig,
+  getArtifactConfig
+} from './artifact-sync/artifact-registry';
 
 export interface FetchStrategy {
   table: string;
@@ -22,43 +27,49 @@ export interface FieldGroup {
   maxTokens?: number;
 }
 
-// Widget field groups with relationship context
+// Widget field groups with relationship context - 20K per field for better context
 const WIDGET_FIELD_GROUPS: FieldGroup[] = [
   {
     groupName: 'metadata',
-    fields: ['sys_id', 'name', 'title', 'id', 'sys_created_on', 'sys_updated_on'],
+    fields: ['sys_id', 'name', 'title', 'id', 'sys_created_on', 'sys_updated_on', 'sys_scope'],
     description: 'Basic widget identification and metadata',
-    maxTokens: 1000
+    maxTokens: 2000
   },
   {
     groupName: 'template',
     fields: ['template'],
     description: 'HTML template - defines UI structure and Angular bindings (ng-click, {{data.x}})',
-    maxTokens: 10000
+    maxTokens: 20000  // Increased to 20K
   },
   {
     groupName: 'server_script',
     fields: ['script'],  // Note: 'script' is the actual field name, not 'server_script'
     description: 'Server-side script (ES5 only) - initializes data object and handles input.action requests',
-    maxTokens: 10000
+    maxTokens: 20000  // Increased to 20K
   },
   {
     groupName: 'client_script',
     fields: ['client_script'],
     description: 'Client-side AngularJS controller - implements methods called by template ng-click and calls c.server.get()',
-    maxTokens: 10000
+    maxTokens: 20000  // Increased to 20K
   },
   {
     groupName: 'styling',
     fields: ['css'],
     description: 'Widget-specific CSS styles - classes used in template',
-    maxTokens: 5000
+    maxTokens: 20000  // Increased to 20K
   },
   {
     groupName: 'configuration',
-    fields: ['option_schema', 'data_table', 'demo_data', 'public'],
-    description: 'Widget configuration options and settings',
-    maxTokens: 3000
+    fields: ['option_schema', 'data_table', 'demo_data', 'public', 'roles'],
+    description: 'Widget configuration options, data sources and access control',
+    maxTokens: 10000  // Increased for better config context
+  },
+  {
+    groupName: 'dependencies',
+    fields: ['dependencies', 'link'],
+    description: 'Widget dependencies and Angular providers required',
+    maxTokens: 5000
   }
 ];
 
@@ -120,9 +131,70 @@ export class SmartFieldFetcher {
   }
 
   /**
+   * DYNAMIC fetch any artifact using registry configuration
+   */
+  async fetchArtifact(table: string, sys_id: string): Promise<any> {
+    console.log(`\n🔍 Smart fetching ${table}: ${sys_id}`);
+    
+    const fieldGroups = this.getFieldGroups(table);
+    const config = getArtifactConfig(table);
+    
+    const results: any = {
+      _fetch_strategy: 'smart_chunked',
+      _context_hint: config ? `${config.displayName} - fields fetched in groups to respect token limits` : 'Fields fetched separately but are related',
+      _field_groups: {}
+    };
+
+    // Fetch each field group
+    for (const group of fieldGroups) {
+      console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
+      
+      try {
+        const response = await this.client.query(table, {
+          query: `sys_id=${sys_id}`,
+          fields: group.fields,
+          limit: 1
+        });
+        
+        if (response.result?.[0]) {
+          results._field_groups[group.groupName] = {
+            data: response.result[0],
+            description: group.description,
+            fields: group.fields
+          };
+          
+          // Add to flat structure for easy access
+          Object.assign(results, response.result[0]);
+        }
+      } catch (error: any) {
+        console.log(`⚠️ Failed to fetch ${group.groupName}: ${error.message}`);
+        
+        // If group fails due to size, fetch fields individually
+        if (error.message?.includes('exceeds maximum allowed tokens')) {
+          results._field_groups[group.groupName] = await this.fetchFieldsIndividually(
+            table,
+            sys_id,
+            group.fields,
+            group.description
+          );
+        }
+      }
+    }
+    
+    // Add coherence validation hints if it's a widget
+    if (table === 'sp_widget') {
+      results._coherence_hints = this.generateCoherenceHints(results);
+    }
+    
+    return results;
+  }
+
+  /**
    * Intelligently fetch widget fields with context preservation
+   * (Wrapper for backward compatibility)
    */
   async fetchWidget(sys_id: string): Promise<any> {
+    return this.fetchArtifact('sp_widget', sys_id);
     console.log(`\n🔍 Smart fetching widget: ${sys_id}`);
     
     const results: any = {
@@ -175,90 +247,18 @@ export class SmartFieldFetcher {
 
   /**
    * Fetch flow with intelligent chunking
+   * (Wrapper for backward compatibility)
    */
   async fetchFlow(sys_id: string): Promise<any> {
-    console.log(`\n🔍 Smart fetching flow: ${sys_id}`);
-    
-    const results: any = {
-      _fetch_strategy: 'smart_chunked',
-      _context_hint: 'Flow definition contains JSON with all steps and actions - may be very large',
-      _field_groups: {}
-    };
-
-    for (const group of FLOW_FIELD_GROUPS) {
-      console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
-      
-      try {
-        const response = await this.client.query('sys_hub_flow', {
-          query: `sys_id=${sys_id}`,
-          fields: group.fields,
-          limit: 1
-        });
-        
-        if (response.result?.[0]) {
-          results._field_groups[group.groupName] = {
-            data: response.result[0],
-            description: group.description
-          };
-          Object.assign(results, response.result[0]);
-        }
-      } catch (error: any) {
-        if (error.message?.includes('exceeds maximum allowed tokens')) {
-          results._field_groups[group.groupName] = await this.fetchFieldsIndividually(
-            'sys_hub_flow',
-            sys_id,
-            group.fields,
-            group.description
-          );
-        }
-      }
-    }
-    
-    return results;
+    return this.fetchArtifact('sys_hub_flow', sys_id);
   }
 
   /**
    * Fetch business rule with intelligent chunking
+   * (Wrapper for backward compatibility)
    */
   async fetchBusinessRule(sys_id: string): Promise<any> {
-    console.log(`\n🔍 Smart fetching business rule: ${sys_id}`);
-    
-    const results: any = {
-      _fetch_strategy: 'smart_chunked',
-      _context_hint: 'Business rule script runs in context of current record with access to current, previous, gs',
-      _field_groups: {}
-    };
-
-    for (const group of BUSINESS_RULE_FIELD_GROUPS) {
-      console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
-      
-      try {
-        const response = await this.client.query('sys_script', {
-          query: `sys_id=${sys_id}`,
-          fields: group.fields,
-          limit: 1
-        });
-        
-        if (response.result?.[0]) {
-          results._field_groups[group.groupName] = {
-            data: response.result[0],
-            description: group.description
-          };
-          Object.assign(results, response.result[0]);
-        }
-      } catch (error: any) {
-        if (error.message?.includes('exceeds maximum allowed tokens')) {
-          results._field_groups[group.groupName] = await this.fetchFieldsIndividually(
-            'sys_script',
-            sys_id,
-            group.fields,
-            group.description
-          );
-        }
-      }
-    }
-    
-    return results;
+    return this.fetchArtifact('sys_script', sys_id);
   }
 
   /**
@@ -375,9 +375,10 @@ export class SmartFieldFetcher {
   }
 
   /**
-   * Get smart fetch strategy based on table
+   * Get smart fetch strategy based on table - NOW USES ARTIFACT REGISTRY!
    */
   getFieldGroups(table: string): FieldGroup[] {
+    // First check if we have specific groups defined
     switch (table) {
       case 'sp_widget':
         return WIDGET_FIELD_GROUPS;
@@ -385,23 +386,74 @@ export class SmartFieldFetcher {
         return FLOW_FIELD_GROUPS;
       case 'sys_script':
         return BUSINESS_RULE_FIELD_GROUPS;
-      default:
-        // Generic strategy for unknown tables
-        return [
-          {
-            groupName: 'metadata',
-            fields: ['sys_id', 'name', 'sys_created_on', 'sys_updated_on'],
-            description: 'Basic record information',
-            maxTokens: 1000
-          },
-          {
-            groupName: 'content',
-            fields: ['*'], // Fetch all other fields
-            description: 'Record content',
-            maxTokens: 20000
-          }
-        ];
     }
+    
+    // Try to get from artifact registry
+    const config = getArtifactConfig(table);
+    if (config) {
+      return this.createFieldGroupsFromRegistry(config);
+    }
+    
+    // Generic strategy for unknown tables
+    return [
+      {
+        groupName: 'metadata',
+        fields: ['sys_id', 'name', 'sys_created_on', 'sys_updated_on'],
+        description: 'Basic record information',
+        maxTokens: 1000
+      },
+      {
+        groupName: 'content',
+        fields: ['*'], // Fetch all other fields
+        description: 'Record content',
+        maxTokens: 20000
+      }
+    ];
+  }
+
+  /**
+   * Create field groups from artifact registry configuration
+   */
+  private createFieldGroupsFromRegistry(config: ArtifactTypeConfig): FieldGroup[] {
+    const groups: FieldGroup[] = [];
+    
+    // Group 1: Metadata fields
+    const metadataFields = ['sys_id', 'sys_created_on', 'sys_updated_on', config.identifierField];
+    groups.push({
+      groupName: 'metadata',
+      fields: [...new Set(metadataFields)], // Remove duplicates
+      description: `${config.displayName} metadata`,
+      maxTokens: 2000
+    });
+    
+    // Group 2-N: Each field mapping as its own group if large
+    for (const mapping of config.fieldMappings) {
+      if (mapping.maxTokens > 5000) {
+        // Large field gets its own group
+        groups.push({
+          groupName: mapping.serviceNowField,
+          fields: [mapping.serviceNowField],
+          description: mapping.description,
+          maxTokens: mapping.maxTokens
+        });
+      }
+    }
+    
+    // Group N+1: Small fields together
+    const smallFields = config.fieldMappings
+      .filter(m => m.maxTokens <= 5000)
+      .map(m => m.serviceNowField);
+    
+    if (smallFields.length > 0) {
+      groups.push({
+        groupName: 'configuration',
+        fields: smallFields,
+        description: `${config.displayName} configuration`,
+        maxTokens: 10000
+      });
+    }
+    
+    return groups;
   }
 }
 

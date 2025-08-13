@@ -333,7 +333,7 @@ Follow this systematic approach for all debugging:
 
 ## MCP Server Capabilities
 
-Snow-Flow includes 17 specialized MCP servers, each providing comprehensive ServiceNow capabilities:
+Snow-Flow includes 18 specialized MCP servers, each providing comprehensive ServiceNow capabilities:
 
 ### 1. ServiceNow Deployment Server
 **Purpose:** Widget and artifact deployment with coherence validation
@@ -617,7 +617,39 @@ Snow-Flow includes 17 specialized MCP servers, each providing comprehensive Serv
 - Code optimization
 - Automatic documentation
 
-### 17. Snow-Flow Orchestration Server
+### 17. ServiceNow Local Development Server
+**Purpose:** Bridge between ServiceNow artifacts and Claude Code's native development tools
+
+**Key Tools:**
+- `snow_pull_artifact` - Pull any ServiceNow artifact to local files
+- `snow_push_artifact` - Push local changes back with validation
+- `snow_validate_artifact_coherence` - Validate artifact relationships
+- `snow_list_supported_artifacts` - List all supported artifact types
+- `snow_sync_status` - Check sync status of local artifacts
+- `snow_sync_cleanup` - Clean up local files after sync
+- `snow_convert_to_es5` - Convert modern JavaScript to ES5
+
+**Features:**
+- Supports 12+ artifact types dynamically
+- Smart field chunking for large artifacts
+- ES5 validation for server-side scripts
+- Coherence validation for widgets
+- Full Claude Code native tool integration
+
+**Supported Artifact Types:**
+- Service Portal Widgets (`sp_widget`)
+- Flow Designer Flows (`sys_hub_flow`)
+- Script Includes (`sys_script_include`)
+- Business Rules (`sys_script`)
+- UI Pages (`sys_ui_page`)
+- Client Scripts (`sys_script_client`)
+- UI Policies (`sys_ui_policy`)
+- REST Messages (`sys_rest_message`)
+- Transform Maps (`sys_transform_map`)
+- Scheduled Jobs (`sysauto_script`)
+- Fix Scripts (`sys_script_fix`)
+
+### 18. Snow-Flow Orchestration Server
 **Purpose:** Multi-agent coordination and task management
 
 **Key Tools:**
@@ -634,6 +666,97 @@ Snow-Flow includes 17 specialized MCP servers, each providing comprehensive Serv
 - Neural network training (TensorFlow.js)
 - Memory management
 - Performance monitoring
+
+## Local Development with Artifact Sync
+
+### Dynamic Artifact Synchronization
+
+The Local Development Server enables editing ServiceNow artifacts using Claude Code's native file tools. This creates a powerful development bridge between ServiceNow and local development environments.
+
+**Workflow:**
+
+1. **Pull Artifact to Local Files**
+   ```javascript
+   // Auto-detect artifact type
+   snow_pull_artifact({ sys_id: 'any_sys_id' });
+   
+   // Or specify table for faster pull
+   snow_pull_artifact({ 
+     sys_id: 'widget_sys_id',
+     table: 'sp_widget' 
+   });
+   ```
+
+2. **Edit with Claude Code Native Tools**
+   - Full search capabilities across files
+   - Multi-file editing and refactoring
+   - Syntax highlighting and validation
+   - Git-like diff viewing
+   - Go-to-definition and references
+
+3. **Validate Coherence**
+   ```javascript
+   // Check artifact relationships
+   snow_validate_artifact_coherence({ 
+     sys_id: 'artifact_sys_id' 
+   });
+   ```
+
+4. **Push Changes Back**
+   ```javascript
+   // Push with automatic validation
+   snow_push_artifact({ sys_id: 'artifact_sys_id' });
+   
+   // Force push despite warnings
+   snow_push_artifact({ 
+     sys_id: 'artifact_sys_id',
+     force: true 
+   });
+   ```
+
+5. **Clean Up**
+   ```javascript
+   // Remove local files after sync
+   snow_sync_cleanup({ sys_id: 'artifact_sys_id' });
+   ```
+
+**Artifact Registry:**
+
+Each artifact type is configured with:
+- Field mappings to local files
+- Context-aware wrappers for better editing
+- ES5 validation flags for server scripts
+- Coherence rules for interconnected fields
+- Preprocessors/postprocessors for data transformation
+
+**File Structure Example:**
+```
+/tmp/snow-flow-artifacts/
+├── widgets/
+│   └── my_widget/
+│       ├── my_widget.html          # Template
+│       ├── my_widget.server.js     # Server script (ES5)
+│       ├── my_widget.client.js     # Client script
+│       ├── my_widget.css           # Styles
+│       ├── my_widget.config.json   # Configuration
+│       └── README.md               # Context & instructions
+├── script_includes/
+│   └── MyScriptInclude/
+│       ├── MyScriptInclude.js      # Script
+│       └── MyScriptInclude.docs.md # Documentation
+└── business_rules/
+    └── my_rule/
+        ├── my_rule.js               # Rule script
+        └── my_rule.condition.js     # Condition
+```
+
+**Benefits:**
+- Use your favorite editor features
+- Full search and replace capabilities
+- Version control integration
+- Bulk operations across artifacts
+- Offline development capability
+- Advanced refactoring tools
 
 ## Debugging Best Practices
 

@@ -11,8 +11,14 @@ export { ServiceNowOAuth } from './utils/snow-oauth.js';
 export { ServiceNowClient } from './utils/servicenow-client.js';
 export { Logger } from './utils/logger.js';
 
-// Export MCP server
+// Export artifact sync system
+export { ArtifactLocalSync } from './utils/artifact-local-sync.js';
+export { SmartFieldFetcher } from './utils/smart-field-fetcher.js';
+export * from './utils/artifact-sync/artifact-registry.js';
+
+// Export MCP servers
 export { ServiceNowMCPServer } from './mcp/servicenow-mcp-server.js';
+export { ServiceNowLocalDevelopmentMCP } from './mcp/servicenow-local-development-mcp.js';
 
 // Snow-Flow System Integration (New)
 export { SnowFlowSystem, snowFlowSystem } from './snow-flow-system.js';
