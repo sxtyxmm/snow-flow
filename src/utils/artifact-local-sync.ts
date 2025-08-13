@@ -11,8 +11,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { ServiceNowClient } from './servicenow-client';
-import { SmartFieldFetcher } from './smart-field-fetcher';
+import { ServiceNowClient } from './servicenow-client.js';
+import { SmartFieldFetcher } from './smart-field-fetcher.js';
 import { 
   ARTIFACT_REGISTRY, 
   ArtifactTypeConfig, 
@@ -90,11 +90,7 @@ export class ArtifactLocalSync {
     } else {
       // Generic fetch for other types
       const allFields = config.fieldMappings.map(fm => fm.serviceNowField);
-      const response = await this.client.query(tableName, {
-        query: `sys_id=${sys_id}`,
-        fields: allFields.concat(['sys_id', 'sys_created_on', 'sys_updated_on']),
-        limit: 1
-      });
+      const response = await this.client.searchRecords(tableName, `sys_id=${sys_id}`, 1);
       artifactData = response.result?.[0];
     }
 
@@ -428,7 +424,7 @@ export class ArtifactLocalSync {
     // Update in ServiceNow
     try {
       console.log(`\n📤 Updating ${config.displayName} in ServiceNow...`);
-      await this.client.update(config.tableName, sys_id, updates);
+      await this.client.updateRecord(config.tableName, sys_id, updates);
       
       artifact.syncStatus = 'synced';
       artifact.lastSyncedAt = new Date();
@@ -502,7 +498,7 @@ export class ArtifactLocalSync {
     // Update in ServiceNow
     try {
       console.log(`\n📤 Updating widget in ServiceNow...`);
-      await this.client.update('sp_widget', sys_id, updates);
+      await this.client.updateRecord('sp_widget', sys_id, updates);
       
       artifact.syncStatus = 'synced';
       artifact.lastSyncedAt = new Date();
@@ -794,11 +790,7 @@ snow-flow sync status ${widget.sys_id}
     
     for (const table of tables) {
       try {
-        const response = await this.client.query(table, {
-          query: `sys_id=${sys_id}`,
-          fields: ['sys_id'],
-          limit: 1
-        });
+        const response = await this.client.searchRecords(table, `sys_id=${sys_id}`, 1);
         
         if (response.result?.[0]) {
           console.log(`🎆 Found artifact in table: ${table}`);

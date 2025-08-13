@@ -5,7 +5,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ServiceNowClientWithTracking } from '../../utils/servicenow-client-with-tracking.js';
 import { MCPLogger } from './mcp-logger.js';
-import { SnowOAuth } from '../../utils/snow-oauth.js';
+import { ServiceNowOAuth } from '../../utils/snow-oauth.js';
 import { mcpAuth } from '../../utils/mcp-auth-middleware.js';
 
 export interface MCPToolResult {
@@ -13,13 +13,14 @@ export interface MCPToolResult {
     type: string;
     text: string;
   }>;
+  [key: string]: unknown; // Add index signature for MCP SDK compatibility
 }
 
 export abstract class EnhancedBaseMCPServer {
   protected server: Server;
   protected client: ServiceNowClientWithTracking;
   protected logger: MCPLogger;
-  protected oauth: SnowOAuth;
+  protected oauth: ServiceNowOAuth;
   protected isAuthenticated: boolean = false;
 
   constructor(name: string, version: string = '1.0.0') {
@@ -33,7 +34,7 @@ export abstract class EnhancedBaseMCPServer {
     this.client = new ServiceNowClientWithTracking(this.logger);
     
     // Initialize OAuth
-    this.oauth = new SnowOAuth();
+    this.oauth = new ServiceNowOAuth();
     
     // Create server with capabilities
     this.server = new Server(

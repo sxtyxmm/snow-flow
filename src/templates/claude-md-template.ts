@@ -11,6 +11,20 @@ This document provides comprehensive instructions for Snow-Flow, an advanced Ser
 6. [Command Reference](#command-reference)
 7. [Workflow Guidelines](#workflow-guidelines)
 
+## CRITICAL: Widget Debugging Must Use Local Sync
+
+### 🔴 When User Reports Widget Issues, ALWAYS Use \`snow_pull_artifact\` FIRST!
+
+**Common scenarios that REQUIRE Local Sync:**
+- "Widget skips questions" → \`snow_pull_artifact\`
+- "Form doesn't submit properly" → \`snow_pull_artifact\`
+- "Data not displaying" → \`snow_pull_artifact\`
+- "Button doesn't work" → \`snow_pull_artifact\`
+- "Debug this widget" → \`snow_pull_artifact\`
+- "Fix widget issue" → \`snow_pull_artifact\`
+
+**DO NOT use \`snow_query_table\` for widget debugging!** It will hit token limits and you can't use native search/edit tools.
+
 ## Core Philosophy
 
 ### The Prime Directive: Verify, Don't Assume
@@ -46,6 +60,87 @@ const propertyCheck = await snow_property_manager({
 
 // Step 4: Only then make informed decisions
 \`\`\`
+
+### 🔄 CRITICAL: Sync User Modifications Before Working
+
+**When a user mentions they've modified an artifact directly in ServiceNow, ALWAYS fetch the latest version first!**
+
+If a user says any of these:
+- "I've updated the widget in ServiceNow"
+- "I made some changes to the flow"
+- "I modified the script"
+- "I adjusted the configuration"
+- "Ik heb het zelf aangepast" (Dutch: I adjusted it myself)
+
+**YOU MUST:**
+
+1. **Immediately fetch the current version from ServiceNow:**
+\`\`\`javascript
+// For any artifact the user has modified
+const currentVersion = await snow_query_table({
+  table: 'artifact_table_name',
+  query: \`sys_id=\${artifact_sys_id}\`,
+  fields: ['*'],  // Get all fields
+  limit: 1
+});
+
+// Or for widgets specifically
+const widgetData = await snow_query_table({
+  table: 'sp_widget',
+  query: \`sys_id=\${widget_sys_id}\`,
+  fields: ['name', 'template', 'client_script', 'script', 'css', 'option_schema'],
+  limit: 1
+});
+
+// Or use snow_get_by_sysid for comprehensive retrieval
+const artifact = await snow_get_by_sysid({
+  table: 'table_name',
+  sys_id: 'the_sys_id'
+});
+\`\`\`
+
+2. **Analyze the user's modifications:**
+   - Review what they changed
+   - Understand their intent
+   - Preserve their modifications
+
+3. **Build upon their changes:**
+   - Don't overwrite their work
+   - Integrate new features with their modifications
+   - Maintain their code style and patterns
+
+4. **Inform the user:**
+   - Acknowledge that you've fetched their latest changes
+   - Summarize what modifications you found
+   - Explain how you'll build upon their work
+
+**Example Workflow:**
+\`\`\`javascript
+// User: "I've updated the widget to add a loading spinner"
+// Snow-Flow response:
+
+// 1. Fetch current version
+const widget = await snow_query_table({
+  table: 'sp_widget',
+  query: \`sys_id=\${widgetSysId}\`,
+  fields: ['*'],
+  limit: 1
+});
+
+// 2. Analyze changes
+console.log("✅ Fetched your latest widget version from ServiceNow");
+console.log("📝 I see you've added a loading spinner in the template");
+
+// 3. Work with the updated version
+// ... make additional changes based on user's modifications ...
+\`\`\`
+
+**Why This Matters:**
+- User modifications are not tracked locally
+- Working with outdated versions causes conflicts
+- User's work could be lost if not synced
+- Builds trust by respecting user's contributions
+- Ensures coherent development flow
 
 ## Fundamental Rules
 
@@ -334,7 +429,66 @@ ServiceNow widgets MUST have perfect communication between client and server scr
 - [ ] Data flows correctly: Server → HTML → Client → Server
 - [ ] No orphaned methods or unused data properties
 
-### Rule 4: Evidence-Based Debugging
+### Rule 4: Use Local Sync for Widget Debugging - NOT snow_query_table!
+
+**CRITICAL: When debugging widgets, ALWAYS use \`snow_pull_artifact\` first!**
+
+\`\`\`javascript
+// ✅ CORRECT - Use Local Sync for widget debugging
+snow_pull_artifact({ 
+  sys_id: 'widget_sys_id',
+  table: 'sp_widget' 
+});
+// Now use Claude Code native search, multi-file edit, etc.
+
+// ❌ WRONG - Don't use snow_query_table for debugging widgets
+snow_query_table({ 
+  table: 'sp_widget',
+  query: 'sys_id=...',
+  fields: ['template', 'script', 'client_script'] 
+});
+// This hits token limits and can't use native tools!
+\`\`\`
+
+**Why Local Sync for Widget Debugging:**
+- **No token limits** - Handle widgets of ANY size
+- **Native search** - Find issues across all files instantly
+- **Multi-file view** - See relationships between components
+- **Better debugging** - Trace data flow, find missing methods
+- **Coherence checking** - Validate all parts work together
+
+**Widget Debugging Workflow:**
+1. User reports issue → \`snow_pull_artifact\`
+2. Search for error patterns across files
+3. Fix using multi-file edit
+4. Validate coherence → \`snow_validate_artifact_coherence\`
+5. Push fixes back → \`snow_push_artifact\`
+
+**IMPORTANT: Use Local Sync Instead of Query for Large Widgets**
+
+When you see "exceeds maximum allowed tokens" errors, don't try to fetch fields separately with \`snow_query_table\`. Use Local Sync instead:
+
+\`\`\`javascript
+// ❌ WRONG - Don't do this when debugging:
+snow_query_table({ table: 'sp_widget', fields: ['name'] });
+snow_query_table({ table: 'sp_widget', fields: ['script'] });
+snow_query_table({ table: 'sp_widget', fields: ['client_script'] });
+// This is inefficient and can't use native tools!
+
+// ✅ CORRECT - Use Local Sync:
+snow_pull_artifact({ 
+  sys_id: '01d01d6983176a502a7ea130ceaad376' 
+});
+// All files available locally with NO token limits!
+\`\`\`
+
+**Local Sync Benefits:**
+- Handles widgets of ANY size automatically
+- All files available for native tool usage
+- Maintains relationships between components
+- Enables powerful search and refactoring
+
+### Rule 5: Evidence-Based Debugging
 
 Follow this systematic approach for all debugging:
 
@@ -615,7 +769,39 @@ ServiceNow runs on Rhino engine - ES6+ syntax will cause SyntaxError and script 
 - Anomaly detection
 - Process optimization
 
-### 12. Snow-Flow Orchestration Server
+### 12. ServiceNow Local Development Server
+**Purpose:** Bridge between ServiceNow artifacts and Claude Code's native development tools
+
+**Key Tools:**
+- \`snow_pull_artifact\` - Pull any ServiceNow artifact to local files
+- \`snow_push_artifact\` - Push local changes back with validation
+- \`snow_validate_artifact_coherence\` - Validate artifact relationships
+- \`snow_list_supported_artifacts\` - List all supported artifact types
+- \`snow_sync_status\` - Check sync status of local artifacts
+- \`snow_sync_cleanup\` - Clean up local files after sync
+- \`snow_convert_to_es5\` - Convert modern JavaScript to ES5
+
+**Features:**
+- Supports 12+ artifact types dynamically
+- Smart field chunking for large artifacts
+- ES5 validation for server-side scripts
+- Coherence validation for widgets
+- Full Claude Code native tool integration
+
+**Supported Artifact Types:**
+- Service Portal Widgets (\`sp_widget\`)
+- Flow Designer Flows (\`sys_hub_flow\`)
+- Script Includes (\`sys_script_include\`)
+- Business Rules (\`sys_script\`)
+- UI Pages (\`sys_ui_page\`)
+- Client Scripts (\`sys_script_client\`)
+- UI Policies (\`sys_ui_policy\`)
+- REST Messages (\`sys_rest_message\`)
+- Transform Maps (\`sys_transform_map\`)
+- Scheduled Jobs (\`sysauto_script\`)
+- Fix Scripts (\`sys_script_fix\`)
+
+### 13. Snow-Flow Orchestration Server
 **Purpose:** Multi-agent coordination and task management
 
 **Key Tools:**
@@ -625,6 +811,13 @@ ServiceNow runs on Rhino engine - ES6+ syntax will cause SyntaxError and script 
 - \`memory_search\` - Search persistent memory
 - \`neural_train\` - Train neural networks with TensorFlow.js
 - \`performance_report\` - Generate performance reports
+
+**Features:**
+- Multi-agent coordination
+- Task orchestration
+- Neural network training (TensorFlow.js)
+- Memory management
+- Performance monitoring
 
 ### Additional Servers:
 
@@ -642,6 +835,97 @@ ServiceNow runs on Rhino engine - ES6+ syntax will cause SyntaxError and script 
 - Neural network training (TensorFlow.js)
 - Memory management
 - Performance monitoring
+
+## Local Development with Artifact Sync
+
+### Dynamic Artifact Synchronization
+
+The Local Development Server enables editing ServiceNow artifacts using Claude Code's native file tools. This creates a powerful development bridge between ServiceNow and local development environments.
+
+**Workflow:**
+
+1. **Pull Artifact to Local Files**
+   \`\`\`javascript
+   // Auto-detect artifact type
+   snow_pull_artifact({ sys_id: 'any_sys_id' });
+   
+   // Or specify table for faster pull
+   snow_pull_artifact({ 
+     sys_id: 'widget_sys_id',
+     table: 'sp_widget' 
+   });
+   \`\`\`
+
+2. **Edit with Claude Code Native Tools**
+   - Full search capabilities across files
+   - Multi-file editing and refactoring
+   - Syntax highlighting and validation
+   - Git-like diff viewing
+   - Go-to-definition and references
+
+3. **Validate Coherence**
+   \`\`\`javascript
+   // Check artifact relationships
+   snow_validate_artifact_coherence({ 
+     sys_id: 'artifact_sys_id' 
+   });
+   \`\`\`
+
+4. **Push Changes Back**
+   \`\`\`javascript
+   // Push with automatic validation
+   snow_push_artifact({ sys_id: 'artifact_sys_id' });
+   
+   // Force push despite warnings
+   snow_push_artifact({ 
+     sys_id: 'artifact_sys_id',
+     force: true 
+   });
+   \`\`\`
+
+5. **Clean Up**
+   \`\`\`javascript
+   // Remove local files after sync
+   snow_sync_cleanup({ sys_id: 'artifact_sys_id' });
+   \`\`\`
+
+**Artifact Registry:**
+
+Each artifact type is configured with:
+- Field mappings to local files
+- Context-aware wrappers for better editing
+- ES5 validation flags for server scripts
+- Coherence rules for interconnected fields
+- Preprocessors/postprocessors for data transformation
+
+**File Structure Example:**
+\`\`\`
+/tmp/snow-flow-artifacts/
+├── widgets/
+│   └── my_widget/
+│       ├── my_widget.html          # Template
+│       ├── my_widget.server.js     # Server script (ES5)
+│       ├── my_widget.client.js     # Client script
+│       ├── my_widget.css           # Styles
+│       ├── my_widget.config.json   # Configuration
+│       └── README.md               # Context & instructions
+├── script_includes/
+│   └── MyScriptInclude/
+│       ├── MyScriptInclude.js      # Script
+│       └── MyScriptInclude.docs.md # Documentation
+└── business_rules/
+    └── my_rule/
+        ├── my_rule.js               # Rule script
+        └── my_rule.condition.js     # Condition
+\`\`\`
+
+**Benefits:**
+- Use your favorite editor features
+- Full search and replace capabilities
+- Version control integration
+- Bulk operations across artifacts
+- Offline development capability
+- Advanced refactoring tools
 
 ## Debugging Best Practices
 

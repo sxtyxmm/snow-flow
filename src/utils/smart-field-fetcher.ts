@@ -5,12 +5,12 @@
  * while maintaining context relationships between fields.
  */
 
-import { ServiceNowClient } from './servicenow-client';
+import { ServiceNowClient } from './servicenow-client.js';
 import { 
   ARTIFACT_REGISTRY,
   ArtifactTypeConfig,
   getArtifactConfig
-} from './artifact-sync/artifact-registry';
+} from './artifact-sync/artifact-registry.js';
 
 export interface FetchStrategy {
   table: string;
@@ -150,15 +150,11 @@ export class SmartFieldFetcher {
       console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
       
       try {
-        const response = await this.client.query(table, {
-          query: `sys_id=${sys_id}`,
-          fields: group.fields,
-          limit: 1
-        });
+        const response = await this.client.getRecord(table, sys_id);
         
-        if (response.result?.[0]) {
+        if (response) {
           results._field_groups[group.groupName] = {
-            data: response.result[0],
+            data: response,
             description: group.description,
             fields: group.fields
           };
@@ -208,15 +204,11 @@ export class SmartFieldFetcher {
       console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
       
       try {
-        const response = await this.client.query('sp_widget', {
-          query: `sys_id=${sys_id}`,
-          fields: group.fields,
-          limit: 1
-        });
+        const response = await this.client.getRecord('sp_widget', sys_id);
         
-        if (response.result?.[0]) {
+        if (response) {
           results._field_groups[group.groupName] = {
-            data: response.result[0],
+            data: response,
             description: group.description,
             fields: group.fields
           };
@@ -282,14 +274,10 @@ export class SmartFieldFetcher {
     for (const field of fields) {
       try {
         console.log(`    📄 Fetching field: ${field}`);
-        const response = await this.client.query(table, {
-          query: `sys_id=${sys_id}`,
-          fields: [field],
-          limit: 1
-        });
+        const response = await this.client.getRecord(table, sys_id);
         
-        if (response.result?.[0]) {
-          result.data[field] = response.result[0][field];
+        if (response) {
+          result.data[field] = response[field];
           result._field_status[field] = 'success';
         }
       } catch (fieldError: any) {
@@ -360,11 +348,7 @@ export class SmartFieldFetcher {
     const query = `${field}CONTAINS${searchTerm}${additionalQuery ? '^' + additionalQuery : ''}`;
     
     try {
-      const response = await this.client.query(table, {
-        query: query,
-        fields: ['sys_id', 'name', field.substring(0, 50)], // Get preview of field
-        limit: 10
-      });
+      const response = await this.client.searchRecords(table, query, 10);
       
       console.log(`  ✅ Found ${response.result?.length || 0} matches`);
       return response.result || [];

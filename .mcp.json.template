@@ -194,6 +194,18 @@
         "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
       }
     },
+    "servicenow-local-development": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-local-development-mcp.js"
+      ],
+      "description": "Local development bridge for Claude Code - pull any ServiceNow artifact to local files with native tool integration (snow_pull_artifact, snow_push_artifact, snow_validate_artifact_coherence), smart field chunking for large artifacts, ES5 validation, coherence checking, 12+ artifact types support",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
     "snow-flow": {
       "command": "node",
       "args": [

@@ -130,7 +130,7 @@ export class ServiceNowClientWithTracking extends ServiceNowClient {
     this.mcpLogger.progress(`Fetching ${table} record: ${sysId}`);
     
     try {
-      const result = await super.getRecord(table, sysId, fields);
+      const result = await super.getRecord(table, sysId);
       
       // Estimate tokens
       if (result?.data?.result) {
