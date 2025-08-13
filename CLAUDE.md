@@ -208,6 +208,34 @@ const verify = await snow_execute_script_with_output({
 
 ServiceNow widgets MUST have perfect communication between client and server scripts. This is not optional - widgets fail when these components don't talk to each other correctly.
 
+**IMPORTANT: Smart Fetch for Large Widgets**
+
+When querying widgets with `snow_query_table` results in "exceeds maximum allowed tokens" errors, Snow-Flow automatically uses **Smart Fetch Strategy**:
+
+```javascript
+// ❌ This might fail with token limit error:
+snow_query_table({
+  table: 'sp_widget',
+  query: 'sys_id=01d01d6983176a502a7ea130ceaad376',
+  fields: ['name','template','script','client_script','css'],
+  limit: 1
+});
+
+// ✅ Snow-Flow automatically splits into chunks:
+// 1. Fetches metadata (name, title, sys_id)
+// 2. Fetches template separately
+// 3. Fetches script separately  
+// 4. Fetches client_script separately
+// 5. Fetches css separately
+// BUT maintains context that these belong together!
+```
+
+**Smart Fetch Context Preservation:**
+- Fields are fetched in chunks to respect token limits
+- Context relationships are preserved and explained
+- Coherence hints are provided (e.g., "template references {{data.x}} from server script")
+- All fields remain accessible as if fetched together
+
 **The Three-Way Contract:**
 
 **Server Script Must:**
