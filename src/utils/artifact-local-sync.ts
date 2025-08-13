@@ -841,31 +841,65 @@ snow-flow sync status ${widget.sys_id}
 
   /**
    * Pull any supported artifact type by detecting table from sys_id
+   * ENHANCED: Better error logging and more robust detection
    */
   async pullArtifactBySysId(sys_id: string): Promise<LocalArtifact> {
-    // Try to detect table by querying common tables
-    const tables = Object.keys(ARTIFACT_REGISTRY);
+    console.log(`\n🔍 Auto-detecting artifact type for sys_id: ${sys_id}`);
+    console.log(`📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} supported tables...`);
+    
+    // SMART ORDER: Check most common tables first for better performance
+    const allTables = Object.keys(ARTIFACT_REGISTRY);
+    const commonTables = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'];
+    const otherTables = allTables.filter(t => !commonTables.includes(t));
+    const tables = [...commonTables, ...otherTables]; // Common tables first
     const timeoutConfig = getMCPTimeoutConfig();
+    const errors: Array<{table: string, error: string}> = [];
     
     for (const table of tables) {
       try {
-        // Quick query with short timeout
+        console.log(`   🔎 Checking table: ${table}...`);
+        
+        // Increased timeout for better reliability
         const response = await withMCPTimeout(
           this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
-          3000, // 3 second timeout for detection
+          8000, // 8 second timeout per table (was 3s)
           `Detect table for ${sys_id}`
         );
         
         if (response.result?.[0]) {
-          console.log(`🎆 Found artifact in table: ${table}`);
+          console.log(`   ✅ Found in table: ${table}`);
+          console.log(`🎆 Auto-detection successful! Proceeding with pull...`);
           return this.pullArtifact(table, sys_id);
+        } else {
+          console.log(`   ❌ Not found in: ${table}`);
         }
       } catch (error) {
-        // Table might not exist, continue searching
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.log(`   ⚠️ Error checking ${table}: ${errorMsg}`);
+        errors.push({ table, error: errorMsg });
+        
+        // Don't fail on permission errors, timeouts, etc. - keep trying other tables
       }
     }
     
-    throw new Error(`Could not find artifact with sys_id ${sys_id} in any supported table`);
+    // Generate detailed error message
+    console.log(`\n❌ Artifact detection failed!`);
+    console.log(`🔍 Searched ${tables.length} tables for sys_id: ${sys_id}`);
+    
+    if (errors.length > 0) {
+      console.log(`\n⚠️ Errors encountered:`);
+      errors.forEach(({table, error}) => {
+        console.log(`   ${table}: ${error}`);
+      });
+    }
+    
+    console.log(`\n💡 Troubleshooting tips:`);
+    console.log(`   1. Verify the sys_id exists in ServiceNow`);
+    console.log(`   2. Check your permissions for the target table`);
+    console.log(`   3. Try specifying the table explicitly: snow_pull_artifact({sys_id, table: 'sp_widget'})`);
+    console.log(`   4. Supported tables: ${tables.join(', ')}`);
+    
+    throw new Error(`Could not find artifact with sys_id ${sys_id} in any supported table. See details above.`);
   }
 
   /**

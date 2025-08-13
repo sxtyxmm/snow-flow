@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.5.16",
-  "description": "ServiceNow development framework with EMERGENCY FIX for wrapper multiplication bug. v3.5.16 FIXES the triple/quadruple wrapper problem in v3.5.15. Features ULTRA-CONSERVATIVE wrapper system that aggressively strips ALL wrapper variations and only adds wrappers for truly minimal content (<50 chars). No more duplicate HTML comments or function wrappers. Enhanced 'snow-flow init' creates optimized settings.json with 18 MCP servers, extensive development permissions, intelligent hooks, and ServiceNow-specific commands. Features intelligent timeout configuration and comprehensive ServiceNow development workflow.",
+  "version": "3.5.17",
+  "description": "ServiceNow development framework with ROBUST artifact detection fix. v3.5.17 FIXES the intermittent 'Could not find artifact' errors in snow_pull_artifact. Enhanced pullArtifactBySysId with detailed error logging, longer timeouts (8s per table), smart table ordering, and comprehensive troubleshooting guidance. ULTRA-CONSERVATIVE wrapper system prevents duplicate HTML comments. Enhanced 'snow-flow init' creates optimized settings.json with 18 MCP servers, extensive development permissions, intelligent hooks, and ServiceNow-specific commands. Features intelligent timeout configuration and comprehensive ServiceNow development workflow.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
