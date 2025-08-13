@@ -11,6 +11,7 @@ import {
   ArtifactTypeConfig,
   getArtifactConfig
 } from './artifact-sync/artifact-registry.js';
+import { withMCPTimeout, getMCPTimeoutConfig } from './mcp-timeout-config.js';
 
 export interface FetchStrategy {
   table: string;
@@ -201,9 +202,15 @@ export class SmartFieldFetcher {
     // Try to fetch all fields first, then fall back to individual fields if too large
     console.log(`📦 Attempting to fetch complete widget data...`);
     
+    const timeoutConfig = getMCPTimeoutConfig();
+    
     try {
-      // Try to get all fields at once
-      const response = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
+      // Try to get all fields at once with timeout protection
+      const response = await withMCPTimeout(
+        this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1),
+        timeoutConfig.queryToolTimeout,
+        `Fetch complete widget ${sys_id}`
+      );
       
       if (response && response.success && response.data && response.data.result && response.data.result.length > 0) {
         const widgetData = response.data.result[0];
@@ -236,7 +243,11 @@ export class SmartFieldFetcher {
       
       // First, get the widget with minimal fields to ensure it exists
       try {
-        const basicResponse = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
+        const basicResponse = await withMCPTimeout(
+          this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1),
+          timeoutConfig.queryToolTimeout,
+          `Basic widget fetch ${sys_id}`
+        );
         
         if (!basicResponse || !basicResponse.success || !basicResponse.data || !basicResponse.data.result || basicResponse.data.result.length === 0) {
           throw new Error(`Widget with sys_id ${sys_id} not found`);
@@ -279,8 +290,12 @@ export class SmartFieldFetcher {
         if (!widgetData.script && !widgetData.client_script && !widgetData.template) {
           console.log(`⚠️ Critical fields missing, trying direct API call...`);
           
-          // Try using getRecord instead of searchRecords
-          const directResponse = await this.client.getRecord('sp_widget', sys_id);
+          // Try using getRecord instead of searchRecords with short timeout
+          const directResponse = await withMCPTimeout(
+            this.client.getRecord('sp_widget', sys_id),
+            5000, // 5 second timeout for direct fetch
+            `Direct widget fetch ${sys_id}`
+          );
           
           if (directResponse && directResponse.success && directResponse.data && directResponse.data.result) {
             const directData = directResponse.data.result;
@@ -446,11 +461,16 @@ export class SmartFieldFetcher {
     console.log(`\n🔍 DEBUG: Testing different fetch approaches for widget ${sys_id}\n`);
     
     const results: any = {};
+    const timeoutConfig = getMCPTimeoutConfig();
     
-    // Test 1: Basic searchRecords
+    // Test 1: Basic searchRecords with timeout
     try {
-      console.log(`Test 1: searchRecords...`);
-      const test1 = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
+      console.log(`Test 1: searchRecords (${timeoutConfig.queryToolTimeout/1000}s timeout)...`);
+      const test1 = await withMCPTimeout(
+        this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1),
+        timeoutConfig.queryToolTimeout,
+        'searchRecords test'
+      );
       console.log(`  - Response structure: success=${test1?.success}, has data=${!!test1?.data}, has result=${!!test1?.data?.result}`);
       if (test1?.data?.result?.[0]) {
         const widget = test1.data.result[0];
@@ -464,10 +484,14 @@ export class SmartFieldFetcher {
       console.log(`  ❌ Error: ${e.message}`);
     }
     
-    // Test 2: getRecord
+    // Test 2: getRecord with timeout
     try {
-      console.log(`Test 2: getRecord...`);
-      const test2 = await this.client.getRecord('sp_widget', sys_id);
+      console.log(`Test 2: getRecord (${timeoutConfig.queryToolTimeout/1000}s timeout)...`);
+      const test2 = await withMCPTimeout(
+        this.client.getRecord('sp_widget', sys_id),
+        timeoutConfig.queryToolTimeout,
+        'getRecord test'
+      );
       console.log(`  - Response structure: success=${test2?.success}, has data=${!!test2?.data}, has result=${!!test2?.data?.result}`);
       if (test2?.data?.result) {
         const widget = test2.data.result;
@@ -481,14 +505,18 @@ export class SmartFieldFetcher {
       console.log(`  ❌ Error: ${e.message}`);
     }
     
-    // Test 3: searchRecordsWithFields
+    // Test 3: searchRecordsWithFields with timeout
     try {
-      console.log(`Test 3: searchRecordsWithFields with specific fields...`);
-      const test3 = await this.client.searchRecordsWithFields(
-        'sp_widget', 
-        `sys_id=${sys_id}`,
-        ['name', 'script', 'client_script', 'template', 'css'],
-        1
+      console.log(`Test 3: searchRecordsWithFields (${timeoutConfig.queryToolTimeout/1000}s timeout)...`);
+      const test3 = await withMCPTimeout(
+        this.client.searchRecordsWithFields(
+          'sp_widget', 
+          `sys_id=${sys_id}`,
+          ['name', 'script', 'client_script', 'template', 'css'],
+          1
+        ),
+        timeoutConfig.queryToolTimeout,
+        'searchRecordsWithFields test'
       );
       console.log(`  - Response structure: success=${test3?.success}, has data=${!!test3?.data}, has result=${!!test3?.data?.result}`);
       if (test3?.data?.result?.[0]) {

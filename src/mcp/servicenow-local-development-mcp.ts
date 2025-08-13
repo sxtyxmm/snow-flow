@@ -207,12 +207,22 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
       
+      // Add timeout protection for MCP tool execution
+      const TOOL_TIMEOUT = 10000; // 10 seconds max per tool call
+      
       try {
         this.logger.info(`🔧 Executing tool: ${name}`, args);
         
-        let result: MCPToolResult;
+        // Create timeout promise
+        const timeoutPromise = new Promise<MCPToolResult>((_, reject) => {
+          setTimeout(() => reject(new Error(`Tool ${name} timed out after ${TOOL_TIMEOUT/1000}s`)), TOOL_TIMEOUT);
+        });
         
-        switch (name) {
+        // Execute tool with timeout protection
+        const toolPromise = (async (): Promise<MCPToolResult> => {
+          let result: MCPToolResult;
+          
+          switch (name) {
           case 'snow_pull_artifact':
             result = await this.pullArtifact(args);
             break;
@@ -257,6 +267,12 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
+          
+          return result;
+        })();
+        
+        // Race between tool execution and timeout
+        const result = await Promise.race([toolPromise, timeoutPromise]);
         
         this.logger.info(`✅ Tool ${name} completed successfully`);
         return {
@@ -282,15 +298,27 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
   private async pullArtifact(args: any): Promise<MCPToolResult> {
     const { sys_id, table } = args;
     
+    // Add timeout for pull operations
+    const PULL_TIMEOUT = 15000; // 15 seconds for pull operations
+    
     try {
-      let artifact;
-      if (table) {
-        // Use specified table
-        artifact = await this.syncManager.pullArtifact(table, sys_id);
-      } else {
-        // Auto-detect table
-        artifact = await this.syncManager.pullArtifactBySysId(sys_id);
-      }
+      const pullPromise = (async () => {
+        let artifact;
+        if (table) {
+          // Use specified table
+          artifact = await this.syncManager.pullArtifact(table, sys_id);
+        } else {
+          // Auto-detect table
+          artifact = await this.syncManager.pullArtifactBySysId(sys_id);
+        }
+        return artifact;
+      })();
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Pull operation timed out after ${PULL_TIMEOUT/1000}s`)), PULL_TIMEOUT);
+      });
+      
+      const artifact = await Promise.race([pullPromise, timeoutPromise]);
       
       return {
         content: [
@@ -480,8 +508,16 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
   private async debugWidgetFetch(args: any): Promise<MCPToolResult> {
     const { sys_id } = args;
     
+    // Debug operations get extra time
+    const DEBUG_TIMEOUT = 20000; // 20 seconds for debug operations
+    
     try {
-      const debugResults = await this.syncManager['smartFetcher'].debugFetchWidget(sys_id);
+      const debugPromise = this.syncManager['smartFetcher'].debugFetchWidget(sys_id);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Debug operation timed out after ${DEBUG_TIMEOUT/1000}s`)), DEBUG_TIMEOUT);
+      });
+      
+      const debugResults = await Promise.race([debugPromise, timeoutPromise]);
       
       let summaryText = `🔍 Debug Results for Widget ${sys_id}\n\n`;
       
@@ -542,13 +578,27 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
   }
 }
 
-// Start the server
+// Start the server with timeout protection
 async function main() {
-  const mcpServer = new ServiceNowLocalDevelopmentMCP();
-  const transport = new StdioServerTransport();
-  // Access server through a public method
-  await (mcpServer as any).server.connect(transport);
-  console.error('🚀 ServiceNow Local Development MCP Server started');
+  try {
+    const mcpServer = new ServiceNowLocalDevelopmentMCP();
+    const transport = new StdioServerTransport();
+    
+    // Add timeout for server initialization
+    const INIT_TIMEOUT = 5000; // 5 seconds to start
+    
+    const connectPromise = (mcpServer as any).server.connect(transport);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Server initialization timeout')), INIT_TIMEOUT);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    console.error('🚀 ServiceNow Local Development MCP Server started');
+  } catch (error) {
+    console.error('❌ Server failed to start within timeout:', error);
+    // Still allow server to run even if initial connection takes time
+    console.error('⏳ Server may still be initializing...');
+  }
 }
 
 if (require.main === module) {

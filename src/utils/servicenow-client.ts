@@ -143,9 +143,6 @@ export class ServiceNowClient {
     // 🔧 CRITICAL FIX: Add makeRequest method to Axios instance to fix phantom calls
     // Some code expects makeRequest to exist on this.client (the Axios instance)
     (this.client as any).makeRequest = async (config: any) => {
-      this.logger.debug('🔧 AXIOS makeRequest called! Config:', config);
-      this.logger.debug('🔧 Routing to appropriate HTTP method...');
-      
       // Route to the appropriate Axios method based on the request config
       const method = (config.method || 'GET').toLowerCase();
       const url = config.url || config.endpoint;
@@ -3457,10 +3454,7 @@ try {
    * This method provides compatibility for code that expects makeRequest
    */
   async makeRequest(config: any): Promise<any> {
-    this.logger.info('🔧 MAKEQUEST CALLED! Stack trace:', new Error().stack);
-    this.logger.info('🔧 TEMP FIX: makeRequest called with config:', config);
-    this.logger.info('🔧 This instance constructor:', this.constructor.name);
-    this.logger.info('🔧 This instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+    // Debug logging removed - was causing noise in production
     
     try {
       await this.ensureAuthenticated();
@@ -3469,8 +3463,6 @@ try {
       const method = (config.method || 'GET').toLowerCase();
       const url = config.url || config.endpoint;
       const data = config.data || config.body;
-      
-      this.logger.info(`🔧 Routing ${method.toUpperCase()} request to: ${url}`);
       
       switch (method) {
         case 'get':

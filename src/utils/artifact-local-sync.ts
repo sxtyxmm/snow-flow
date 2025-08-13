@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { ServiceNowClient } from './servicenow-client.js';
 import { SmartFieldFetcher } from './smart-field-fetcher.js';
+import { withMCPTimeout, getMCPTimeoutConfig } from './mcp-timeout-config.js';
 import { 
   ARTIFACT_REGISTRY, 
   ArtifactTypeConfig, 
@@ -46,6 +47,8 @@ export interface LocalFile {
   currentContent?: string;
   isModified: boolean;
   fieldMapping?: FieldMapping;  // Reference to field mapping from registry
+  existedBefore?: boolean;  // Did file exist before pull?
+  previousContent?: string;  // Content before overwrite
 }
 
 export class ArtifactLocalSync {
@@ -139,20 +142,50 @@ export class ArtifactLocalSync {
     }
 
     console.log(`\n🔄 Pulling ${config.displayName} (${sys_id}) to local files...`);
+    console.log(`📋 Snow-Flow v3.5.16 - ULTRA-CONSERVATIVE Wrapper System (No More Duplicates!)`);
+    console.log(`⚠️  CRITICAL FIX: Aggressive strip & minimal wrapper addition only`);
+    
+    // Get timeout configuration
+    const timeoutConfig = getMCPTimeoutConfig();
     
     // Use smart fetcher for known types, otherwise direct query
     let artifactData: any;
-    if (tableName === 'sp_widget') {
-      artifactData = await this.smartFetcher.fetchWidget(sys_id);
-    } else if (tableName === 'sys_hub_flow') {
-      artifactData = await this.smartFetcher.fetchFlow(sys_id);
-    } else if (tableName === 'sys_script') {
-      artifactData = await this.smartFetcher.fetchBusinessRule(sys_id);
-    } else {
-      // Generic fetch for other types
-      const allFields = config.fieldMappings.map(fm => fm.serviceNowField);
-      const response = await this.client.searchRecords(tableName, `sys_id=${sys_id}`, 1);
-      artifactData = response.result?.[0];
+    // Fetch with timeout protection
+    try {
+      if (tableName === 'sp_widget') {
+        artifactData = await withMCPTimeout(
+          this.smartFetcher.fetchWidget(sys_id),
+          timeoutConfig.pullToolTimeout,
+          `Fetch widget ${sys_id}`
+        );
+      } else if (tableName === 'sys_hub_flow') {
+        artifactData = await withMCPTimeout(
+          this.smartFetcher.fetchFlow(sys_id),
+          timeoutConfig.pullToolTimeout,
+          `Fetch flow ${sys_id}`
+        );
+      } else if (tableName === 'sys_script') {
+        artifactData = await withMCPTimeout(
+          this.smartFetcher.fetchBusinessRule(sys_id),
+          timeoutConfig.pullToolTimeout,
+          `Fetch business rule ${sys_id}`
+        );
+      } else {
+        // Generic fetch for other types
+        const allFields = config.fieldMappings.map(fm => fm.serviceNowField);
+        const response = await withMCPTimeout(
+          this.client.searchRecords(tableName, `sys_id=${sys_id}`, 1),
+          timeoutConfig.queryToolTimeout,
+          `Query ${tableName} ${sys_id}`
+        );
+        artifactData = response.result?.[0];
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('timed out')) {
+        console.error(`⏱️ Fetch timed out - ServiceNow may be slow or artifact is very large`);
+        console.error(`💡 Try using snow_debug_widget_fetch to diagnose the issue`);
+      }
+      throw error;
     }
 
     if (!artifactData) {
@@ -193,9 +226,23 @@ export class ArtifactLocalSync {
         .replace('{api_name}', artifactData.api_name || sanitizedName)
         .replace('{short_description}', artifactData.short_description || sanitizedName);
       
-      // Generate header/footer with replacements
-      const header = this.replacePlaceholders(mapping.wrapperHeader || '', artifactData);
-      const footer = this.replacePlaceholders(mapping.wrapperFooter || '', artifactData);
+      // ULTRA-CONSERVATIVE WRAPPER SYSTEM: When in doubt, don't add wrappers
+      let header = '';
+      let footer = '';
+      
+      // FAILSAFE: Only add wrappers if we're absolutely certain it's safe
+      if (mapping.wrapperHeader && mapping.wrapperFooter) {
+        const shouldAddWrappers = this.needsWrappers(processedContent, mapping);
+        
+        if (shouldAddWrappers && processedContent.trim().length < 50) {
+          // EXTRA SAFETY: Only for very short content
+          header = this.replacePlaceholders(mapping.wrapperHeader, artifactData);
+          footer = this.replacePlaceholders(mapping.wrapperFooter, artifactData);
+          console.log(`   🔧 Adding wrappers for ${filename} (content is minimal: ${processedContent.trim().length} chars)`);
+        } else {
+          console.log(`   ✅ Skipping wrappers for ${filename} (conservative approach)`);
+        }
+      }
       
       const file = this.createLocalFile(
         artifactPath,
@@ -359,10 +406,24 @@ export class ArtifactLocalSync {
       // In real implementation, prompt for confirmation
     }
     
-    // Update in ServiceNow
+    // Update in ServiceNow with timeout protection
     try {
       console.log(`\n📤 Updating ${config.displayName} in ServiceNow...`);
-      await this.client.updateRecord(config.tableName, sys_id, updates);
+      const timeoutConfig = getMCPTimeoutConfig();
+      
+      const updateResult = await withMCPTimeout(
+        this.client.updateRecord(config.tableName, sys_id, updates),
+        timeoutConfig.pushToolTimeout,
+        `Update ${config.displayName} ${sys_id}`
+      );
+      
+      // CRITICAL FIX: Check if the API call was actually successful
+      if (!updateResult || !updateResult.success) {
+        const errorMsg = updateResult?.error || 'Unknown API error';
+        console.error(`❌ ServiceNow API returned failure: ${errorMsg}`);
+        artifact.syncStatus = 'pending_upload';
+        return false;
+      }
       
       artifact.syncStatus = 'synced';
       artifact.lastSyncedAt = new Date();
@@ -424,6 +485,34 @@ export class ArtifactLocalSync {
     const filePath = path.join(dirPath, filename);
     const fullContent = header + content + footer;
     
+    // CRITICAL FIX: Check if file exists and handle overwrites intelligently
+    let fileExists = false;
+    let existingContent = '';
+    
+    if (fs.existsSync(filePath)) {
+      fileExists = true;
+      existingContent = fs.readFileSync(filePath, 'utf8');
+      
+      // Check if existing content is the same (avoid unnecessary writes)
+      if (existingContent === fullContent) {
+        console.log(`   📄 Unchanged: ${filename} (identical content, skipping write)`);
+        return {
+          filename,
+          path: filePath,
+          field,
+          type: type as any,
+          originalContent: content,
+          isModified: false
+        };
+      }
+      
+      console.log(`   🔄 Overwriting: ${filename}`);
+      console.log(`   ℹ️ File size: ${existingContent.length} → ${fullContent.length} chars`);
+    } else {
+      console.log(`   📝 Creating: ${filename}`);
+    }
+    
+    // Write the file
     fs.writeFileSync(filePath, fullContent, 'utf8');
     
     return {
@@ -432,7 +521,9 @@ export class ArtifactLocalSync {
       field,
       type: type as any,
       originalContent: content,
-      isModified: false
+      isModified: fileExists, // Mark as modified if we overwrote existing file
+      existedBefore: fileExists,
+      previousContent: existingContent
     };
   }
 
@@ -603,29 +694,123 @@ snow-flow sync status ${widget.sys_id}
   }
 
   /**
-   * Strip headers/footers we added - now uses field mapping for accuracy
+   * AGGRESSIVE STRIP FUNCTION: Remove ALL possible Snow-Flow wrapper variations
+   * FIXED: Handles multiple/nested wrappers and all patterns
    */
   private stripAddedWrappers(content: string, type: string, fieldMapping?: FieldMapping): string {
-    // Remove our added comments and wrappers
     let cleaned = content;
     
-    if (type === 'js') {
-      // Remove wrapper function if we added it
-      cleaned = cleaned.replace(/^\(function\(\) \{\n/, '');
-      cleaned = cleaned.replace(/\n\}\)\(\);$/, '');
-      
-      // Remove our header comments
-      cleaned = cleaned.replace(/^\/\*\*[\s\S]*?\*\/\n\n/, '');
-      cleaned = cleaned.replace(/^function\(/, 'function(');
-    } else if (type === 'html') {
-      // Remove our HTML comments
-      cleaned = cleaned.replace(/^<!-- ServiceNow Widget Template -->[\s\S]*?-->\n\n/, '');
-    } else if (type === 'css') {
-      // Remove our CSS comments
-      cleaned = cleaned.replace(/^\/\* ServiceNow Widget Styles \*\/[\s\S]*?\*\/\n\n/, '');
+    // STEP 1: Remove ALL HTML comment variations (multiple times if needed)
+    if (type === 'html') {
+      let previousLength;
+      do {
+        previousLength = cleaned.length;
+        
+        // Remove ServiceNow Widget Template comments (all variations)
+        cleaned = cleaned.replace(/^\s*<!--\s*ServiceNow\s+Widget\s+Template[\s\S]*?-->\s*\n?/gmi, '');
+        
+        // Remove Angular bindings comments
+        cleaned = cleaned.replace(/^\s*<!--\s*Angular\s+bindings[\s\S]*?-->\s*\n?/gmi, '');
+        
+        // Remove any other HTML comments at start
+        cleaned = cleaned.replace(/^\s*<!--[\s\S]*?-->\s*\n?/gm, '');
+        
+      } while (cleaned.length !== previousLength); // Keep going until no more changes
     }
     
+    // STEP 2: Remove ALL JS comment variations (multiple times if needed)
+    if (type === 'js') {
+      let previousLength;
+      do {
+        previousLength = cleaned.length;
+        
+        // Remove Server/Client script comment blocks
+        cleaned = cleaned.replace(/^\s*\/\*\*[\s\S]*?\*\/\s*\n?/gm, '');
+        
+        // Remove function wrappers
+        cleaned = cleaned.replace(/^\s*\(function\s*\(\s*\)\s*\{\s*\n?/gm, '');
+        cleaned = cleaned.replace(/\s*\n?\s*\}\s*\)\s*\(\s*\)\s*;?\s*$/gm, '');
+        
+        // Remove function( wrappers for client scripts
+        cleaned = cleaned.replace(/^\s*function\s*\(\s*$/gm, '');
+        cleaned = cleaned.replace(/^\s*\)\s*$/gm, '');
+        
+      } while (cleaned.length !== previousLength);
+    }
+    
+    // STEP 3: Remove ALL CSS comment variations
+    if (type === 'css') {
+      let previousLength;
+      do {
+        previousLength = cleaned.length;
+        
+        // Remove widget style comments
+        cleaned = cleaned.replace(/^\s*\/\*[\s\S]*?\*\/\s*\n?/gm, '');
+        
+      } while (cleaned.length !== previousLength);
+    }
+    
+    // STEP 4: Clean up excessive whitespace
+    cleaned = cleaned.replace(/^\s*\n+/gm, ''); // Remove empty lines at start
+    cleaned = cleaned.replace(/\n\s*$/gm, '');  // Remove trailing whitespace
+    
     return cleaned.trim();
+  }
+  
+  
+  /**
+   * CONSERVATIVE WRAPPER DETECTION: Only add wrappers if content is truly minimal
+   * FIXED: Now properly detects ALL types of existing wrappers/comments
+   */
+  private needsWrappers(content: string, mapping: FieldMapping): boolean {
+    if (!content || !content.trim()) {
+      return false; // Empty content doesn't need wrappers
+    }
+    
+    const trimmed = content.trim();
+    
+    // CONSERVATIVE APPROACH: If content has ANY of these indicators, skip wrappers
+    
+    // 1. Already has HTML comments (ANY HTML comments)
+    if (trimmed.includes('<!--')) {
+      console.log(`   🔍 Detected existing HTML comments - skipping wrappers`);
+      return false;
+    }
+    
+    // 2. Already has JS comments (ANY block comments)
+    if (trimmed.includes('/**') || trimmed.includes('/*')) {
+      console.log(`   🔍 Detected existing JS comments - skipping wrappers`);
+      return false;
+    }
+    
+    // 3. Already has function wrappers (ANY function patterns)
+    if (trimmed.includes('(function') || trimmed.match(/^function\s*\(/)) {
+      console.log(`   🔍 Detected existing function patterns - skipping wrappers`);
+      return false;
+    }
+    
+    // 4. Content is substantial (more than just basic code)
+    if (trimmed.length > 200) {
+      console.log(`   🔍 Content is substantial (${trimmed.length} chars) - skipping wrappers`);
+      return false;
+    }
+    
+    // 5. Contains ServiceNow-specific patterns
+    const serviceNowPatterns = [
+      'data.', 'input.', 'options.', '$scope.', 'c.server', 'gs.', '$sp.',
+      'ng-', 'angular', 'spModal', 'spUtil', '{{', 'glide'
+    ];
+    
+    for (const pattern of serviceNowPatterns) {
+      if (trimmed.toLowerCase().includes(pattern.toLowerCase())) {
+        console.log(`   🔍 Detected ServiceNow pattern '${pattern}' - skipping wrappers`);
+        return false;
+      }
+    }
+    
+    // ONLY add wrappers for truly minimal/empty content
+    console.log(`   ✨ Content is minimal and clean - adding wrappers`);
+    return true;
   }
 
   /**
@@ -660,10 +845,16 @@ snow-flow sync status ${widget.sys_id}
   async pullArtifactBySysId(sys_id: string): Promise<LocalArtifact> {
     // Try to detect table by querying common tables
     const tables = Object.keys(ARTIFACT_REGISTRY);
+    const timeoutConfig = getMCPTimeoutConfig();
     
     for (const table of tables) {
       try {
-        const response = await this.client.searchRecords(table, `sys_id=${sys_id}`, 1);
+        // Quick query with short timeout
+        const response = await withMCPTimeout(
+          this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
+          3000, // 3 second timeout for detection
+          `Detect table for ${sys_id}`
+        );
         
         if (response.result?.[0]) {
           console.log(`🎆 Found artifact in table: ${table}`);

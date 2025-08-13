@@ -2599,6 +2599,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "servicenow-system-properties",
       "servicenow-update-set",
       "servicenow-development-assistant",
+      "servicenow-local-development",
       "servicenow-security-compliance",
       "servicenow-reporting-analytics",
       "servicenow-machine-learning",
@@ -2610,7 +2611,101 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     ],
     "permissions": {
       "allow": [
-        "Bash(*)",
+        // Snow-Flow Core Commands
+        "Bash(npx snow-flow *)",
+        "Bash(snow-flow *)",
+        "Bash(./snow-flow *)",
+        
+        // Development Commands
+        "Bash(npm run *)",
+        "Bash(npm install *)",
+        "Bash(npm update *)",
+        "Bash(npm test *)",
+        "Bash(npm run lint)",
+        "Bash(npm run build)",
+        "Bash(npm run dev)",
+        "Bash(npm start)",
+        "Bash(yarn *)",
+        "Bash(pnpm *)",
+        
+        // Git Operations
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(git add *)",
+        "Bash(git commit *)",
+        "Bash(git push *)",
+        "Bash(git pull *)",
+        "Bash(git branch *)",
+        "Bash(git checkout *)",
+        "Bash(git merge *)",
+        "Bash(git config *)",
+        "Bash(git remote *)",
+        
+        // GitHub CLI
+        "Bash(gh *)",
+        
+        // Node.js and System Commands
+        "Bash(node *)",
+        "Bash(npm *)",
+        "Bash(npx *)",
+        "Bash(which *)",
+        "Bash(pwd)",
+        "Bash(ls *)",
+        "Bash(cd *)",
+        "Bash(mkdir *)",
+        "Bash(rm *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(find *)",
+        "Bash(grep *)",
+        "Bash(cat *)",
+        "Bash(head *)",
+        "Bash(tail *)",
+        "Bash(less *)",
+        "Bash(more *)",
+        
+        // API Testing and Network
+        "Bash(curl *)",
+        "Bash(wget *)",
+        "Bash(ping *)",
+        "Bash(telnet *)",
+        "Bash(nc *)",
+        "Bash(netstat *)",
+        
+        // JSON and Data Processing
+        "Bash(jq *)",
+        "Bash(awk *)",
+        "Bash(sed *)",
+        "Bash(sort *)",
+        "Bash(uniq *)",
+        "Bash(wc *)",
+        
+        // Process and System Monitoring
+        "Bash(ps *)",
+        "Bash(top)",
+        "Bash(htop)",
+        "Bash(lsof *)",
+        "Bash(df *)",
+        "Bash(du *)",
+        "Bash(free *)",
+        "Bash(uptime)",
+        
+        // Environment
+        "Bash(env)",
+        "Bash(export *)",
+        "Bash(echo *)",
+        "Bash(printenv *)",
+        
+        // Docker (if used)
+        "Bash(docker *)",
+        "Bash(docker-compose *)",
+        
+        // ServiceNow CLI (if exists)
+        "Bash(sn *)",
+        "Bash(snc *)",
+        
+        // File Operations - Claude Code Tools
         "Read(*)",
         "Write(*)",
         "Edit(*)",
@@ -2627,10 +2722,38 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         "Task(*)",
         "ListMcpResourcesTool",
         "ReadMcpResourceTool",
+        
+        // MCP Tools - All ServiceNow Servers
         "mcp__servicenow-*",
         "mcp__snow-flow__*"
       ],
-      "deny": []
+      "deny": [
+        "Bash(rm -rf /)",
+        "Bash(sudo rm *)",
+        "Bash(sudo *)"
+      ]
+    },
+    "hooks": {
+      "PreCompact": [
+        {
+          "matcher": "manual",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "/bin/bash -c 'INPUT=$(cat); CUSTOM=$(echo \"$INPUT\" | jq -r \".custom_instructions // \\\"\\\"\"); echo \"🔄 PreCompact Guidance:\"; echo \"📋 IMPORTANT: Review CLAUDE.md in project root for:\"; echo \"   • 18+ MCP servers and snow_pull_artifact for widget debugging\"; echo \"   • Swarm coordination strategies (hierarchical, mesh, adaptive)\"; echo \"   • SPARC methodology workflows with batchtools optimization\"; echo \"   • Critical concurrent execution rules (GOLDEN RULE: 1 MESSAGE = ALL OPERATIONS)\"; if [ -n \"$CUSTOM\" ]; then echo \"🎯 Custom compact instructions: $CUSTOM\"; fi; echo \"✅ Ready for compact operation\"'"
+            }
+          ]
+        },
+        {
+          "matcher": "auto",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "/bin/bash -c 'echo \"🔄 Auto-Compact Guidance (Context Window Full):\"; echo \"📋 CRITICAL: Before compacting, ensure you understand:\"; echo \"   • All 18+ MCP servers including servicenow-local-development\"; echo \"   • Use snow_pull_artifact for widget debugging (NOT snow_query_table)\"; echo \"   • Concurrent execution patterns from CLAUDE.md\"; echo \"   • Batchtools optimization for 300% performance gains\"; echo \"   • Swarm coordination strategies for complex tasks\"; echo \"⚡ Apply GOLDEN RULE: Always batch operations in single messages\"; echo \"✅ Auto-compact proceeding with full agent context\"'"
+            }
+          ]
+        }
+      ]
     },
     "env": {
       "BASH_DEFAULT_TIMEOUT_MS": "0",
@@ -2645,12 +2768,16 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "32000",
       "CLAUDE_CODE_TIMEOUT": "0",
       "CLAUDE_CODE_SESSION_TIMEOUT": "0",
-      "CLAUDE_CODE_EXECUTION_TIMEOUT": "0"
+      "CLAUDE_CODE_EXECUTION_TIMEOUT": "0",
+      "SNOW_FLOW_DEBUG": "false",
+      "SNOW_FLOW_LOG_LEVEL": "info",
+      "MCP_DEBUG": "false",
+      "NODE_ENV": "development"
     },
     "cleanupPeriodDays": 90,
     "includeCoAuthoredBy": true
-    // Removed invalid properties: automation, snowFlow, mcpServers
-    // These were causing "Property X is not allowed" errors in Claude Code
+    // Snow-Flow v3.5.13+ optimized settings with servicenow-local-development
+    // Comprehensive permissions for Snow-Flow development workflow
   };
   
   const claudeSettingsPath = join(targetDir, '.claude/settings.json');
