@@ -14,6 +14,13 @@ export class ServiceNowClientWithTracking extends ServiceNowClient {
   }
 
   /**
+   * Get the base ServiceNow client for audit logger integration
+   */
+  public getBaseClient(): ServiceNowClient {
+    return this;
+  }
+
+  /**
    * Override makeRequest to add tracking
    */
   async makeRequest(config: any): Promise<any> {

@@ -17,6 +17,7 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { mcpAuth } from '../utils/mcp-auth-middleware.js';
 import { mcpConfig } from '../utils/mcp-config-manager.js';
 import { MCPLogger } from './shared/mcp-logger.js';
+import { ServiceNowAuditLogger, getAuditLogger } from '../utils/servicenow-audit-logger.js';
 
 interface SchedulePattern {
   type: 'daily' | 'weekly' | 'monthly' | 'interval' | 'cron';
@@ -35,6 +36,7 @@ class ServiceNowAutomationMCP {
   private server: Server;
   private client: ServiceNowClient;
   private logger: MCPLogger;
+  private auditLogger: ServiceNowAuditLogger;
   private config: ReturnType<typeof mcpConfig.getConfig>;
 
   constructor() {
@@ -52,6 +54,8 @@ class ServiceNowAutomationMCP {
 
     this.client = new ServiceNowClient();
     this.logger = new MCPLogger('ServiceNowAutomationMCP');
+    this.auditLogger = getAuditLogger(this.logger, 'servicenow-automation');
+    this.auditLogger.setServiceNowClient(this.client);
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
@@ -1937,11 +1941,24 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
    * Execute script with output retrieval
    */
   private async executeScriptWithOutput(args: any) {
+    const startTime = Date.now();
     try {
       this.logger.info('Executing script with output retrieval...');
       
       // Create a unique execution ID
       const executionId = `snow_flow_exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      // Log script execution start
+      await this.getAuditLogger().logOperation('script_execution_start', 'INFO', {
+        message: 'Starting background script execution with output capture',
+        metadata: {
+          execution_id: executionId,
+          script_length: args.script.length,
+          has_es5_validation: true,
+          capture_logs: args.capture_logs,
+          max_wait: args.max_wait || 5000
+        }
+      });
       
       // Wrap the script to capture output
       const wrappedScript = `
@@ -2056,6 +2073,36 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
         }
       }
       
+      const duration = Date.now() - startTime;
+      const success = scriptOutput?.success !== false;
+      const outputLines = scriptOutput?.output?.length || 0;
+      const errorLines = scriptOutput?.errors?.length || 0;
+      
+      // Log script execution completion with audit
+      await this.getAuditLogger().logScriptExecution(
+        'background',
+        duration,
+        success,
+        scriptOutput?.errors || [],
+        outputLines
+      );
+      
+      // Enhanced audit log with detailed execution info
+      await this.getAuditLogger().logOperation('script_execution_complete', success ? 'INFO' : 'ERROR', {
+        message: `Background script execution ${success ? 'completed successfully' : 'failed'}`,
+        duration_ms: duration,
+        metadata: {
+          execution_id: executionId,
+          output_lines: outputLines,
+          error_lines: errorLines,
+          script_success: success,
+          execution_method: 'background_with_output',
+          es5_validated: true,
+          captured_output: !!scriptOutput
+        },
+        success
+      });
+      
       return {
         content: [{
           type: 'text',
@@ -2063,6 +2110,17 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
         }]
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Log failed script execution
+      await this.getAuditLogger().logScriptExecution(
+        'background',
+        duration,
+        false,
+        { message: errorMessage, type: 'exception' }
+      );
+      
       this.logger.error('Failed to execute script with output:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to execute script: ${error}`);
     }
@@ -2712,6 +2770,13 @@ ${groupedResults.suites.slice(0, 10).map(suite =>
       this.logger.error('Failed to trace execution:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to trace execution: ${error}`);
     }
+  }
+
+  /**
+   * Get audit logger for logging Snow-Flow activities
+   */
+  public getAuditLogger(): ServiceNowAuditLogger {
+    return this.auditLogger;
   }
 
   async run() {

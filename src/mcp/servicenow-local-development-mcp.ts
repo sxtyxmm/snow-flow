@@ -297,6 +297,7 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
 
   private async pullArtifact(args: any): Promise<MCPToolResult> {
     const { sys_id, table } = args;
+    const startTime = Date.now();
     
     // Add timeout for pull operations
     const PULL_TIMEOUT = 15000; // 15 seconds for pull operations
@@ -319,6 +320,29 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
       });
       
       const artifact = await Promise.race([pullPromise, timeoutPromise]);
+      const duration = Date.now() - startTime;
+      
+      // Log artifact sync operation
+      await this.getAuditLogger().logArtifactSync(
+        'pull',
+        artifact.tableName,
+        sys_id,
+        artifact.name,
+        artifact.files.length,
+        duration,
+        true
+      );
+      
+      // Special logging for widgets
+      if (artifact.tableName === 'sp_widget') {
+        await this.getAuditLogger().logWidgetOperation(
+          'pull',
+          sys_id,
+          artifact.name,
+          duration,
+          true
+        );
+      }
       
       return {
         content: [
@@ -329,7 +353,12 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
         ]
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Log failed operation
+      await this.getAuditLogger().logArtifactSync('pull', table || 'unknown', sys_id, undefined, 0, duration, false);
+      
       return {
         content: [
           {
@@ -343,9 +372,50 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
 
   private async pushArtifact(args: any): Promise<MCPToolResult> {
     const { sys_id, force = false } = args;
+    const startTime = Date.now();
     
     try {
       const success = await this.syncManager.pushArtifact(sys_id);
+      const duration = Date.now() - startTime;
+      
+      // Get artifact info for logging
+      const localArtifacts = this.syncManager.listLocalArtifacts();
+      const artifact = localArtifacts.find(a => a.sys_id === sys_id);
+      
+      if (success) {
+        // Log successful push
+        await this.getAuditLogger().logArtifactSync(
+          'push',
+          artifact?.tableName || 'unknown',
+          sys_id,
+          artifact?.name,
+          artifact?.files.length,
+          duration,
+          true
+        );
+        
+        // Special logging for widgets
+        if (artifact?.tableName === 'sp_widget') {
+          await this.getAuditLogger().logWidgetOperation(
+            'push',
+            sys_id,
+            artifact.name,
+            duration,
+            true
+          );
+        }
+      } else {
+        // Log failed push
+        await this.getAuditLogger().logArtifactSync(
+          'push',
+          artifact?.tableName || 'unknown',
+          sys_id,
+          artifact?.name,
+          artifact?.files.length,
+          duration,
+          false
+        );
+      }
       
       return {
         content: [
@@ -358,7 +428,12 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
         ]
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Log failed operation
+      await this.getAuditLogger().logArtifactSync('push', 'unknown', sys_id, undefined, 0, duration, false);
+      
       return {
         content: [
           {

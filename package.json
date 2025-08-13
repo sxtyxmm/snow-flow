@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.5.17",
-  "description": "ServiceNow development framework with ROBUST artifact detection fix. v3.5.17 FIXES the intermittent 'Could not find artifact' errors in snow_pull_artifact. Enhanced pullArtifactBySysId with detailed error logging, longer timeouts (8s per table), smart table ordering, and comprehensive troubleshooting guidance. ULTRA-CONSERVATIVE wrapper system prevents duplicate HTML comments. Enhanced 'snow-flow init' creates optimized settings.json with 18 MCP servers, extensive development permissions, intelligent hooks, and ServiceNow-specific commands. Features intelligent timeout configuration and comprehensive ServiceNow development workflow.",
+  "version": "3.6.0",
+  "description": "ServiceNow development framework with COMPREHENSIVE AUDIT LOGGING. v3.6.0 introduces complete audit trail for all Snow-Flow activities in ServiceNow with source 'snow-flow'. Tracks API calls, widget operations, script execution, authentication, and tool usage with token consumption data. Enhanced compliance support for SOX/GDPR/HIPAA with detailed security monitoring. Includes robust artifact detection fix, ultra-conservative wrapper system, and optimized settings.json with 18 MCP servers. Features intelligent timeout configuration and comprehensive ServiceNow development workflow.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
