@@ -1242,6 +1242,36 @@ export class ServiceNowClient {
   }
 
   /**
+   * Search records with specific fields
+   */
+  async searchRecordsWithFields(table: string, query: string, fields: string[], limit: number = 10): Promise<ServiceNowAPIResponse<any>> {
+    try {
+      await this.ensureAuthenticated();
+      
+      const url = `/api/now/table/${table}`;
+      const params: any = {
+        sysparm_query: query,
+        sysparm_limit: limit.toString(),
+        sysparm_fields: fields.join(',')
+      };
+      
+      const response = await this.client.get(url, { params });
+      
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('API Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: null
+      };
+    }
+  }
+
+  /**
    * Search records in a table using encoded query
    */
   async searchRecords(table: string, query: string, limit: number = 10): Promise<ServiceNowAPIResponse<any>> {

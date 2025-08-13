@@ -43,6 +43,31 @@ export class ServiceNowClientWithTracking extends ServiceNowClient {
   }
 
   /**
+   * Override searchRecordsWithFields to add tracking
+   */
+  async searchRecordsWithFields(table: string, query: string, fields: string[], limit: number = 10): Promise<any> {
+    this.mcpLogger.progress(`Searching ${table} with specific fields: ${fields.join(', ')}`);
+    
+    try {
+      const result = await super.searchRecordsWithFields(table, query, fields, limit);
+      
+      // Estimate tokens based on fields requested
+      const fieldCount = fields.length;
+      const estimatedTokens = Math.min(fieldCount * 100, 1000); // Rough estimate
+      this.mcpLogger.trackTokens(estimatedTokens, 0);
+      
+      if (result?.data?.result?.length > 0) {
+        this.mcpLogger.info(`Found ${result.data.result.length} records with ${fieldCount} fields`);
+      }
+      
+      return result;
+    } catch (error) {
+      this.mcpLogger.error('Search with fields failed', error);
+      throw error;
+    }
+  }
+
+  /**
    * Override searchRecords to add tracking
    */
   async searchRecords(table: string, query: string, limit: number = 10): Promise<any> {

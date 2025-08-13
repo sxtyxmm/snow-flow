@@ -190,7 +190,6 @@ export class SmartFieldFetcher {
    * (Wrapper for backward compatibility)
    */
   async fetchWidget(sys_id: string): Promise<any> {
-    return this.fetchArtifact('sp_widget', sys_id);
     console.log(`\n🔍 Smart fetching widget: ${sys_id}`);
     
     const results: any = {
@@ -199,35 +198,116 @@ export class SmartFieldFetcher {
       _field_groups: {}
     };
 
-    // Fetch each field group
-    for (const group of WIDGET_FIELD_GROUPS) {
-      console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
+    // Try to fetch all fields first, then fall back to individual fields if too large
+    console.log(`📦 Attempting to fetch complete widget data...`);
+    
+    try {
+      // Try to get all fields at once
+      const response = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
       
-      try {
-        const response = await this.client.getRecord('sp_widget', sys_id);
+      if (response && response.result && response.result.length > 0) {
+        const widgetData = response.result[0];
+        console.log(`✅ Successfully fetched complete widget`);
         
-        if (response) {
+        // Organize into field groups for better context
+        for (const group of WIDGET_FIELD_GROUPS) {
+          const groupData: any = {};
+          for (const fieldName of group.fields) {
+            if (widgetData[fieldName] !== undefined) {
+              groupData[fieldName] = widgetData[fieldName];
+            }
+          }
+          
           results._field_groups[group.groupName] = {
-            data: response,
+            data: groupData,
             description: group.description,
             fields: group.fields
           };
-          
-          // Add to flat structure for easy access
-          Object.assign(results, response.result[0]);
         }
-      } catch (error: any) {
-        console.log(`⚠️ Failed to fetch ${group.groupName}: ${error.message}`);
         
-        // If group fails due to size, fetch fields individually
-        if (error.message?.includes('exceeds maximum allowed tokens')) {
-          results._field_groups[group.groupName] = await this.fetchFieldsIndividually(
+        // Add complete widget data to flat structure
+        Object.assign(results, widgetData);
+      } else {
+        throw new Error('Widget not found');
+      }
+    } catch (error: any) {
+      console.log(`⚠️ Complete fetch failed: ${error.message}`);
+      console.log(`🔄 Switching to field-by-field fetching...`);
+      
+      // Fall back to fetching fields per group or individually
+      for (const group of WIDGET_FIELD_GROUPS) {
+        console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
+        
+        try {
+          // Try to fetch all fields in this group at once
+          const groupResponse = await this.client.searchRecordsWithFields(
             'sp_widget',
-            sys_id,
+            `sys_id=${sys_id}`,
             group.fields,
-            group.description
+            1
           );
+          
+          if (groupResponse && groupResponse.success && groupResponse.data && groupResponse.data.result && groupResponse.data.result.length > 0) {
+            const groupData = groupResponse.data.result[0];
+            console.log(`  ✅ Successfully fetched ${group.groupName}`);
+            
+            results._field_groups[group.groupName] = {
+              data: groupData,
+              description: group.description,
+              fields: group.fields
+            };
+            
+            // Add to flat structure
+            Object.assign(results, groupData);
+          } else {
+            throw new Error('No data returned for group');
+          }
+        } catch (groupError: any) {
+          console.log(`  ⚠️ Group ${group.groupName} failed, fetching fields individually...`);
+          
+          // If group fails, fetch fields one by one
+          const groupData: any = {};
+          for (const fieldName of group.fields) {
+            console.log(`    📄 Fetching field: ${fieldName}`);
+            
+            try {
+              // Fetch just this single field
+              const fieldResponse = await this.client.searchRecordsWithFields(
+                'sp_widget',
+                `sys_id=${sys_id}`,
+                [fieldName],
+                1
+              );
+              
+              if (fieldResponse && fieldResponse.success && fieldResponse.data && fieldResponse.data.result && fieldResponse.data.result.length > 0) {
+                const fieldValue = fieldResponse.data.result[0][fieldName];
+                if (fieldValue !== undefined && fieldValue !== null) {
+                  groupData[fieldName] = fieldValue;
+                  results[fieldName] = fieldValue; // Also add to flat structure
+                  console.log(`      ✅ Got ${fieldName} (${typeof fieldValue === 'string' ? fieldValue.length : 0} chars)`);
+                } else {
+                  groupData[fieldName] = '';
+                  console.log(`      ⚠️ ${fieldName} is empty`);
+                }
+              }
+            } catch (fieldError: any) {
+              console.log(`      ❌ Failed to fetch ${fieldName}: ${fieldError.message}`);
+              groupData[fieldName] = ''; // Empty string for failed fields
+            }
+          }
+          
+          results._field_groups[group.groupName] = {
+            data: groupData,
+            description: group.description,
+            fields: group.fields,
+            _fetched_individually: true
+          };
         }
+      }
+      
+      // Make sure we have at least the sys_id
+      if (!results.sys_id) {
+        results.sys_id = sys_id;
       }
     }
     
