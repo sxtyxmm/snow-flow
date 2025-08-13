@@ -11,6 +11,20 @@ This document provides comprehensive instructions for Snow-Flow, an advanced Ser
 6. [Command Reference](#command-reference)
 7. [Workflow Guidelines](#workflow-guidelines)
 
+## CRITICAL: Widget Debugging Must Use Local Sync
+
+### \ud83d\udd34 When User Reports Widget Issues, ALWAYS Use `snow_pull_artifact` FIRST!
+
+**Common scenarios that REQUIRE Local Sync:**
+- "Widget skips questions" \u2192 `snow_pull_artifact`
+- "Form doesn't submit properly" \u2192 `snow_pull_artifact`
+- "Data not displaying" \u2192 `snow_pull_artifact`
+- "Button doesn't work" \u2192 `snow_pull_artifact`
+- "Debug this widget" \u2192 `snow_pull_artifact`
+- "Fix widget issue" \u2192 `snow_pull_artifact`
+
+**DO NOT use `snow_query_table` for widget debugging!** It will hit token limits and you can't use native search/edit tools.
+
 ## Core Philosophy
 
 ### The Prime Directive: Verify, Don't Assume
@@ -175,66 +189,79 @@ MyClass.prototype.getName = function() {
 };
 ```
 
-### Rule 2: Background Scripts as Primary Debug Tool
+### Rule 2: Use Local Sync for Widget Debugging - NOT snow_query_table!
 
-Background scripts provide immediate, factual feedback from the actual ServiceNow instance. Use them extensively for verification and debugging.
+**CRITICAL: When debugging widgets, ALWAYS use `snow_pull_artifact` first!**
 
 ```javascript
-// Universal verification pattern
+// ✅ CORRECT - Use Local Sync for widget debugging
+snow_pull_artifact({ 
+  sys_id: 'widget_sys_id',
+  table: 'sp_widget' 
+});
+// Now use Claude Code native search, multi-file edit, etc.
+
+// ❌ WRONG - Don't use snow_query_table for debugging widgets
+snow_query_table({ 
+  table: 'sp_widget',
+  query: 'sys_id=...',
+  fields: ['template', 'script', 'client_script'] 
+});
+// This hits token limits and can't use native tools!
+```
+
+**Why Local Sync for Widget Debugging:**
+- **No token limits** - Handle widgets of ANY size
+- **Native search** - Find issues across all files instantly
+- **Multi-file view** - See relationships between components
+- **Better debugging** - Trace data flow, find missing methods
+- **Coherence checking** - Validate all parts work together
+
+**Widget Debugging Workflow:**
+1. User reports issue → `snow_pull_artifact`
+2. Search for error patterns across files
+3. Fix using multi-file edit
+4. Validate coherence → `snow_validate_artifact_coherence`
+5. Push fixes back → `snow_push_artifact`
+
+### Rule 3: Background Scripts for Verification Only
+
+Background scripts provide immediate feedback but should NOT be used for widget updates. Use them for verification:
+
+```javascript
+// Use for verification and testing
 const verify = await snow_execute_script_with_output({
-  script: `
-    gs.info('=== VERIFICATION TEST ===');
-    
-    // Test table existence
-    var table = new GlideRecord('table_name');
-    gs.info('Table valid: ' + table.isValid());
-    
-    // Test property existence
-    var prop = gs.getProperty('property.name');
-    gs.info('Property: ' + (prop || 'NOT SET'));
-    
-    // Test actual code
-    try {
-      // User's code here
-      gs.info('SUCCESS');
-    } catch(e) {
-      gs.error('ERROR: ' + e.message);
-    }
-  `
+  script: `/* Test code */`
 });
 ```
 
-### Rule 3: Widget Coherence - Critical Client-Server Communication
+### Rule 4: Widget Coherence - Critical Client-Server Communication
 
 ServiceNow widgets MUST have perfect communication between client and server scripts. This is not optional - widgets fail when these components don't talk to each other correctly.
 
-**IMPORTANT: Smart Fetch for Large Widgets**
+**IMPORTANT: Use Local Sync Instead of Query for Large Widgets**
 
-When querying widgets with `snow_query_table` results in "exceeds maximum allowed tokens" errors, Snow-Flow automatically uses **Smart Fetch Strategy**:
+When you see "exceeds maximum allowed tokens" errors, don't try to fetch fields separately with `snow_query_table`. Use Local Sync instead:
 
 ```javascript
-// ❌ This might fail with token limit error:
-snow_query_table({
-  table: 'sp_widget',
-  query: 'sys_id=01d01d6983176a502a7ea130ceaad376',
-  fields: ['name','template','script','client_script','css'],
-  limit: 1
-});
+// ❌ WRONG - Don't do this when debugging:
+snow_query_table({ table: 'sp_widget', fields: ['name'] });
+snow_query_table({ table: 'sp_widget', fields: ['script'] });
+snow_query_table({ table: 'sp_widget', fields: ['client_script'] });
+// This is inefficient and can't use native tools!
 
-// ✅ Snow-Flow automatically splits into chunks:
-// 1. Fetches metadata (name, title, sys_id)
-// 2. Fetches template separately
-// 3. Fetches script separately  
-// 4. Fetches client_script separately
-// 5. Fetches css separately
-// BUT maintains context that these belong together!
+// ✅ CORRECT - Use Local Sync:
+snow_pull_artifact({ 
+  sys_id: '01d01d6983176a502a7ea130ceaad376' 
+});
+// All files available locally with NO token limits!
 ```
 
-**Smart Fetch Context Preservation:**
-- Fields are fetched in chunks to respect token limits
-- Context relationships are preserved and explained
-- Coherence hints are provided (e.g., "template references {{data.x}} from server script")
-- All fields remain accessible as if fetched together
+**Local Sync Benefits:**
+- Handles widgets of ANY size automatically
+- All files available for native tool usage
+- Maintains relationships between components
+- Enables powerful search and refactoring
 
 **The Three-Way Contract:**
 
@@ -284,7 +311,7 @@ snow_query_table({
 - [ ] Data flows correctly: Server → HTML → Client → Server
 - [ ] No orphaned methods or unused data properties
 
-### Rule 4: Evidence-Based Debugging
+### Rule 5: Evidence-Based Debugging
 
 Follow this systematic approach for all debugging:
 
