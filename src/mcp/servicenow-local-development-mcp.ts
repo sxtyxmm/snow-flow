@@ -158,6 +158,20 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             required: ['code']
           }
         },
+        {
+          name: 'snow_debug_widget_fetch',
+          description: 'Debug widget fetching to diagnose API issues',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_id: {
+                type: 'string',
+                description: 'Widget sys_id to debug'
+              }
+            },
+            required: ['sys_id']
+          }
+        },
         // Legacy compatibility tools
         {
           name: 'snow_pull_widget',
@@ -225,6 +239,10 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             
           case 'snow_convert_to_es5':
             result = await this.convertToES5(args);
+            break;
+            
+          case 'snow_debug_widget_fetch':
+            result = await this.debugWidgetFetch(args);
             break;
             
           // Legacy compatibility
@@ -457,6 +475,61 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
         }
       ]
     };
+  }
+
+  private async debugWidgetFetch(args: any): Promise<MCPToolResult> {
+    const { sys_id } = args;
+    
+    try {
+      const debugResults = await this.syncManager['smartFetcher'].debugFetchWidget(sys_id);
+      
+      let summaryText = `🔍 Debug Results for Widget ${sys_id}\n\n`;
+      
+      // Check which methods worked
+      const methods = ['searchRecords', 'getRecord', 'searchRecordsWithFields'];
+      for (const method of methods) {
+        if (debugResults[method]) {
+          const widget = debugResults[method];
+          summaryText += `✅ ${method}:\n`;
+          summaryText += `  - Fields: ${Object.keys(widget).length}\n`;
+          summaryText += `  - Has script: ${!!widget.script}\n`;
+          summaryText += `  - Has client_script: ${!!widget.client_script}\n`;
+          summaryText += `  - Has template: ${!!widget.template}\n`;
+          summaryText += `  - Script size: ${widget.script?.length || 0} chars\n`;
+          summaryText += `  - Client script size: ${widget.client_script?.length || 0} chars\n`;
+          summaryText += `  - Template size: ${widget.template?.length || 0} chars\n\n`;
+        } else {
+          summaryText += `❌ ${method}: Failed\n\n`;
+        }
+      }
+      
+      // Recommend best approach
+      const workingMethods = methods.filter(m => debugResults[m]);
+      if (workingMethods.length > 0) {
+        summaryText += `\n📊 Recommendation: Use ${workingMethods[0]} for fetching this widget.`;
+      } else {
+        summaryText += `\n⚠️ All fetch methods failed. There may be an authentication or permission issue.`;
+      }
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: summaryText
+          }
+        ]
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Debug failed: ${errorMessage}`
+          }
+        ]
+      };
+    }
   }
 
   // Legacy compatibility methods

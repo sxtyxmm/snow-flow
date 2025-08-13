@@ -58,22 +58,28 @@ export class ArtifactLocalSync {
     this.client = client;
     this.smartFetcher = new SmartFieldFetcher(client);
     
+    // Version check for debugging
+    console.log(`🔧 ArtifactLocalSync v3.5.10 initializing...`);
+    
     // Use custom directory, environment variable, or default to current project's servicenow folder
     if (customBaseDir) {
       this.baseDir = customBaseDir;
+      console.log(`  📍 Using custom directory: ${customBaseDir}`);
     } else if (process.env.SNOW_FLOW_ARTIFACTS_DIR) {
       this.baseDir = process.env.SNOW_FLOW_ARTIFACTS_DIR;
+      console.log(`  📍 Using environment variable directory: ${this.baseDir}`);
     } else {
       // Default to 'servicenow' folder in current working directory
       this.baseDir = path.join(process.cwd(), 'servicenow');
+      console.log(`  📍 Using project directory: ${this.baseDir}`);
     }
     
     // Create base directory if it doesn't exist
     if (!fs.existsSync(this.baseDir)) {
       fs.mkdirSync(this.baseDir, { recursive: true });
-      console.log(`📁 Created ServiceNow artifacts directory: ${this.baseDir}`);
+      console.log(`  ✅ Created ServiceNow artifacts directory`);
     } else {
-      console.log(`📁 Using ServiceNow artifacts directory: ${this.baseDir}`);
+      console.log(`  ✅ Directory exists`);
     }
     
     // Create .gitignore if it doesn't exist to optionally exclude from version control

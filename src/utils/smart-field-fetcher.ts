@@ -205,8 +205,8 @@ export class SmartFieldFetcher {
       // Try to get all fields at once
       const response = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
       
-      if (response && response.result && response.result.length > 0) {
-        const widgetData = response.result[0];
+      if (response && response.success && response.data && response.data.result && response.data.result.length > 0) {
+        const widgetData = response.data.result[0];
         console.log(`✅ Successfully fetched complete widget`);
         
         // Organize into field groups for better context
@@ -228,81 +228,82 @@ export class SmartFieldFetcher {
         // Add complete widget data to flat structure
         Object.assign(results, widgetData);
       } else {
-        throw new Error('Widget not found');
+        throw new Error('Widget not found or no data returned');
       }
     } catch (error: any) {
       console.log(`⚠️ Complete fetch failed: ${error.message}`);
-      console.log(`🔄 Switching to field-by-field fetching...`);
+      console.log(`🔄 Switching to more robust fetching approach...`);
       
-      // Fall back to fetching fields per group or individually
-      for (const group of WIDGET_FIELD_GROUPS) {
-        console.log(`📦 Fetching ${group.groupName}: ${group.description}`);
+      // First, get the widget with minimal fields to ensure it exists
+      try {
+        const basicResponse = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
         
-        try {
-          // Try to fetch all fields in this group at once
-          const groupResponse = await this.client.searchRecordsWithFields(
-            'sp_widget',
-            `sys_id=${sys_id}`,
-            group.fields,
-            1
-          );
+        if (!basicResponse || !basicResponse.success || !basicResponse.data || !basicResponse.data.result || basicResponse.data.result.length === 0) {
+          throw new Error(`Widget with sys_id ${sys_id} not found`);
+        }
+        
+        // Widget exists, now get it via getRecord which might handle large fields better
+        const widgetData = basicResponse.data.result[0];
+        
+        // Store what we got
+        if (widgetData) {
+          // Add all available fields to results
+          Object.assign(results, widgetData);
           
-          if (groupResponse && groupResponse.success && groupResponse.data && groupResponse.data.result && groupResponse.data.result.length > 0) {
-            const groupData = groupResponse.data.result[0];
-            console.log(`  ✅ Successfully fetched ${group.groupName}`);
+          // Organize into field groups
+          for (const group of WIDGET_FIELD_GROUPS) {
+            const groupData: any = {};
+            for (const fieldName of group.fields) {
+              if (widgetData[fieldName] !== undefined) {
+                groupData[fieldName] = widgetData[fieldName];
+              }
+            }
             
             results._field_groups[group.groupName] = {
               data: groupData,
               description: group.description,
               fields: group.fields
             };
-            
-            // Add to flat structure
-            Object.assign(results, groupData);
-          } else {
-            throw new Error('No data returned for group');
-          }
-        } catch (groupError: any) {
-          console.log(`  ⚠️ Group ${group.groupName} failed, fetching fields individually...`);
-          
-          // If group fails, fetch fields one by one
-          const groupData: any = {};
-          for (const fieldName of group.fields) {
-            console.log(`    📄 Fetching field: ${fieldName}`);
-            
-            try {
-              // Fetch just this single field
-              const fieldResponse = await this.client.searchRecordsWithFields(
-                'sp_widget',
-                `sys_id=${sys_id}`,
-                [fieldName],
-                1
-              );
-              
-              if (fieldResponse && fieldResponse.success && fieldResponse.data && fieldResponse.data.result && fieldResponse.data.result.length > 0) {
-                const fieldValue = fieldResponse.data.result[0][fieldName];
-                if (fieldValue !== undefined && fieldValue !== null) {
-                  groupData[fieldName] = fieldValue;
-                  results[fieldName] = fieldValue; // Also add to flat structure
-                  console.log(`      ✅ Got ${fieldName} (${typeof fieldValue === 'string' ? fieldValue.length : 0} chars)`);
-                } else {
-                  groupData[fieldName] = '';
-                  console.log(`      ⚠️ ${fieldName} is empty`);
-                }
-              }
-            } catch (fieldError: any) {
-              console.log(`      ❌ Failed to fetch ${fieldName}: ${fieldError.message}`);
-              groupData[fieldName] = ''; // Empty string for failed fields
-            }
           }
           
-          results._field_groups[group.groupName] = {
-            data: groupData,
-            description: group.description,
-            fields: group.fields,
-            _fetched_individually: true
-          };
+          // Log what we got
+          console.log(`📊 Retrieved widget fields:`);
+          console.log(`  - name: ${widgetData.name || 'N/A'}`);
+          console.log(`  - template: ${widgetData.template ? widgetData.template.length + ' chars' : 'empty'}`);
+          console.log(`  - script: ${widgetData.script ? widgetData.script.length + ' chars' : 'empty'}`);
+          console.log(`  - client_script: ${widgetData.client_script ? widgetData.client_script.length + ' chars' : 'empty'}`);
+          console.log(`  - css: ${widgetData.css ? widgetData.css.length + ' chars' : 'empty'}`);
         }
+        
+        // If critical fields are missing, try alternative approach
+        if (!widgetData.script && !widgetData.client_script && !widgetData.template) {
+          console.log(`⚠️ Critical fields missing, trying direct API call...`);
+          
+          // Try using getRecord instead of searchRecords
+          const directResponse = await this.client.getRecord('sp_widget', sys_id);
+          
+          if (directResponse && directResponse.success && directResponse.data && directResponse.data.result) {
+            const directData = directResponse.data.result;
+            
+            // Merge any new data we got
+            Object.assign(results, directData);
+            
+            console.log(`📊 Direct API retrieved:`);
+            console.log(`  - template: ${directData.template ? directData.template.length + ' chars' : 'empty'}`);
+            console.log(`  - script: ${directData.script ? directData.script.length + ' chars' : 'empty'}`);
+            console.log(`  - client_script: ${directData.client_script ? directData.client_script.length + ' chars' : 'empty'}`);
+          }
+        }
+        
+      } catch (fallbackError: any) {
+        console.log(`❌ All fetch attempts failed: ${fallbackError.message}`);
+        // At least return basic structure with sys_id
+        results.sys_id = sys_id;
+        results.name = 'Unknown Widget';
+        results.template = '';
+        results.script = '';
+        results.client_script = '';
+        results.css = '';
       }
       
       // Make sure we have at least the sys_id
@@ -436,6 +437,78 @@ export class SmartFieldFetcher {
       console.log(`  ⚠️ Search failed: ${error}`);
       return [];
     }
+  }
+
+  /**
+   * Debug method to directly test API calls
+   */
+  async debugFetchWidget(sys_id: string): Promise<any> {
+    console.log(`\n🔍 DEBUG: Testing different fetch approaches for widget ${sys_id}\n`);
+    
+    const results: any = {};
+    
+    // Test 1: Basic searchRecords
+    try {
+      console.log(`Test 1: searchRecords...`);
+      const test1 = await this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1);
+      console.log(`  - Response structure: success=${test1?.success}, has data=${!!test1?.data}, has result=${!!test1?.data?.result}`);
+      if (test1?.data?.result?.[0]) {
+        const widget = test1.data.result[0];
+        console.log(`  - Fields received: ${Object.keys(widget).join(', ')}`);
+        console.log(`  - Script length: ${widget.script?.length || 0}`);
+        console.log(`  - Client script length: ${widget.client_script?.length || 0}`);
+        console.log(`  - Template length: ${widget.template?.length || 0}`);
+        results.searchRecords = widget;
+      }
+    } catch (e: any) {
+      console.log(`  ❌ Error: ${e.message}`);
+    }
+    
+    // Test 2: getRecord
+    try {
+      console.log(`Test 2: getRecord...`);
+      const test2 = await this.client.getRecord('sp_widget', sys_id);
+      console.log(`  - Response structure: success=${test2?.success}, has data=${!!test2?.data}, has result=${!!test2?.data?.result}`);
+      if (test2?.data?.result) {
+        const widget = test2.data.result;
+        console.log(`  - Fields received: ${Object.keys(widget).join(', ')}`);
+        console.log(`  - Script length: ${widget.script?.length || 0}`);
+        console.log(`  - Client script length: ${widget.client_script?.length || 0}`);
+        console.log(`  - Template length: ${widget.template?.length || 0}`);
+        results.getRecord = widget;
+      }
+    } catch (e: any) {
+      console.log(`  ❌ Error: ${e.message}`);
+    }
+    
+    // Test 3: searchRecordsWithFields
+    try {
+      console.log(`Test 3: searchRecordsWithFields with specific fields...`);
+      const test3 = await this.client.searchRecordsWithFields(
+        'sp_widget', 
+        `sys_id=${sys_id}`,
+        ['name', 'script', 'client_script', 'template', 'css'],
+        1
+      );
+      console.log(`  - Response structure: success=${test3?.success}, has data=${!!test3?.data}, has result=${!!test3?.data?.result}`);
+      if (test3?.data?.result?.[0]) {
+        const widget = test3.data.result[0];
+        console.log(`  - Fields received: ${Object.keys(widget).join(', ')}`);
+        console.log(`  - Script length: ${widget.script?.length || 0}`);
+        console.log(`  - Client script length: ${widget.client_script?.length || 0}`);
+        console.log(`  - Template length: ${widget.template?.length || 0}`);
+        results.searchRecordsWithFields = widget;
+      }
+    } catch (e: any) {
+      console.log(`  ❌ Error: ${e.message}`);
+    }
+    
+    console.log(`\n📊 Debug Results Summary:`);
+    console.log(`  - searchRecords got: ${results.searchRecords ? Object.keys(results.searchRecords).length + ' fields' : 'failed'}`);
+    console.log(`  - getRecord got: ${results.getRecord ? Object.keys(results.getRecord).length + ' fields' : 'failed'}`);
+    console.log(`  - searchRecordsWithFields got: ${results.searchRecordsWithFields ? Object.keys(results.searchRecordsWithFields).length + ' fields' : 'failed'}`);
+    
+    return results;
   }
 
   /**
