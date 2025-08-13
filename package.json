@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.0",
-  "description": "ServiceNow development framework with COMPREHENSIVE AUDIT LOGGING. v3.6.0 introduces complete audit trail for all Snow-Flow activities in ServiceNow with source 'snow-flow'. Tracks API calls, widget operations, script execution, authentication, and tool usage with token consumption data. Enhanced compliance support for SOX/GDPR/HIPAA with detailed security monitoring. Includes robust artifact detection fix, ultra-conservative wrapper system, and optimized settings.json with 18 MCP servers. Features intelligent timeout configuration and comprehensive ServiceNow development workflow.",
+  "version": "3.6.1",
+  "description": "ServiceNow development framework with ABSOLUTE NO MOCK DATA POLICY. v3.6.1 enforces COMPLETE, PRODUCTION-READY implementations with NO placeholders, NO TODO comments, NO test data, and NO shortcuts. EVERY implementation must be fully functional. Enhanced CLAUDE.md template with comprehensive examples of complete implementations. Includes comprehensive audit logging with source 'snow-flow', token tracking, and compliance support. Features robust artifact detection, ultra-conservative wrapper system, and 18 MCP servers. TAKE THE TIME. DO IT RIGHT. NO EXCEPTIONS.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

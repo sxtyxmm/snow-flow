@@ -2,6 +2,58 @@ export const CLAUDE_MD_TEMPLATE = `# Snow-Flow Configuration & Best Practices
 
 This document provides comprehensive instructions for Snow-Flow, an advanced ServiceNow development and orchestration framework powered by Claude AI.
 
+## 🚨 ABSOLUTE RULE #1: NO MOCK DATA, NO PLACEHOLDERS, NO SHORTCUTS! 🚨
+
+### **EVERYTHING MUST BE REAL, COMPLETE, AND PRODUCTION-READY**
+
+**⛔ ABSOLUTELY FORBIDDEN:**
+- ❌ NO mock data, test data, or demo data
+- ❌ NO placeholder code or stub implementations
+- ❌ NO "TODO" comments or incomplete sections
+- ❌ NO simulated responses or fake results
+- ❌ NO shortcuts, quick fixes, or temporary solutions
+- ❌ NO "this would normally..." explanations
+- ❌ NO partial implementations or "proof of concepts"
+- ❌ NO hardcoded test values or example data
+
+**✅ MANDATORY REQUIREMENTS:**
+- ✅ EVERY implementation must be COMPLETE and FUNCTIONAL
+- ✅ ALL code must be PRODUCTION-READY
+- ✅ TAKE THE TIME to write EVERYTHING properly
+- ✅ IMPLEMENT all error handling, validation, and edge cases
+- ✅ CREATE actual working solutions, not demonstrations
+- ✅ BUILD real integrations, not simulations
+- ✅ DEVELOP complete features, not prototypes
+- ✅ DELIVER finished products, not drafts
+
+**📝 Quality Standards:**
+1. **Complete Implementation** - Every feature fully implemented with all functionality
+2. **Real Data Operations** - Actual ServiceNow API calls with real responses
+3. **Comprehensive Error Handling** - All edge cases covered, all errors handled
+4. **Production-Grade Code** - Clean, maintainable, documented, tested
+5. **Full Validation** - Input validation, data verification, coherence checking
+6. **Actual Integration** - Real connections to ServiceNow, no mocked services
+7. **Thorough Testing** - Complete test coverage, not just happy path
+8. **Professional Documentation** - Detailed, accurate, complete documentation
+
+**🎯 The Snow-Flow Commitment:**
+When implementing ANY feature, no matter how complex or time-consuming:
+- INVEST the time to do it RIGHT
+- WRITE every line of code needed
+- IMPLEMENT every validation required
+- HANDLE every possible error
+- CREATE comprehensive solutions
+- BUILD production-ready systems
+- DELIVER professional results
+
+**Remember:** Users depend on Snow-Flow for REAL production ServiceNow environments. 
+There is NO room for shortcuts, placeholders, or incomplete implementations.
+Every line of code matters. Every feature must work. Every implementation must be complete.
+
+**TAKE THE TIME. DO IT RIGHT. NO EXCEPTIONS.**
+
+---
+
 ## Table of Contents
 1. [Core Philosophy](#core-philosophy)
 2. [Fundamental Rules](#fundamental-rules)
@@ -42,23 +94,34 @@ Snow-Flow operates on evidence-based development. Never make assumptions about w
 
 \`\`\`javascript
 // Before claiming anything doesn't work or exist:
-// Step 1: Test the actual implementation
+// Step 1: Test the actual implementation - COMPLETE TEST, NO MOCK
 const verify = await snow_execute_script_with_output({
-  script: \`/* Test the exact code or resource */\`
+  script: \`
+    // REAL verification code - NO placeholders
+    var gr = new GlideRecord('actual_table_name');
+    gr.addQuery('active', true);
+    gr.query();
+    var count = 0;
+    while (gr.next()) {
+      count++;
+      gs.info('Record found: ' + gr.getDisplayValue());
+    }
+    gs.info('Total records: ' + count);
+  \`
 });
 
-// Step 2: Check if resources exist
+// Step 2: Check if resources exist - ACTUAL CHECK, NO ASSUMPTIONS
 const tableCheck = await snow_discover_table_fields({
   table_name: 'potentially_custom_table'
 });
 
-// Step 3: Validate configurations
+// Step 3: Validate configurations - REAL VALIDATION
 const propertyCheck = await snow_property_manager({
   action: 'get',
   name: 'system.property'
 });
 
-// Step 4: Only then make informed decisions
+// Step 4: Only then make informed decisions based on REAL DATA
 \`\`\`
 
 ### 🔄 CRITICAL: Sync User Modifications Before Working
@@ -353,25 +416,54 @@ function processIncident(incident, priority, assignee) {
 | \`arr.map(x => x.id)\` | \`arr.map(function(x) { return x.id; })\` |
 
 \`\`\`javascript
-// Universal verification pattern
+// Universal verification pattern - COMPLETE IMPLEMENTATION REQUIRED
 const verify = await snow_execute_script_with_output({
   script: \`
     gs.info('=== VERIFICATION TEST ===');
     
-    // Test table existence
-    var table = new GlideRecord('table_name');
-    gs.info('Table valid: ' + table.isValid());
+    // Test ACTUAL table existence - NO PLACEHOLDERS
+    var incidentTable = new GlideRecord('incident');
+    gs.info('Incident table valid: ' + incidentTable.isValid());
     
-    // Test property existence
-    var prop = gs.getProperty('property.name');
-    gs.info('Property: ' + (prop || 'NOT SET'));
+    // Count REAL records
+    incidentTable.addQuery('active', true);
+    incidentTable.query();
+    var count = 0;
+    while (incidentTable.next() && count < 10) {
+      count++;
+      gs.info('Found: ' + incidentTable.number + ' - ' + incidentTable.short_description);
+    }
+    gs.info('Total active incidents: ' + incidentTable.getRowCount());
     
-    // Test actual code
+    // Test ACTUAL property - use real property names
+    var instanceName = gs.getProperty('instance_name');
+    var glideVersion = gs.getProperty('glide.version');
+    gs.info('Instance: ' + instanceName);
+    gs.info('Version: ' + glideVersion);
+    
+    // Test COMPLETE user code - NO STUBS
     try {
-      // User's code here
-      gs.info('SUCCESS');
+      // REAL implementation - not placeholder
+      var userGr = new GlideRecord('sys_user');
+      userGr.addQuery('active', true);
+      userGr.addQuery('user_name', gs.getUserName());
+      userGr.query();
+      if (userGr.next()) {
+        gs.info('Current user: ' + userGr.name + ' (' + userGr.email + ')');
+        gs.info('Roles: ' + userGr.roles.toString());
+      }
+      
+      // Test ACTUAL business logic
+      var taskGr = new GlideRecord('task');
+      taskGr.addQuery('assigned_to', gs.getUserID());
+      taskGr.addQuery('active', true);
+      taskGr.query();
+      gs.info('Active tasks assigned to me: ' + taskGr.getRowCount());
+      
+      gs.info('=== VERIFICATION COMPLETE ===');
     } catch(e) {
       gs.error('ERROR: ' + e.message);
+      gs.error('Stack: ' + e.stack);
     }
   \`
 });
@@ -526,8 +618,10 @@ Follow this systematic approach for all debugging:
 
 ### Widget Development
 
+**🚨 NO MOCK WIDGETS - EVERY WIDGET MUST BE COMPLETE AND FUNCTIONAL**
+
 **CRITICAL: Direct Widget Updates (Not Background Scripts!)**
-- Use \`snow_update({ type: 'widget', identifier: 'widget_name', config: { /* fields to update */ }})\` 
+- Use \`snow_update({ type: 'widget', identifier: 'widget_name', config: { /* COMPLETE fields */ }})\` 
 - Updates widget fields DIRECTLY on the widget record
 - Do NOT use background scripts to update widget fields
 - Do NOT try to import server scripts into client scripts
@@ -537,17 +631,233 @@ Follow this systematic approach for all debugging:
 - Use Angular providers correctly  
 - Implement proper data binding
 - Test across different themes and portals
+- **NO PLACEHOLDER CONTENT - Every widget must be production-ready**
 
-**Creating New Widgets:**
+**Creating New Widgets - COMPLETE IMPLEMENTATION REQUIRED:**
 \`\`\`javascript
+// ❌ WRONG - Mock/placeholder widget
 snow_deploy({
   type: 'widget',
   config: {
-    name: 'my_widget',
-    title: 'My Widget',  // Required for display
-    template: '<div>{{data.message}}</div>',  // Required HTML
-    script: 'data.message = "Hello";', // ServiceNow uses 'script' field
-    client_script: 'function($scope) { var c = this; }'
+    name: 'test_widget',
+    template: '<div>TODO: Add content</div>',  // NO!
+    script: '// TODO: Add logic',  // NO!
+    client_script: '// Placeholder'  // NO!
+  }
+})
+
+// ✅ CORRECT - Complete, functional widget
+snow_deploy({
+  type: 'widget',
+  config: {
+    name: 'incident_dashboard_widget',
+    title: 'Incident Dashboard',
+    template: \`
+      <div class="incident-dashboard">
+        <div class="dashboard-header">
+          <h2>{{data.title}}</h2>
+          <span class="refresh-time">{{data.lastRefresh}}</span>
+        </div>
+        <div class="stats-container">
+          <div class="stat-card" ng-repeat="stat in data.stats">
+            <div class="stat-value">{{stat.value}}</div>
+            <div class="stat-label">{{stat.label}}</div>
+          </div>
+        </div>
+        <div class="incident-list">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Number</th>
+                <th>Short Description</th>
+                <th>Priority</th>
+                <th>Assigned To</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="incident in data.incidents" ng-click="c.openIncident(incident.sys_id)">
+                <td>{{incident.number}}</td>
+                <td>{{incident.short_description}}</td>
+                <td><span class="priority-{{incident.priority}}">{{incident.priority}}</span></td>
+                <td>{{incident.assigned_to}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    \`,
+    script: \`
+      // COMPLETE server-side implementation
+      (function() {
+        data.title = 'Incident Dashboard';
+        data.lastRefresh = new GlideDateTime().getDisplayValue();
+        
+        // Get incident statistics
+        data.stats = [];
+        
+        var totalGr = new GlideAggregate('incident');
+        totalGr.addQuery('active', true);
+        totalGr.addAggregate('COUNT');
+        totalGr.query();
+        if (totalGr.next()) {
+          data.stats.push({
+            value: totalGr.getAggregate('COUNT'),
+            label: 'Total Active'
+          });
+        }
+        
+        var criticalGr = new GlideAggregate('incident');
+        criticalGr.addQuery('active', true);
+        criticalGr.addQuery('priority', '1');
+        criticalGr.addAggregate('COUNT');
+        criticalGr.query();
+        if (criticalGr.next()) {
+          data.stats.push({
+            value: criticalGr.getAggregate('COUNT'),
+            label: 'Critical'
+          });
+        }
+        
+        // Get recent incidents
+        data.incidents = [];
+        var incGr = new GlideRecord('incident');
+        incGr.addQuery('active', true);
+        incGr.orderByDesc('sys_created_on');
+        incGr.setLimit(10);
+        incGr.query();
+        
+        while (incGr.next()) {
+          data.incidents.push({
+            sys_id: incGr.getUniqueValue(),
+            number: incGr.getValue('number'),
+            short_description: incGr.getValue('short_description'),
+            priority: incGr.getValue('priority'),
+            assigned_to: incGr.assigned_to.getDisplayValue()
+          });
+        }
+        
+        // Handle server actions
+        if (input && input.action === 'refresh') {
+          // Refresh logic
+          data.lastRefresh = new GlideDateTime().getDisplayValue();
+        }
+      })();
+    \`,
+    client_script: \`
+      function($scope, $window, spModal) {
+        var c = this;
+        
+        // Initialize client controller
+        c.refreshInterval = null;
+        
+        // Open incident in new window
+        c.openIncident = function(sysId) {
+          var url = '/nav_to.do?uri=incident.do?sys_id=' + sysId;
+          $window.open(url, '_blank');
+        };
+        
+        // Refresh data
+        c.refresh = function() {
+          c.server.get({
+            action: 'refresh'
+          }).then(function(response) {
+            console.log('Dashboard refreshed');
+          });
+        };
+        
+        // Auto-refresh every 30 seconds
+        c.startAutoRefresh = function() {
+          c.refreshInterval = setInterval(function() {
+            $scope.$apply(function() {
+              c.refresh();
+            });
+          }, 30000);
+        };
+        
+        // Clean up on destroy
+        $scope.$on('$destroy', function() {
+          if (c.refreshInterval) {
+            clearInterval(c.refreshInterval);
+          }
+        });
+        
+        // Start auto-refresh
+        c.startAutoRefresh();
+      }
+    \`,
+    css: \`
+      .incident-dashboard {
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      
+      .stats-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .stat-card {
+        flex: 1;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+      }
+      
+      .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+      }
+      
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+      
+      .incident-list {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+      }
+      
+      .incident-list tr {
+        cursor: pointer;
+      }
+      
+      .incident-list tr:hover {
+        background: #f0f0f0;
+      }
+      
+      .priority-1 { color: #d9534f; font-weight: bold; }
+      .priority-2 { color: #f0ad4e; }
+      .priority-3 { color: #5bc0de; }
+      .priority-4 { color: #5cb85c; }
+      .priority-5 { color: #777; }
+    \`,
+    option_schema: [
+      {
+        name: 'refresh_interval',
+        label: 'Refresh Interval (seconds)',
+        type: 'integer',
+        default: 30
+      },
+      {
+        name: 'max_incidents',
+        label: 'Maximum Incidents to Display',
+        type: 'integer',
+        default: 10
+      }
+    ]
   }
 })
 \`\`\`
@@ -1055,6 +1365,31 @@ gs.info('Field exists: ' + (element ? 'Yes' : 'No'));
 
 ## Conclusion
 
-Snow-Flow is a powerful framework for ServiceNow development that emphasizes verification, testing, and evidence-based decision making. By following these guidelines and best practices, you ensure reliable, maintainable, and effective ServiceNow solutions.
+Snow-Flow is a powerful framework for ServiceNow development that demands **COMPLETE, PRODUCTION-READY IMPLEMENTATIONS** with absolutely **NO MOCK DATA, NO PLACEHOLDERS, and NO SHORTCUTS**.
 
-Remember: Your job is to solve problems, not to judge implementations. Every environment has its reasons for existing configurations. Verify, test, and respect what you find.`;
+**The Snow-Flow Standard:**
+- **EVERY** line of code must be complete and functional
+- **EVERY** feature must be fully implemented
+- **EVERY** integration must be real and working
+- **EVERY** solution must be production-ready
+- **NO EXCEPTIONS, NO EXCUSES**
+
+By following these guidelines and the **NO MOCK DATA** principle, you ensure:
+- Reliable, maintainable ServiceNow solutions
+- Complete implementations that work in production
+- Professional-grade code that users can depend on
+- Real solutions to real problems
+
+Remember: 
+1. **NO MOCK DATA** - Everything must be real
+2. **TAKE THE TIME** - Do it right, no shortcuts
+3. **COMPLETE IMPLEMENTATIONS** - Every feature, every time
+4. **PRODUCTION READY** - Users depend on this being real
+5. **VERIFY AND TEST** - With real data, real systems
+
+Your job is to deliver **COMPLETE, WORKING SOLUTIONS**. Every implementation matters. Every line of code counts. Every feature must work.
+
+**TAKE THE TIME. DO IT RIGHT. NO MOCK DATA. NO EXCEPTIONS.**`;
+
+// Add version constant to track template updates
+export const CLAUDE_MD_TEMPLATE_VERSION = '3.6.1-NO-MOCK-DATA';
