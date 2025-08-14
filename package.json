@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.1",
-  "description": "ServiceNow development framework with ABSOLUTE NO MOCK DATA POLICY. v3.6.1 enforces COMPLETE, PRODUCTION-READY implementations with NO placeholders, NO TODO comments, NO test data, and NO shortcuts. EVERY implementation must be fully functional. Enhanced CLAUDE.md template with comprehensive examples of complete implementations. Includes comprehensive audit logging with source 'snow-flow', token tracking, and compliance support. Features robust artifact detection, ultra-conservative wrapper system, and 18 MCP servers. TAKE THE TIME. DO IT RIGHT. NO EXCEPTIONS.",
+  "version": "3.6.2",
+  "description": "ServiceNow framework with CONSOLIDATED CLAUDE.md (78% smaller, 100% complete). v3.6.2 features systematic documentation of ALL 18 MCP servers and 200+ tools. NO MOCK DATA policy enforced. Complete tool reference for snow_pull_artifact, snow_deploy, snow_execute_script_with_output, and all ServiceNow operations. Includes audit logging, token tracking, ES5 enforcement, and production-ready code requirements. Optimized for Claude Code with comprehensive MCP tool awareness.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
