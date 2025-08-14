@@ -6,7 +6,7 @@
 import { Command } from 'commander';
 import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import * as os from 'os';
 import { existsSync } from 'fs';
@@ -2733,6 +2733,14 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         "Bash(sudo *)"
       ]
     },
+    "autoCompactThreshold": 0.65,
+    "compactMode": "aggressive",
+    "contextPreservation": {
+      "preserveMCPState": true,
+      "preserveToolResults": true,
+      "preserveRecentContext": 5000,
+      "prioritizeServiceNowOperations": true
+    },
     "hooks": {
       "PreCompact": [
         {
@@ -2746,10 +2754,11 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         },
         {
           "matcher": "auto",
+          "threshold": 0.65,
           "hooks": [
             {
               "type": "command",
-              "command": "/bin/bash -c 'echo \"🔄 Auto-Compact Guidance (Context Window Full):\"; echo \"📋 CRITICAL: Before compacting, ensure you understand:\"; echo \"   • All 18+ MCP servers including servicenow-local-development\"; echo \"   • Use snow_pull_artifact for widget debugging (NOT snow_query_table)\"; echo \"   • Concurrent execution patterns from CLAUDE.md\"; echo \"   • Batchtools optimization for 300% performance gains\"; echo \"   • Swarm coordination strategies for complex tasks\"; echo \"⚡ Apply GOLDEN RULE: Always batch operations in single messages\"; echo \"✅ Auto-compact proceeding with full agent context\"'"
+              "command": "/bin/bash -c 'echo \"⚡ EARLY Auto-Compact triggered at 65% context usage\"; echo \"🔔 Compacting BEFORE API calls fail\"; echo \"📋 Preserving critical Snow-Flow context:\"; echo \"   • Active MCP connections and tool state\"; echo \"   • Recent ServiceNow operations and results\"; echo \"   • Current artifact sync status\"; echo \"   • Authentication and session data\"; echo \"⚠️ This prevents mid-operation failures\"; echo \"✅ Safe compact at 65% threshold\"'"
             }
           ]
         }
@@ -2769,6 +2778,10 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       "CLAUDE_CODE_TIMEOUT": "0",
       "CLAUDE_CODE_SESSION_TIMEOUT": "0",
       "CLAUDE_CODE_EXECUTION_TIMEOUT": "0",
+      "CLAUDE_CODE_EARLY_COMPACT": "true",
+      "CLAUDE_CODE_COMPACT_THRESHOLD": "0.65",
+      "CLAUDE_CODE_PRESERVE_MCP_STATE": "true",
+      "CLAUDE_CODE_CONTEXT_WINDOW_BUFFER": "35",
       "SNOW_FLOW_DEBUG": "false",
       "SNOW_FLOW_LOG_LEVEL": "info",
       "MCP_DEBUG": "false",
@@ -2783,6 +2796,143 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   const claudeSettingsPath = join(targetDir, '.claude/settings.json');
   await fs.writeFile(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2));
 }
+
+// Setup MCP configuration function
+async function setupMCPConfig(
+  targetDir: string,
+  instanceUrl: string,
+  clientId: string,
+  clientSecret: string,
+  force: boolean = false
+): Promise<void> {
+  // Find the Snow-Flow installation root
+  let snowFlowRoot = '';
+  
+  // Try different locations to find the Snow-Flow root
+  const possiblePaths = [
+    join(targetDir, 'node_modules/snow-flow'),
+    join(targetDir, '../snow-flow-dev/snow-flow'),
+    join(process.env.HOME || '', 'Projects/snow-flow-dev/snow-flow'),
+    __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname
+  ];
+  
+  for (const testPath of possiblePaths) {
+    try {
+      await fs.access(join(testPath, '.mcp.json.template'));
+      snowFlowRoot = testPath;
+      break;
+    } catch {
+      // Keep trying
+    }
+  }
+  
+  if (!snowFlowRoot) {
+    // Last resort: assume we're running from the installed package
+    snowFlowRoot = resolve(__dirname, '..');
+    // Verify we can find the template
+    try {
+      await fs.access(join(snowFlowRoot, '.mcp.json.template'));
+    } catch {
+      throw new Error('Could not find snow-flow project root');
+    }
+  }
+  
+  // Read the template file
+  const templatePath = join(snowFlowRoot, '.mcp.json.template');
+  let templateContent: string;
+  
+  try {
+    templateContent = await fs.readFile(templatePath, 'utf-8');
+  } catch (error) {
+    console.error('❌ Could not find .mcp.json.template file');
+    throw error;
+  }
+  
+  // Replace placeholders in template
+  const mcpConfigContent = templateContent
+    .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
+    .replace(/{{SNOW_INSTANCE}}/g, '${SNOW_INSTANCE}')
+    .replace(/{{SNOW_CLIENT_ID}}/g, '${SNOW_CLIENT_ID}')
+    .replace(/{{SNOW_CLIENT_SECRET}}/g, '${SNOW_CLIENT_SECRET}')
+    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, '${SNOW_DEPLOYMENT_TIMEOUT}')
+    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, '${MCP_DEPLOYMENT_TIMEOUT}')
+    .replace(/{{NEO4J_URI}}/g, '${NEO4J_URI}')
+    .replace(/{{NEO4J_USER}}/g, '${NEO4J_USER}')
+    .replace(/{{NEO4J_PASSWORD}}/g, '${NEO4J_PASSWORD}')
+    .replace(/{{SNOW_FLOW_ENV}}/g, '${SNOW_FLOW_ENV}');
+  
+  // Parse to ensure it's valid JSON
+  const mcpConfig = JSON.parse(mcpConfigContent);
+  
+  // Keep the standard MCP structure that Claude Code expects
+  const finalConfig = {
+    "mcpServers": mcpConfig.servers
+  };
+  
+  // Create .mcp.json in project root for Claude Code discovery
+  const mcpConfigPath = join(targetDir, '.mcp.json');
+  try {
+    await fs.access(mcpConfigPath);
+    if (force) {
+      console.log('⚠️  .mcp.json already exists, overwriting with --force flag');
+      await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
+    } else {
+      console.log('⚠️  .mcp.json already exists, skipping (use --force to overwrite)');
+    }
+  } catch {
+    await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
+  }
+  
+  // Also create legacy config in .claude for backward compatibility
+  const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
+  await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
+}
+
+// Refresh MCP configuration command
+program
+  .command('refresh-mcp')
+  .description('Refresh MCP server configuration to latest version')
+  .option('--force', 'Force overwrite existing configuration')
+  .action(async (options) => {
+    console.log(chalk.blue.bold(`\n🔄 Refreshing MCP Configuration to v${VERSION}...`));
+    console.log('='.repeat(60));
+    
+    try {
+      // Check if project is initialized
+      const envPath = join(process.cwd(), '.env');
+      if (!existsSync(envPath)) {
+        console.error(chalk.red('\n❌ No .env file found. Please run "snow-flow init" first.'));
+        process.exit(1);
+      }
+      
+      // Load env vars
+      dotenv.config({ path: envPath });
+      const instanceUrl = process.env.SNOW_INSTANCE;
+      const clientId = process.env.SNOW_CLIENT_ID;
+      const clientSecret = process.env.SNOW_CLIENT_SECRET;
+      
+      if (!instanceUrl || !clientId || !clientSecret) {
+        console.error(chalk.red('\n❌ Missing ServiceNow credentials in .env file.'));
+        process.exit(1);
+      }
+      
+      console.log('\n📝 Updating MCP configuration...');
+      await setupMCPConfig(process.cwd(), instanceUrl, clientId, clientSecret, options.force || false);
+      
+      console.log(chalk.green('\n✅ MCP configuration refreshed successfully!'));
+      console.log('\n📢 IMPORTANT: Restart Claude Code to use the new configuration:');
+      console.log(chalk.cyan('   claude --mcp-config .mcp.json'));
+      console.log('\n💡 The Local Development server now includes:');
+      console.log('   • Universal artifact detection via sys_metadata');
+      console.log('   • Support for ANY ServiceNow table (even custom)');
+      console.log('   • Generic artifact handling for unknown types');
+      console.log('   • Automatic file structure creation');
+      
+    } catch (error) {
+      console.error(chalk.red('\n❌ Failed to refresh MCP configuration:'), error);
+      process.exit(1);
+    }
+  });
 
 // Direct widget creation command
 program

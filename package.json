@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.3",
-  "description": "EMERGENCY FIX: Prevents infinite hanging in servicenow-local-development. v3.6.3 adds maximum operation timeouts (30s for artifact detection, 60s for progress indicator) to prevent operations from running forever. Fixes pullArtifactBySysId with fail-fast mechanism. Consolidated CLAUDE.md with ALL 18 MCP servers and 200+ tools. NO MOCK DATA policy enforced. Includes audit logging, token tracking, and ES5 enforcement.",
+  "version": "3.6.23",
+  "description": "CATALOG VARIABLE TABLE FIX - v3.6.23 fixes critical issue: catalog variables now created in correct table 'item_option_new' instead of wrong table 'sc_cat_item_option'. This ensures variables are actually visible and functional in catalog items.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

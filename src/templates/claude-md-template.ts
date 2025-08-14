@@ -2,6 +2,24 @@ export const CLAUDE_MD_TEMPLATE = `# Snow-Flow ServiceNow Development Framework
 
 ## 🚨 ABSOLUTE RULES - NO EXCEPTIONS
 
+### 🔴 CRITICAL: Widget Debugging MUST Use Local Sync!
+
+**When user reports ANY widget issue, ALWAYS use:**
+\`\`\`
+snow_pull_artifact({ sys_id: 'widget_sys_id' })
+\`\`\`
+
+**NEVER use snow_query_table for widgets!** It will hit token limits and you can't use native tools.
+
+**Common scenarios requiring snow_pull_artifact:**
+- "Widget skips questions" → snow_pull_artifact
+- "Form doesn't submit" → snow_pull_artifact  
+- "Data not displaying" → snow_pull_artifact
+- "Button doesn't work" → snow_pull_artifact
+- "Debug this widget" → snow_pull_artifact
+- "Fix widget issue" → snow_pull_artifact
+- Widget script > 1000 chars → snow_pull_artifact
+
 ### Rule #1: NO MOCK DATA - EVERYTHING REAL & COMPLETE
 **FORBIDDEN:** Mock data, placeholders, TODOs, stub implementations, test values, simulations, "this would normally...", partial implementations.
 **REQUIRED:** Complete, production-ready, fully functional code. Take time to implement EVERYTHING properly. Real integrations, comprehensive error handling, full validation.
@@ -15,14 +33,15 @@ Test before claiming broken. Check resources exist. Validate configurations. Evi
 
 ## 📋 MCP SERVERS & TOOLS (18 Servers, 200+ Tools)
 
-### 1. **servicenow-local-development** 🔧 Widget/Artifact Sync
+### 1. **servicenow-local-development** 🔧 Widget/Artifact Sync [USE THIS FOR WIDGETS!]
 \`\`\`
-snow_pull_artifact - Pull ANY artifact to local files for native editing
+snow_pull_artifact - Pull ANY artifact to local files (ALWAYS use for widgets!)
 snow_push_artifact - Push local changes back to ServiceNow  
 snow_cleanup_artifacts - Clean local artifact cache
 snow_get_sync_status - Check artifact sync status
 snow_list_local_artifacts - List all pulled artifacts
 \`\`\`
+**⚠️ CRITICAL: For ANY widget work, use snow_pull_artifact FIRST, not snow_query_table!**
 
 ### 2. **servicenow-deployment** 🚀 Complete Deployment System
 \`\`\`
@@ -38,7 +57,7 @@ snow_check_widget_coherence - Validate HTML/Client/Server communication
 
 ### 3. **servicenow-operations** 📊 Core Operations
 \`\`\`
-snow_query_table - Universal table query with pagination
+snow_query_table - Universal table query (NOT for widgets - use snow_pull_artifact!)
 snow_query_incidents - Query and analyze incidents
 snow_analyze_incident - AI-powered incident analysis
 snow_auto_resolve_incident - Automated resolution
@@ -167,14 +186,16 @@ snow_devops_pipeline - CI/CD pipelines
 snow_manage_cmdb_relationships - CI relationships
 \`\`\`
 
-### 15. **servicenow-knowledge-catalog** 📚 Knowledge & Catalog
+### 15. **servicenow-knowledge-catalog** 📚 Knowledge & Catalog (v3.6.10 Corrected!)
 \`\`\`
 snow_create_knowledge_article - KB articles
-snow_manage_catalog_item - Catalog items
-snow_configure_variables - Variable sets
-snow_create_catalog_policy - Catalog policies
-snow_manage_categories - Categories
+snow_create_catalog_item - Catalog items
+snow_create_catalog_variable - Variable sets
+snow_create_catalog_ui_policy - CORRECTED: Creates in 2 tables (conditions as string, actions as records)
+snow_order_catalog_item - Order catalog items
+snow_discover_catalogs - Discover available catalogs
 \`\`\`
+**✅ Corrected UI Policy (v3.6.10):** Conditions stored as query string in catalog_conditions field. Actions created in catalog_ui_policy_action table. Based on actual ServiceNow structure!
 
 ### 16. **servicenow-flow-workspace-mobile** 📱 Modern UX
 \`\`\`
@@ -268,6 +289,42 @@ await snow_deploy({
     \`
   }
 });
+\`\`\`
+
+### Catalog UI Policy (v3.6.10 Corrected)
+\`\`\`javascript
+await snow_create_catalog_ui_policy({
+  cat_item: 'catalog_item_sys_id',
+  short_description: 'Dynamic Field Control',
+  // Conditions converted to ServiceNow query string format
+  conditions: [
+    {
+      catalog_variable: 'user_type',  // Can use name or sys_id
+      operation: 'is',  // or 'is not', 'contains', 'is empty', etc.
+      value: 'employee',
+      and_or: 'AND'  // Connect with AND or OR
+    },
+    {
+      catalog_variable: 'department',
+      operation: 'is not empty',
+      value: ''
+    }
+  ],
+  // Actions still create separate records
+  actions: [
+    {
+      catalog_variable: 'manager_approval',
+      visible: true,
+      mandatory: true
+    },
+    {
+      catalog_variable: 'cost_center',
+      mandatory: true
+    }
+  ]
+});
+// Creates policy with conditions as query string in catalog_conditions field
+// Actions created as separate records in catalog_ui_policy_action table
 \`\`\`
 
 ## ⚡ Command Reference

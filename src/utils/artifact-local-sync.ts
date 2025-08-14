@@ -36,6 +36,7 @@ export interface LocalArtifact {
   createdAt: Date;
   lastSyncedAt: Date;
   artifactConfig?: ArtifactTypeConfig;  // Reference to registry config
+  isGeneric?: boolean;  // True for custom/unknown tables
 }
 
 export interface LocalFile {
@@ -318,6 +319,11 @@ export class ArtifactLocalSync {
       throw new Error(`No local artifact found for ${sys_id}. Run pullArtifact first.`);
     }
     
+    // Handle generic artifacts differently
+    if (artifact.isGeneric) {
+      return this.pushGenericArtifact(artifact);
+    }
+    
     const config = artifact.artifactConfig;
     if (!config) {
       throw new Error(`No configuration found for artifact ${sys_id}`);
@@ -440,6 +446,70 @@ export class ArtifactLocalSync {
     }
   }
 
+  /**
+   * Push generic artifact changes back to ServiceNow
+   * Only updates known script fields to avoid data corruption
+   */
+  async pushGenericArtifact(artifact: LocalArtifact): Promise<boolean> {
+    console.log(`\n🔄 Pushing generic artifact changes to ${artifact.tableName}...`);
+    
+    const updates: any = {};
+    let hasChanges = false;
+    
+    // Only update known script fields for safety
+    const scriptFields = ['script', 'condition', 'script_plain', 'advanced', 
+                        'client_script', 'server_script', 'template', 'body'];
+    
+    for (const file of artifact.files) {
+      if (file.field && scriptFields.includes(file.field)) {
+        if (fs.existsSync(file.path)) {
+          const currentContent = fs.readFileSync(file.path, 'utf8');
+          if (currentContent !== file.originalContent) {
+            hasChanges = true;
+            updates[file.field] = currentContent;
+            console.log(`   📝 Changed: ${file.filename} (${file.field})`);
+          }
+        }
+      }
+    }
+    
+    if (!hasChanges) {
+      console.log(`✅ No changes detected. Generic artifact is up to date.`);
+      return true;
+    }
+    
+    try {
+      console.log(`\n📤 Updating generic artifact in ServiceNow...`);
+      const timeoutConfig = getMCPTimeoutConfig();
+      
+      const updateResult = await withMCPTimeout(
+        this.client.updateRecord(artifact.tableName, artifact.sys_id, updates),
+        timeoutConfig.pushToolTimeout,
+        `Update generic artifact ${artifact.sys_id}`
+      );
+      
+      if (!updateResult || !updateResult.success) {
+        const errorMsg = updateResult?.error || 'Unknown API error';
+        console.error(`❌ ServiceNow API returned failure: ${errorMsg}`);
+        artifact.syncStatus = 'pending_upload';
+        return false;
+      }
+      
+      artifact.syncStatus = 'synced';
+      artifact.lastSyncedAt = new Date();
+      
+      console.log(`✅ Generic artifact successfully updated in ServiceNow!`);
+      console.log(`🔗 Table: ${artifact.tableName}`);
+      console.log(`🔗 sys_id: ${artifact.sys_id}`);
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to update generic artifact:`, error);
+      artifact.syncStatus = 'pending_upload';
+      return false;
+    }
+  }
+  
   /**
    * Push local changes back to ServiceNow
    * (Wrapper for backward compatibility)
@@ -841,22 +911,50 @@ snow-flow sync status ${widget.sys_id}
 
   /**
    * Pull any supported artifact type by detecting table from sys_id
-   * ENHANCED: Better error logging and more robust detection
+   * ENHANCED: Now uses sys_metadata to find ANY table, not just registered ones!
    */
   async pullArtifactBySysId(sys_id: string): Promise<LocalArtifact> {
     console.log(`\n🔍 Auto-detecting artifact type for sys_id: ${sys_id}`);
-    console.log(`📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} supported tables...`);
     
     // CRITICAL: Add MAXIMUM operation timeout to prevent infinite hanging
     const MAX_OPERATION_TIME = 30000; // 30 seconds max for entire operation
     const operationStart = Date.now();
+    const timeoutConfig = getMCPTimeoutConfig();
     
-    // SMART ORDER: Check most common tables first for better performance
+    // STEP 1: Try to find the table name using sys_metadata (works for ANY table!)
+    console.log(`🔮 Querying sys_metadata to find table name...`);
+    try {
+      const metadataResponse = await withMCPTimeout(
+        this.client.searchRecords('sys_metadata', `sys_id=${sys_id}`, 1),
+        5000,
+        `Query sys_metadata for ${sys_id}`
+      );
+      
+      if (metadataResponse.result?.[0]?.sys_class_name) {
+        const tableName = metadataResponse.result[0].sys_class_name;
+        console.log(`   ✅ Found in sys_metadata! Table: ${tableName}`);
+        
+        // Check if this table is in our registry
+        if (ARTIFACT_REGISTRY[tableName]) {
+          console.log(`   ✅ Table is supported! Proceeding with pull...`);
+          return this.pullArtifact(tableName, sys_id);
+        } else {
+          console.log(`   ⚠️ Table '${tableName}' is not in artifact registry`);
+          console.log(`   🔧 Attempting generic pull for custom table...`);
+          return this.pullGenericArtifact(tableName, sys_id);
+        }
+      }
+    } catch (error) {
+      console.log(`   ⚠️ sys_metadata query failed: ${error instanceof Error ? error.message : error}`);
+      console.log(`   📋 Falling back to registered table search...`);
+    }
+    
+    // STEP 2: If sys_metadata fails, try common tables first
+    console.log(`\n📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} registered tables...`);
     const allTables = Object.keys(ARTIFACT_REGISTRY);
     const commonTables = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'];
     const otherTables = allTables.filter(t => !commonTables.includes(t));
     const tables = [...commonTables, ...otherTables]; // Common tables first
-    const timeoutConfig = getMCPTimeoutConfig();
     const errors: Array<{table: string, error: string}> = [];
     
     for (const table of tables) {
@@ -872,7 +970,7 @@ snow-flow sync status ${widget.sys_id}
         // Reduced timeout per table for faster failure
         const response = await withMCPTimeout(
           this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
-          3000, // 3 second timeout per table (reduced from 8s)
+          3000, // 3 second timeout per table
           `Detect table for ${sys_id}`
         );
         
@@ -887,14 +985,36 @@ snow-flow sync status ${widget.sys_id}
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.log(`   ⚠️ Error checking ${table}: ${errorMsg}`);
         errors.push({ table, error: errorMsg });
+      }
+    }
+    
+    // STEP 3: Try a few common custom tables as last resort
+    const customTables = ['sys_ui_script', 'sys_processor', 'sys_ws_operation', 'sys_portal_page'];
+    console.log(`\n🔍 Checking additional custom tables...`);
+    
+    for (const table of customTables) {
+      if (Date.now() - operationStart > MAX_OPERATION_TIME) break;
+      
+      try {
+        console.log(`   🔎 Checking custom table: ${table}...`);
+        const response = await withMCPTimeout(
+          this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
+          3000,
+          `Check custom table ${table}`
+        );
         
-        // Don't fail on permission errors, timeouts, etc. - keep trying other tables
+        if (response.result?.[0]) {
+          console.log(`   ✅ Found in custom table: ${table}`);
+          return this.pullGenericArtifact(table, sys_id);
+        }
+      } catch (error) {
+        // Silent fail for custom tables
       }
     }
     
     // Generate detailed error message
     console.log(`\n❌ Artifact detection failed!`);
-    console.log(`🔍 Searched ${tables.length} tables for sys_id: ${sys_id}`);
+    console.log(`🔍 Searched sys_metadata + ${tables.length} registered tables + ${customTables.length} custom tables`);
     
     if (errors.length > 0) {
       console.log(`\n⚠️ Errors encountered:`);
@@ -906,12 +1026,134 @@ snow-flow sync status ${widget.sys_id}
     console.log(`\n💡 Troubleshooting tips:`);
     console.log(`   1. Verify the sys_id exists in ServiceNow`);
     console.log(`   2. Check your permissions for the target table`);
-    console.log(`   3. Try specifying the table explicitly: snow_pull_artifact({sys_id, table: 'sp_widget'})`);
-    console.log(`   4. Supported tables: ${tables.join(', ')}`);
+    console.log(`   3. Try specifying the table explicitly: snow_pull_artifact({sys_id, table: 'table_name'})`);
+    console.log(`   4. The artifact might be in a custom or scoped application table`);
     
-    throw new Error(`Could not find artifact with sys_id ${sys_id} in any supported table. See details above.`);
+    throw new Error(`Could not find artifact with sys_id ${sys_id}. It may be in a custom table or you may lack permissions.`);
   }
 
+  /**
+   * Pull a generic artifact from an unknown/custom table
+   * Creates a basic file structure for any ServiceNow record
+   */
+  async pullGenericArtifact(tableName: string, sys_id: string): Promise<LocalArtifact> {
+    console.log(`\n🔧 Pulling generic artifact from custom table: ${tableName}`);
+    
+    try {
+      // Fetch the record with all fields
+      const response = await withMCPTimeout(
+        this.client.searchRecords(tableName, `sys_id=${sys_id}`, 1),
+        10000,
+        `Fetch generic artifact from ${tableName}`
+      );
+      
+      const record = response.result?.[0];
+      if (!record) {
+        throw new Error(`Record not found in ${tableName}`);
+      }
+      
+      // Create a generic folder structure
+      const name = record.name || record.short_description || record.sys_name || sys_id;
+      const sanitizedName = this.sanitizeFilename(name);
+      const artifactPath = path.join(this.baseDir, 'custom', tableName, sanitizedName);
+      
+      // Clean up existing files
+      if (fs.existsSync(artifactPath)) {
+        fs.rmSync(artifactPath, { recursive: true });
+      }
+      fs.mkdirSync(artifactPath, { recursive: true });
+      
+      const files: LocalFile[] = [];
+      
+      // Create JSON file with all fields
+      const jsonFile = this.createLocalFile(
+        artifactPath,
+        `${sanitizedName}.json`,
+        JSON.stringify(record, null, 2),
+        'all_fields',
+        'json'
+      );
+      files.push(jsonFile);
+      
+      // Extract common script fields if they exist
+      const scriptFields = ['script', 'condition', 'script_plain', 'advanced', 
+                          'client_script', 'server_script', 'template', 'body'];
+      
+      for (const field of scriptFields) {
+        if (record[field] && typeof record[field] === 'string' && record[field].trim()) {
+          const ext = field.includes('template') || field === 'body' ? 'html' : 'js';
+          const scriptFile = this.createLocalFile(
+            artifactPath,
+            `${sanitizedName}.${field}.${ext}`,
+            record[field],
+            field,
+            ext
+          );
+          files.push(scriptFile);
+        }
+      }
+      
+      // Create README
+      const readmeContent = `# Generic Artifact: ${name}\n\n` +
+        `**Table:** ${tableName}\n` +
+        `**Sys ID:** ${sys_id}\n` +
+        `**Created:** ${record.sys_created_on || 'Unknown'}\n` +
+        `**Updated:** ${record.sys_updated_on || 'Unknown'}\n\n` +
+        `## Notice\n\n` +
+        `This is a generic artifact from a custom/unknown table.\n` +
+        `Snow-Flow has created a basic file structure to allow editing.\n\n` +
+        `## Files\n\n` +
+        `- **${sanitizedName}.json** - Complete record data\n` +
+        (files.length > 1 ? files.slice(1).map(f => 
+          `- **${f.filename}** - ${f.field} field content\n`).join('') : '') +
+        `\n## Push Support\n\n` +
+        `Generic artifacts have limited push support. ` +
+        `Only script fields will be updated when pushing back.\n`;
+      
+      const readmeFile = this.createLocalFile(
+        artifactPath,
+        'README.md',
+        readmeContent,
+        'documentation',
+        'md'
+      );
+      files.push(readmeFile);
+      
+      // Create artifact record
+      const artifact: LocalArtifact = {
+        sys_id: sys_id,
+        name: name,
+        type: `Custom (${tableName})`,
+        tableName: tableName,
+        localPath: artifactPath,
+        files: files,
+        metadata: record,
+        syncStatus: 'synced',
+        createdAt: new Date(),
+        lastSyncedAt: new Date(),
+        isGeneric: true  // Mark as generic for special handling
+      };
+      
+      this.artifacts.set(sys_id, artifact);
+      
+      const relativePath = path.relative(process.cwd(), artifactPath);
+      const displayPath = relativePath.startsWith('..') ? artifactPath : relativePath;
+      
+      console.log(`✅ Generic artifact pulled successfully!`);
+      console.log(`📁 Location: ${displayPath}`);
+      console.log(`📄 Files created:`);
+      files.forEach(f => console.log(`   - ${f.filename} (${f.type})`));
+      console.log(`\n⚠️ Note: This is a generic pull from a custom table.`);
+      console.log(`   Full push support may be limited.`);
+      
+      return artifact;
+      
+    } catch (error) {
+      console.error(`❌ Failed to pull generic artifact:`, error);
+      throw error;
+    }
+  }
+  
   /**
    * Get supported artifact types
    */

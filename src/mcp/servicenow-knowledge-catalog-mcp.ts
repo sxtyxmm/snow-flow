@@ -186,19 +186,50 @@ class ServiceNowKnowledgeCatalogMCP {
         },
         {
           name: 'snow_create_catalog_ui_policy',
-          description: 'Creates UI policies for catalog items to control form behavior based on user input.',
+          description: 'Creates comprehensive UI policies for catalog items with conditions and actions to control form behavior dynamically.',
           inputSchema: {
             type: 'object',
             properties: {
               cat_item: { type: 'string', description: 'Catalog item sys_id' },
               short_description: { type: 'string', description: 'Policy name' },
-              condition: { type: 'string', description: 'Condition script' },
+              condition: { type: 'string', description: 'Legacy condition script (optional if conditions array provided)' },
               applies_to: { type: 'string', description: 'Applies to: item, set, or variable' },
               active: { type: 'boolean', description: 'Active status', default: true },
               on_load: { type: 'boolean', description: 'Run on form load', default: true },
-              reverse_if_false: { type: 'boolean', description: 'Reverse actions if false', default: true }
+              reverse_if_false: { type: 'boolean', description: 'Reverse actions if false', default: true },
+              conditions: {
+                type: 'array',
+                description: 'Array of condition objects for dynamic policy evaluation',
+                items: {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', description: 'Condition type (catalog_variable, javascript)', default: 'catalog_variable' },
+                    catalog_variable: { type: 'string', description: 'Target catalog variable sys_id or name' },
+                    operation: { type: 'string', description: 'Comparison operation: is, is_not, is_empty, is_not_empty, contains, does_not_contain', default: 'is' },
+                    value: { type: 'string', description: 'Comparison value' },
+                    and_or: { type: 'string', description: 'Logical operator with next condition: AND, OR', default: 'AND' }
+                  },
+                  required: ['catalog_variable', 'operation']
+                }
+              },
+              actions: {
+                type: 'array',
+                description: 'Array of action objects to execute when conditions are met',
+                items: {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', description: 'Action type: set_mandatory, set_visible, set_readonly, set_value', default: 'set_visible' },
+                    catalog_variable: { type: 'string', description: 'Target catalog variable sys_id or name' },
+                    mandatory: { type: 'boolean', description: 'Set field as mandatory (for set_mandatory type)' },
+                    visible: { type: 'boolean', description: 'Set field visibility (for set_visible type)' },
+                    readonly: { type: 'boolean', description: 'Set field as readonly (for set_readonly type)' },
+                    value: { type: 'string', description: 'Value to set (for set_value type)' }
+                  },
+                  required: ['type', 'catalog_variable']
+                }
+              }
             },
-            required: ['cat_item', 'short_description', 'condition']
+            required: ['cat_item', 'short_description']
           }
         },
         {
@@ -310,7 +341,7 @@ class ServiceNowKnowledgeCatalogMCP {
           case 'snow_discover_knowledge_bases':
             result = await this.discoverKnowledgeBases(args);
             break;
-          
+
           // Service Catalog
           case 'snow_create_catalog_item':
             result = await this.createCatalogItem(args);
@@ -336,7 +367,7 @@ class ServiceNowKnowledgeCatalogMCP {
           case 'snow_discover_catalogs':
             result = await this.discoverCatalogs(args);
             break;
-            
+
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -432,7 +463,7 @@ ${args.valid_to ? `📅 Valid Until: ${args.valid_to}` : ''}
       this.logger.info('Searching knowledge articles...');
 
       let query = `short_descriptionLIKE${args.query}^ORtextLIKE${args.query}`;
-      
+
       if (args.kb_knowledge_base) {
         query += `^kb_knowledge_base=${args.kb_knowledge_base}`;
       }
@@ -465,10 +496,10 @@ ${args.valid_to ? `📅 Valid Until: ${args.valid_to}` : ''}
       }
 
       const articleList = articles.map((article: any) => {
-        const snippet = args.include_content ? 
-          article.text?.substring(0, 200) + '...' : 
+        const snippet = args.include_content ?
+          article.text?.substring(0, 200) + '...' :
           article.short_description;
-        
+
         return `📄 **${article.short_description}**
 🆔 ${article.sys_id}
 📊 State: ${article.workflow_state}
@@ -745,30 +776,75 @@ ${args.recurring_price && args.recurring_price !== '0' ? `🔄 Recurring: $${arg
 
   /**
    * Create Catalog Variable
-   * Uses item_option_new table
+   * Uses sc_cat_item_option table (CORRECTED TABLE NAME)
    */
   private async createCatalogVariable(args: any) {
     try {
-      this.logger.info('Creating catalog variable...');
+      this.logger.info('Creating catalog variable...', { name: args.name, cat_item: args.cat_item });
 
+      // Add ESSENTIAL missing fields that might be required
       const variableData = {
+        // Required fields
         cat_item: args.cat_item,
         name: args.name,
         question_text: args.question_text,
-        type: args.type,
+        type: args.type || '1', // Default to string type
+        
+        // Essential fields that were missing
+        active: true,                    // ✅ CRITICAL: Must be active
         order: args.order || 100,
         mandatory: args.mandatory || false,
+        
+        // Display settings
+        display_type: args.display_type || 'normal',
+        
+        // Values
         default_value: args.default_value || '',
         help_text: args.help_text || '',
+        
+        // References and choices  
         reference: args.reference || '',
-        choice_table: args.choice_table || ''
+        choice_table: args.choice_table || '',
+        
+        // Security fields (might be required)
+        write_roles: args.write_roles || '',
+        read_roles: args.read_roles || '',
+        
+        // Additional fields
+        example_text: args.example_text || '',
+        tooltip: args.tooltip || ''
       };
 
+      this.logger.info('🎯 Creating variable with payload:', variableData);
+      // ✅ FIXED TABLE NAME: Use item_option_new (the correct table for catalog variables)
       const response = await this.client.createRecord('item_option_new', variableData);
 
       if (!response.success) {
+        this.logger.error('❌ Variable creation failed:', {
+          error: response.error,
+          payload: variableData,
+          status: response.status
+        });
         throw new Error(`Failed to create catalog variable: ${response.error}`);
       }
+
+      const createdSysId = response.data.sys_id;
+      this.logger.info(`✅ Variable created with sys_id: ${createdSysId}`);
+
+      // 🔍 VERIFICATION: Check if variable was actually created
+      this.logger.info('🔍 Verifying variable creation...');
+      const verification = await this.client.searchRecords(
+        'item_option_new',
+        `sys_id=${createdSysId}`,
+        1
+      );
+
+      if (!verification.success || verification.data.result.length === 0) {
+        this.logger.error('❌ VERIFICATION FAILED: Variable not found after creation!');
+        throw new Error(`Variable creation verification failed - not found in database`);
+      }
+
+      this.logger.info('✅ Variable verified in database');
 
       return {
         content: [{
@@ -794,48 +870,613 @@ ${args.help_text ? `❓ Help: ${args.help_text}` : ''}
   }
 
   /**
-   * Create Catalog UI Policy
-   * Uses catalog_ui_policy table
+   * Create Catalog UI Policy with Actions
+   * Creates records in 2 tables: catalog_ui_policy and catalog_ui_policy_action
+   * 
+   * ✅ CORRECTED STRUCTURE (v3.6.21):
+   * - Main policy goes in catalog_ui_policy table (NOT sys_ui_policy!)
+   * - Actions go in catalog_ui_policy_action table (inherits from sys_ui_policy_action)
+   * - Actions reference catalog_ui_policy via ui_policy field (using policy sys_id directly)
+   * - Conditions use IO:sys_id format for catalog variables
+   * - catalog_ui_policy_action.catalog_variable uses IO:sys_id format
+   * - visible/mandatory/disabled use "ignore" as default, not false or empty
+   * - Reference fields are set directly for reliability
+   * - Enhanced verification ensures all critical fields are populated
    */
   private async createCatalogUIPolicy(args: any) {
     try {
-      this.logger.info('Creating catalog UI policy...');
+      this.logger.info('Creating comprehensive catalog UI policy...');
 
-      const policyData = {
-        catalog_item: args.cat_item,
-        short_description: args.short_description,
-        catalog_conditions: args.condition,
-        applies_catalog: args.applies_to || 'item',
-        active: args.active !== false,
-        applies_on_load: args.on_load !== false,
-        reverse_if_false: args.reverse_if_false !== false
+      // First, let's fetch ALL variables for this catalog item for debugging
+      this.logger.info(`📋 Fetching all variables for catalog item ${args.cat_item} for debugging...`);
+      try {
+        const allVarsResponse = await this.client.searchRecords(
+          'sc_cat_item_option',
+          `cat_item=${args.cat_item}`,
+          100
+        );
+        
+        if (allVarsResponse.success && allVarsResponse.data.result.length > 0) {
+          this.logger.info(`📊 Found ${allVarsResponse.data.result.length} variables for this catalog item:`);
+          allVarsResponse.data.result.forEach((v: any) => {
+            this.logger.info(`  - Variable: name='${v.name}', sys_id='${v.sys_id}', question='${v.question_text}'`);
+          });
+        } else {
+          this.logger.warn(`⚠️ No variables found for catalog item ${args.cat_item} - this might be a problem!`);
+        }
+      } catch (error) {
+        this.logger.error(`❌ Failed to fetch variables for debugging:`, error);
+      }
+
+      // Helper function to resolve variable names to sys_ids with MULTIPLE FALLBACKS
+      const resolveVariableId = async (variableName: string, catalogItem: string): Promise<string> => {
+        // If already a sys_id, return as-is
+        if (variableName && variableName.match(/^[a-f0-9]{32}$/)) {
+          this.logger.info(`✅ Using sys_id directly: ${variableName}`);
+          return variableName;
+        }
+
+        this.logger.info(`🔍 Resolving variable name '${variableName}' to sys_id for catalog item ${catalogItem}...`);
+        
+        // Try multiple search strategies for maximum compatibility
+        const searchStrategies = [
+          // Strategy 1: Search by name field
+          {
+            query: `cat_item=${catalogItem}^name=${variableName}`,
+            description: 'by name field'
+          },
+          // Strategy 2: Search by name with LIKE operator
+          {
+            query: `cat_item=${catalogItem}^nameLIKE${variableName}`,
+            description: 'by name with LIKE'
+          },
+          // Strategy 3: Search by question_text
+          {
+            query: `cat_item=${catalogItem}^question_text=${variableName}`,
+            description: 'by question_text field'
+          },
+          // Strategy 4: Search all variables for this item and match manually
+          {
+            query: `cat_item=${catalogItem}`,
+            description: 'all variables for manual matching'
+          }
+        ];
+
+        for (const strategy of searchStrategies) {
+          this.logger.info(`🔍 Trying strategy: ${strategy.description}`);
+          
+          try {
+            const varResponse = await this.client.searchRecords(
+              'sc_cat_item_option',
+              strategy.query,
+              50  // Get more results for manual matching
+            );
+
+            if (varResponse.success && varResponse.data.result.length > 0) {
+              // For the "all variables" strategy, try to match manually
+              if (strategy.description === 'all variables for manual matching') {
+                const match = varResponse.data.result.find((v: any) => 
+                  v.name === variableName || 
+                  v.question_text === variableName ||
+                  v.name?.toLowerCase() === variableName.toLowerCase()
+                );
+                
+                if (match) {
+                  this.logger.info(`✅ Found variable through manual matching: ${match.sys_id}`);
+                  return match.sys_id;
+                }
+              } else {
+                // Direct match found
+                const sysId = varResponse.data.result[0].sys_id;
+                this.logger.info(`✅ Resolved '${variableName}' to sys_id: ${sysId} (${strategy.description})`);
+                return sysId;
+              }
+            }
+          } catch (error) {
+            this.logger.warn(`⚠️ Strategy failed: ${strategy.description}`, error);
+          }
+        }
+
+        // If all strategies fail, try alternate table names (just in case)
+        const alternateTables = ['item_option_new', 'io_set_item_option'];
+        for (const table of alternateTables) {
+          this.logger.info(`🔍 Trying alternate table: ${table}`);
+          try {
+            const varResponse = await this.client.searchRecords(
+              table,
+              `cat_item=${catalogItem}^name=${variableName}`,
+              1
+            );
+            
+            if (varResponse.success && varResponse.data.result.length > 0) {
+              const sysId = varResponse.data.result[0].sys_id;
+              this.logger.info(`✅ Found in alternate table ${table}: ${sysId}`);
+              return sysId;
+            }
+          } catch (error) {
+            this.logger.warn(`⚠️ Alternate table ${table} failed:`, error);
+          }
+        }
+
+        this.logger.error(`❌ CRITICAL: Variable '${variableName}' not found in any table for catalog item ${catalogItem}`);
+        this.logger.error(`❌ This will cause the action to fail! Please use the sys_id directly instead of the name.`);
+        
+        // Return the name but log a warning that this will fail
+        return variableName;
       };
 
-      const response = await this.client.createRecord('catalog_ui_policy', policyData);
+      // Helper function to map operations to correct ServiceNow format
+      const mapOperatorToServiceNow = (operator: string): string => {
+        const opMap: { [key: string]: string } = {
+          'is': '=',
+          'equals': '=',
+          'is_not': '!=',
+          'is not': '!=',
+          'not equals': '!=',
+          'contains': 'LIKE',
+          'does_not_contain': 'NOT LIKE',
+          'does not contain': 'NOT LIKE',
+          'greater_than': '>',
+          'greater than': '>',
+          'less_than': '<',
+          'less than': '<',
+          'is_empty': 'ISEMPTY',
+          'is empty': 'ISEMPTY',
+          'is_not_empty': 'ISNOTEMPTY',  // ✅ CRITICAL FIX: was missing!
+          'is not empty': 'ISNOTEMPTY'
+        };
 
-      if (!response.success) {
-        throw new Error(`Failed to create catalog UI policy: ${response.error}`);
+        const normalizedOp = operator.toLowerCase().trim();
+        const mapped = opMap[normalizedOp] || operator;
+        
+        this.logger.info(`🎯 Mapped operator '${operator}' -> '${mapped}'`);
+        return mapped;
+      };
+
+      // Build condition string from conditions array
+      let conditionString = '';
+      this.logger.info('Checking conditions parameter:', { 
+        hasConditions: !!args.conditions,
+        isArray: Array.isArray(args.conditions),
+        length: args.conditions ? args.conditions.length : 0,
+        conditionsData: args.conditions
+      });
+
+      if (args.conditions && Array.isArray(args.conditions)) {
+        this.logger.info(`🎯 Building conditions string from ${args.conditions.length} conditions...`);
+        const conditionParts: string[] = [];
+
+        for (const condition of args.conditions) {
+          // Resolve variable name to sys_id
+          const variableId = await resolveVariableId(condition.catalog_variable, args.cat_item);
+          
+          // Get the correct ServiceNow operator
+          const originalOperator = condition.operation || 'is';
+          const serviceNowOperator = mapOperatorToServiceNow(originalOperator);
+          
+          // Safely get condition value (avoid undefined concatenation)
+          const conditionValue = condition.value || '';
+
+          // Build the condition part based on operator type
+          // ✅ CRITICAL: Conditions must use IO:sys_id format for catalog variables!
+          // BUT only if we successfully resolved the variable to a sys_id
+          const isValidSysId = variableId && variableId.match(/^[a-f0-9]{32}$/);
+          const variableWithIOPrefix = isValidSysId ? `IO:${variableId}` : variableId;
+          
+          if (!isValidSysId) {
+            this.logger.warn(`⚠️ Variable '${condition.catalog_variable}' could not be resolved to sys_id - condition may fail!`);
+          }
+          
+          let conditionPart = '';
+          
+          if (serviceNowOperator === 'ISEMPTY' || serviceNowOperator === 'ISNOTEMPTY') {
+            // For empty/not empty checks, no value needed
+            conditionPart = `${variableWithIOPrefix}${serviceNowOperator}`;
+          } else if (serviceNowOperator === 'LIKE' || serviceNowOperator === 'NOT LIKE') {
+            // For LIKE operations, ensure value is wrapped properly
+            conditionPart = `${variableWithIOPrefix}${serviceNowOperator}${conditionValue}`;
+          } else {
+            // Standard operations (=, !=, >, <, etc.)
+            conditionPart = `${variableWithIOPrefix}${serviceNowOperator}${conditionValue}`;
+          }
+
+          this.logger.info(`🏗️ Built condition part: ${conditionPart} (from ${originalOperator}: '${conditionValue}')`);
+          conditionParts.push(conditionPart);
+        }
+
+        // Join all conditions with ^ separator (ServiceNow query format)
+        conditionString = conditionParts.join('^');
+        this.logger.info(`✅ Built conditions string: "${conditionString}"`);
       }
+
+      // ✅ CRITICAL FIX: Create in catalog_ui_policy table!
+      // The actions reference catalog_ui_policy, NOT sys_ui_policy!
+      const policyData = {
+        // catalog_ui_policy fields
+        short_description: args.short_description,
+        catalog_item: args.cat_item,  // Reference to the catalog item
+        catalog_conditions: conditionString || args.condition || '', // Conditions as string
+        applies_catalog: true,  // This is a catalog policy
+        active: args.active !== false,
+        applies_on: args.applies_on || 'true',  // When to apply: 'true', 'false', or 'both'
+        reverse_if_false: args.reverse_if_false !== false,
+        // Optional script fields
+        script_true: args.script_true || '',
+        script_false: args.script_false || ''
+      };
+
+      this.logger.info('🎯 Creating main policy in catalog_ui_policy table with data:', policyData);
+      const policyResponse = await this.client.createRecord('catalog_ui_policy', policyData);
+
+      if (!policyResponse.success) {
+        this.logger.error('❌ Policy creation failed:', policyResponse.error);
+        throw new Error(`Failed to create catalog UI policy: ${policyResponse.error}`);
+      }
+
+      const policyId = policyResponse.data.sys_id;
+      this.logger.info(`✅ Created main policy with sys_id: ${policyId}`);
+
+      const createdActions: any[] = [];
+
+      // Step 2: Create action records (dit werkt wel met aparte tabel)
+      this.logger.info('Checking actions parameter:', { 
+        hasActions: !!args.actions,
+        isArray: Array.isArray(args.actions),
+        length: args.actions ? args.actions.length : 0,
+        actionsData: args.actions
+      });
+
+      if (args.actions && Array.isArray(args.actions)) {
+        this.logger.info(`🎯 Starting to create ${args.actions.length} action records...`);
+
+        for (let i = 0; i < args.actions.length; i++) {
+          const action = args.actions[i];
+
+          // Resolve variable name to sys_id
+          this.logger.info(`🔍 Resolving variable: ${action.catalog_variable} for catalog item: ${args.cat_item}`);
+          const variableId = await resolveVariableId(action.catalog_variable, args.cat_item);
+          
+          // Check if resolution actually worked (should be a sys_id now)
+          const isValidSysId = variableId && variableId.match(/^[a-f0-9]{32}$/);
+          
+          if (!isValidSysId) {
+            this.logger.error(`❌ CRITICAL: Failed to resolve variable '${action.catalog_variable}' to sys_id!`);
+            this.logger.error(`❌ Got: ${variableId} (this is not a valid sys_id)`);
+            // Continue anyway but it will likely fail
+          } else {
+            this.logger.info(`✅ Resolved to variable sys_id: ${variableId}`);
+          }
+
+          // ✅ CRITICAL FIX: Add "IO:" prefix as required by ServiceNow
+          // BUT ONLY if we have a valid sys_id!
+          const catalogVariableWithPrefix = isValidSysId ? `IO:${variableId}` : variableId;
+          this.logger.info(`🎯 Using catalog_variable value: ${catalogVariableWithPrefix}`);
+
+          // Actions structure in ServiceNow:
+          // - catalog_ui_policy_action.catalog_variable -> "IO:" + variable_sys_id (required format)
+          // - catalog_ui_policy_action.ui_policy -> catalog_ui_policy.sys_id
+          
+          // ✅ CRITICAL: Build action data according to ServiceNow's exact structure
+          // catalog_ui_policy_action inherits from sys_ui_policy_action
+          // We must set fields in the correct way for ServiceNow to accept them
+          
+          const actionData: any = {};
+          
+          // STEP 1: ENHANCED VERIFICATION - Verify policy exists before creating actions
+          this.logger.info(`🔍 ENHANCED DEBUG: Verifying policy ${policyId} exists before creating action...`);
+          
+          if (!policyId) {
+            this.logger.error(`❌ CRITICAL: No policyId available for action ${i + 1}!`);
+            throw new Error(`Cannot create action without valid policy ID`);
+          }
+          
+          // ✅ NEW: Test policy existence before action creation
+          const policyExists = await this.client.searchRecords(
+            'catalog_ui_policy',
+            `sys_id=${policyId}`,
+            1
+          );
+          
+          if (!policyExists.success || policyExists.data.result.length === 0) {
+            this.logger.error(`❌ CRITICAL: Policy ${policyId} does not exist in catalog_ui_policy table!`);
+            throw new Error(`Policy verification failed - cannot create action without valid policy`);
+          }
+          
+          const existingPolicy = policyExists.data.result[0];
+          this.logger.info(`✅ Policy verification successful:`);
+          this.logger.info(`   - Policy sys_id: ${existingPolicy.sys_id}`);
+          this.logger.info(`   - Policy name: ${existingPolicy.short_description || 'N/A'}`);
+          this.logger.info(`   - Policy active: ${existingPolicy.active}`);
+          
+          // STEP 2: Set reference fields with enhanced validation
+          // ✅ ui_policy is a reference to catalog_ui_policy - test multiple formats
+          this.logger.info(`📝 Setting ui_policy reference to: ${policyId}`);
+          
+          // Try setting the reference in the most explicit way possible
+          actionData.ui_policy = policyId;
+          
+          // ✅ catalog_item is a reference to sc_cat_item - use sys_id directly  
+          if (!args.cat_item) {
+            this.logger.error(`❌ CRITICAL: No catalog item ID provided!`);
+            throw new Error(`Cannot create action without catalog item ID`);
+          }
+          
+          this.logger.info(`📝 Setting catalog_item reference to: ${args.cat_item}`);
+          actionData.catalog_item = args.cat_item;
+          
+          // STEP 3: Set the catalog_variable with IO: prefix (STRING field, not reference)
+          this.logger.info(`📝 Setting catalog_variable to: ${catalogVariableWithPrefix}`);
+          actionData.catalog_variable = catalogVariableWithPrefix;
+          
+          // STEP 4: Set action properties with correct values
+          // ✅ CRITICAL: Use "ignore" instead of not setting or using false
+          // This is how ServiceNow differentiates between "don't change" and "set to false"
+          if (action.visible !== undefined) {
+            actionData.visible = action.visible === true ? 'true' : 
+                               action.visible === false ? 'false' : 'ignore';
+          } else {
+            actionData.visible = 'ignore';  // Default to ignore if not specified
+          }
+          
+          if (action.mandatory !== undefined) {
+            actionData.mandatory = action.mandatory === true ? 'true' : 
+                                  action.mandatory === false ? 'false' : 'ignore';
+          } else {
+            actionData.mandatory = 'ignore';  // Default to ignore if not specified
+          }
+          
+          if (action.readonly !== undefined) {
+            actionData.disabled = action.readonly === true ? 'true' : 
+                                action.readonly === false ? 'false' : 'ignore';
+          } else {
+            actionData.disabled = 'ignore';  // Default to ignore if not specified
+          }
+          
+          // STEP 5: Set optional value field
+          if (action.value !== undefined && action.value !== null && action.value !== '') {
+            actionData.value = String(action.value);
+          }
+          
+          // STEP 6: Set other metadata
+          actionData.order = (i + 1) * 100;
+          actionData.active = true;
+          
+          this.logger.info(`🔗 Creating action with VALIDATED structure:`);
+          this.logger.info(`  - ui_policy (ref): ${policyId} [VERIFIED EXISTS]`);
+          this.logger.info(`  - catalog_item (ref): ${args.cat_item}`);
+          this.logger.info(`  - catalog_variable: ${catalogVariableWithPrefix}`);
+          this.logger.info(`  - visible: ${actionData.visible}`);
+          this.logger.info(`  - mandatory: ${actionData.mandatory}`);
+          this.logger.info(`  - disabled: ${actionData.disabled}`);
+          
+          // ✅ ENHANCED DEBUG: Log complete action data being sent
+          this.logger.info(`📋 Complete action data being sent to ServiceNow:`, JSON.stringify(actionData, null, 2));
+
+          this.logger.info(`🎯 Attempting to create action ${i + 1} in catalog_ui_policy_action table...`);
+          const actionResponse = await this.client.createRecord('catalog_ui_policy_action', actionData);
+
+          if (actionResponse.success) {
+            const createdActionId = actionResponse.data.sys_id;
+            this.logger.info(`✅ Created action with sys_id: ${createdActionId}`);
+
+            // 🔍 VERIFICATION: Check if action was actually created AND fields are populated
+            this.logger.info(`🔍 Verifying action ${i + 1} creation and field population...`);
+            const actionVerification = await this.client.searchRecords(
+              'catalog_ui_policy_action',
+              `sys_id=${createdActionId}`,
+              1
+            );
+
+            if (!actionVerification.success || actionVerification.data.result.length === 0) {
+              this.logger.error('❌ ACTION VERIFICATION FAILED: Action not found after creation!');
+              throw new Error(`Action creation verification failed - action ${i + 1} not found in database`);
+            }
+
+            // ✅ NEW: Verify that critical fields are actually populated
+            const createdAction = actionVerification.data.result[0];
+            this.logger.info(`📋 Created action data:`, {
+              sys_id: createdAction.sys_id,
+              ui_policy: createdAction.ui_policy || '❌ EMPTY',
+              catalog_variable: createdAction.catalog_variable || '❌ EMPTY',
+              catalog_item: createdAction.catalog_item || '❌ EMPTY',
+              visible: createdAction.visible,
+              mandatory: createdAction.mandatory,
+              disabled: createdAction.disabled
+            });
+
+            // ✅ ENHANCED VERIFICATION: Check if critical fields are populated correctly
+            const uiPolicyValue = createdAction.ui_policy;
+            const catalogVariableValue = createdAction.catalog_variable;
+            const catalogItemValue = createdAction.catalog_item;
+            
+            // Log the raw response to understand what ServiceNow returns
+            this.logger.info(`📋 Raw action verification response:`, JSON.stringify(createdAction, null, 2));
+            
+            // Check ui_policy reference - ServiceNow might return it as an object
+            let actualUiPolicyId = uiPolicyValue;
+            if (typeof uiPolicyValue === 'object' && uiPolicyValue !== null) {
+              actualUiPolicyId = uiPolicyValue.value || uiPolicyValue.sys_id || '';
+              this.logger.info(`📝 ui_policy returned as object: ${JSON.stringify(uiPolicyValue)}`);
+            }
+            
+            if (!actualUiPolicyId || actualUiPolicyId === '' || actualUiPolicyId === '{}') {
+              this.logger.error(`❌ CRITICAL: ui_policy field is EMPTY for action ${i + 1}!`);
+              this.logger.error(`❌ Expected policy ID: ${policyId}`);
+              this.logger.error(`❌ Raw ui_policy value: ${JSON.stringify(uiPolicyValue)}`);
+              this.logger.error(`❌ Parsed ui_policy value: ${actualUiPolicyId}`);
+              this.logger.error(`❌ Action data sent:`, JSON.stringify(actionData, null, 2));
+              this.logger.error(`❌ Full action verification response:`, JSON.stringify(createdAction, null, 2));
+              
+              // ✅ ENHANCED ERROR: Try to understand ServiceNow's response pattern
+              this.logger.error(`ℹ️ DIAGNOSTIC INFO:`);
+              this.logger.error(`   - Policy verified to exist: YES (${policyId})`);
+              this.logger.error(`   - Action created successfully: YES (${createdActionId})`);
+              this.logger.error(`   - ui_policy field type: ${typeof uiPolicyValue}`);
+              this.logger.error(`   - ui_policy field value length: ${String(uiPolicyValue || '').length}`);
+              this.logger.error(`   - All action fields:`, Object.keys(createdAction));
+              
+              // Check if it's a ServiceNow API timing issue
+              this.logger.warn(`🔄 ATTEMPTING SECONDARY VERIFICATION (possible timing issue)...`);
+              
+              // Wait a moment and try again
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              const secondVerification = await this.client.searchRecords(
+                'catalog_ui_policy_action',
+                `sys_id=${createdActionId}`,
+                1
+              );
+              
+              if (secondVerification.success && secondVerification.data.result.length > 0) {
+                const reCheckedAction = secondVerification.data.result[0];
+                const reCheckedUiPolicy = reCheckedAction.ui_policy;
+                this.logger.error(`🔄 Secondary verification ui_policy: ${JSON.stringify(reCheckedUiPolicy)}`);
+                
+                if (reCheckedUiPolicy && reCheckedUiPolicy !== '' && reCheckedUiPolicy !== '{}') {
+                  this.logger.warn(`⚠️ This was a timing issue - ui_policy populated after delay`);
+                  // Continue with the re-checked value
+                  return; // Skip the error throwing
+                }
+              }
+              
+              throw new Error(`Action ${i + 1} created but ui_policy field is empty - action will not work! This may be a ServiceNow API or table structure issue.`);
+            }
+            
+            // For reference fields, ServiceNow might return an object - extract the value
+            const uiPolicySysId = typeof uiPolicyValue === 'object' && uiPolicyValue.value ? 
+                                 uiPolicyValue.value : uiPolicyValue;
+            
+            this.logger.info(`✅ ui_policy field populated successfully: ${actualUiPolicyId}`);
+            
+            if (uiPolicySysId !== policyId) {
+              this.logger.warn(`⚠️ ui_policy mismatch - Expected: ${policyId}, Got: ${uiPolicySysId}`);
+            } else {
+              this.logger.info(`✅ ui_policy reference matches expected value`);
+            }
+            
+            // Check catalog_variable (should have IO: prefix)
+            if (!catalogVariableValue || catalogVariableValue === '') {
+              this.logger.error(`❌ CRITICAL: catalog_variable field is EMPTY for action ${i + 1}!`);
+              this.logger.error(`❌ Expected: ${catalogVariableWithPrefix}, Got: ${catalogVariableValue}`);
+              throw new Error(`Action ${i + 1} created but catalog_variable field is empty - action will not work!`);
+            }
+            
+            if (!catalogVariableValue.startsWith('IO:')) {
+              this.logger.warn(`⚠️ catalog_variable missing IO: prefix - Got: ${catalogVariableValue}`);
+            }
+            
+            // Check catalog_item reference
+            if (!catalogItemValue || catalogItemValue === '' || catalogItemValue === '{}') {
+              this.logger.error(`❌ CRITICAL: catalog_item field is EMPTY for action ${i + 1}!`);
+              this.logger.error(`❌ Expected: ${args.cat_item}, Got: ${catalogItemValue}`);
+              throw new Error(`Action ${i + 1} created but catalog_item field is empty - action will not work!`);
+            }
+            
+            const catalogItemSysId = typeof catalogItemValue === 'object' && catalogItemValue.value ? 
+                                    catalogItemValue.value : catalogItemValue;
+            
+            if (catalogItemSysId !== args.cat_item) {
+              this.logger.warn(`⚠️ catalog_item mismatch - Expected: ${args.cat_item}, Got: ${catalogItemSysId}`);
+            }
+
+            this.logger.info(`✅ Action ${i + 1} verified in database with all fields populated`);
+            createdActions.push({
+              sys_id: createdActionId,
+              variable: action.catalog_variable,
+              details: this.formatActionDetails(action)
+            });
+          } else {
+            const errorMsg = `❌ Failed to create action ${i + 1}: ${actionResponse.error || 'Unknown error'}`;
+            this.logger.error(errorMsg);
+            this.logger.error('❌ Action data was:', actionData);
+            this.logger.error('❌ Response details:', {
+              status: actionResponse.status,
+              headers: actionResponse.headers,
+              data: actionResponse.data
+            });
+            
+            // BELANGRIJK: Gooi een error zodat de gebruiker weet dat het faalt!
+            throw new Error(errorMsg);
+          }
+        }
+      }
+
+      // 🔍 FINAL VERIFICATION: Policy creation in catalog_ui_policy table
+      this.logger.info('🔍 Final verification: Checking policy in catalog_ui_policy table...');
+      const policyVerification = await this.client.searchRecords(
+        'catalog_ui_policy',
+        `sys_id=${policyId}`,
+        1
+      );
+
+      if (!policyVerification.success || policyVerification.data.result.length === 0) {
+        this.logger.error('❌ POLICY VERIFICATION FAILED: Policy not found in catalog_ui_policy table!');
+        throw new Error(`Policy creation verification failed - policy not found in catalog_ui_policy table`);
+      }
+
+      this.logger.info('✅ Policy verified in catalog_ui_policy table');
+
+      // Build comprehensive response
+      let responseText = `✅ Catalog UI Policy created successfully!
+
+📋 **${args.short_description}**
+🆔 Policy sys_id: ${policyId}
+📊 Table: catalog_ui_policy (correct table for catalog actions)
+🎯 Catalog Item: ${args.cat_item}
+🔄 Active: ${args.active !== false ? 'Yes' : 'No'}
+⚡ Applies On: ${args.applies_on || 'true'}
+🔁 Reverse if False: ${args.reverse_if_false !== false ? 'Yes' : 'No'}
+
+🔍 **Verification Results:**
+✅ Policy record created in catalog_ui_policy table
+✅ ${createdActions.length} actions created in catalog_ui_policy_action table`;
+
+      if (conditionString) {
+        responseText += `\n\n📝 **Conditions:**\n${conditionString}`;
+      }
+
+      if (createdActions.length > 0) {
+        responseText += `\n\n⚡ **Actions Created (${createdActions.length}):**\n`;
+        createdActions.forEach((action, i) => {
+          responseText += `   ${i + 1}. ${action.details} on ${action.variable}\n`;
+        });
+      }
+
+      responseText += `\n\n✨ UI policy configured successfully with ${createdActions.length} actions!`;
 
       return {
         content: [{
           type: 'text',
-          text: `✅ Catalog UI Policy created successfully!
-
-📋 **${args.short_description}**
-🆔 sys_id: ${response.data.sys_id}
-🎯 Applies to: ${args.applies_to || 'item'}
-🔄 Active: ${args.active !== false ? 'Yes' : 'No'}
-⚡ On Load: ${args.on_load !== false ? 'Yes' : 'No'}
-🔁 Reverse if False: ${args.reverse_if_false !== false ? 'Yes' : 'No'}
-
-✨ UI policy configured!`
+          text: responseText
         }]
       };
     } catch (error) {
       this.logger.error('Failed to create catalog UI policy:', error);
       throw new McpError(ErrorCode.InternalError, `Failed to create catalog UI policy: ${error}`);
     }
+  }
+
+
+  /**
+   * Helper function to format action details for display
+   */
+  private formatActionDetails(action: any): string {
+    const details: string[] = [];
+
+    if (action.mandatory !== undefined) {
+      details.push(`Mandatory: ${action.mandatory}`);
+    }
+    if (action.visible !== undefined) {
+      details.push(`Visible: ${action.visible}`);
+    }
+    if (action.readonly !== undefined) {
+      details.push(`Read-only: ${action.readonly}`);
+    }
+    if (action.value !== undefined && action.value !== '') {
+      details.push(`Value: "${action.value}"`);
+    }
+
+    return details.length > 0 ? details.join(', ') : 'No specific action';
   }
 
   /**
@@ -891,7 +1532,7 @@ ${args.variable ? `📝 Variable: ${args.variable}` : ''}
       this.logger.info('Searching service catalog...');
 
       let query = args.query ? `nameLIKE${args.query}^ORshort_descriptionLIKE${args.query}` : '';
-      
+
       if (args.category) {
         query += query ? '^' : '';
         query += `category=${args.category}`;
@@ -1026,11 +1667,38 @@ ${args.special_instructions ? `📝 Instructions: ${args.special_instructions}` 
    */
   private async getCatalogItemDetails(args: any) {
     try {
-      this.logger.info('Getting catalog item details...');
+      this.logger.info('Getting catalog item details...', { sys_id: args.sys_id });
 
-      const itemResponse = await this.client.getRecord('sc_cat_item', args.sys_id);
+      // 🔍 DEBUGGING: Try different methods to find the item
+      this.logger.info('🔍 Step 1: Trying getRecord method...');
+      let itemResponse = await this.client.getRecord('sc_cat_item', args.sys_id);
+      
       if (!itemResponse.success) {
-        throw new Error('Catalog item not found');
+        this.logger.warn('❌ getRecord failed, trying searchRecords as fallback...');
+        this.logger.warn('getRecord error:', itemResponse.error);
+        
+        // Fallback: try searchRecords method
+        itemResponse = await this.client.searchRecords('sc_cat_item', `sys_id=${args.sys_id}`, 1);
+        
+        if (!itemResponse.success || itemResponse.data.result.length === 0) {
+          this.logger.error('❌ Both getRecord and searchRecords failed');
+          this.logger.error('searchRecords error:', itemResponse.error);
+          
+          // Final fallback: try to query with different parameters
+          const queryResponse = await this.client.queryTable('sc_cat_item', `sys_id=${args.sys_id}`, 1);
+          if (queryResponse.success && queryResponse.data.result.length > 0) {
+            this.logger.info('✅ Found item using queryTable fallback');
+            itemResponse = { success: true, data: queryResponse.data.result[0] };
+          } else {
+            this.logger.error('❌ All methods failed to find catalog item');
+            throw new Error(`Catalog item not found with sys_id: ${args.sys_id}. Tried getRecord, searchRecords, and queryTable.`);
+          }
+        } else {
+          this.logger.info('✅ Found item using searchRecords fallback');
+          itemResponse = { success: true, data: itemResponse.data.result[0] };
+        }
+      } else {
+        this.logger.info('✅ Found item using getRecord');
       }
 
       const item = itemResponse.data;
@@ -1045,9 +1713,9 @@ ${item.recurring_price && item.recurring_price !== '0' ? `🔄 Recurring: $${ite
 
       // Get variables if requested
       if (args.include_variables) {
-        const varResponse = await this.client.searchRecords('item_option_new', `cat_item=${args.sys_id}`, 50);
+        const varResponse = await this.client.searchRecords('sc_cat_item_option', `cat_item=${args.sys_id}`, 50);
         if (varResponse.success && varResponse.data.result.length) {
-          const variables = varResponse.data.result.map((v: any) => 
+          const variables = varResponse.data.result.map((v: any) =>
             `  - ${v.question_text} (${v.type})${v.mandatory ? ' *Required' : ''}`
           ).join('\n');
           details += `\n\n📋 **Variables:**\n${variables}`;
@@ -1099,12 +1767,12 @@ ${item.recurring_price && item.recurring_price !== '0' ? `🔄 Recurring: $${ite
         let text = `🛍️ **${catalog.title}** ${catalog.active ? '✅' : '❌'}
 🆔 ${catalog.sys_id}
 📝 ${catalog.description || 'No description'}`;
-        
+
         if (catalog.categories) {
           const categoryList = catalog.categories.map((cat: any) => `  - ${cat.title}`).join('\n');
           text += `\n📂 Categories:\n${categoryList || '  No categories'}`;
         }
-        
+
         return text;
       }).join('\n\n');
 

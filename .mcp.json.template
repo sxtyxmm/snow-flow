@@ -139,7 +139,7 @@
       "args": [
         "{{PROJECT_ROOT}}/dist/mcp/servicenow-knowledge-catalog-mcp.js"
       ],
-      "description": "Knowledge and catalog management - create/search/update knowledge articles, knowledge bases, catalog items, catalog variables, UI policies, client scripts, order items, discover catalogs",
+      "description": "Knowledge and catalog management - CORRECTED v3.6.10 with proper catalog UI policy creation (2-table system: policy with embedded conditions string, separate actions table). Create/search/update knowledge articles, catalog items, variables, UI policies with conditions as query string and actions array",
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -199,7 +199,7 @@
       "args": [
         "{{PROJECT_ROOT}}/dist/mcp/servicenow-local-development-mcp.js"
       ],
-      "description": "Local development bridge for Claude Code - pull any ServiceNow artifact to local files with native tool integration (snow_pull_artifact, snow_push_artifact, snow_validate_artifact_coherence), smart field chunking for large artifacts, ES5 validation, coherence checking, 12+ artifact types support",
+      "description": "UNIVERSAL ARTIFACT DETECTION v3.6.6 - finds ANY ServiceNow record by sys_id using sys_metadata! Pull any artifact (even custom tables) to local files with Claude Code native tools. Supports all tables, generic artifact creation for unknown types, smart chunking, ES5 validation, coherence checking. Tools: snow_pull_artifact, snow_push_artifact, snow_validate_artifact_coherence",
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
