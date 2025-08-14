@@ -55,6 +55,18 @@ export class MCPLogger {
     // Send progress every 5 seconds (reduced frequency)
     this.progressInterval = setInterval(() => {
       const duration = Math.round((Date.now() - this.startTime) / 1000);
+      
+      // CRITICAL: Stop progress after 60 seconds to prevent infinite loops
+      if (duration > 60) {
+        console.error(`⚠️ [${this.name}] Operation exceeded maximum time (60s). Stopping progress indicator.`);
+        this.stopProgress();
+        
+        // Force stop the operation by throwing timeout error
+        const timeoutError = new Error(`Operation timeout: exceeded 60 seconds`);
+        this.operationError('Operation timeout', timeoutError);
+        return;
+      }
+      
       if (duration > 3) { // Only show progress after 3+ seconds
         this.progress(`Operation in progress... (${duration}s elapsed, ${this.tokenUsage.total} tokens used)`);
       }

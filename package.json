@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.2",
-  "description": "ServiceNow framework with CONSOLIDATED CLAUDE.md (78% smaller, 100% complete). v3.6.2 features systematic documentation of ALL 18 MCP servers and 200+ tools. NO MOCK DATA policy enforced. Complete tool reference for snow_pull_artifact, snow_deploy, snow_execute_script_with_output, and all ServiceNow operations. Includes audit logging, token tracking, ES5 enforcement, and production-ready code requirements. Optimized for Claude Code with comprehensive MCP tool awareness.",
+  "version": "3.6.3",
+  "description": "EMERGENCY FIX: Prevents infinite hanging in servicenow-local-development. v3.6.3 adds maximum operation timeouts (30s for artifact detection, 60s for progress indicator) to prevent operations from running forever. Fixes pullArtifactBySysId with fail-fast mechanism. Consolidated CLAUDE.md with ALL 18 MCP servers and 200+ tools. NO MOCK DATA policy enforced. Includes audit logging, token tracking, and ES5 enforcement.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

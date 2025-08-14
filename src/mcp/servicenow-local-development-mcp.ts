@@ -299,8 +299,8 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
     const { sys_id, table } = args;
     const startTime = Date.now();
     
-    // Add timeout for pull operations
-    const PULL_TIMEOUT = 15000; // 15 seconds for pull operations
+    // Add timeout for pull operations (must be longer than pullArtifactBySysId's 30s timeout)
+    const PULL_TIMEOUT = 35000; // 35 seconds for pull operations (allows 30s for detection + 5s buffer)
     
     try {
       const pullPromise = (async () => {

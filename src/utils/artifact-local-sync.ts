@@ -847,6 +847,10 @@ snow-flow sync status ${widget.sys_id}
     console.log(`\n🔍 Auto-detecting artifact type for sys_id: ${sys_id}`);
     console.log(`📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} supported tables...`);
     
+    // CRITICAL: Add MAXIMUM operation timeout to prevent infinite hanging
+    const MAX_OPERATION_TIME = 30000; // 30 seconds max for entire operation
+    const operationStart = Date.now();
+    
     // SMART ORDER: Check most common tables first for better performance
     const allTables = Object.keys(ARTIFACT_REGISTRY);
     const commonTables = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'];
@@ -856,13 +860,19 @@ snow-flow sync status ${widget.sys_id}
     const errors: Array<{table: string, error: string}> = [];
     
     for (const table of tables) {
+      // Check if we've exceeded maximum operation time
+      if (Date.now() - operationStart > MAX_OPERATION_TIME) {
+        console.log(`\n⏱️ Maximum operation time (30s) exceeded. Stopping search.`);
+        break;
+      }
+      
       try {
         console.log(`   🔎 Checking table: ${table}...`);
         
-        // Increased timeout for better reliability
+        // Reduced timeout per table for faster failure
         const response = await withMCPTimeout(
           this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
-          8000, // 8 second timeout per table (was 3s)
+          3000, // 3 second timeout per table (reduced from 8s)
           `Detect table for ${sys_id}`
         );
         
