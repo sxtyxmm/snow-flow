@@ -394,11 +394,57 @@ class ServiceNowKnowledgeCatalogMCP {
 
       // Find knowledge base if name provided
       let kbId = args.kb_knowledge_base;
-      if (kbId && !kbId.match(/^[a-f0-9]{32}$/)) {
-        const kbResponse = await this.client.searchRecords('kb_knowledge_base', `title=${kbId}`, 1);
-        if (kbResponse.success && kbResponse.data.result.length) {
-          kbId = kbResponse.data.result[0].sys_id;
+      let kbFound = false;
+      
+      if (kbId) {
+        // If it's already a sys_id, verify it exists
+        if (kbId.match(/^[a-f0-9]{32}$/)) {
+          const kbVerifyResponse = await this.client.searchRecords('kb_knowledge_base', `sys_id=${kbId}`, 1);
+          if (kbVerifyResponse.success && kbVerifyResponse.data.result.length > 0) {
+            kbFound = true;
+            this.logger.info(`✅ Knowledge base verified with sys_id: ${kbId}`);
+          }
+        } else {
+          // It's a name/title, search for it
+          const kbResponse = await this.client.searchRecords('kb_knowledge_base', `title=${kbId}`, 1);
+          if (kbResponse.success && kbResponse.data.result.length > 0) {
+            kbId = kbResponse.data.result[0].sys_id;
+            kbFound = true;
+            this.logger.info(`✅ Found knowledge base '${args.kb_knowledge_base}' with sys_id: ${kbId}`);
+          }
         }
+        
+        // If knowledge base was specified but not found, this is an error
+        if (!kbFound) {
+          this.logger.error(`❌ Knowledge base '${args.kb_knowledge_base}' not found!`);
+          
+          // List available knowledge bases to help the user
+          const availableKBs = await this.client.searchRecords('kb_knowledge_base', 'active=true', 10);
+          let kbList = '';
+          if (availableKBs.success && availableKBs.data.result.length > 0) {
+            kbList = '\n\n📚 **Available Knowledge Bases:**\n' + 
+              availableKBs.data.result.map((kb: any) => `  - ${kb.title} (${kb.sys_id})`).join('\n');
+          }
+          
+          throw new Error(
+            `Knowledge base '${args.kb_knowledge_base}' does not exist! ` +
+            `Article cannot be created without a valid knowledge base.\n\n` +
+            `🔧 **Solution Options:**\n` +
+            `1. Use snow_create_knowledge_base to create a new knowledge base first\n` +
+            `2. Use snow_discover_knowledge_bases to list existing knowledge bases\n` +
+            `3. Specify a valid knowledge base sys_id or title${kbList}`
+          );
+        }
+      } else {
+        // No knowledge base specified - this should also be an error for proper article management
+        this.logger.warn('⚠️ No knowledge base specified for article creation');
+        throw new Error(
+          'Knowledge base is required for article creation!\n\n' +
+          '🔧 **Solution:**\n' +
+          '1. Specify kb_knowledge_base with either a sys_id or title\n' +
+          '2. Use snow_discover_knowledge_bases to list available options\n' +
+          '3. Or create a new one with snow_create_knowledge_base'
+        );
       }
 
       // Find category if name provided
@@ -413,7 +459,7 @@ class ServiceNowKnowledgeCatalogMCP {
       const articleData = {
         short_description: args.short_description,
         text: args.text,
-        kb_knowledge_base: kbId || '',
+        kb_knowledge_base: kbId, // Now guaranteed to be valid or error thrown
         kb_category: categoryId || '',
         article_type: args.article_type || 'text',
         workflow_state: args.workflow_state || 'draft',
@@ -438,7 +484,7 @@ class ServiceNowKnowledgeCatalogMCP {
 
 📚 **${args.short_description}**
 🆔 sys_id: ${response.data.sys_id}
-📂 Knowledge Base: ${args.kb_knowledge_base || 'Default'}
+📂 Knowledge Base: ${args.kb_knowledge_base} (${kbId})
 🏷️ Category: ${args.kb_category || 'Uncategorized'}
 📝 Type: ${args.article_type || 'text'}
 📊 State: ${args.workflow_state || 'draft'}

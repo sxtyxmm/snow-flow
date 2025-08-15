@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.24",
-  "description": "CATALOG UI POLICY DEPLOYMENT SUPPORT - v3.6.24 adds catalog_ui_policy support to snow_deploy tool. You can now deploy catalog UI policies via unified deployment with automatic variable resolution, condition/action creation, and comprehensive error handling.",
+  "version": "3.6.25",
+  "description": "KNOWLEDGE BASE VERIFICATION - v3.6.25 adds critical validation to snow_create_knowledge_article. Now throws error when non-existent knowledge base is specified, preventing orphaned articles. Includes helpful suggestions to create or discover valid knowledge bases.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
