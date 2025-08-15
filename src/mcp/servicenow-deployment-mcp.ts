@@ -307,7 +307,7 @@ class ServiceNowDeploymentMCP {
                 enum: [
                   'widget', 'portal_page', 'application', 'script', 'business_rule', 'table',
                   'script_include', 'ui_page', 'client_script', 'ui_action', 'ui_policy', 
-                  'acl', 'field', 'workflow', 'flow', 'notification', 'scheduled_job'
+                  'catalog_ui_policy', 'acl', 'field', 'workflow', 'flow', 'notification', 'scheduled_job'
                 ],
                 description: 'Type of artifact to deploy'
               },
@@ -7917,6 +7917,8 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
         return await this.deployApplication(scopedConfig);
       case 'xml_update_set':
         return await this.deployXMLUpdateSet(scopedConfig);
+      case 'catalog_ui_policy':
+        return await this.deployCatalogUIPolicy(scopedConfig);
       default:
         throw new Error(`Unsupported artifact type for unified deployment: ${type}`);
     }
@@ -8075,6 +8077,213 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
       }
       
       throw new Error(`XML deployment failed: ${errorMsg}`);
+    }
+  }
+
+  /**
+   * Deploy Catalog UI Policy to ServiceNow
+   */
+  private async deployCatalogUIPolicy(config: any): Promise<any> {
+    const { 
+      catalog_item, cat_item, 
+      catalog_conditions, 
+      short_description,
+      applies_to = 'all',
+      active = true,
+      on_load = true,
+      reverse_if_false = true,
+      conditions = [],
+      actions = []
+    } = config;
+    
+    const catalogItemId = catalog_item || cat_item;
+    if (!catalogItemId) {
+      throw new Error('catalog_item or cat_item is required for catalog UI policy deployment');
+    }
+    
+    if (!short_description) {
+      throw new Error('short_description is required for catalog UI policy deployment');
+    }
+    
+    this.logger.info('🚀 Deploying Catalog UI Policy', { 
+      catalogItem: catalogItemId,
+      description: short_description,
+      conditions: conditions.length,
+      actions: actions.length
+    });
+
+    try {
+      // If catalog_conditions is provided, convert it to conditions array
+      let policyConditions = conditions;
+      if (catalog_conditions && policyConditions.length === 0) {
+        // Parse catalog_conditions string like "employee_type=contractor"
+        const conditionParts = catalog_conditions.split('=');
+        if (conditionParts.length === 2) {
+          policyConditions = [{
+            catalog_variable: conditionParts[0].trim(),
+            operation: 'is',
+            value: conditionParts[1].trim(),
+            and_or: 'AND'
+          }];
+          this.logger.info('📝 Converted catalog_conditions to conditions array:', policyConditions);
+        }
+      }
+      
+      // Build policy data for catalog_ui_policy table
+      const policyData = {
+        cat_item: catalogItemId,
+        short_description: short_description,
+        applies_to: applies_to,
+        active: active,
+        on_load: on_load,
+        reverse_if_false: reverse_if_false,
+        order: 100
+      };
+      
+      this.logger.info('🎯 Creating main policy in catalog_ui_policy table with data:', policyData);
+      const policyResponse = await this.client.createRecord('catalog_ui_policy', policyData);
+      
+      if (!policyResponse.success) {
+        throw new Error(`Failed to create catalog UI policy: ${policyResponse.error}`);
+      }
+      
+      const policyId = policyResponse.data.sys_id;
+      this.logger.info(`✅ Created policy with sys_id: ${policyId}`);
+      
+      // Create conditions if provided
+      const createdConditions = [];
+      for (let i = 0; i < policyConditions.length; i++) {
+        const condition = policyConditions[i];
+        
+        // Resolve variable name to sys_id if needed
+        let variableSysId = condition.catalog_variable;
+        if (condition.catalog_variable && !condition.catalog_variable.match(/^[a-f0-9]{32}$/)) {
+          // Search for variable by name
+          const variableSearch = await this.client.searchRecords(
+            'item_option_new',
+            `cat_item=${catalogItemId}^name=${condition.catalog_variable}`,
+            1
+          );
+          
+          if (variableSearch.success && variableSearch.data.result.length > 0) {
+            variableSysId = variableSearch.data.result[0].sys_id;
+            this.logger.info(`✅ Resolved variable '${condition.catalog_variable}' to sys_id: ${variableSysId}`);
+          } else {
+            this.logger.warn(`⚠️ Could not resolve variable '${condition.catalog_variable}', using as-is`);
+          }
+        }
+        
+        const conditionData = {
+          ui_policy: policyId,
+          catalog_variable: `IO:${variableSysId}`, // IO: prefix required
+          operation: condition.operation || 'is',
+          value: condition.value || '',
+          and_or: condition.and_or || 'AND',
+          order: (i + 1) * 100,
+          active: true
+        };
+        
+        this.logger.info(`🔗 Creating condition ${i + 1}:`, conditionData);
+        const conditionResponse = await this.client.createRecord('catalog_ui_policy_condition', conditionData);
+        
+        if (conditionResponse.success) {
+          createdConditions.push(conditionResponse.data.sys_id);
+          this.logger.info(`✅ Created condition ${i + 1} with sys_id: ${conditionResponse.data.sys_id}`);
+        } else {
+          this.logger.error(`❌ Failed to create condition ${i + 1}:`, conditionResponse.error);
+        }
+      }
+      
+      // Create actions if provided
+      const createdActions = [];
+      for (let i = 0; i < actions.length; i++) {
+        const action = actions[i];
+        
+        // Resolve variable name to sys_id if needed
+        let actionVariableSysId = action.catalog_variable;
+        if (action.catalog_variable && !action.catalog_variable.match(/^[a-f0-9]{32}$/)) {
+          const actionVariableSearch = await this.client.searchRecords(
+            'item_option_new',
+            `cat_item=${catalogItemId}^name=${action.catalog_variable}`,
+            1
+          );
+          
+          if (actionVariableSearch.success && actionVariableSearch.data.result.length > 0) {
+            actionVariableSysId = actionVariableSearch.data.result[0].sys_id;
+            this.logger.info(`✅ Resolved action variable '${action.catalog_variable}' to sys_id: ${actionVariableSysId}`);
+          } else {
+            this.logger.warn(`⚠️ Could not resolve action variable '${action.catalog_variable}', using as-is`);
+          }
+        }
+        
+        const actionData: any = {
+          ui_policy: policyId,
+          catalog_item: catalogItemId,
+          catalog_variable: `IO:${actionVariableSysId}`, // IO: prefix required
+          order: (i + 1) * 100,
+          active: true
+        };
+        
+        // Set action type fields based on action.type or individual properties
+        if (action.type === 'set_mandatory' || action.mandatory !== undefined) {
+          actionData.mandatory = action.mandatory === true ? 'true' : 
+                                action.mandatory === false ? 'false' : 'ignore';
+        } else {
+          actionData.mandatory = 'ignore';
+        }
+        
+        if (action.type === 'set_visible' || action.visible !== undefined) {
+          actionData.visible = action.visible === true ? 'true' : 
+                              action.visible === false ? 'false' : 'ignore';
+        } else {
+          actionData.visible = 'ignore';
+        }
+        
+        if (action.type === 'set_readonly' || action.readonly !== undefined) {
+          actionData.disabled = action.readonly === true ? 'true' : 
+                               action.readonly === false ? 'false' : 'ignore';
+        } else {
+          actionData.disabled = 'ignore';
+        }
+        
+        if (action.value !== undefined && action.value !== null && action.value !== '') {
+          actionData.value = String(action.value);
+        }
+        
+        this.logger.info(`🎬 Creating action ${i + 1}:`, actionData);
+        const actionResponse = await this.client.createRecord('catalog_ui_policy_action', actionData);
+        
+        if (actionResponse.success) {
+          createdActions.push(actionResponse.data.sys_id);
+          this.logger.info(`✅ Created action ${i + 1} with sys_id: ${actionResponse.data.sys_id}`);
+        } else {
+          this.logger.error(`❌ Failed to create action ${i + 1}:`, actionResponse.error);
+        }
+      }
+      
+      return {
+        success: true,
+        policy_id: policyId,
+        conditions_created: createdConditions.length,
+        actions_created: createdActions.length,
+        message: `✅ Catalog UI Policy '${short_description}' deployed successfully`,
+        details: {
+          policy_sys_id: policyId,
+          catalog_item: catalogItemId,
+          conditions: createdConditions,
+          actions: createdActions,
+          next_steps: [
+            '1. Test the catalog item form to verify policy behavior',
+            '2. Check that conditions trigger actions correctly',
+            '3. Verify variable visibility/mandatory/readonly changes'
+          ]
+        }
+      };
+      
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.logger.error('Catalog UI Policy deployment failed', { error: errorMsg, config });
+      throw new Error(`Catalog UI Policy deployment failed: ${errorMsg}`);
     }
   }
 

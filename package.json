@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.23",
-  "description": "CATALOG VARIABLE TABLE FIX - v3.6.23 fixes critical issue: catalog variables now created in correct table 'item_option_new' instead of wrong table 'sc_cat_item_option'. This ensures variables are actually visible and functional in catalog items.",
+  "version": "3.6.24",
+  "description": "CATALOG UI POLICY DEPLOYMENT SUPPORT - v3.6.24 adds catalog_ui_policy support to snow_deploy tool. You can now deploy catalog UI policies via unified deployment with automatic variable resolution, condition/action creation, and comprehensive error handling.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
