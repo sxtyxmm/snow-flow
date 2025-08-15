@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "3.6.25",
-  "description": "KNOWLEDGE BASE VERIFICATION - v3.6.25 adds critical validation to snow_create_knowledge_article. Now throws error when non-existent knowledge base is specified, preventing orphaned articles. Includes helpful suggestions to create or discover valid knowledge bases.",
+  "version": "4.0.0-final-claude",
+  "description": "FINAL CLAUDE CODE CLI EDITION - This is the last version specifically designed for Claude Code CLI. Future versions will support multiple LLMs (OpenAI, Google, Anthropic, Ollama, etc.) through a modular provider system. Thank you to all Claude Code users!",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -396,10 +396,15 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.22.0",
+    "@ai-sdk/anthropic": "^2.0.4",
+    "@ai-sdk/google": "^1.2.22",
+    "@ai-sdk/openai": "^1.3.24",
     "@modelcontextprotocol/sdk": "^1.15.1",
+    "@openrouter/ai-sdk-provider": "^1.1.2",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/node-fetch": "^2.6.12",
     "@types/uuid": "^10.0.0",
+    "ai": "^5.0.14",
     "axios": "^1.10.0",
     "better-sqlite3": "^9.6.0",
     "boxen": "^8.0.1",
