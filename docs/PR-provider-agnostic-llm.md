@@ -1,5 +1,8 @@
 # PR: Make Snow-Flow provider‑agnostic (OpenAI/Gemini/Grok/DeepSeek/Qwen/Llama)
 
+> **Update – Single CLI**
+> We hergebruiken je **bestaande `src/cli.ts`** en voegen een nieuwe engine toe: `--engine agent`. Daarmee start je de provider‑agnostische host direct via het bestaande `snow-flow swarm` commando. Alle voorbeelden hieronder zijn daarop aangepast. (De aparte `snow-flow-agent` bin is niet meer nodig.)
+
 This patch adds a thin, vendor‑neutral LLM layer and an MCP bridge so Snow‑Flow runs **without Claude Code** while still using your MCP servers. It introduces:
 
 - `src/llm/providers.ts` – unified provider registry (OpenAI, Google Gemini, OpenRouter, OpenAI‑compatible for xAI Grok & DeepSeek, Ollama optional)
@@ -26,10 +29,9 @@ src/
     providers.ts
   mcp/
     bridge.ts
-  cli.ts
-bin/
-  snow-flow-agent
+# CLI blijft: src/cli.ts (bestaande) – uitgebreid met extra flags (--engine, --provider, --model, --base-url, ...)
 ```
+
 
 ---
 
@@ -201,8 +203,9 @@ await runAgent({
 
 ---
 
-## bin/snow-flow-agent
-```bash
+## CLI (bestaand) – geen aparte bin meer nodig
+De bestaande `snow-flow` CLI krijgt een extra engine (`--engine agent`). Gebruik de usage‑voorbeelden hieronder.
+bash
 #!/usr/bin/env node
 require('../dist/cli.js');
 ```
@@ -216,6 +219,26 @@ chmod +x bin/snow-flow-agent
 
 ## package.json (diff)
 ```diff
+--- a/package.json
++++ b/package.json
+@@
+   "dependencies": {
++    "ai": "^5.0.0",
++    "@ai-sdk/openai": "^1.0.0",
++    "@ai-sdk/google": "^1.0.0",
++    "@openrouter/ai-sdk-provider": "^1.1.2",
++    "@modelcontextprotocol/sdk": "^1.2.0",
++    "dotenv": "^16.4.5"
+   },
+   "devDependencies": {
+   },
+   "scripts": {
+-    "build": "tsc -p tsconfig.json"
++    "build": "tsc -p tsconfig.json"
+   }
+```
+> Geen extra `bin` entry nodig; we gebruiken de bestaande CLI.
+diff
 --- a/package.json
 +++ b/package.json
 @@
@@ -243,7 +266,83 @@ chmod +x bin/snow-flow-agent
 
 ---
 
-## README – usage snippet
+## README – usage snippet (single CLI)
+```md
+### Provider‑agnostic agent usage (via bestaande CLI)
+
+#### 1) OpenAI (closed source)
+```
+OPENAI_API_KEY=sk-... \
+snow-flow swarm "Maak een UR-tickettype incl. goedkeuringen" \
+  --engine agent \
+  --provider openai \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model gpt-4o-mini
+```
+
+#### 2) Google Gemini
+```
+GOOGLE_API_KEY=... \
+snow-flow swarm "Genereer changerequest workflow" \
+  --engine agent \
+  --provider google \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model gemini-2.5-flash
+```
+
+#### 3) xAI Grok (OpenAI‑compatible)
+```
+OPENAI_COMPAT_API_KEY=... \
+snow-flow swarm "Analyseer incident backlog" \
+  --engine agent \
+  --provider openai-compatible \
+  --base-url https://api.x.ai/v1 \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model grok-2
+```
+
+#### 4) DeepSeek (OpenAI‑compatible)
+```
+OPENAI_COMPAT_API_KEY=... \
+snow-flow swarm "Genereer rapportage KPI's" \
+  --engine agent \
+  --provider openai-compatible \
+  --base-url https://api.deepseek.com/v1 \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model deepseek-chat
+```
+
+#### 5) Qwen3 & Llama via OpenRouter
+```
+OPENROUTER_API_KEY=... \
+snow-flow swarm "Maak service catalog item" \
+  --engine agent \
+  --provider openrouter \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model qwen/qwen2.5-72b-instruct
+```
+
+##### Alt: Local (OpenAI‑compatible base URL)
+```
+SNOWFLOW_PROVIDER=openai-compatible \
+OPENAI_COMPAT_API_KEY=unused \
+snow-flow swarm "Refactor flow designer" \
+  --engine agent \
+  --provider openai-compatible \
+  --base-url http://localhost:8000/v1 \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model llama-3.1-70b-instruct
+```
+
+SNOWFLOW_PROVIDER=openai-compatible \
+OPENAI_COMPAT_API_KEY=unused \
+snow-flow swarm "Refactor flow designer" \
+  --engine agent \
+  --provider openai-compatible \
+  --base-url http://localhost:8000/v1 \
+  --mcp-cmd node --mcp-args dist/mcp/index.js \
+  --model llama-3.1-70b-instruct
+```
 ```md
 ### Provider‑agnostic agent usage
 
@@ -330,98 +429,21 @@ No change required if you already compile to `dist/`. Ensure `tsconfig.json` inc
 
 ---
 
-## START-HERE CHECKLIST (90 min)
+## START-HERE CHECKLIST (single CLI update)
 
-> Doel: Snow-Flow laten draaien met jouw MCP, eerst op OpenAI, daarna Gemini/Grok/DeepSeek/Qwen/Llama.
-
-### 0) Nieuwe branch (5m)
-```bash
-git checkout -b feat/provider-agnostic-llm
-```
-
-### 1) Deps + bin (10m)
-```bash
-npm i ai @ai-sdk/openai @ai-sdk/google @openrouter/ai-sdk-provider @modelcontextprotocol/sdk dotenv
-npm run build
-chmod +x bin/snow-flow-agent
-```
-
-### 2) Secrets file (5m)
-Maak `.env` of `.env.local` op repo-root op basis van onderstaand voorbeeld.
-
-```bash
-# .env.example – kopieer naar .env en vul
-# Closed-source
-OPENAI_API_KEY=
-GOOGLE_API_KEY=
-# of GOOGLE_GENERATIVE_AI_API_KEY=
-
-# Gateways / OSS modellen
-OPENROUTER_API_KEY=
-OPENAI_COMPAT_API_KEY=   # hergebruik voor xAI Grok, DeepSeek, vLLM/LM Studio
-
-# Optioneel lokaal (indien OpenAI-compatible endpoint)
-# SNOWFLOW_BASE_URL=http://localhost:8000/v1
-```
-
-### 3) MCP-commando verifiëren (5m)
-Zorg dat je MCP server te starten is (voorbeeld):
-```bash
-node dist/mcp/index.js --help
-```
-> Pas het pad aan als jouw MCP-entry anders heet.
-
-### 4) Eerste smoke test – OpenAI (10m)
-```bash
-OPENAI_API_KEY=sk-... \
-snow-flow-agent \
-  --mcpCmd node \
-  --mcpArgs dist/mcp/index.js \
-  --provider openai \
-  --model gpt-4o-mini \
-  --prompt "List de beschikbare MCP-tools en voer de simpelste uit"
-```
-Verwacht: streaming output + tool-aanroep. Zie je geen tools? Check stap 3.
-
-### 5) Tweede test – Gemini (10m)
-```bash
-GOOGLE_API_KEY=... \
-snow-flow-agent --mcpCmd node --mcpArgs dist/mcp/index.js \
-  --provider google --model gemini-2.5-flash \
-  --prompt "Gebruik een MCP-tool om een voorbeeldactie uit te voeren"
-```
-
-### 6) Gateways naar OSS – Qwen/Llama via OpenRouter (10m)
-```bash
-OPENROUTER_API_KEY=... \
-snow-flow-agent --mcpCmd node --mcpArgs dist/mcp/index.js \
-  --provider openrouter --model qwen/qwen2.5-72b-instruct \
-  --prompt "Roep een eenvoudige MCP-tool aan"
-```
-
-### 7) xAI Grok (OpenAI-compatible) (10m)
-```bash
-OPENAI_COMPAT_API_KEY=... \
-snow-flow-agent --mcpCmd node --mcpArgs dist/mcp/index.js \
-  --provider openai-compatible --baseURL https://api.x.ai/v1 \
-  --model grok-2 \
-  --prompt "Voer een MCP-tool uit en vat kort samen"
-```
-
-### 8) DeepSeek (OpenAI-compatible) (10m)
-```bash
-OPENAI_COMPAT_API_KEY=... \
-snow-flow-agent --mcpCmd node --mcpArgs dist/mcp/index.js \
-  --provider openai-compatible --baseURL https://api.deepseek.com/v1 \
-  --model deepseek-chat \
-  --prompt "Maak een korte analyse met 1 MCP-tool"
-```
-
-### 9) Commit (5m)
-```bash
-git add .
-git commit -m "feat: provider-agnostic LLM host + MCP bridge + CLI"
-```
+> **Update – Single CLI**
+> Gebruik voortaan het bestaande `snow-flow` commando met `--engine agent`. Voorbeeld (OpenAI):
+> 
+> ```bash
+> OPENAI_API_KEY=sk-... \
+> snow-flow swarm "List de beschikbare MCP-tools en voer de simpelste uit" \
+>   --engine agent \
+>   --provider openai \
+>   --mcp-cmd node --mcp-args dist/mcp/index.js \
+>   --model gpt-4o-mini
+> ```
+> 
+> De stappen hieronder blijven gelijk; vervang overal `snow-flow-agent` door `snow-flow swarm "<objective>" --engine agent` en voeg de juiste `--provider`/`--model`/`--base-url` toe waar nodig.
 
 ---
 
