@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.0.3",
-  "description": "KNOWLEDGE BASE VERIFICATION - v3.6.25 adds critical validation to snow_create_knowledge_article. Now throws error when non-existent knowledge base is specified, preventing orphaned articles. Includes helpful suggestions to create or discover valid knowledge bases.",
+  "version": "4.1.0",
+  "description": "ENTERPRISE SCALE - v4.1.0 removes ALL artificial limits! Now supports widgets with 5MB+ server scripts, 200k token fields, and 100k record queries. Built for real enterprise ServiceNow environments.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {

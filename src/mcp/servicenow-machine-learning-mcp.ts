@@ -2403,7 +2403,7 @@ export class ServiceNowMachineLearningMCP {
     
     const queryParams = {
       sysparm_query: `sys_created_on>=${startDate.toISOString()}^sys_created_on<=${endDate.toISOString()}`,
-      sysparm_limit: 1000
+      sysparm_limit: 100000
     };
     
     let tableName = '';
@@ -3046,7 +3046,7 @@ export class ServiceNowMachineLearningMCP {
         sysparm_breakdown: breakdown || '',
         sysparm_from: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         sysparm_to: new Date().toISOString().split('T')[0],
-        sysparm_limit: 1000
+        sysparm_limit: 100000
       });
 
       return {

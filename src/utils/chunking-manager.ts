@@ -23,7 +23,8 @@ export class ChunkingManager {
   /**
    * Determine if script needs chunking
    */
-  static needsChunking(script: string, maxSize: number = 100000): boolean {
+  static needsChunking(script: string, maxSize: number = 5000000): boolean {
+    // 5MB = ServiceNow's actual response limit
     return script.length > maxSize;
   }
 
@@ -31,7 +32,7 @@ export class ChunkingManager {
    * Split large script into manageable chunks
    */
   static chunkScript(script: string, strategy: ChunkingStrategy = {
-    maxChunkSize: 25000,
+    maxChunkSize: 2500000, // 2.5MB chunks
     overlapSize: 500,
     chunkType: 'functions'
   }): ScriptChunk[] {

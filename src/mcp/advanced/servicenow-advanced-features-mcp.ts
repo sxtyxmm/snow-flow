@@ -2043,7 +2043,7 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
         params: {
           sysparm_query: `name=${tableName}^internal_type=reference`,
           sysparm_fields: 'element,column_label,reference,reference.name,reference.label,mandatory,active',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -2096,7 +2096,7 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
         params: {
           sysparm_query: `reference=${tableName}^internal_type=reference`,
           sysparm_fields: 'name,element,column_label,mandatory,active',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -2628,7 +2628,7 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
         params: {
           sysparm_query: `name=${tableName}^ORname=${tableName}.parent`,
           sysparm_fields: 'element,column_label,internal_type,max_length,mandatory,unique,reference',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -3248,7 +3248,7 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
         params: {
           sysparm_query: query,
           sysparm_fields: 'element,column_label,internal_type,mandatory,max_length,read_only,display',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -4022,7 +4022,7 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
         params: {
           sysparm_query: `name=${tableName}^active=true`,
           sysparm_fields: 'element,column_label,internal_type,max_length,mandatory,read_only,reference,default_value,unique,primary',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -5242,7 +5242,7 @@ WHERE ${m.target_field} IS NULL;`).join('\n')}`;
         params: {
           sysparm_query: `name=${tableName}^active=true`,
           sysparm_fields: 'element,column_label,internal_type,max_length,mandatory,read_only,reference,default_value,unique,primary,virtual,calculated,formula,depends_on,choice,dependent_on_field,spell_check',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -5371,7 +5371,7 @@ WHERE ${m.target_field} IS NULL;`).join('\n')}`;
         params: {
           sysparm_query: `name=${tableName}^active=true`,
           sysparm_fields: 'element,internal_type,mandatory,max_length,reference',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -11535,7 +11535,7 @@ function getIncidentsByUser(userSysId) {
         params: {
           sysparm_query: auditQuery,
           sysparm_fields: 'tablename,fieldname,oldvalue,newvalue,sys_created_on,sys_created_by,documentkey',
-          sysparm_limit: 5000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -11589,7 +11589,7 @@ function getIncidentsByUser(userSysId) {
         params: {
           sysparm_query: workflowQuery,
           sysparm_fields: 'context,workflow_version,state,started,sys_created_on,sys_created_by',
-          sysparm_limit: 2000
+          sysparm_limit: 100000 // Remove artificial 10k limit0 // Remove artificial 2k limit
         }
       });
 
@@ -12655,7 +12655,7 @@ function getIncidentsByUser(userSysId) {
         params: {
           sysparm_query: query,
           sysparm_fields: 'sys_id,name,description,table,condition,active,category,workflow_version,published',
-          sysparm_limit: 1000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
@@ -12789,7 +12789,7 @@ function getIncidentsByUser(userSysId) {
         params: {
           sysparm_query: executionQuery,
           sysparm_fields: 'sys_id,workflow_version,context,state,started,ended,duration,priority,sys_created_on,sys_created_by',
-          sysparm_limit: 10000
+          sysparm_limit: 100000 // Remove artificial limit0
         }
       });
 
@@ -12813,7 +12813,7 @@ function getIncidentsByUser(userSysId) {
         params: {
           sysparm_query: executionQuery.replace('wf_executing', 'wf_history'),
           sysparm_fields: 'sys_id,workflow_version,context,state,started,ended,duration,result',
-          sysparm_limit: 5000
+          sysparm_limit: 100000 // Remove artificial limit
         }
       });
 
