@@ -160,8 +160,8 @@ export class SmartFieldFetcher {
             fields: group.fields
           };
           
-          // Add to flat structure for easy access
-          Object.assign(results, response.result[0]);
+          // FIX: getRecord returns direct object, not response.result[0]
+          Object.assign(results, response);
         }
       } catch (error: any) {
         console.log(`⚠️ Failed to fetch ${group.groupName}: ${error.message}`);
@@ -297,8 +297,9 @@ export class SmartFieldFetcher {
             `Direct widget fetch ${sys_id}`
           );
           
-          if (directResponse && directResponse.success && directResponse.data && directResponse.data.result) {
-            const directData = directResponse.data.result;
+          if (directResponse) {
+            // FIX: getRecord returns direct object, not nested structure
+            const directData = directResponse;
             
             // Merge any new data we got
             Object.assign(results, directData);
@@ -373,6 +374,7 @@ export class SmartFieldFetcher {
         const response = await this.client.getRecord(table, sys_id);
         
         if (response) {
+          // FIX: getRecord returns direct object
           result.data[field] = response[field];
           result._field_status[field] = 'success';
         }

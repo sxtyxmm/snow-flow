@@ -14,6 +14,7 @@ import * as os from 'os';
 import { ServiceNowClient } from './servicenow-client.js';
 import { SmartFieldFetcher } from './smart-field-fetcher.js';
 import { withMCPTimeout, getMCPTimeoutConfig } from './mcp-timeout-config.js';
+import { ChunkingManager } from './chunking-manager.js';
 import { 
   ARTIFACT_REGISTRY, 
   ArtifactTypeConfig, 
@@ -358,6 +359,31 @@ export class ArtifactLocalSync {
           
           // Map back to ServiceNow field
           if (file.field && file.field !== 'documentation' && file.field !== 'metadata') {
+            // Check if field needs chunking (large server scripts)
+            if (ChunkingManager.needsChunking(processedContent)) {
+              console.log(`   ⚠️ Large field detected: ${file.field} (${processedContent.length} chars)`);
+              
+              // Attempt chunked update
+              const chunkResult = await ChunkingManager.attemptChunkedUpdate(
+                this.client,
+                config.tableName,
+                sys_id,
+                file.field,
+                processedContent
+              );
+              
+              if (!chunkResult.success) {
+                // Add to validation results as a manual instruction
+                validationResults.push({
+                  valid: false,
+                  errors: [],
+                  warnings: [`Large ${file.field} requires manual update`],
+                  hints: [chunkResult.message]
+                });
+                continue; // Skip adding to updates
+              }
+            }
+            
             updates[file.field] = processedContent;
             console.log(`   📝 Changed: ${file.filename} (${file.field})`);
             
