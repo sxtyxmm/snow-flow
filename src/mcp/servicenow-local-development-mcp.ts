@@ -172,35 +172,6 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             required: ['sys_id']
           }
         },
-        // Legacy compatibility tools
-        {
-          name: 'snow_pull_widget',
-          description: 'Pull a ServiceNow widget to local files (legacy - use snow_pull_artifact instead)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              sys_id: {
-                type: 'string',
-                description: 'Widget sys_id to pull'
-              }
-            },
-            required: ['sys_id']
-          }
-        },
-        {
-          name: 'snow_push_widget',
-          description: 'Push widget changes back to ServiceNow (legacy - use snow_push_artifact instead)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              sys_id: {
-                type: 'string',
-                description: 'Widget sys_id to push'
-              }
-            },
-            required: ['sys_id']
-          }
-        }
       ]
     }));
 
@@ -255,14 +226,6 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             result = await this.debugWidgetFetch(args);
             break;
             
-          // Legacy compatibility
-          case 'snow_pull_widget':
-            result = await this.pullWidget(args);
-            break;
-            
-          case 'snow_push_widget':
-            result = await this.pushWidget(args);
-            break;
             
           default:
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
@@ -643,14 +606,6 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
     }
   }
 
-  // Legacy compatibility methods
-  private async pullWidget(args: any): Promise<MCPToolResult> {
-    return this.pullArtifact({ ...args, table: 'sp_widget' });
-  }
-
-  private async pushWidget(args: any): Promise<MCPToolResult> {
-    return this.pushArtifact(args);
-  }
 }
 
 // Start the server with timeout protection
