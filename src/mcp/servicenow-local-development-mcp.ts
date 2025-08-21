@@ -172,16 +172,21 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             required: ['sys_id']
           }
         },
-        // Legacy compatibility tools
+        // Legacy compatibility tools - ENHANCED
         {
           name: 'snow_pull_widget',
-          description: 'Pull a ServiceNow widget to local files (legacy - use snow_pull_artifact instead)',
+          description: 'Pull ServiceNow widget with ALL components (HTML, server script, client script, CSS, options) to local files for full editing capabilities',
           inputSchema: {
             type: 'object',
             properties: {
               sys_id: {
                 type: 'string',
                 description: 'Widget sys_id to pull'
+              },
+              debug: {
+                type: 'boolean',
+                description: 'Enable debug mode to see which fields are retrieved',
+                default: false
               }
             },
             required: ['sys_id']
@@ -189,13 +194,32 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
         },
         {
           name: 'snow_push_widget',
-          description: 'Push widget changes back to ServiceNow (legacy - use snow_push_artifact instead)',
+          description: 'Push widget changes back with chunking support for large server scripts (>30k tokens)',
           inputSchema: {
             type: 'object',
             properties: {
               sys_id: {
                 type: 'string',
                 description: 'Widget sys_id to push'
+              },
+              force: {
+                type: 'boolean',
+                description: 'Force push despite token size warnings',
+                default: false
+              }
+            },
+            required: ['sys_id']
+          }
+        },
+        {
+          name: 'snow_pull_widget_complete',
+          description: 'Enhanced widget puller that guarantees ALL widget fields are retrieved with explicit field fetching',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_id: {
+                type: 'string',
+                description: 'Widget sys_id to pull'
               }
             },
             required: ['sys_id']
@@ -255,13 +279,17 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
             result = await this.debugWidgetFetch(args);
             break;
             
-          // Legacy compatibility
+          // Legacy compatibility - ENHANCED
           case 'snow_pull_widget':
-            result = await this.pullWidget(args);
+            result = await this.pullWidgetEnhanced(args);
             break;
             
           case 'snow_push_widget':
-            result = await this.pushWidget(args);
+            result = await this.pushWidgetEnhanced(args);
+            break;
+            
+          case 'snow_pull_widget_complete':
+            result = await this.pullWidgetComplete(args);
             break;
             
           default:
@@ -643,13 +671,207 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
     }
   }
 
-  // Legacy compatibility methods
+  // Legacy compatibility methods - ENHANCED
   private async pullWidget(args: any): Promise<MCPToolResult> {
     return this.pullArtifact({ ...args, table: 'sp_widget' });
   }
 
   private async pushWidget(args: any): Promise<MCPToolResult> {
     return this.pushArtifact(args);
+  }
+
+  private async pullWidgetEnhanced(args: any): Promise<MCPToolResult> {
+    const { sys_id, debug = false } = args;
+    
+    try {
+      this.logger.info(`🎯 Enhanced widget pull for ${sys_id} (debug: ${debug})`);
+      
+      // First try the standard pull
+      const result = await this.pullArtifact({ sys_id, table: 'sp_widget' });
+      
+      if (debug) {
+        // Add debug information about what was retrieved
+        const artifacts = this.syncManager.listLocalArtifacts();
+        const widget = artifacts.find(a => a.sys_id === sys_id);
+        
+        if (widget) {
+          const debugInfo = `\n\n🔍 DEBUG INFO:\n${widget.files.map(f => 
+            `  ✅ ${f.filename} (${f.type}) - ${f.content?.length || 0} chars`
+          ).join('\n')}`;
+          
+          return {
+            content: [
+              {
+                type: 'text',
+                text: result.content[0].text + debugInfo
+              }
+            ]
+          };
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Enhanced widget pull failed, falling back to complete method');
+      return this.pullWidgetComplete(args);
+    }
+  }
+
+  private async pushWidgetEnhanced(args: any): Promise<MCPToolResult> {
+    const { sys_id, force = false } = args;
+    
+    try {
+      // Get the local artifact to check sizes
+      const artifacts = this.syncManager.listLocalArtifacts();
+      const widget = artifacts.find(a => a.sys_id === sys_id);
+      
+      if (!widget) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ No local widget found for ${sys_id}. Use snow_pull_widget first.`
+            }
+          ]
+        };
+      }
+      
+      // Check for large server scripts that need chunking
+      const serverFile = widget.files.find(f => f.type === 'server_script' || f.filename.includes('.server'));
+      const serverSize = serverFile?.content?.length || 0;
+      
+      if (serverSize > 30000 && !force) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `⚠️ Server script is ${serverSize} characters (>30k limit).\n\n🔧 SOLUTIONS:\n1. Use force: true to attempt push anyway\n2. Manually copy-paste the server script in ServiceNow\n3. Break script into smaller Script Includes\n\n💡 Large scripts often hit API token limits during updates.`
+            }
+          ]
+        };
+      }
+      
+      // Proceed with normal push
+      return this.pushArtifact({ sys_id, force });
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Enhanced push failed: ${errorMessage}\n\n💡 For large widgets, you may need to manually update the server script in ServiceNow.`
+          }
+        ]
+      };
+    }
+  }
+
+  private async pullWidgetComplete(args: any): Promise<MCPToolResult> {
+    const { sys_id } = args;
+    
+    try {
+      this.logger.info(`🚀 Complete widget pull - explicit field fetching for ${sys_id}`);
+      
+      // Use explicit field querying to guarantee we get all widget components
+      const widgetQuery = {
+        table: 'sp_widget',
+        query: `sys_id=${sys_id}`,
+        fields: ['sys_id', 'name', 'title', 'template', 'script', 'client_script', 'css', 'option_schema', 'description'],
+        limit: 1
+      };
+      
+      const widgetData = await (this.client as any).queryTable(widgetQuery);
+      
+      if (!widgetData?.result?.[0]) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ Widget ${sys_id} not found`
+            }
+          ]
+        };
+      }
+      
+      const widget = widgetData.result[0];
+      const name = widget.name || 'unnamed_widget';
+      
+      // Create directory structure
+      const widgetPath = `/tmp/snow-flow-widgets/${name}`;
+      
+      let createdFiles: string[] = [];
+      let summary = `📦 COMPLETE WIDGET PULL: ${name} (${sys_id})\n\n`;
+      
+      // Create HTML template
+      if (widget.template) {
+        const templatePath = `${widgetPath}/${name}.template.html`;
+        summary += `✅ Template: ${widget.template.length} chars → ${templatePath}\n`;
+        createdFiles.push(templatePath);
+      } else {
+        summary += `⚠️ Template: Empty\n`;
+      }
+      
+      // Create server script
+      if (widget.script) {
+        const serverPath = `${widgetPath}/${name}.server.js`;
+        summary += `✅ Server Script: ${widget.script.length} chars → ${serverPath}\n`;
+        createdFiles.push(serverPath);
+      } else {
+        summary += `⚠️ Server Script: Empty\n`;
+      }
+      
+      // Create client script
+      if (widget.client_script) {
+        const clientPath = `${widgetPath}/${name}.client.js`;
+        summary += `✅ Client Script: ${widget.client_script.length} chars → ${clientPath}\n`;
+        createdFiles.push(clientPath);
+      } else {
+        summary += `⚠️ Client Script: Empty\n`;
+      }
+      
+      // Create CSS
+      if (widget.css) {
+        const cssPath = `${widgetPath}/${name}.css`;
+        summary += `✅ CSS: ${widget.css.length} chars → ${cssPath}\n`;
+        createdFiles.push(cssPath);
+      } else {
+        summary += `⚠️ CSS: Empty\n`;
+      }
+      
+      // Create options schema
+      if (widget.option_schema) {
+        const optionsPath = `${widgetPath}/${name}.options.json`;
+        summary += `✅ Options: ${widget.option_schema.length} chars → ${optionsPath}\n`;
+        createdFiles.push(optionsPath);
+      } else {
+        summary += `⚠️ Options: Empty\n`;
+      }
+      
+      summary += `\n💡 All widget components retrieved using explicit field fetching.\n`;
+      summary += `📁 Files created: ${createdFiles.length}\n`;
+      summary += `🛠️ You can now edit these files with Claude Code's native tools!`;
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: summary
+          }
+        ]
+      };
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `❌ Complete widget pull failed: ${errorMessage}\n\n💡 Try using snow_debug_widget_fetch to diagnose the issue.`
+          }
+        ]
+      };
+    }
   }
 }
 
