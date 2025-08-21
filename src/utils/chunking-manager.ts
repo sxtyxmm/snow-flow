@@ -23,7 +23,7 @@ export class ChunkingManager {
   /**
    * Determine if script needs chunking
    */
-  static needsChunking(script: string, maxSize: number = 30000): boolean {
+  static needsChunking(script: string, maxSize: number = 100000): boolean {
     return script.length > maxSize;
   }
 

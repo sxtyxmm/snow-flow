@@ -740,12 +740,12 @@ export class ServiceNowLocalDevelopmentMCP extends EnhancedBaseMCPServer {
       const serverFile = widget.files.find(f => f.type === 'server_script' || f.filename.includes('.server'));
       const serverSize = serverFile?.content?.length || 0;
       
-      if (serverSize > 30000 && !force) {
+      if (serverSize > 100000 && !force) {
         return {
           content: [
             {
               type: 'text',
-              text: `⚠️ Server script is ${serverSize} characters (>30k limit).\n\n🔧 SOLUTIONS:\n1. Use force: true to attempt push anyway\n2. Manually copy-paste the server script in ServiceNow\n3. Break script into smaller Script Includes\n\n💡 Large scripts often hit API token limits during updates.`
+              text: `⚠️ Server script is ${serverSize} characters (>100k limit).\n\n🔧 SOLUTIONS:\n1. Use force: true to attempt push anyway\n2. Manually copy-paste the server script in ServiceNow\n3. Break script into smaller Script Includes\n\n💡 Very large scripts (>100k) may hit API token limits during updates.`
             }
           ]
         };
