@@ -8,7 +8,7 @@
     "snow-flow": "bin/snow-flow"
   },
   "scripts": {
-    "build": "tsc || true",
+    "build": "tsc --noEmitOnError false || true",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",

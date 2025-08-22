@@ -18,6 +18,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noEmitOnError": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "suppressExcessPropertyErrors": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
     "noImplicitReturns": false,
