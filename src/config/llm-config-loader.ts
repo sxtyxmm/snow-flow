@@ -17,6 +17,18 @@ export interface SnowFlowConfig {
     provider?: string;
     model?: string;
     apiKey?: string;
+    baseURL?: string;
+    apiKeyEnv?: string;
+  };
+  mcp?: {
+    enabled?: boolean;
+    servers?: string[];
+  };
+  agent?: {
+    maxWorkers?: number;
+    timeout?: number;
+    system?: any;
+    maxSteps?: number;
   };
 }
 

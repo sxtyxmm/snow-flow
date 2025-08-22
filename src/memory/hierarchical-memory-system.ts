@@ -8,11 +8,22 @@ import { MemorySystem } from './memory-system.js';
 export interface HierarchicalMemorySystem extends MemorySystem {
   dbPath?: string;
   namespace?: string;
+  cache?: any;
+  ttl?: number;
   
   storeInNamespace(namespace: string, key: string, value: any): Promise<void>;
   retrieveFromNamespace(namespace: string, key: string): Promise<any>;
   listNamespaces(): Promise<string[]>;
   clearNamespace(namespace: string): Promise<void>;
+  // Extended compatibility methods
+  storeHierarchical?(path: string, data: any): Promise<void>;
+  getHierarchical?(path: string): Promise<any>;
+  search?(pattern: string): Promise<any[]>;
+  getAgentMemory?(agentId: string): Promise<any>;
+  trackAccessPattern?(key: string): Promise<void>;
+  createRelationship?(from: string, to: string, type: string): Promise<void>;
+  getNamespaceStats?(namespace: string): Promise<any>;
+  cleanupExpired?(): Promise<void>;
 }
 
 export class DefaultHierarchicalMemorySystem implements HierarchicalMemorySystem {

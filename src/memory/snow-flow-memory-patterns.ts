@@ -48,3 +48,26 @@ export function matchesPattern(key: string, pattern: string): boolean {
   const regex = new RegExp(pattern.replace('*', '.*'));
   return regex.test(key);
 }
+
+// Export stub implementations for compatibility
+export class SnowFlowMemoryOrganizer {
+  static organize(data: any) { return data; }
+}
+
+export const SNOW_FLOW_AGENT_CAPABILITIES = {
+  RESEARCHER: 'researcher',
+  CODER: 'coder',
+  ANALYST: 'analyst'
+};
+
+export interface HierarchicalMemoryEntry {
+  key: string;
+  value: any;
+  namespace: string;
+}
+
+export interface MemorySearchOptions {
+  pattern?: string;
+  limit?: number;
+  namespace?: string;
+}
