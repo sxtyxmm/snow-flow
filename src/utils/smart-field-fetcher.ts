@@ -40,25 +40,25 @@ const WIDGET_FIELD_GROUPS: FieldGroup[] = [
     groupName: 'template',
     fields: ['template'],
     description: 'HTML template - defines UI structure and Angular bindings (ng-click, {{data.x}})',
-    maxTokens: 20000  // Increased to 20K
+    maxTokens: 200000  // Claude's full context window
   },
   {
     groupName: 'server_script',
     fields: ['script'],  // Note: 'script' is the actual field name, not 'server_script'
     description: 'Server-side script (ES5 only) - initializes data object and handles input.action requests',
-    maxTokens: 20000  // Increased to 20K
+    maxTokens: 200000  // Claude's full context window
   },
   {
     groupName: 'client_script',
     fields: ['client_script'],
     description: 'Client-side AngularJS controller - implements methods called by template ng-click and calls c.server.get()',
-    maxTokens: 20000  // Increased to 20K
+    maxTokens: 200000  // Claude's full context window
   },
   {
     groupName: 'styling',
     fields: ['css'],
     description: 'Widget-specific CSS styles - classes used in template',
-    maxTokens: 20000  // Increased to 20K
+    maxTokens: 200000  // Claude's full context window
   },
   {
     groupName: 'configuration',
@@ -160,8 +160,8 @@ export class SmartFieldFetcher {
             fields: group.fields
           };
           
-          // Add to flat structure for easy access
-          Object.assign(results, response.result[0]);
+          // FIX: getRecord returns direct object, not response.result[0]
+          Object.assign(results, response);
         }
       } catch (error: any) {
         console.log(`⚠️ Failed to fetch ${group.groupName}: ${error.message}`);
@@ -297,8 +297,9 @@ export class SmartFieldFetcher {
             `Direct widget fetch ${sys_id}`
           );
           
-          if (directResponse && directResponse.success && directResponse.data && directResponse.data.result) {
-            const directData = directResponse.data.result;
+          if (directResponse) {
+            // FIX: getRecord returns direct object, not nested structure
+            const directData = directResponse;
             
             // Merge any new data we got
             Object.assign(results, directData);
@@ -373,6 +374,7 @@ export class SmartFieldFetcher {
         const response = await this.client.getRecord(table, sys_id);
         
         if (response) {
+          // FIX: getRecord returns direct object
           result.data[field] = response[field];
           result._field_status[field] = 'success';
         }
@@ -629,7 +631,7 @@ export function createFetchStrategyHint(table: string, sys_id: string): string {
   return `
 🔍 SMART FETCH STRATEGY for ${table} (${sys_id}):
 
-When the artifact is too large (>25000 tokens), I'll fetch fields in intelligent groups:
+When the artifact is too large (>200000 tokens), I'll fetch fields in intelligent groups:
 1. First fetch metadata (name, title, sys_id)
 2. Then fetch each content field separately (template, script, client_script, css)
 3. Maintain context: These fields work together!

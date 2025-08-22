@@ -1265,7 +1265,7 @@ class ServiceNowReportingAnalyticsMCP {
 
   private async getReportData(report: any, maxRows?: number): Promise<any[]> {
     // Simulate getting report data
-    const limit = maxRows || 1000;
+    const limit = maxRows || 100000; // Remove artificial 1k limit
     const data = await this.client.searchRecords(report.table, report.conditions || '', limit);
     return data.success ? data.data.result : [];
   }

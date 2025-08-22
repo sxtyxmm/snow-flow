@@ -2370,7 +2370,7 @@ export class ServiceNowDevelopmentAssistantMCP {
       // Estimate token count (rough estimate: 1 token ≈ 4 characters)
       const jsonString = JSON.stringify(formattedArtifact, null, 2);
       const estimatedTokens = Math.ceil(jsonString.length / 4);
-      const maxTokens = 25000; // MCP response limit
+      const maxTokens = 200000; // Claude's actual context window limit
 
       let responseText: string;
       

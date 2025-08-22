@@ -1,14 +1,14 @@
 <div align="center">
   <img src="assets/snow-flow-logo.svg" alt="Snow-Flow Logo" width="200" height="200">
   
-  # ❄️ Snow-Flow v3.6.25 ❄️
+  # ❄️ Snow-Flow v4.0.0 - Final Claude Code CLI Edition ❄️
   
   <p align="center">
     <strong>🚀 Revolutionary ServiceNow Development Framework with AI-Powered Automation</strong>
   </p>
   
   <p align="center">
-    <a href="https://www.npmjs.com/package/snow-flow"><img src="https://img.shields.io/npm/v/snow-flow.svg?style=for-the-badge&logo=npm&color=CB3837" alt="npm version"></a>
+    <a href="https://www.npmjs.com/package/snow-flow"><img src="https://img.shields.io/badge/npm-v4.0.0--final--claude-CB3837?style=for-the-badge&logo=npm" alt="npm version"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License: MIT"></a>
     <a href="https://nodejs.org"><img src="https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933" alt="Node.js Version"></a>
     <a href="https://github.com/groeimetai/snow-flow"><img src="https://img.shields.io/github/stars/groeimetai/snow-flow?style=for-the-badge&logo=github" alt="GitHub Stars"></a>
@@ -21,29 +21,54 @@
 
 ---
 
-## 🎉 What's New in v3.6.25
+## 🚨 Important Announcement: Final Claude Code CLI Edition
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <h3>⚡ This is the Final Claude Code CLI Version ⚡</h3>
+        <p>Snow-Flow v4.0.0 marks the end of an era. This is the last version designed specifically for Claude Code CLI.</p>
+        <p><strong>🔮 What's Coming Next:</strong></p>
+        <ul align="left">
+          <li>🤖 Support for <strong>ANY LLM</strong>: OpenAI, Google Gemini, Anthropic Claude, Ollama, and more</li>
+          <li>🔌 Modular provider system with unified interface</li>
+          <li>💻 Native CLI with interactive chat interface</li>
+          <li>🔄 Seamless switching between LLM providers</li>
+          <li>📊 Same great ServiceNow tools, now LLM-agnostic</li>
+        </ul>
+        <p><strong>Thank you to all Claude Code users who made this journey possible! 🙏</strong></p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 🎉 What's New in v4.0.0-final-claude
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="50%">
-        <h3>🚀 Major Features</h3>
+        <h3>🏁 Final Release Features</h3>
         <ul align="left">
-          <li><strong>Catalog UI Policy Deployment</strong><br/>Deploy via unified <code>snow_deploy</code> tool</li>
-          <li><strong>Knowledge Base Verification</strong><br/>Prevents orphaned articles with strict validation</li>
-          <li><strong>Catalog Variable Table Fix</strong><br/>Variables now use correct <code>item_option_new</code></li>
-          <li><strong>Enhanced UI Policy Debugging</strong><br/>Comprehensive reference field debugging</li>
-          <li><strong>18th MCP Server</strong><br/>Local Development Server for artifact syncing</li>
+          <li><strong>🔚 Final Claude Code CLI Version</strong><br/>Last release for Claude Code users</li>
+          <li><strong>📚 Complete Feature Set</strong><br/>All 18 MCP servers, 200+ tools</li>
+          <li><strong>🎯 Catalog UI Policy Support</strong><br/>Deploy via unified <code>snow_deploy</code> tool</li>
+          <li><strong>🔒 Knowledge Base Verification</strong><br/>Prevents orphaned articles</li>
+          <li><strong>✨ Beautiful Documentation</strong><br/>Enhanced README and website</li>
         </ul>
       </td>
       <td align="center" width="50%">
-        <h3>🔧 Critical Fixes</h3>
+        <h3>🚀 Latest Improvements</h3>
         <ul align="left">
-          <li>✅ Catalog variables now visible in ServiceNow</li>
-          <li>✅ UI policy actions reference fields fixed</li>
-          <li>✅ Non-existent KB error handling added</li>
-          <li>✅ MCP transport 3x faster operations</li>
-          <li>✅ Widget coherence validation improved</li>
+          <li>✅ Catalog variables table fix (v3.6.23)</li>
+          <li>✅ UI policy debugging enhanced (v3.6.22)</li>
+          <li>✅ Knowledge validation added (v3.6.25)</li>
+          <li>✅ MCP transport 3x faster</li>
+          <li>✅ ES5 validation throughout</li>
+          <li>🎁 All previous fixes included</li>
         </ul>
       </td>
     </tr>

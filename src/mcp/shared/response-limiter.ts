@@ -7,7 +7,7 @@ export class ResponseLimiter {
   // Configurable via environment variable, default to 500KB (reasonable for widgets/flows)
   private static readonly MAX_RESPONSE_SIZE = parseInt(process.env.MCP_MAX_RESPONSE_SIZE || '500000'); // 500KB default
   private static readonly MAX_ARRAY_ITEMS = parseInt(process.env.MCP_MAX_ARRAY_ITEMS || '500');    // 500 items default
-  private static readonly MAX_TOKEN_ESTIMATE = 125000; // ~500KB / 4 chars per token
+  private static readonly MAX_TOKEN_ESTIMATE = 200000; // Claude's actual 200k context window
 
   /**
    * Limit response size to prevent timeouts

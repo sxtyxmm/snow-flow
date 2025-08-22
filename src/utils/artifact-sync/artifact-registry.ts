@@ -68,7 +68,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         fileExtension: 'html',
         description: 'HTML template with Angular bindings',
         wrapperHeader: '<!-- ServiceNow Widget Template: {name} -->\n<!-- Angular bindings: {{data.x}}, ng-click="method()" -->\n\n',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: true
       },
       {
@@ -78,7 +78,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         description: 'Server-side script (ES5 ONLY)',
         wrapperHeader: '/**\n * Server Script for Widget: {name}\n * ES5 ONLY - No arrow functions, const/let, template literals\n * Available: data, input, options, gs, $sp\n */\n\n(function() {\n',
         wrapperFooter: '\n})();',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false,
         validateES5: true
       },
@@ -89,7 +89,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         description: 'Client-side AngularJS controller',
         wrapperHeader: '/**\n * Client Controller for Widget: {name}\n * AngularJS 1.x\n * Available: c (this), c.data, c.server, $scope\n */\n\nfunction(',
         wrapperFooter: ')',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false
       },
       {
@@ -98,7 +98,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         fileExtension: 'css',
         description: 'Widget-specific CSS styles',
         wrapperHeader: '/* Styles for Widget: {name} */\n/* Prefix classes to avoid conflicts */\n\n',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false
       },
       {
@@ -192,7 +192,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         localFileName: '{name}.flow',
         fileExtension: 'json',
         description: 'Complete flow definition with all steps and actions',
-        maxTokens: 50000, // Flows can be huge
+        maxTokens: 200000, // Claude's context window is 200k tokens // Flows can be huge
         isRequired: true,
         preprocessor: (content) => {
           try {
@@ -282,7 +282,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         description: 'Business rule script',
         wrapperHeader: '/**\n * Business Rule: {name}\n * Table: {collection}\n * When: {when}\n * Order: {order}\n * Available: current, previous, gs, g_scratchpad\n */\n\n(function executeRule(current, previous /*null when async*/) {\n',
         wrapperFooter: '\n})(current, previous);',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: true,
         validateES5: true
       },
@@ -321,7 +321,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         localFileName: '{name}.client',
         fileExtension: 'js',
         description: 'Client-side JavaScript',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false
       },
       {
@@ -329,7 +329,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         localFileName: '{name}.server',
         fileExtension: 'js',
         description: 'Server-side processing script (ES5)',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false,
         validateES5: true
       }
@@ -351,7 +351,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         fileExtension: 'js',
         description: 'Client-side form script',
         wrapperHeader: '/**\n * Client Script: {name}\n * Table: {table}\n * Type: {type}\n * Available: g_form, g_user, g_list\n */\n\n',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: true
       }
     ]
@@ -419,7 +419,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         localFileName: '{name}',
         fileExtension: 'js',
         description: 'Transform map script',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: false,
         validateES5: true
       }
@@ -441,7 +441,7 @@ export const ARTIFACT_REGISTRY: Record<string, ArtifactTypeConfig> = {
         fileExtension: 'js',
         description: 'Scheduled job script (ES5)',
         wrapperHeader: '/**\n * Scheduled Job: {name}\n * Run as: {run_as}\n * Time zone: {time_zone}\n */\n\n',
-        maxTokens: 20000,
+        maxTokens: 200000, // Claude's context window is 200k tokens
         isRequired: true,
         validateES5: true
       }

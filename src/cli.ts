@@ -19,6 +19,12 @@ import { VERSION } from './version.js';
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
+// New provider-agnostic engine imports (compile-safe placeholders)
+import { loadSnowFlowConfig } from './config/llm-config-loader.js';
+import { runAgent } from './agent/session.js';
+import { runInteractive } from './agent/interactive.js';
+import { registerAuthCommands } from './cli/auth.js';
+import { registerSessionCommands } from './cli/session.js';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +38,11 @@ program
   .name('snow-flow')
   .description('ServiceNow Multi-Agent Development Framework')
   .version(VERSION);
+
+// Register auth commands (API key management)
+registerAuthCommands(program);
+// Register session inspection commands
+registerSessionCommands(program);
 
 // Flow deprecation handler - check for flow-related commands
 function checkFlowDeprecation(command: string, objective?: string) {
@@ -64,6 +75,18 @@ function checkFlowDeprecation(command: string, objective?: string) {
 program
   .command('swarm <objective>')
   .description('Execute multi-agent orchestration for a ServiceNow task - één command voor alles!')
+  // New engine selector: defaults to auto (uses config-driven agent when available)
+  .option('--engine <engine>', 'Execution engine (auto|agent|claude)', 'auto')
+  .option('--config <path>', 'Path to snowflow.config file')
+  .option('--show-reasoning', 'Show LLM reasoning in a different color (default)', true)
+  .option('--no-show-reasoning', 'Hide LLM reasoning blocks')
+  .option('--save-output <path>', 'Save full assistant output to a file')
+  .option('--resume <sessionId>', 'Resume an existing interactive session')
+  // Provider overrides (optional, config-driven by default)
+  .option('--provider <provider>', 'LLM provider override')
+  .option('--model <model>', 'Model override')
+  .option('--base-url <url>', 'Base URL override for openai-compatible or gateways')
+  .option('--api-key-env <name>', 'Use specific API key env var')
   .option('--strategy <strategy>', 'Execution strategy (development, _analysis, research)', 'development')
   .option('--mode <mode>', 'Coordination mode (hierarchical, mesh, distributed)', 'hierarchical')
   .option('--max-agents <number>', 'Maximum number of agents', '5')
@@ -256,6 +279,68 @@ program
       }
     }
     
+    // Detect agent engine via config (provider-agnostic) when requested or available
+    const shouldUseAgent = (() => {
+      if (options.engine === 'agent') return true;
+      if (options.engine === 'claude') return false;
+      // auto: use agent when config file is present and valid
+      const cfg = loadSnowFlowConfig({
+        configPath: options.config,
+        overrides: {
+          llm: {
+            provider: options.provider || undefined,
+            model: options.model || undefined,
+            baseURL: options.baseUrl || options.baseURL || undefined,
+            apiKeyEnv: options.apiKeyEnv || undefined,
+          } as any,
+        },
+      });
+      return Boolean(cfg && cfg.llm && cfg.llm.provider && cfg.llm.model);
+    })();
+
+    if (shouldUseAgent) {
+      const cfg = loadSnowFlowConfig({
+        configPath: options.config,
+        overrides: {
+          llm: {
+            provider: options.provider || undefined,
+            model: options.model || undefined,
+            baseURL: options.baseUrl || options.baseURL || undefined,
+            apiKeyEnv: options.apiKeyEnv || undefined,
+          } as any,
+        },
+      });
+
+      if (!cfg) {
+        cliLogger.error('❌ Geen snowflow.config.(json|js|cjs) gevonden. Voeg config toe of gebruik --engine claude.');
+        process.exit(1);
+      }
+
+      // Basic validation for MVP
+      if (!cfg.llm?.provider || !cfg.llm?.model) {
+        cliLogger.error('❌ Config mist llm.provider of llm.model');
+        process.exit(1);
+      }
+
+      cliLogger.info('\n🤖 Using provider-agnostic Snow-Flow agent (interactive)');
+      try {
+        await runInteractive({
+          provider: cfg.llm.provider as any,
+          model: String(cfg.llm.model),
+          baseURL: cfg.llm.baseURL,
+          apiKeyEnv: cfg.llm.apiKeyEnv,
+          mcp: cfg.mcp,
+          system: cfg.agent?.system,
+          maxSteps: cfg.agent?.maxSteps ?? 40,
+          showReasoning: options.showReasoning !== false,
+          resumeId: options.resume || undefined,
+        });
+      } catch (e) {
+        cliLogger.error('❌ Interactive agent error:', e instanceof Error ? e.message : String(e));
+      }
+      return; // end here; skip legacy Claude path
+    }
+
     // Analyze the objective using intelligent agent detection
     const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
     
