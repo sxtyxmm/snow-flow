@@ -473,9 +473,15 @@ a.link-animated:hover::after {
 
 .hero-content {
   position: relative;
-  z-index: 2; /* Above the noise overlay */
+  z-index: 20; /* CONTRAST FIX: Higher z-index above all background elements */
   text-align: center;
   padding: var(--space-8);
+  /* READABILITY FIX: Semi-transparent dark backdrop for better text contrast */
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-title {
@@ -485,6 +491,10 @@ a.link-animated:hover::after {
   margin-bottom: var(--space-6);
   position: relative;
   display: inline-block;
+  /* CONTRAST FIX: Ensure title is always readable */
+  color: var(--white);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.6);
+  z-index: 10;
 }
 
 @keyframes gradientShift {
@@ -495,10 +505,14 @@ a.link-animated:hover::after {
 
 .hero-subtitle {
   font-size: clamp(var(--font-lg), 2vw, var(--font-2xl));
-  color: var(--gray-400);
+  color: var(--gray-200); /* CONTRAST FIX: Lighter for better readability */
   margin-bottom: var(--space-10);
-  font-weight: 300;
+  font-weight: 400; /* Slightly bolder for better readability */
   letter-spacing: var(--tracking-wide);
+  /* READABILITY FIX: Add text shadow for contrast */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 10;
+  position: relative;
 }
 
 /* =========================================
@@ -520,8 +534,9 @@ a.link-animated:hover::after {
   position: absolute;
   border-radius: 50%;
   filter: blur(40px);
-  opacity: 0.5;
+  opacity: 0.2; /* CONTRAST FIX: Reduced opacity so they don't interfere with text */
   animation: float 20s infinite ease-in-out;
+  z-index: 1; /* Keep below text content */
 }
 
 .orb-1 {
@@ -658,12 +673,17 @@ a.link-animated:hover::after {
 
 /* Enhanced Title */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #667eea 100%);
+  /* CONTRAST FIX: Much brighter, more contrastive gradient */
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 25%, #e0f2fe 50%, #bfdbfe 75%, #ffffff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   background-size: 200% auto;
   animation: gradient-animate 5s ease infinite;
+  /* FALLBACK: If gradient fails, show white text */
+  color: var(--white);
+  /* CONTRAST ENHANCEMENT: Text shadow visible through transparency */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
 @keyframes gradient-animate {
@@ -710,8 +730,11 @@ a.link-animated:hover::after {
 }
 
 .highlight-text {
-  color: #f5576c;
+  color: #ff6b7a; /* CONTRAST FIX: Brighter red for better visibility */
   font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); /* Better contrast */
+  position: relative;
+  z-index: 15;
 }
 
 /* Feature Pills */
@@ -724,14 +747,18 @@ a.link-animated:hover::after {
 }
 
 .pill {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.6); /* CONTRAST FIX: Darker background for better text visibility */
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Brighter border */
   padding: 0.5rem 1rem;
   border-radius: 50px;
   font-size: 0.85rem;
-  color: white;
+  color: var(--white); /* Ensure pure white text */
   animation: pill-intro 0.5s ease-out;
+  /* READABILITY FIX: Text shadow for extra contrast */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  position: relative;
+  z-index: 15;
 }
 
 .pill-glow { animation: pill-glow 3s ease-in-out infinite; }

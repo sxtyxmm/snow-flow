@@ -1,0 +1,123 @@
+/* =========================================
+   HERO CONTRAST & READABILITY FIXES v4.2.0
+   ========================================= */
+
+/* Critical contrast improvements for hero section */
+
+/* Ensure all hero text has proper z-index layering */
+.hero-content * {
+  position: relative;
+  z-index: 10;
+}
+
+/* Fade-in word animations with better contrast */
+.fade-in-word span {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+  color: var(--gray-100); /* CONTRAST FIX: Very light gray for excellent readability */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Version badge enhanced visibility */
+.animated-badge {
+  animation: badge-pulse 2s ease-in-out infinite;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5); }
+}
+
+/* Title letters enhanced contrast */
+.title-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letterDrop 0.6s ease forwards;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 255, 255, 0.1); /* Subtle white glow */
+}
+
+@keyframes letterDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) rotateX(90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
+/* Feature pills enhanced visibility */
+.feature-pills .pill {
+  /* VISIBILITY FIX: Much stronger background for better text contrast */
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.feature-pills .pill:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Subtitle lines enhanced readability */
+.subtitle-line,
+.subtitle-line-2 {
+  display: block;
+  line-height: var(--leading-relaxed);
+}
+
+.subtitle-line-2 {
+  margin-top: var(--space-2);
+}
+
+/* Background orbs - ensure they don't interfere */
+.floating-orb {
+  /* INTERFERENCE FIX: Move orbs further back and reduce impact */
+  z-index: 0 !important;
+  opacity: 0.15 !important; /* Even more subtle */
+  mix-blend-mode: soft-light; /* Softer blending with background */
+}
+
+/* Responsive contrast adjustments */
+@media (max-width: 768px) {
+  .hero-content {
+    /* MOBILE FIX: Even stronger backdrop on mobile */
+    background: rgba(0, 0, 0, 0.5);
+    padding: var(--space-6);
+  }
+  
+  .hero-title {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.9),
+      0 4px 8px rgba(0, 0, 0, 0.7),
+      0 0 30px rgba(255, 255, 255, 0.2);
+  }
+  
+  .hero-subtitle {
+    color: var(--gray-100); /* Even lighter on mobile */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Dark mode safeguards */
+@media (prefers-color-scheme: dark) {
+  .hero-title {
+    color: var(--white) !important;
+  }
+  
+  .hero-subtitle {
+    color: var(--gray-200) !important;
+  }
+  
+  .pill {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: var(--white) !important;
+  }
+}
