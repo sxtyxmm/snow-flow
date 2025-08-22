@@ -353,7 +353,69 @@ document.addEventListener('DOMContentLoaded', function() {
        ========================================= */
     console.log('%c🏔️ Snow-Flow', 'font-size: 50px; font-weight: bold; background: linear-gradient(135deg, #000 0%, #fff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
     console.log('%cWelcome to Snow-Flow - The ServiceNow Development Revolution', 'font-size: 14px; color: #666;');
-    console.log('%c17 MCP Servers | 200+ Tools | Unlimited Possibilities', 'font-size: 12px; color: #999;');
+    console.log('%c23 Enterprise MCP Servers | 355+ Tools | Unlimited Possibilities', 'font-size: 12px; color: #999;');
+
+    /* =========================================
+       COUNTER ANIMATION (MISSING!)
+       ========================================= */
+    function animateCounter(element, target, duration = 2000) {
+        const start = 0;
+        let numericTarget;
+        
+        // Parse target value (handle numbers, percentages, plus signs)
+        if (typeof target === 'string') {
+            if (target.includes('%')) {
+                numericTarget = parseInt(target.replace('%', ''));
+            } else if (target.includes('+')) {
+                numericTarget = parseInt(target.replace('+', ''));
+            } else {
+                numericTarget = parseInt(target);
+            }
+        } else {
+            numericTarget = parseInt(target);
+        }
+        
+        const increment = numericTarget / (duration / 16); // 60fps
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= numericTarget) {
+                element.textContent = target; // Use original target with symbols
+                clearInterval(timer);
+            } else {
+                // Display current value with appropriate symbols
+                if (typeof target === 'string' && target.includes('+')) {
+                    element.textContent = Math.floor(current) + '+';
+                } else if (typeof target === 'string' && target.includes('%')) {
+                    element.textContent = Math.floor(current) + '%';
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }
+        }, 16);
+    }
+    
+    // Initialize counters when they come into view
+    const counters = document.querySelectorAll('.counter');
+    const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const counter = entry.target;
+                const target = counter.getAttribute('data-target');
+                
+                // Start animation
+                animateCounter(counter, target, 2000);
+                
+                // Only animate once
+                counterObserver.unobserve(counter);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    counters.forEach(counter => {
+        counterObserver.observe(counter);
+    });
     console.log('%cJoin us: https://github.com/groeimetai/snow-flow', 'font-size: 12px; color: #666; text-decoration: underline;');
 
     /* =========================================
