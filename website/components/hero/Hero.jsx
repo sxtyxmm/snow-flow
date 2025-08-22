@@ -8,9 +8,9 @@ const Hero = ({
   primaryCTA = { text: "Get Started", href: "#get-started" },
   secondaryCTA = { text: "Learn More", href: "#features" },
   stats = [
-    { number: "17", label: "MCP Servers" },
-    { number: "200+", label: "Tools" },
-    { number: "80%", label: "Time Saved" },
+    { number: "23", label: "Enterprise MCP Servers" },
+    { number: "355+", label: "Enterprise Tools" },
+    { number: "85%", label: "Memory Optimized" },
     { number: "100%", label: "Real Data" }
   ],
   backgroundAnimation = true,
