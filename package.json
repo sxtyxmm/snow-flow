@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "4.1.2",
+  "version": "4.2.0",
   "description": "ENTERPRISE SCALE - v4.1.0 removes ALL artificial limits! Built on stable v3.6.25 with enterprise-grade support for massive widgets (5MB+ scripts), 200k token fields, and 100k record queries.",
   "main": "dist/index.js",
   "type": "commonjs",
