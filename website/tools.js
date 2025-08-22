@@ -1,5 +1,5 @@
 // Complete Snow-Flow MCP Tools Database
-// 🏔️ 18 MCP Servers with 200+ Tools - v3.6.25
+// 🏔️ 23 MCP Servers with 355+ Tools - v4.2.0 ENTERPRISE OPTIMIZED
 
 const snowFlowTools = {
   "servicenow-deployment": {
@@ -632,6 +632,125 @@ const snowFlowTools = {
       {
         name: "performance_report",
         description: "Generate comprehensive performance reports."
+      }
+    ]
+  },
+
+  // ===== NEW ENTERPRISE MCP SERVERS (v4.2.0) =====
+  
+  "servicenow-itam": {
+    name: "🏢 IT Asset Management",
+    description: "Complete enterprise asset lifecycle management with license optimization and compliance reporting",
+    badge: "6 Enterprise Tools",
+    highlight: "NEW in v4.2.0",
+    tools: [
+      {
+        name: "snow_create_asset",
+        description: "Create IT asset with full lifecycle tracking, warranty management, and financial controls. Supports asset tags, locations, assignments, and automated audit trails.",
+        highlight: "Enterprise ITAM"
+      },
+      {
+        name: "snow_manage_software_license",
+        description: "Complete software license management with compliance tracking, usage optimization, cost analysis, and automatic renewal management.",
+        highlight: "License Optimization"
+      },
+      {
+        name: "snow_track_asset_lifecycle",
+        description: "Track complete asset lifecycle from procurement through disposal with automated state transitions and compliance reporting.",
+        highlight: "Lifecycle Automation"
+      },
+      {
+        name: "snow_asset_compliance_report",
+        description: "Generate comprehensive asset compliance reports for auditing with warranty tracking, cost analysis, and optimization recommendations.",
+        highlight: "Compliance Reporting"
+      },
+      {
+        name: "snow_optimize_licenses",
+        description: "AI-powered license usage analysis with cost optimization recommendations, usage efficiency scoring, and potential savings calculations.",
+        highlight: "AI Cost Optimization"
+      },
+      {
+        name: "snow_asset_discovery",
+        description: "Automated asset discovery from multiple sources with duplicate normalization, relationship creation, and CMDB integration.",
+        highlight: "Discovery Automation"
+      }
+    ]
+  },
+
+  "servicenow-secops": {
+    name: "🛡️ Security Operations",
+    description: "Advanced security incident response with threat intelligence and automated SOAR capabilities",
+    badge: "6 Security Tools",
+    highlight: "NEW in v4.2.0",
+    tools: [
+      {
+        name: "snow_create_security_incident",
+        description: "Create security incidents with automated threat correlation, IOC processing, affected system linking, and priority assignment based on threat intelligence.",
+        highlight: "Automated Threat Response"
+      },
+      {
+        name: "snow_analyze_threat_intelligence",
+        description: "Analyze and correlate threat intelligence with organizational security posture, IOC enrichment, and risk scoring with confidence intervals.",
+        highlight: "Threat Intelligence"
+      },
+      {
+        name: "snow_execute_security_playbook",
+        description: "Execute automated security response playbooks with orchestrated containment, eradication, and recovery actions.",
+        highlight: "SOAR Automation"
+      },
+      {
+        name: "snow_vulnerability_risk_assessment",
+        description: "Automated vulnerability risk assessment with CVSS scoring, business context analysis, and remediation prioritization.",
+        highlight: "Risk Assessment"
+      },
+      {
+        name: "snow_security_dashboard",
+        description: "Real-time security operations dashboard with executive, analyst, incident response, and compliance views with trend analysis.",
+        highlight: "Real-time SOC"
+      },
+      {
+        name: "snow_automate_threat_response",
+        description: "Fully automated threat response with containment, isolation, eradication, and recovery phases with notification orchestration.",
+        highlight: "Automated Response"
+      }
+    ]
+  },
+
+  "servicenow-notifications": {
+    name: "📨 Notification Framework",
+    description: "Enterprise multi-channel notification system with templates, analytics, and preference management",
+    badge: "6 Communication Tools",
+    highlight: "NEW in v4.2.0",
+    tools: [
+      {
+        name: "snow_send_notification",
+        description: "Send multi-channel notifications (email, SMS, push, Slack, Teams) with template support, personalization, and delivery tracking.",
+        highlight: "Multi-channel Messaging"
+      },
+      {
+        name: "snow_create_notification_template",
+        description: "Create reusable notification templates with variable substitution, multi-channel support, and automated formatting.",
+        highlight: "Template Engine"
+      },
+      {
+        name: "snow_notification_preferences",
+        description: "Manage user notification preferences, quiet hours, escalation channels, and routing rules with granular control.",
+        highlight: "Preference Management"
+      },
+      {
+        name: "snow_emergency_broadcast",
+        description: "Send emergency broadcast notifications with preference override, acknowledgment tracking, and targeted audience selection.",
+        highlight: "Emergency Broadcasting"
+      },
+      {
+        name: "snow_notification_analytics",
+        description: "Analyze notification delivery rates, engagement metrics, channel effectiveness, and template performance with insights.",
+        highlight: "Delivery Analytics"
+      },
+      {
+        name: "snow_schedule_notification",
+        description: "Schedule future notifications with advanced scheduling options, recurrence patterns, and conditional delivery triggers.",
+        highlight: "Scheduled Delivery"
       }
     ]
   }
