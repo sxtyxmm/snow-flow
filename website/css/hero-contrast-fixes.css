@@ -10,6 +10,27 @@
   z-index: 10;
 }
 
+/* CENTERING FIX: Force hero content center alignment */
+.hero-content {
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  max-width: 100% !important;
+}
+
+/* Individual title centering - HORIZONTAL LAYOUT */
+.hero-title {
+  text-align: center !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important; /* CRITICAL: Keep letters horizontal! */
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
 /* Fade-in word animations with better contrast */
 .fade-in-word span {
   opacity: 0;
@@ -59,11 +80,15 @@
     0 0 20px rgba(255, 255, 255, 0.1); /* Subtle white glow */
 }
 
-/* Hero title force white color */
+/* Hero title force white color and CENTER */
 .hero-title,
 .hero-title * {
   color: var(--white) !important;
   -webkit-text-fill-color: var(--white) !important;
+  text-align: center !important;
+  display: block !important;
+  margin: 0 auto !important;
+  width: 100% !important;
 }
 
 @keyframes letterDrop {
