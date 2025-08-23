@@ -2,15 +2,29 @@
    BUTTON CONTRAST & VISIBILITY FIXES
    ========================================= */
 
-/* PRIMARY BUTTON (Start Building) - HIGH CONTRAST */
+/* HERO-INSPIRED PRIMARY BUTTON */
 .btn-primary {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important; /* Green gradient */
-  color: var(--white) !important; /* White text on green background */
-  border: 2px solid #059669 !important;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.95) 0%, 
+    rgba(118, 75, 162, 0.95) 50%, 
+    rgba(240, 147, 251, 0.95) 100%) !important; /* Same gradient as hero orbs */
+  color: var(--white) !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: var(--radius-2xl) !important;
+  padding: var(--space-4) var(--space-8) !important;
   font-weight: 600 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4) !important;
+  font-size: var(--font-lg) !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 
+    0 8px 32px rgba(102, 126, 234, 0.3),
+    0 0 40px rgba(118, 75, 162, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
   font-family: var(--font-sans) !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
 /* PRIMARY BUTTON TEXT - FORCE WHITE */
