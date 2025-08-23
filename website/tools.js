@@ -396,12 +396,12 @@ const snowFlowTools = {
       },
       {
         name: "snow_create_catalog_variable",
-        description: "Create catalog variables in correct table (item_option_new). Fixed in v3.6.23!",
+        description: "Create catalog variables in correct table (item_option_new). Enterprise optimization in v4.2.0!",
         highlight: "v4.2.0: Enterprise ready"
       },
       {
         name: "snow_create_catalog_ui_policy",
-        description: "Create catalog UI policies with conditions and actions. Enhanced debugging in v3.6.22.",
+        description: "Create catalog UI policies with conditions and actions. Enterprise scale debugging in v4.2.0.",
         highlight: "v4.2.0: Enterprise debugging"
       },
       {
