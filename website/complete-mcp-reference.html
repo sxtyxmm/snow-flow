@@ -729,8 +729,235 @@ const classification = await mcp__claude-flow__ml_classify_incident({
             </div>
         </div>
 
-        <!-- Continue with remaining servers... -->
-        <!-- Add similar blocks for all other MCP servers -->
+        <!-- Reporting Analytics Server -->
+        <div class="mcp-server" id="reporting" data-category="reporting">
+            <div class="server-header" onclick="toggleServer('reporting')">
+                <div>
+                    <div class="server-title">📊 ServiceNow Reporting & Analytics Server</div>
+                    <div class="server-purpose">Advanced reporting and data visualization</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">11+ Tools</span>
+                        <span class="stat-badge">Dashboards</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_report</div>
+                        <div class="tool-description">Create comprehensive reports</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_dashboard</div>
+                        <div class="tool-description">Build interactive dashboards</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_kpi</div>
+                        <div class="tool-description">Define Key Performance Indicators</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Catalog Server -->
+        <div class="mcp-server" id="knowledge" data-category="knowledge">
+            <div class="server-header" onclick="toggleServer('knowledge')">
+                <div>
+                    <div class="server-title">📚 ServiceNow Knowledge & Catalog Server</div>
+                    <div class="server-purpose">Knowledge base and service catalog management</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">15+ Tools</span>
+                        <span class="stat-badge">KB Validation</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_knowledge_article</div>
+                        <div class="tool-description">Create knowledge articles with validation</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_catalog_item</div>
+                        <div class="tool-description">Create service catalog items</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_catalog_variable</div>
+                        <div class="tool-description">Create catalog variables (fixed in v4.2.0)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Properties Server -->
+        <div class="mcp-server" id="properties" data-category="properties">
+            <div class="server-header" onclick="toggleServer('properties')">
+                <div>
+                    <div class="server-title">📋 ServiceNow System Properties Server</div>
+                    <div class="server-purpose">Complete system property management</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">12 Tools</span>
+                        <span class="stat-badge">Bulk Operations</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_property_get</div>
+                        <div class="tool-description">Retrieve system property values</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_property_set</div>
+                        <div class="tool-description">Set system properties with validation</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_property_bulk_update</div>
+                        <div class="tool-description">Bulk property operations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Set Server -->
+        <div class="mcp-server" id="updatesets" data-category="change">
+            <div class="server-header" onclick="toggleServer('updatesets')">
+                <div>
+                    <div class="server-title">📦 ServiceNow Update Set Server</div>
+                    <div class="server-purpose">Change management and deployment tracking</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">9 Tools</span>
+                        <span class="stat-badge">Change Tracking</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_update_set_create</div>
+                        <div class="tool-description">Create new update sets</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_update_set_complete</div>
+                        <div class="tool-description">Mark update sets as complete</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_update_set_export</div>
+                        <div class="tool-description">Export update sets as XML</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Server -->
+        <div class="mcp-server" id="integration" data-category="integration">
+            <div class="server-header" onclick="toggleServer('integration')">
+                <div>
+                    <div class="server-title">🔗 ServiceNow Integration Server</div>
+                    <div class="server-purpose">REST/SOAP integration and data transformation</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">10+ Tools</span>
+                        <span class="stat-badge">REST/SOAP</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_rest_message</div>
+                        <div class="tool-description">Create REST integrations</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_transform_map</div>
+                        <div class="tool-description">Create data transformation maps</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Development Server -->
+        <div class="mcp-server" id="platform" data-category="platform">
+            <div class="server-header" onclick="toggleServer('platform')">
+                <div>
+                    <div class="server-title">🛠️ ServiceNow Platform Development Server</div>
+                    <div class="server-purpose">Platform development artifacts and UI customization</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">9 Tools</span>
+                        <span class="stat-badge">UI Customization</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_script_include</div>
+                        <div class="tool-description">Create reusable server-side scripts</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_business_rule</div>
+                        <div class="tool-description">Create business rules and automation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Compliance Server -->
+        <div class="mcp-server" id="security" data-category="security">
+            <div class="server-header" onclick="toggleServer('security')">
+                <div>
+                    <div class="server-title">🔒 ServiceNow Security & Compliance Server</div>
+                    <div class="server-purpose">Security policies and compliance frameworks</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">10+ Tools</span>
+                        <span class="stat-badge">Compliance</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_security_policy</div>
+                        <div class="tool-description">Create security policies</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">snow_audit_compliance</div>
+                        <div class="tool-description">Audit compliance requirements</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Remaining Servers Summary -->
+        <div class="mcp-server" id="remaining" data-category="additional">
+            <div class="server-header" onclick="toggleServer('remaining')">
+                <div>
+                    <div class="server-title">➕ Additional Enterprise Servers (11 More)</div>
+                    <div class="server-purpose">Flow, Change, CMDB, Development Assistant, Local Development, and Enhanced servers</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">100+ Tools</span>
+                        <span class="stat-badge">Specialized</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div style="background: rgba(255,255,255,0.05); padding: var(--space-4); border-radius: var(--radius-lg);">
+                    <h4 style="color: white; margin-bottom: var(--space-3);">Complete Server List:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🌊 Flow & Workspace Server (19+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🔄 Change & Virtual Agent Server (15+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🖥️ CMDB & Event Server (20+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 👨‍💻 Development Assistant Server (8+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 💻 Local Development Server (8 tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🎯 Snow-Flow Orchestration Server (8 tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• ⚡ Advanced Features Server (50+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🧩 Intelligent Reporting Server (5+ tools)</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🔗 Integration Enhanced Server</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 📚 Knowledge Catalog Enhanced Server</div>
+                        <div style="color: var(--gray-300); font-size: var(--font-sm);">• 🌊 Flow Workspace Mobile Enhanced Server</div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
     </div>
 
