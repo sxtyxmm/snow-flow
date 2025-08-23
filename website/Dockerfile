@@ -29,8 +29,9 @@ EXPOSE 80
 
 # Add metadata
 LABEL maintainer="Snow-Flow Team" \
-      description="Snow-Flow Documentation Website" \
-      version="3.4.39"
+      description="Snow-Flow Enterprise Website v4.2.0" \
+      version="4.2.0" \
+      features="23 MCP Servers, 355+ Tools, ITAM, SecOps, Notifications"
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

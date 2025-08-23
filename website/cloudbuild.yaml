@@ -1,15 +1,16 @@
 # Snow-Flow Website - Google Cloud Build Configuration
 steps:
-  # Build the Docker image
+  # Build the Docker image (FIXED PATH)
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
       '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA',
       '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
       '--cache-from', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
-      '.'
+      '-f', 'website/Dockerfile',  # Specify Dockerfile location from root
+      'website/'  # Build context is website directory
     ]
-    dir: 'website'
+    # Remove dir: 'website' to run from root
 
   # Push the Docker image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
