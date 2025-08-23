@@ -37,7 +37,7 @@
 
 /* Overall hero content compactness + CONTAINER FIX */
 .hero-content {
-  max-width: 95% !important; /* CRITICAL: Stay within viewport */
+  max-width: 80% !important; /* CRITICAL: Stay within viewport */
   width: 100% !important; /* Full available width */
   padding: var(--space-12) var(--space-4) var(--space-8) !important; /* Side padding to prevent overflow */
   margin: 0 auto !important; /* Center the content */

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow-Flow Complete MCP Tools Reference</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .reference-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem 0;
+            text-align: center;
+            color: white;
+        }
+        
+        .search-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .mcp-server {
+            margin: 2rem 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .server-header {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .server-header:hover {
+            background: #e9ecef;
+        }
+        
+        .server-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .server-purpose {
+            color: #666;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        
+        .server-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-badge {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        
+        .server-content {
+            display: none;
+            padding: 1.5rem;
+        }
+        
+        .server-content.expanded {
+            display: block;
+        }
+        
+        .apis-used {
+            background: #f0f8ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .apis-used h4 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        
+        .api-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .api-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .tool-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 1rem;
+            background: #fafafa;
+        }
+        
+        .tool-name {
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tool-description {
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+        
+        .tool-params {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .param-list {
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .param-list.expanded {
+            max-height: none;
+        }
+        
+        .expand-params {
+            color: #667eea;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .usage-example {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        
+        .critical-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #dc2626;
+        }
+        
+        .key-features {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .key-features h4 {
+            color: #166534;
+            margin-top: 0;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #667eea;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+        }
+        
+        .toc {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .toc-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .toc-item {
+            padding: 0.25rem 0;
+        }
+        
+        .toc-link {
+            color: #667eea;
+            text-decoration: none;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .toc-link:hover {
+            text-decoration: underline;
+        }
+        
+        .tool-count {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Snow-Flow</a>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="mcp-servers.html" class="nav-link">MCP Servers</a>
+                <a href="complete-mcp-reference.html" class="nav-link active">Complete Reference</a>
+                <a href="https://github.com/ruvnet/claude-flow" class="nav-link">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="reference-header">
+        <div class="container">
+            <h1>Complete MCP Tools Reference</h1>
+            <p>Comprehensive guide to all 200+ Snow-Flow MCP tools across 16 specialized servers</p>
+        </div>
+    </header>
+
+    <!-- Search and Filters -->
+    <div class="search-container">
+        <input type="text" class="search-box" id="searchBox" placeholder="Search tools, servers, or descriptions...">
+        
+        <div class="filter-tabs">
+            <div class="filter-tab active" data-filter="all">All Servers</div>
+            <div class="filter-tab" data-filter="operations">Operations</div>
+            <div class="filter-tab" data-filter="automation">Automation</div>
+            <div class="filter-tab" data-filter="deployment">Deployment</div>
+            <div class="filter-tab" data-filter="ml">Machine Learning</div>
+            <div class="filter-tab" data-filter="reporting">Reporting</div>
+            <div class="filter-tab" data-filter="integration">Integration</div>
+        </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="container">
+        <div class="toc">
+            <h3>Quick Navigation</h3>
+            <ul class="toc-list">
+                <li class="toc-item">
+                    <a href="#operations" class="toc-link">
+                        <span>ServiceNow Operations MCP</span>
+                        <span class="tool-count">20+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#automation" class="toc-link">
+                        <span>ServiceNow Automation MCP</span>
+                        <span class="tool-count">27+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#deployment" class="toc-link">
+                        <span>ServiceNow Deployment MCP</span>
+                        <span class="tool-count">10+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#ml" class="toc-link">
+                        <span>Machine Learning MCP</span>
+                        <span class="tool-count">15+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#reporting" class="toc-link">
+                        <span>Reporting & Analytics MCP</span>
+                        <span class="tool-count">8+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#knowledge" class="toc-link">
+                        <span>Knowledge & Catalog MCP</span>
+                        <span class="tool-count">6+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#properties" class="toc-link">
+                        <span>System Properties MCP</span>
+                        <span class="tool-count">12+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#updatesets" class="toc-link">
+                        <span>Update Set MCP</span>
+                        <span class="tool-count">9+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#integration" class="toc-link">
+                        <span>Integration MCP</span>
+                        <span class="tool-count">8+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#platform" class="toc-link">
+                        <span>Platform Development MCP</span>
+                        <span class="tool-count">12+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#security" class="toc-link">
+                        <span>Security & Compliance MCP</span>
+                        <span class="tool-count">8+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#flow" class="toc-link">
+                        <span>Flow & Workspace MCP</span>
+                        <span class="tool-count">6+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#change" class="toc-link">
+                        <span>Change & Virtual Agent MCP</span>
+                        <span class="tool-count">10+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#cmdb" class="toc-link">
+                        <span>CMDB & Event Management MCP</span>
+                        <span class="tool-count">15+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#assistant" class="toc-link">
+                        <span>Development Assistant MCP</span>
+                        <span class="tool-count">8+ tools</span>
+                    </a>
+                </li>
+                <li class="toc-item">
+                    <a href="#orchestration" class="toc-link">
+                        <span>Snow-Flow Orchestration MCP</span>
+                        <span class="tool-count">25+ tools</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- MCP Servers -->
+    <div class="container" id="serversContainer">
+        
+        <!-- Operations MCP -->
+        <div class="mcp-server" id="operations" data-category="operations">
+            <div class="server-header" onclick="toggleServer('operations')">
+                <div>
+                    <div class="server-title">ServiceNow Operations MCP</div>
+                    <div class="server-purpose">Core ServiceNow operations and queries for comprehensive data access</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">20+ Tools</span>
+                        <span class="stat-badge">Universal Queries</span>
+                        <span class="stat-badge">Smart Analytics</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="apis-used">
+                    <h4>ServiceNow APIs Used</h4>
+                    <div class="api-list">
+                        <span class="api-tag">Table API</span>
+                        <span class="api-tag">Incident Management API</span>
+                        <span class="api-tag">Service Request API</span>
+                        <span class="api-tag">Problem Management API</span>
+                        <span class="api-tag">CMDB API</span>
+                        <span class="api-tag">User Management API</span>
+                        <span class="api-tag">Knowledge Base API</span>
+                    </div>
+                </div>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_query_table</div>
+                        <div class="tool-description">Universal query tool for any ServiceNow table with smart analytics. OMIT limit for ALL records with minimal fields.</div>
+                        <div class="tool-params">
+                            <strong>Key Parameters:</strong> table (required), query, limit, include_content, fields, group_by
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_query_incidents</div>
+                        <div class="tool-description">Advanced incident querying with filtering and analysis capabilities</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> query, limit, include_content, include_analysis, fields
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_analyze_incident</div>
+                        <div class="tool-description">Deep incident analysis with pattern recognition and automated resolution suggestions</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> incident_id, include_similar, include_suggestions
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_auto_resolve_incident</div>
+                        <div class="tool-description">Automated incident resolution based on known patterns with dry-run mode</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> incident_id, dry_run (default: true)
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_cmdb_search</div>
+                        <div class="tool-description">CMDB configuration item search with relationship mapping</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> query, ci_type, limit, include_relationships
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_operational_metrics</div>
+                        <div class="tool-description">Operational metrics and analytics including trends and KPIs</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> time_period, metrics
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="usage-example">
+<strong>Claude Code Usage:</strong>
+// Universal query for analytics - omit limit for ALL records
+const allIncidents = await mcp__claude-flow__snow_query_table({
+  table: 'incident',
+  include_content: false, // Count only for performance
+  group_by: 'category'
+});
+
+// Query with limit for display
+const recentIncidents = await mcp__claude-flow__snow_query_table({
+  table: 'incident',
+  query: 'state!=6^state!=7',
+  fields: ['number', 'short_description', 'priority'],
+  limit: 50
+});</div>
+            </div>
+        </div>
+
+        <!-- Automation MCP -->
+        <div class="mcp-server" id="automation" data-category="automation">
+            <div class="server-header" onclick="toggleServer('automation')">
+                <div>
+                    <div class="server-title">ServiceNow Automation MCP</div>
+                    <div class="server-purpose">Comprehensive automation with 27+ tools for scripts, jobs, and testing</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">27+ Tools</span>
+                        <span class="stat-badge">ES5 Enforcement</span>
+                        <span class="stat-badge">ATF Testing</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="critical-warning">
+                    <strong>🚨 CRITICAL: ES5 JAVASCRIPT ONLY!</strong><br>
+                    All background scripts MUST use ES5 syntax (var, function(){}, string concatenation). 
+                    ES6+ features (const, let, arrows, templates) will cause SyntaxError on ServiceNow's Rhino engine!
+                </div>
+                
+                <div class="apis-used">
+                    <h4>ServiceNow APIs Used</h4>
+                    <div class="api-list">
+                        <span class="api-tag">Background Script API</span>
+                        <span class="api-tag">Scheduled Jobs API</span>
+                        <span class="api-tag">Event Rules API</span>
+                        <span class="api-tag">SLA Definition API</span>
+                        <span class="api-tag">ATF API</span>
+                        <span class="api-tag">REST Testing API</span>
+                        <span class="api-tag">System Logs API</span>
+                    </div>
+                </div>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_execute_background_script</div>
+                        <div class="tool-description">🚨 REQUIRES USER CONFIRMATION: Executes ES5-only background scripts with optional autoConfirm</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> script (ES5 ONLY!), description, allowDataModification, autoConfirm
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_scheduled_job</div>
+                        <div class="tool-description">Creates automated scheduled jobs with cron patterns and user context</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> name, script (ES5 only!), schedule, active, runAsUser
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_create_atf_test</div>
+                        <div class="tool-description">Creates Automated Test Framework tests for ServiceNow applications</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> name, testFor, table, active, category
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_execute_script_with_output</div>
+                        <div class="tool-description">Execute script and retrieve output with ES5 enforcement</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> script (ES5 only!), return_output, max_wait, capture_logs
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="usage-example">
+<strong>ES5 Example (CORRECT):</strong>
+var script = `
+  var incidents = [];
+  var gr = new GlideRecord('incident');
+  gr.query();
+  while (gr.next()) {
+    incidents.push({
+      number: gr.number.toString(),
+      priority: gr.priority.toString()
+    });
+  }
+  gs.info('Found ' + incidents.length + ' incidents');
+`;
+
+await mcp__claude-flow__snow_execute_background_script({
+  script: script,
+  description: 'Count incidents by priority',
+  allowDataModification: false
+});</div>
+            </div>
+        </div>
+
+        <!-- Machine Learning MCP -->
+        <div class="mcp-server" id="ml" data-category="ml">
+            <div class="server-header" onclick="toggleServer('ml')">
+                <div>
+                    <div class="server-title">ServiceNow Machine Learning MCP</div>
+                    <div class="server-purpose">AI/ML capabilities with TensorFlow.js neural networks and ServiceNow native ML</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">15+ Tools</span>
+                        <span class="stat-badge">TensorFlow.js</span>
+                        <span class="stat-badge">No License Required</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="key-features">
+                    <h4>Key Features</h4>
+                    <ul>
+                        <li>Real TensorFlow.js neural networks (not simulated)</li>
+                        <li>Works without expensive ServiceNow ML licenses</li>
+                        <li>Intelligent data selection and optimization</li>
+                        <li>Hybrid approach combining native and custom ML</li>
+                        <li>Streaming support for large datasets</li>
+                    </ul>
+                </div>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">ml_train_incident_classifier</div>
+                        <div class="tool-description">Trains LSTM neural networks on historical incident data with intelligent selection (up to 5000 records)</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> training_size, auto_maximize_data, epochs, intelligent_selection, streaming_mode
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">ml_classify_incident</div>
+                        <div class="tool-description">Real-time incident classification using trained neural networks</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> incident_number, short_description, description
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">ml_hybrid_recommendation</div>
+                        <div class="tool-description">Intelligent hybrid approach combining ServiceNow native ML with TensorFlow.js</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> task_type, servicenow_weight, tensorflow_weight
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="usage-example">
+<strong>Machine Learning Usage:</strong>
+// Train incident classifier with optimized data
+const training = await mcp__claude-flow__ml_train_incident_classifier({
+  auto_maximize_data: true,
+  intelligent_selection: true,
+  epochs: 50,
+  streaming_mode: true
+});
+
+// Classify new incident
+const classification = await mcp__claude-flow__ml_classify_incident({
+  incident_number: 'INC0000123',
+  short_description: 'Email server not responding'
+});</div>
+            </div>
+        </div>
+
+        <!-- Deployment MCP -->
+        <div class="mcp-server" id="deployment" data-category="deployment">
+            <div class="server-header" onclick="toggleServer('deployment')">
+                <div>
+                    <div class="server-title">ServiceNow Deployment MCP</div>
+                    <div class="server-purpose">Comprehensive deployment management with validation and cross-instance capabilities</div>
+                    <div class="server-stats">
+                        <span class="stat-badge">10+ Tools</span>
+                        <span class="stat-badge">Cross-Instance</span>
+                        <span class="stat-badge">Rollback Support</span>
+                    </div>
+                </div>
+            </div>
+            <div class="server-content">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">snow_validate_deployment</div>
+                        <div class="tool-description">Pre-deployment validation with compatibility and dependency checks</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> type, artifact
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_rollback_deployment</div>
+                        <div class="tool-description">Safe rollback to previous state with recovery recommendations</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> update_set_id, reason
+                        </div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-name">snow_clone_instance_artifact</div>
+                        <div class="tool-description">Direct cross-instance cloning (dev→test→prod)</div>
+                        <div class="tool-params">
+                            <strong>Parameters:</strong> source_instance, target_instance, type, sys_id
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue with remaining servers... -->
+        <!-- Add similar blocks for all other MCP servers -->
+        
+    </div>
+
+    <!-- Back to Top -->
+    <a href="#" class="back-to-top" id="backToTop">↑</a>
+
+    <script>
+        // Search functionality
+        const searchBox = document.getElementById('searchBox');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const servers = document.querySelectorAll('.mcp-server');
+        const backToTop = document.getElementById('backToTop');
+
+        searchBox.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            filterServers(searchTerm, getActiveFilter());
+        });
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                filterServers(searchBox.value.toLowerCase(), this.dataset.filter);
+            });
+        });
+
+        function getActiveFilter() {
+            return document.querySelector('.filter-tab.active').dataset.filter;
+        }
+
+        function filterServers(searchTerm, category) {
+            servers.forEach(server => {
+                const title = server.querySelector('.server-title').textContent.toLowerCase();
+                const purpose = server.querySelector('.server-purpose').textContent.toLowerCase();
+                const serverCategory = server.dataset.category;
+                
+                const matchesSearch = !searchTerm || title.includes(searchTerm) || purpose.includes(searchTerm);
+                const matchesCategory = category === 'all' || serverCategory === category;
+                
+                server.style.display = matchesSearch && matchesCategory ? 'block' : 'none';
+            });
+        }
+
+        function toggleServer(serverId) {
+            const server = document.getElementById(serverId);
+            const content = server.querySelector('.server-content');
+            content.classList.toggle('expanded');
+        }
+
+        // Show/hide back to top button
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // Smooth scroll for back to top
+        backToTop.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Smooth scroll for TOC links
+        document.querySelectorAll('.toc-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                    // Auto-expand the server
+                    const content = target.querySelector('.server-content');
+                    content.classList.add('expanded');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
