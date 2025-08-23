@@ -20,15 +20,14 @@
   max-width: 100% !important;
 }
 
-/* Individual title centering - HORIZONTAL LAYOUT */
+/* Individual title centering - VERTICAL LAYOUT */
 .hero-title {
   text-align: center !important;
   width: 100% !important;
   display: flex !important;
-  flex-direction: row !important; /* CRITICAL: Keep letters horizontal! */
+  flex-direction: column !important; /* CORRECT: Letters stacked vertically! */
   justify-content: center !important;
   align-items: center !important;
-  flex-wrap: wrap !important;
 }
 
 /* Fade-in word animations with better contrast */
@@ -67,9 +66,9 @@
   50% { transform: scale(1.05); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5); }
 }
 
-/* Title letters enhanced contrast */
+/* Title letters enhanced contrast - VERTICAL STACKING */
 .title-letter {
-  display: inline-block;
+  display: block !important; /* Changed to block for vertical stacking */
   opacity: 0;
   animation: letterDrop 0.6s ease forwards;
   /* CRITICAL FIX: Force white color for title letters */
@@ -78,6 +77,8 @@
     0 2px 4px rgba(0, 0, 0, 0.8),
     0 4px 8px rgba(0, 0, 0, 0.6),
     0 0 20px rgba(255, 255, 255, 0.1); /* Subtle white glow */
+  line-height: 0.8 !important; /* Tight vertical spacing */
+  margin: 0 !important;
 }
 
 /* Hero title force white color and CENTER */
