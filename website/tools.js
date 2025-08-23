@@ -384,7 +384,7 @@ const snowFlowTools = {
       {
         name: "snow_create_knowledge_article",
         description: "Create knowledge articles with KB validation. Now prevents orphaned articles by validating knowledge base exists!",
-        highlight: "v3.6.25: KB validation added"
+        highlight: "v4.2.0: Enhanced enterprise validation"
       },
       {
         name: "snow_search_knowledge",
@@ -397,12 +397,12 @@ const snowFlowTools = {
       {
         name: "snow_create_catalog_variable",
         description: "Create catalog variables in correct table (item_option_new). Fixed in v3.6.23!",
-        highlight: "v3.6.23: Table fix"
+        highlight: "v4.2.0: Enterprise ready"
       },
       {
         name: "snow_create_catalog_ui_policy",
         description: "Create catalog UI policies with conditions and actions. Enhanced debugging in v3.6.22.",
-        highlight: "v3.6.22: Enhanced debugging"
+        highlight: "v4.2.0: Enterprise debugging"
       },
       {
         name: "snow_order_catalog_item",

@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="css/hero-contrast-fixes.css">
     <link rel="stylesheet" href="css/button-fixes.css">
     <link rel="stylesheet" href="css/title-layout-fix.css">
+    <link rel="stylesheet" href="css/button-contrast-fixes.css">
+    <link rel="stylesheet" href="css/hero-stats-visibility.css">
+    <link rel="stylesheet" href="css/font-standardization.css">
+    <link rel="stylesheet" href="css/enterprise-section-update.css">
     
     <!-- Modern Font Stack -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -516,11 +520,71 @@ and historical patterns. Deploy as real-time API" \
     <!-- New in v3.6.25 Section -->
     <section id="new-features" class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: var(--space-20) 0;">
         <div class="container">
-            <h2 class="text-center font-black" style="font-size: var(--font-4xl); color: var(--white); margin-bottom: var(--space-4);">🎆 New in v3.6.25</h2>
-            <p class="text-center" style="color: rgba(255,255,255,0.9); margin-bottom: var(--space-12); font-size: var(--font-lg);">Latest enhancements and critical fixes</p>
+            <h2 class="text-center font-black" style="font-size: var(--font-4xl); color: var(--white); margin-bottom: var(--space-4);">🚀 New in v4.2.0 ENTERPRISE</h2>
+            <p class="text-center" style="color: rgba(255,255,255,0.9); margin-bottom: var(--space-12); font-size: var(--font-lg);">Revolutionary enterprise features, memory optimizations, and massive performance improvements</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
-                <!-- Catalog UI Policy Deployment -->
+                <!-- ITAM Enterprise Module -->
+                <div class="card" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="padding: var(--space-6);">
+                        <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">🏢</div>
+                        <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">IT Asset Management</h3>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Complete enterprise asset lifecycle management with license optimization and compliance reporting.</p>
+                        <div style="background: rgba(16, 185, 129, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                            <strong style="color: #10b981;">6 New Enterprise Tools</strong>
+                        </div>
+                        <ul style="color: rgba(255,255,255,0.7); font-size: var(--font-sm); list-style: none; padding: 0;">
+                            <li>✅ snow_create_asset</li>
+                            <li>✅ snow_manage_software_license</li>
+                            <li>✅ snow_track_asset_lifecycle</li>
+                            <li>✅ snow_asset_compliance_report</li>
+                            <li>✅ snow_optimize_licenses</li>
+                            <li>✅ snow_asset_discovery</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- SecOps Security Module -->
+                <div class="card" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="padding: var(--space-6);">
+                        <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">🛡️</div>
+                        <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">Security Operations</h3>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Advanced security incident response with threat intelligence and automated SOAR capabilities.</p>
+                        <div style="background: rgba(239, 68, 68, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                            <strong style="color: #ef4444;">6 Security Tools</strong>
+                        </div>
+                        <ul style="color: rgba(255,255,255,0.7); font-size: var(--font-sm); list-style: none; padding: 0;">
+                            <li>✅ snow_create_security_incident</li>
+                            <li>✅ snow_analyze_threat_intelligence</li>
+                            <li>✅ snow_execute_security_playbook</li>
+                            <li>✅ snow_vulnerability_risk_assessment</li>
+                            <li>✅ snow_security_dashboard</li>
+                            <li>✅ snow_automate_threat_response</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Notifications Framework -->
+                <div class="card" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="padding: var(--space-6);">
+                        <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">📨</div>
+                        <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">Notification Framework</h3>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Enterprise multi-channel notification system with templates, analytics, and preference management.</p>
+                        <div style="background: rgba(59, 130, 246, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                            <strong style="color: #3b82f6;">6 Communication Tools</strong>
+                        </div>
+                        <ul style="color: rgba(255,255,255,0.7); font-size: var(--font-sm); list-style: none; padding: 0;">
+                            <li>✅ snow_send_notification</li>
+                            <li>✅ snow_create_notification_template</li>
+                            <li>✅ snow_notification_preferences</li>
+                            <li>✅ snow_emergency_broadcast</li>
+                            <li>✅ snow_notification_analytics</li>
+                            <li>✅ snow_schedule_notification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Memory Optimization -->
                 <div class="card" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
                     <div class="card-icon" style="font-size: 2rem;">🎯</div>
                     <h3 style="color: var(--white); margin-bottom: var(--space-2);">Catalog UI Policy Deployment</h3>
@@ -602,7 +666,7 @@ and historical patterns. Deploy as real-time API" \
             </div>
 
             <div class="text-center" style="margin-top: var(--space-10);">
-                <a href="https://github.com/groeimetai/snow-flow/releases/tag/v3.6.25" class="btn btn-glass" style="background: rgba(255,255,255,0.2); color: white; padding: var(--space-3) var(--space-6);">
+                <a href="https://github.com/groeimetai/snow-flow/releases/tag/v4.2.0" class="btn btn-glass" style="background: rgba(255,255,255,0.2); color: white; padding: var(--space-3) var(--space-6);">
                     <span>View Full Changelog</span>
                     <span style="margin-left: var(--space-2);">→</span>
                 </a>
@@ -1052,7 +1116,7 @@ export DEBUG=snow-flow:*</code>
             <div class="flex justify-between items-center">
                 <div>
                     <h3 class="navbar-logo" style="font-size: var(--font-2xl);"><span class="logo-mountain">🏔️</span> SNOW-FLOW</h3>
-                    <p style="color: var(--gray-500); margin-top: var(--space-2);">© 2024 Snow-Flow v3.4.38 | MIT License</p>
+                    <p style="color: var(--gray-500); margin-top: var(--space-2);">© 2024 Snow-Flow v4.2.0 ENTERPRISE | MIT License</p>
                 </div>
                 <div class="flex gap-8">
                     <a href="https://github.com/groeimetai/snow-flow" class="link-animated" style="color: var(--gray-400);">GitHub</a>
