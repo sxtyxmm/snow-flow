@@ -64,9 +64,9 @@
   50% { transform: scale(1.05); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5); }
 }
 
-/* Title letters enhanced contrast - NORMAL INLINE */
+/* Title letters enhanced contrast - INLINE HORIZONTAL */
 .title-letter {
-  display: inline !important; /* NORMAL: Letters side by side horizontally */
+  display: inline-block !important; /* CRITICAL: Inline-block for horizontal letters with animation support */
   opacity: 0;
   animation: letterDrop 0.6s ease forwards;
   /* CRITICAL FIX: Force white color for title letters */
@@ -75,17 +75,22 @@
     0 2px 4px rgba(0, 0, 0, 0.8),
     0 4px 8px rgba(0, 0, 0, 0.6),
     0 0 20px rgba(255, 255, 255, 0.1); /* Subtle white glow */
+  /* Ensure horizontal spacing */
+  margin-right: 2px !important;
 }
 
-/* Hero title force white color and CENTER */
-.hero-title,
-.hero-title * {
+/* Hero title force white color and CENTER - NO DISPLAY OVERRIDE */
+.hero-title {
   color: var(--white) !important;
   -webkit-text-fill-color: var(--white) !important;
   text-align: center !important;
-  display: block !important;
   margin: 0 auto !important;
   width: 100% !important;
+}
+
+/* Only target non-letter elements to avoid breaking inline letters */
+.hero-title .version-badge {
+  display: inline-block !important;
 }
 
 @keyframes letterDrop {
