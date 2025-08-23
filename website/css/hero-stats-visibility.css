@@ -27,6 +27,7 @@
   text-align: center !important;
   flex: 1 !important;
   padding: var(--space-3) !important;
+  color: white !important;
 }
 
 /* Stat numbers - HIGH CONTRAST */

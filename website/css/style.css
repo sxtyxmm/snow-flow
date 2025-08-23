@@ -613,7 +613,6 @@ a.link-animated:hover::after {
 /* Enhanced Logo */
 .hero-logo-container {
   margin-bottom: var(--space-8);
-  position: relative;
 }
 
 .logo-glow-container {

@@ -15,7 +15,7 @@
   justify-content: unset !important;
 }
 
-/* Force letters to display horizontally inline */
+/* Force letters to display horizontally inline - TIGHT SPACING */
 .title-letter {
   /* CRITICAL: inline-block allows horizontal layout with animations */
   display: inline-block !important;
@@ -23,14 +23,16 @@
   flex-direction: unset !important;
   /* Keep letters side by side */
   float: none !important;
-  /* Normal letter spacing */
-  margin-right: 0.1em !important;
+  /* TIGHTER letter spacing to fit in container */
+  margin-right: 0.02em !important; /* Much tighter spacing */
   margin-bottom: 0 !important;
   margin-top: 0 !important;
   /* White color for visibility */
   color: var(--white) !important;
   /* Strong text shadow for contrast */
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+  /* RESPONSIVE: Scale with container */
+  transform: scale(1) !important;
 }
 
 /* Override any parent containers that might affect layout */

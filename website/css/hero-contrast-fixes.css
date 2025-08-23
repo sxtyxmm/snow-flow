@@ -6,7 +6,6 @@
 
 /* Ensure all hero text has proper z-index layering */
 .hero-content * {
-  position: relative;
   z-index: 10;
 }
 
