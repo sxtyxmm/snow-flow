@@ -134,32 +134,29 @@ class SnowFlowAnimations {
      * PARALLAX EFFECTS
      */
     setupParallaxEffects() {
+        // PARALLAX COMPLETELY DISABLED to prevent section overlap
         const parallaxElements = document.querySelectorAll('.hero-parallax, .gradient-mesh, .particles');
         
-        const updateParallax = () => {
-            const scrolled = window.pageYOffset;
-            const rate = scrolled * -0.5;
+        // DISABLED: All parallax transforms that cause section overlap
+        // const updateParallax = () => {
+        //     const scrolled = window.pageYOffset;
+        //     const rate = scrolled * -0.5;
+        //     parallaxElements.forEach(element => {
+        //         if (this.isInViewport(element)) {
+        //             const speed = element.dataset.speed || 0.5;
+        //             const yPos = -(scrolled * speed);
+        //             element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+        //         }
+        //     });
+        // };
 
-            parallaxElements.forEach(element => {
-                if (this.isInViewport(element)) {
-                    const speed = element.dataset.speed || 0.5;
-                    const yPos = -(scrolled * speed);
-                    element.style.transform = `translate3d(0, ${yPos}px, 0)`;
-                }
-            });
-        };
-
-        // Optimized scroll handler for parallax
-        let parallaxTicking = false;
-        window.addEventListener('scroll', () => {
-            if (!parallaxTicking) {
-                requestAnimationFrame(() => {
-                    updateParallax();
-                    parallaxTicking = false;
-                });
-                parallaxTicking = true;
-            }
+        // Keep all parallax elements static - no translateY
+        parallaxElements.forEach(element => {
+            element.style.transform = 'translate3d(0, 0px, 0)'; // Static positioning
         });
+        
+        // NO scroll listener for parallax to prevent transforms
+        console.log('🚫 All parallax effects disabled - no translateY transforms');
     }
 
     /**
