@@ -63,10 +63,12 @@
   margin: 0 var(--space-4) !important;
 }
 
-/* HERO SIZE ADJUSTMENT - Make hero larger for better stats visibility */
+/* HERO SIZE ADJUSTMENT - Fixed height to prevent overlap */
 .hero {
-  min-height: 110vh !important; /* Increased from 100vh */
-  padding: var(--space-20) 0 var(--space-32) !important; /* More bottom padding for stats */
+  min-height: 100vh !important; /* Back to standard height */
+  max-height: 100vh !important; /* CRITICAL: Prevent extending beyond viewport */
+  padding: var(--space-8) 0 var(--space-16) !important; /* Less padding to fit in viewport */
+  overflow: hidden !important; /* Contain content within bounds */
 }
 
 /* Hero content spacing adjustment */
