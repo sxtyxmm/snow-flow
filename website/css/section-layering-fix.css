@@ -1,0 +1,73 @@
+/* =========================================
+   SECTION LAYERING FIX - Prevent Overlap During Scroll
+   ========================================= */
+
+/* Hero section - highest z-index during viewing */
+.hero {
+  position: relative !important;
+  z-index: 10 !important; /* Higher than sections but lower than navbar */
+  isolation: isolate !important; /* Create stacking context */
+}
+
+/* All sections - lower z-index to stay behind hero during scroll */
+.section {
+  position: relative !important;
+  z-index: 1 !important; /* Lower than hero */
+  background-attachment: scroll !important; /* Prevent background issues */
+}
+
+/* First section after hero - specific fix */
+#servers {
+  z-index: 1 !important; /* Ensure it stays behind hero */
+  position: relative !important;
+  /* Clear separation without overlap */
+  margin-top: 0 !important; /* Remove excessive margin that might cause issues */
+  padding-top: var(--space-16) !important; /* Internal padding instead of margin */
+}
+
+/* Hero content - proper stacking */
+.hero-content {
+  position: relative !important;
+  z-index: 20 !important; /* Above hero background but below navbar */
+}
+
+/* Hero background elements - lowest z-index */
+.hero-bg-animation,
+.floating-orb {
+  z-index: 0 !important; /* Background layer */
+}
+
+/* Navbar - highest z-index (unchanged) */
+.navbar {
+  z-index: 1000 !important; /* Always on top */
+}
+
+/* Smooth section transitions without overlap */
+.section-transition {
+  background: linear-gradient(to bottom, transparent 0%, var(--black) 20%) !important;
+  height: var(--space-8) !important;
+  position: relative !important;
+  z-index: 2 !important;
+  margin-top: -var(--space-8) !important;
+}
+
+/* Fix any transform issues during scroll */
+.section * {
+  transform-style: preserve-3d !important; /* Prevent transform issues */
+}
+
+/* Mobile layering adjustments */
+@media (max-width: 768px) {
+  .hero {
+    z-index: 10 !important;
+  }
+  
+  .section {
+    z-index: 1 !important;
+  }
+  
+  #servers {
+    margin-top: 0 !important;
+    padding-top: var(--space-12) !important;
+  }
+}
