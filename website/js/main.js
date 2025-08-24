@@ -88,13 +88,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const heroTitle = document.querySelector('.hero-title');
     const heroSubtitle = document.querySelector('.hero-subtitle');
     
-    // Parallax effect on scroll
+    // Parallax effect DISABLED - was causing section overlap
     if (hero) {
-        window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const parallaxSpeed = 0.5;
-            hero.style.transform = `translateY(${scrolled * parallaxSpeed}px)`;
-        });
+        // DISABLED: This was the source of translateY(290.5px) during scroll
+        // window.addEventListener('scroll', function() {
+        //     const scrolled = window.pageYOffset;
+        //     const parallaxSpeed = 0.5;
+        //     hero.style.transform = `translateY(${scrolled * parallaxSpeed}px)`;
+        // });
+        
+        // Keep hero static - no transform during scroll
+        hero.style.transform = 'translateY(0px)';
     }
 
     // Typewriter effect for hero subtitle
