@@ -2,10 +2,11 @@
    HERO SIZE OPTIMIZATION - Compact & Clean
    ========================================= */
 
-/* SNOW-FLOW title - slightly smaller */
+/* SNOW-FLOW title - even smaller for better proportion */
 .hero-title {
-  font-size: clamp(var(--font-4xl), 6vw, var(--font-6xl)) !important; /* Reduced from 8vw/7xl */
+  font-size: clamp(var(--font-3xl), 5vw, var(--font-5xl)) !important; /* Further reduced for better balance */
   margin-bottom: var(--space-4) !important; /* Reduced from space-6 */
+  letter-spacing: -0.03em !important; /* Tighter letter spacing */
 }
 
 /* Title letters - tighter spacing */
@@ -59,11 +60,18 @@
   margin: var(--space-6) 0 var(--space-8) !important; /* Adjusted margins */
 }
 
-/* Hero stats - more compact */
+/* Hero stats - more compact with icon styling */
 .hero-stats {
   padding: var(--space-4) var(--space-6) !important; /* Reduced padding */
   margin: var(--space-8) auto var(--space-6) !important; /* Reduced margins */
-  max-width: 700px !important; /* Slightly smaller max width */
+  max-width: 650px !important; /* Even more compact */
+}
+
+.stat-icon {
+  font-size: var(--font-xl) !important; /* Nice sized icons */
+  margin-bottom: var(--space-1) !important;
+  display: block !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) !important;
 }
 
 .stat-number {
@@ -73,10 +81,16 @@
 
 .stat-label {
   font-size: var(--font-xs) !important; /* Smaller labels */
+  margin-top: var(--space-1) !important;
 }
 
 .stat-divider {
-  height: 50px !important; /* Shorter dividers */
+  height: 45px !important; /* Shorter dividers */
+}
+
+.stat-item {
+  text-align: center !important;
+  padding: var(--space-2) !important; /* Reduced padding */
 }
 
 /* Hero content overall spacing */
@@ -98,7 +112,7 @@
 /* Responsive adjustments for compact design */
 @media (max-width: 768px) {
   .hero-title {
-    font-size: clamp(var(--font-3xl), 5vw, var(--font-5xl)) !important;
+    font-size: clamp(var(--font-2xl), 4vw, var(--font-4xl)) !important; /* Even smaller on mobile */
   }
   
   .hero-subtitle {
