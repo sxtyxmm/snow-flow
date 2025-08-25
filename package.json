@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
   "version": "4.2.1",
-  "description": "ENTERPRISE OPTIMIZED - v4.2.1 perfect mobile experience + complete website redesign. Beautiful hero, mobile-optimized, comprehensive MCP reference, and 355+ tools. Professional enterprise presentation.",
+  "description": "Conversational ServiceNow development platform using Claude Code. Multi-agent orchestration with 20+ MCP servers providing 200+ ServiceNow tools for comprehensive platform development.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
