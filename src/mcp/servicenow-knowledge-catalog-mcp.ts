@@ -916,20 +916,14 @@ ${args.help_text ? `❓ Help: ${args.help_text}` : ''}
   }
 
   /**
-   * Create Catalog UI Policy with Actions
-   * Creates records in 2 tables: catalog_ui_policy and catalog_ui_policy_action
-   * 
-   * ✅ CORRECTED STRUCTURE (v3.6.21):
-   * - Main policy goes in catalog_ui_policy table (NOT sys_ui_policy!)
-   * - Actions go in catalog_ui_policy_action table (inherits from sys_ui_policy_action)
-   * - Actions reference catalog_ui_policy via ui_policy field (using policy sys_id directly)
-   * - Conditions use IO:sys_id format for catalog variables
-   * - catalog_ui_policy_action.catalog_variable uses IO:sys_id format
-   * - visible/mandatory/disabled use "ignore" as default, not false or empty
-   * - Reference fields are set directly for reliability
-   * - Enhanced verification ensures all critical fields are populated
+   * SIMPLIFIED Create Catalog UI Policy with Actions
+   * ServiceNow catalog UI policies work differently - simpler approach
    */
   private async createCatalogUIPolicy(args: any) {
+    this.logger.info('🎯 SIMPLIFIED: Creating catalog UI policy with working approach...');
+    
+    // Simplified approach - focus on what actually works in ServiceNow
+    try {
     try {
       this.logger.info('Creating comprehensive catalog UI policy...');
 
