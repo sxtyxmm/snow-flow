@@ -791,27 +791,35 @@ Memory.store("swarm_session_${sessionId}", JSON.stringify({
 }));
 \`\`\`
 
-### 2. Validate ServiceNow Connection
-**Execute these steps IN ORDER:**
+### 2. 🚨 MANDATORY: ServiceNow Auth & Update Set Setup
+**CRITICAL: These steps are REQUIRED for ALL development work:**
 
 \`\`\`javascript
-// Step 2.1: Test ServiceNow authentication
+// Step 2.1: MANDATORY - Test ServiceNow authentication
 const authCheck = await snow_auth_diagnostics();
 if (!authCheck.success) {
-  throw new Error("Authentication failed! Run: snow-flow auth login");
+  throw new Error("❌ CRITICAL: Authentication failed! Run: snow-flow auth login");
 }
 
-// Step 2.2: Create Update Set for tracking changes
+// Step 2.2: MANDATORY - Create Update Set for tracking ALL changes
 const updateSetName = "Snow-Flow: ${objective.substring(0, 50)}... - ${new Date().toISOString().split('T')[0]}";
 const updateSet = await snow_update_set_create({
   name: updateSetName,
-  description: "Automated creation for: ${objective}\\n\\nSession: ${sessionId}",
-  auto_switch: true
+  description: "Automated Snow-Flow development for: ${objective}\\n\\nSession: ${sessionId}\\nAll changes tracked automatically",
+  auto_switch: true  // 🚨 CRITICAL: Sets as current update set!
 });
 
-// Store Update Set info in memory
+// Store Update Set info in memory for all agents
 Memory.store("update_set_${sessionId}", JSON.stringify(updateSet));
+Memory.store("current_update_set", updateSet.sys_id);
 \`\`\`
+
+**WHY THIS IS CRITICAL:**
+- ✅ All ServiceNow changes are automatically tracked
+- ✅ Enables deployment to other instances later  
+- ✅ Provides rollback capabilities
+- ✅ Follows ServiceNow development best practices
+- ❌ **WITHOUT UPDATE SET: Changes are untracked and risky!**
 
 ### 3. Create Master Task List
 After completing setup steps, create task breakdown:
@@ -927,10 +935,11 @@ ${isAuthenticated ? '✅ Authentication detected - full deployment capabilities'
 
 Your agents MUST use these MCP tools IN THIS ORDER:
 
-🔍 **PRE-FLIGHT CHECKS** (Always do first!):
+🚨 **MANDATORY PRE-FLIGHT CHECKS** (ALWAYS do first!):
 1. \`snow_auth_diagnostics\` - Test authentication and permissions
-2. If auth fails, the tool provides specific instructions
-3. Continue with appropriate strategy based on auth status
+2. \`snow_update_set_create\` - Create and activate update set for tracking
+3. If auth fails, STOP and provide instructions to run 'snow-flow auth login'
+4. If update set fails, STOP - development work is not safe without tracking
 
 🎯 **Core Development Tools**:
 1. **Universal Query Tool**: \`snow_query_table\` - Works with ALL ServiceNow tables
