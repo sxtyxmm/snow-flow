@@ -869,7 +869,7 @@ ${args.recurring_price && args.recurring_price !== '0' ? `🔄 Recurring: $${arg
         this.logger.error('❌ Variable creation failed:', {
           error: response.error,
           payload: variableData,
-          status: response.status
+          success: response.success
         });
         throw new Error(`Failed to create catalog variable: ${response.error}`);
       }
@@ -1429,8 +1429,8 @@ ${args.help_text ? `❓ Help: ${args.help_text}` : ''}
             this.logger.error(errorMsg);
             this.logger.error('❌ Action data was:', actionData);
             this.logger.error('❌ Response details:', {
-              status: actionResponse.status,
-              headers: actionResponse.headers,
+              success: actionResponse.success,
+              error: actionResponse.error,
               data: actionResponse.data
             });
             
