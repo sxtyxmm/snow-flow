@@ -26,6 +26,10 @@ tsconfig.json
 jest.config.js
 .eslintrc*
 .prettierrc*
+cloudbuild*.yaml
+fix-*.sh
+*.test.json
+snowflow.config.example.ts
 
 # Git and CI
 .git/
@@ -36,7 +40,22 @@ jest.config.js
 docs/
 *.md
 !README.md
+!CLAUDE.md
 !LICENSE
+
+# Promotional and internal files
+LINKEDIN_POSTS_SERIES.md
+RELEASE_*.md
+CLOUD_BUILD_*.md
+AUDIT-LOGGING.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+CHANGELOG.md
+DEBUG_GUIDE.md
+COMPLETE-MCP-*.md
+MCP-SERVERS-*.md
+coordination.md
+memory-bank.md
 
 # Test files
 test/
