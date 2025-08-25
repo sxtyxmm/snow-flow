@@ -59,7 +59,7 @@ export class SmartQueryEnhancement {
             return this.executeOriginalQuery(originalArgs);
         }
         
-        return {
+        return { content: [{ type: "text", text: "" }],
           success: true,
           result: result,
           message: contextMessage,
@@ -195,7 +195,7 @@ The 'script' field contains ES5-only code with access to:
   private async executeOriginalQuery(args: any): Promise<any> {
     // This would call the original snow_query_table implementation
     // For now, return a placeholder
-    return {
+    return { content: [{ type: "text", text: "" }],
       success: true,
       result: { message: 'Original query executed' },
       message: 'Query executed normally without smart chunking'
@@ -218,7 +218,7 @@ The 'script' field contains ES5-only code with access to:
       args.additionalQuery
     );
     
-    return {
+    return { content: [{ type: "text", text: "" }],
       success: true,
       result: results,
       message: `Found ${results.length} matches for "${args.searchTerm}" in ${args.table}.${args.field}`
