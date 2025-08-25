@@ -3,7 +3,7 @@
  * Enhanced memory system for ServiceNow Queen Agent coordination
  */
 
-import { HierarchicalMemorySystem, HierarchicalMemoryEntry, MemorySearchOptions } from '../memory/hierarchical-memory-system';
+import { HierarchicalMemorySystem } from '../memory/hierarchical-memory-system';
 import { SnowFlowMemoryOrganizer, SNOW_FLOW_AGENT_CAPABILITIES } from '../memory/snow-flow-memory-patterns';
 import { Logger } from '../utils/logger';
 import { EventEmitter } from 'events';

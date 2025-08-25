@@ -192,7 +192,7 @@ The 'script' field contains ES5-only code with access to:
   /**
    * Execute original query when smart fetch not needed
    */
-  private async executeOriginalQuery(args: any): Promise<MCPToolResult> {
+  private async executeOriginalQuery(args: any): Promise<any> {
     // This would call the original snow_query_table implementation
     // For now, return a placeholder
     return {

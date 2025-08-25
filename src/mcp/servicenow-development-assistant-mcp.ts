@@ -85,7 +85,7 @@ export class ServiceNowDevelopmentAssistantMCP {
   private async initializeSystems(): Promise<void> {
     try {
       // Initialize systems synchronously during server startup
-      this.memorySystem = {} as any; // Simplified memory system
+      this.memorySystem = null as any; // Disabled memory system
       
       // await this.memorySystem.initialize(); // QueenMemorySystem doesn't have initialize method
       this.logger.info('Memory system initialized');
@@ -99,7 +99,7 @@ export class ServiceNowDevelopmentAssistantMCP {
     } catch (error) {
       this.logger.error('Failed to initialize systems:', error);
       // Initialize minimal fallback systems
-      this.memorySystem = {} as any; // Simplified memory system
+      this.memorySystem = null as any; // Disabled memory system
       // await this.memorySystem.initialize(); // QueenMemorySystem doesn't have initialize method
     }
   }

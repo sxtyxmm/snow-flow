@@ -33,17 +33,33 @@
     font-weight: 900 !important;
   }
   
-  /* Feature pills - iPhone optimized */
+  /* Feature pills - iPhone 2x2 grid */
   .feature-pills {
-    gap: var(--space-2) !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-1) !important;
     margin: var(--space-3) 0 var(--space-4) !important;
+    width: 100% !important;
+    max-width: 350px !important;
   }
   
   .pill {
-    padding: var(--space-2) var(--space-4) !important;
-    font-size: 0.85rem !important;
-    max-width: 90% !important;
-    border-radius: var(--radius-full) !important;
+    padding: var(--space-2) var(--space-1) !important;
+    font-size: 0.75rem !important;
+    max-width: none !important;
+    border-radius: var(--radius-lg) !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: var(--space-1) !important;
+  }
+  
+  .pill-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
   }
   
   /* CTA buttons - iPhone touch friendly */
@@ -57,29 +73,40 @@
     max-width: 85% !important;
   }
   
-  /* Hero stats - compact iPhone layout */
+  /* Hero stats - wider iPhone layout */
   .hero-stats {
-    max-width: 90% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    max-width: 95% !important;
+    width: 100% !important;
     margin: var(--space-4) auto var(--space-2) !important;
     padding: var(--space-3) var(--space-2) !important;
     background: rgba(0, 0, 0, 0.3) !important;
     backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-xl) !important;
   }
   
   .stat-item {
+    flex: 1 !important;
     padding: var(--space-2) var(--space-1) !important;
     text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
   }
   
   .stat-number {
-    font-size: 1.3rem !important;
+    font-size: 1.2rem !important;
     font-weight: 800 !important;
+    margin-bottom: var(--space-1) !important;
   }
   
   .stat-label {
-    font-size: 0.7rem !important;
-    line-height: 1.2 !important;
+    font-size: 0.65rem !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
   }
 }
 
