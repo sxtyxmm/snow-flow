@@ -677,7 +677,7 @@ and historical patterns. Deploy as real-time API" \
     <section id="new-features" class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: var(--space-20) 0;">
         <div class="container">
             <h2 class="text-center font-black" style="font-size: var(--font-4xl); color: var(--white); margin-bottom: var(--space-4);">🚀 New in v4.2.0 ENTERPRISE</h2>
-            <p class="text-center" style="color: rgba(255,255,255,0.9); margin-bottom: var(--space-12); font-size: var(--font-lg);">Revolutionary enterprise features, memory optimizations, and massive performance improvements</p>
+            <p class="text-center" style="color: rgba(255,255,255,0.9); margin-bottom: var(--space-12); font-size: var(--font-lg);">Enterprise-grade ServiceNow integration with proven MCP servers, real machine learning, and comprehensive tooling</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
                 <!-- ITAM Enterprise Module -->
@@ -685,7 +685,7 @@ and historical patterns. Deploy as real-time API" \
                     <div style="padding: var(--space-6);">
                         <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">🏢</div>
                         <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">IT Asset Management</h3>
-                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Complete enterprise asset lifecycle management with license optimization and compliance reporting.</p>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">IT Asset Management with 6 MCP tools for asset tracking, license management, and compliance workflows.</p>
                         <div style="background: rgba(16, 185, 129, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
                             <strong style="color: #10b981;">6 New Enterprise Tools</strong>
                         </div>
@@ -705,7 +705,7 @@ and historical patterns. Deploy as real-time API" \
                     <div style="padding: var(--space-6);">
                         <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">🛡️</div>
                         <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">Security Operations</h3>
-                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Advanced security incident response with threat intelligence and automated SOAR capabilities.</p>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Security Operations with 6 MCP tools for incident response, threat analysis, and security playbook automation.</p>
                         <div style="background: rgba(239, 68, 68, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
                             <strong style="color: #ef4444;">6 Security Tools</strong>
                         </div>
@@ -725,7 +725,7 @@ and historical patterns. Deploy as real-time API" \
                     <div style="padding: var(--space-6);">
                         <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">📨</div>
                         <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">Notification Framework</h3>
-                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Enterprise multi-channel notification system with templates, analytics, and preference management.</p>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Multi-channel notification system supporting email, SMS, push, Slack, and Teams with template management.</p>
                         <div style="background: rgba(59, 130, 246, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
                             <strong style="color: #3b82f6;">6 Communication Tools</strong>
                         </div>
@@ -740,20 +740,23 @@ and historical patterns. Deploy as real-time API" \
                     </div>
                 </div>
 
-                <!-- Memory Optimization -->
+                <!-- Local Development Sync -->
                 <div class="card" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
-                    <div class="card-icon" style="font-size: 2rem;">🎯</div>
-                    <h3 style="color: var(--white); margin-bottom: var(--space-2);">Catalog UI Policy Deployment</h3>
-                    <p style="color: rgba(255,255,255,0.8); font-size: var(--font-sm); margin-bottom: var(--space-3);">Deploy catalog UI policies via unified snow_deploy tool</p>
-                    <div class="code-block" style="background: rgba(0,0,0,0.2); padding: var(--space-3);">
-                        <code style="font-size: var(--font-xs); color: var(--white);">snow_deploy({
-  type: "catalog_ui_policy",
-  config: {
-    catalog_item: "id",
-    conditions: [...],
-    actions: [...]
-  }
-})</code>
+                    <div style="padding: var(--space-6);">
+                        <div style="font-size: var(--font-3xl); margin-bottom: var(--space-3);">🔄</div>
+                        <h3 style="color: var(--white); font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3);">Local Development Sync</h3>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: var(--space-4);">Bridge ServiceNow with Claude Code native tools. Edit any ServiceNow artifact locally with full search, refactor, and debugging capabilities.</p>
+                        <div style="background: rgba(16, 185, 129, 0.2); padding: var(--space-2); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                            <strong style="color: #10b981;">12+ Artifact Types</strong>
+                        </div>
+                        <ul style="color: rgba(255,255,255,0.7); font-size: var(--font-sm); list-style: none; padding: 0;">
+                            <li>✅ snow_pull_artifact</li>
+                            <li>✅ snow_push_artifact</li>
+                            <li>✅ snow_validate_artifact_coherence</li>
+                            <li>✅ Widgets, Flows, Scripts</li>
+                            <li>✅ Full Claude Code integration</li>
+                            <li>✅ ES5 validation & conversion</li>
+                        </ul>
                     </div>
                 </div>
 
