@@ -1724,7 +1724,7 @@ ${args.special_instructions ? `📝 Instructions: ${args.special_instructions}` 
           this.logger.error('searchRecords error:', itemResponse.error);
           
           // Final fallback: try to query with different parameters
-          const queryResponse = await this.client.queryTable('sc_cat_item', `sys_id=${args.sys_id}`, 1);
+          const queryResponse = await this.client.searchRecords('sc_cat_item', `sys_id=${args.sys_id}`, 1);
           if (queryResponse.success && queryResponse.data.result.length > 0) {
             this.logger.info('✅ Found item using queryTable fallback');
             itemResponse = { success: true, data: queryResponse.data.result[0] };
