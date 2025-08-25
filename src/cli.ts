@@ -853,11 +853,13 @@ TodoWrite([
 ### 4. Agent Spawning Strategy
 Based on the task analysis, spawn ${taskAnalysis.estimatedAgentCount} agents in smart batches:
 
-**Agent Spawn Order (Use Snow-Flow MCP Tools):**
+**Dynamic Agent Discovery & Spawning (Use Snow-Flow MCP Tools):**
 1. **Initialize Swarm**: \`swarm_init({ topology: 'hierarchical', maxAgents: ${parseInt(options.maxAgents)} })\`
-2. **Primary Agent**: \`agent_spawn({ type: '${taskAnalysis.primaryAgent}', name: 'Primary${taskAnalysis.primaryAgent.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}' })\`
-3. **Supporting Agents**: Use \`agent_spawn\` for each: ${taskAnalysis.supportingAgents.map(agent => `'${agent}'`).join(', ')}
+2. **Discover Agents Dynamically**: \`agent_discover({ task_analysis: ${JSON.stringify(taskAnalysis)}, required_capabilities: [], context: { max_agents: ${parseInt(options.maxAgents)}, include_new_types: true } })\`
+3. **Spawn Discovered Agents**: Use \`agent_spawn({ type: 'agent_type_from_discovery', name: 'Agent Name', capabilities: ['discovered_capabilities'] })\` for each discovered agent
 4. **Coordination**: \`task_orchestrate({ task: '${objective}', strategy: 'adaptive' })\`
+
+**IMPORTANT**: Do NOT use hardcoded agent types like 'widget-creator', 'specialist' etc. Let \`agent_discover\` determine the optimal agent types for this specific task!
 
 ### 5. Memory Coordination Pattern
 All agents MUST use this simple memory coordination:
