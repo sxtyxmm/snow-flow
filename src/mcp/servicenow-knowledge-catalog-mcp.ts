@@ -924,7 +924,6 @@ ${args.help_text ? `❓ Help: ${args.help_text}` : ''}
     
     // Simplified approach - focus on what actually works in ServiceNow
     try {
-    try {
       this.logger.info('Creating comprehensive catalog UI policy...');
 
       // First, let's fetch ALL variables for this catalog item for debugging
