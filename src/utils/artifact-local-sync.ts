@@ -975,7 +975,32 @@ snow-flow sync status ${widget.sys_id}
       console.log(`   📋 Falling back to registered table search...`);
     }
     
-    // STEP 2: If sys_metadata fails, try common tables first
+    // STEP 2: If sys_metadata fails, try sp_widget FIRST for this specific widget
+    console.log(`\n🎯 Prioritizing sp_widget table for this sys_id...`);
+    
+    // Special case: Try sp_widget first with extended debugging
+    try {
+      console.log(`🔍 Direct widget check with enhanced debugging...`);
+      const widgetResponse = await withMCPTimeout(
+        this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1),
+        10000, // 10 seconds for widget check
+        `Direct widget detection for ${sys_id}`
+      );
+      
+      console.log(`📊 Widget detection result:`, {
+        success: widgetResponse.success,
+        resultCount: widgetResponse.result?.length || 0,
+        error: widgetResponse.error || 'none'
+      });
+      
+      if (widgetResponse.result?.[0]) {
+        console.log(`   ✅ Found widget! Name: ${widgetResponse.result[0].name}`);
+        return this.pullArtifact('sp_widget', sys_id);
+      }
+    } catch (directWidgetError) {
+      console.log(`   ❌ Direct widget check failed:`, directWidgetError);
+    }
+    
     console.log(`\n📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} registered tables...`);
     const allTables = Object.keys(ARTIFACT_REGISTRY);
     const commonTables = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'];
@@ -993,12 +1018,23 @@ snow-flow sync status ${widget.sys_id}
       try {
         console.log(`   🔎 Checking table: ${table}...`);
         
-        // Reduced timeout per table for faster failure
+        // Increased timeout for widget detection reliability
+        const timeoutPerTable = table === 'sp_widget' ? 8000 : 4000; // Longer for widgets
         const response = await withMCPTimeout(
           this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
-          3000, // 3 second timeout per table
+          timeoutPerTable,
           `Detect table for ${sys_id}`
         );
+        
+        // Additional debug logging for sp_widget
+        if (table === 'sp_widget') {
+          console.log(`   🐛 Widget detection details:`, {
+            searchQuery: `sys_id=${sys_id}`,
+            timeout: timeoutPerTable,
+            responseSuccess: response.success,
+            resultCount: response.result?.length || 0
+          });
+        }
         
         if (response.result?.[0]) {
           console.log(`   ✅ Found in table: ${table}`);
