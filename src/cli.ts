@@ -853,10 +853,11 @@ TodoWrite([
 ### 4. Agent Spawning Strategy
 Based on the task analysis, spawn ${taskAnalysis.estimatedAgentCount} agents in smart batches:
 
-**Agent Spawn Order:**
-1. **Primary Agent**: Spawn ${taskAnalysis.primaryAgent} first
-2. **Supporting Agents**: Spawn ${taskAnalysis.supportingAgents.join(', ')} after primary is established
-3. **Use Task tool**: \`Task("agent description", "agent prompt")\` for each agent
+**Agent Spawn Order (Use Snow-Flow MCP Tools):**
+1. **Initialize Swarm**: \`swarm_init({ topology: 'hierarchical', maxAgents: ${parseInt(options.maxAgents)} })\`
+2. **Primary Agent**: \`agent_spawn({ type: '${taskAnalysis.primaryAgent}', name: 'Primary${taskAnalysis.primaryAgent.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}' })\`
+3. **Supporting Agents**: Use \`agent_spawn\` for each: ${taskAnalysis.supportingAgents.map(agent => `'${agent}'`).join(', ')}
+4. **Coordination**: \`task_orchestrate({ task: '${objective}', strategy: 'adaptive' })\`
 
 ### 5. Memory Coordination Pattern
 All agents MUST use this simple memory coordination:
