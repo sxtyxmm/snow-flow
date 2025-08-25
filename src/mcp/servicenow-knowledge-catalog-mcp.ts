@@ -1500,7 +1500,7 @@ ${args.help_text ? `❓ Help: ${args.help_text}` : ''}
   /**
    * Helper function to format action details for display
    */
-  } catch (error: any) {\n    this.logger.error('Failed to create catalog UI policy:', error);\n    return { content: [{ type: 'text', text: `❌ Failed to create catalog UI policy: ${error.message || error}` }] };\n  }\n}\n\n  private formatActionDetails(action: any): string {
+  private formatActionDetails(action: any): string {
     const details: string[] = [];
 
     if (action.mandatory !== undefined) {
