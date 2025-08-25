@@ -890,7 +890,7 @@ export class ServiceNowMachineLearningMCP {
           throw new Error('TensorFlow.js not properly loaded');
         }
         
-        if (!global.performance || typeof global.performance.tick !== 'function') {
+        if (!global.performance || typeof (global.performance as any).tick !== 'function') {
           throw new Error('Performance API not available - TensorFlow.js requires timing functions');
         }
         
@@ -948,7 +948,7 @@ export class ServiceNowMachineLearningMCP {
                 categories_count: categories.length,
                 tensorflow_available: typeof tf !== 'undefined',
                 performance_available: typeof global.performance !== 'undefined',
-                tick_available: typeof global.performance?.tick === 'function'
+                tick_available: typeof (global.performance as any)?.tick === 'function'
               }
             }, null, 2)
           }]

@@ -40,3 +40,19 @@ export interface MCPMemoryManager {
   delete(key: string): Promise<boolean>;
   list(): Promise<string[]>;
 }
+
+export interface MCPToolResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+}
+
+export interface MCPToolResult {
+  success?: boolean;
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  [key: string]: any;
+}

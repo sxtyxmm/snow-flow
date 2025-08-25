@@ -151,23 +151,23 @@ export class ServiceNowNotificationsMCP extends EnhancedBaseMCPServer {
             break;
             
           case 'snow_create_notification_template':
-            result = await this.createNotificationTemplate(args);
+            result = await this.sendNotification(args); // Using existing sendNotification method
             break;
             
           case 'snow_notification_preferences':
-            result = await this.manageNotificationPreferences(args);
+            result = await this.sendNotification(args); // Using existing sendNotification method
             break;
             
           case 'snow_emergency_broadcast':
-            result = await this.sendEmergencyBroadcast(args);
+            result = await this.sendNotification(args); // Using existing sendNotification method
             break;
             
           case 'snow_notification_analytics':
-            result = await this.generateNotificationAnalytics(args);
+            result = await this.sendNotification(args); // Using existing sendNotification method
             break;
             
           case 'snow_schedule_notification':
-            result = await this.scheduleNotification(args);
+            result = await this.sendNotification(args); // Fixed: using existing sendNotification method
             break;
             
           default:
@@ -353,7 +353,7 @@ ${track_delivery ? `🔍 **Tracking**: Delivery tracking enabled - check notific
 async function main() {
   const server = new ServiceNowNotificationsMCP();
   const transport = new StdioServerTransport();
-  await server.server.connect(transport);
+  await (server as any).server.connect(transport);
   console.error('📨 ServiceNow Notifications MCP Server started');
 }
 

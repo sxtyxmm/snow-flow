@@ -603,7 +603,7 @@ ${create_relationships ? `- **Relationships Created**: ${relationshipsCreated}` 
 async function main() {
   const server = new ServiceNowITAMMCP();
   const transport = new StdioServerTransport();
-  await server.server.connect(transport);
+  await (server as any).server.connect(transport);
   console.error('🏢 ServiceNow ITAM MCP Server started');
 }
 

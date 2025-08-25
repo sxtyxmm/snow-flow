@@ -1027,12 +1027,12 @@ ${JSON.stringify(exportData, null, 2)}
           // Update
           const sys_id = existing.data.result[0].sys_id;
           const result = await this.client.updateRecord('sys_properties', sys_id, {
-            value: propertyData.value,
-            ...(propertyData.description && { description: propertyData.description }),
-            ...(propertyData.type && { type: propertyData.type }),
-            ...(propertyData.suffix && { suffix: propertyData.suffix }),
-            ...(propertyData.choices && { choices: propertyData.choices }),
-            ...(propertyData.is_private !== undefined && { is_private: propertyData.is_private ? 'true' : 'false' })
+            value: (propertyData as any).value,
+            ...((propertyData as any).description && { description: (propertyData as any).description }),
+            ...((propertyData as any).type && { type: (propertyData as any).type }),
+            ...((propertyData as any).suffix && { suffix: (propertyData as any).suffix }),
+            ...((propertyData as any).choices && { choices: (propertyData as any).choices }),
+            ...((propertyData as any).is_private !== undefined && { is_private: (propertyData as any).is_private ? 'true' : 'false' })
           });
           
           if (result.success) {
@@ -1045,12 +1045,12 @@ ${JSON.stringify(exportData, null, 2)}
           this.logger.trackAPICall('CREATE', 'sys_properties', 1);
           const result = await this.client.createRecord('sys_properties', {
             name,
-            value: propertyData.value,
-            description: propertyData.description || `Imported by Snow-Flow`,
-            type: propertyData.type || 'string',
-            suffix: propertyData.suffix || 'global',
-            choices: propertyData.choices || '',
-            is_private: propertyData.is_private ? 'true' : 'false'
+            value: (propertyData as any).value,
+            description: (propertyData as any).description || `Imported by Snow-Flow`,
+            type: (propertyData as any).type || 'string',
+            suffix: (propertyData as any).suffix || 'global',
+            choices: (propertyData as any).choices || '',
+            is_private: (propertyData as any).is_private ? 'true' : 'false'
           });
           
           if (result.success) {

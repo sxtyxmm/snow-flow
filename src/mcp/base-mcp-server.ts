@@ -609,46 +609,6 @@ export abstract class BaseMCPServer {
     return this.toolHandlers.get(name);
   }
 
-  /**
-   * Execute tool with retry logic
-   */
-  private async executeWithRetry(name: string, args: any, maxRetries: number = 3): Promise<any> {
-    const handler = this.getToolHandler(name);
-    
-    if (!handler) {
-      throw new McpError(
-        ErrorCode.MethodNotFound,
-        `Tool '${name}' not found`
-      );
-    }
-
-    let lastError: any;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Execute the tool handler
-        const result = await handler(args);
-        return result;
-      } catch (error: any) {
-        lastError = error;
-        
-        // Don't retry on non-retryable errors
-        if (error.code === ErrorCode.InvalidRequest || 
-            error.code === ErrorCode.MethodNotFound) {
-          throw error;
-        }
-        
-        // Log retry attempt
-        if (attempt < maxRetries) {
-          this.logger.warn(`Tool ${name} failed (attempt ${attempt}/${maxRetries}), retrying...`, error.message);
-          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * attempt, 5000)));
-        }
-      }
-    }
-    
-    // All retries failed
-    throw lastError;
-  }
 
   /**
    * Graceful shutdown

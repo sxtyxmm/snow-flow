@@ -609,7 +609,7 @@ ${automated_actions ?
 async function main() {
   const server = new ServiceNowSecOpsMCP();
   const transport = new StdioServerTransport();
-  await server.server.connect(transport);
+  await (server as any).server.connect(transport);
   console.error('🛡️ ServiceNow SecOps MCP Server started');
 }
 
