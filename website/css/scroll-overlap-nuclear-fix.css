@@ -15,8 +15,6 @@
   position: relative !important;
   z-index: 1000 !important; /* Maximum z-index */
   height: 100vh !important; /* Exact viewport height */
-  min-height: 100vh !important;
-  max-height: 100vh !important;
   overflow: visible !important; /* Allow content to show */
   isolation: isolate !important;
   /* Disable any scroll effects */

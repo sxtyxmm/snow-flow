@@ -1,0 +1,215 @@
+/* =========================================
+   MOBILE HERO FIXES - Complete Mobile Redesign
+   ========================================= */
+
+/* Mobile hero specific improvements */
+@media (max-width: 768px) {
+  /* Hero container - better mobile proportions */
+  .hero {
+    min-height: 100vh !important;
+    padding: var(--space-4) 0 !important;
+  }
+  
+  /* Hero content - mobile optimized */
+  .hero-content {
+    padding: var(--space-8) var(--space-3) var(--space-6) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* SNOW-FLOW title - much better mobile sizing */
+  .hero-title {
+    font-size: clamp(var(--font-2xl), 8vw, var(--font-4xl)) !important;
+    margin: var(--space-4) 0 var(--space-6) !important;
+    line-height: 1.1 !important;
+    /* Better mobile letter spacing */
+    letter-spacing: -0.01em !important;
+  }
+  
+  /* Title letters - mobile optimized */
+  .title-letter {
+    margin-right: 0.08em !important; /* Better mobile spacing */
+  }
+  
+  /* Version badge - mobile friendly */
+  .version-badge {
+    font-size: var(--font-sm) !important;
+    padding: var(--space-1) var(--space-3) !important;
+    top: -10px !important;
+    right: -15px !important;
+    transform: rotate(-3deg) scale(0.9) !important;
+  }
+  
+  /* Hero subtitle - mobile optimized */
+  .hero-subtitle {
+    font-size: clamp(var(--font-sm), 4vw, var(--font-lg)) !important;
+    margin-bottom: var(--space-6) !important;
+    padding: 0 var(--space-2) !important;
+    line-height: var(--leading-relaxed) !important;
+  }
+  
+  /* Feature pills - mobile stack */
+  .feature-pills {
+    flex-direction: column !important;
+    gap: var(--space-2) !important;
+    margin: var(--space-6) 0 !important;
+    align-items: center !important;
+  }
+  
+  .pill {
+    width: 100% !important;
+    max-width: 280px !important;
+    justify-content: center !important;
+    font-size: var(--font-sm) !important;
+    padding: var(--space-2) var(--space-4) !important;
+  }
+  
+  /* CTA buttons - mobile stack */
+  .hero-actions {
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+    margin: var(--space-8) 0 !important;
+    width: 100% !important;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100% !important;
+    max-width: 300px !important;
+    padding: var(--space-3) var(--space-6) !important;
+    font-size: var(--font-base) !important;
+    justify-content: center !important;
+  }
+  
+  /* Hero stats - mobile optimized */
+  .hero-stats {
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+    padding: var(--space-4) !important;
+    margin: var(--space-8) auto var(--space-6) !important;
+    max-width: 320px !important;
+  }
+  
+  .stat-item {
+    width: 100% !important;
+    padding: var(--space-3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-lg) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+  
+  .stat-divider {
+    width: 80% !important;
+    height: 1px !important;
+    margin: 0 auto !important;
+  }
+  
+  .stat-icon {
+    font-size: var(--font-lg) !important;
+    margin-bottom: var(--space-1) !important;
+  }
+  
+  .stat-number {
+    font-size: var(--font-2xl) !important;
+    margin-bottom: var(--space-1) !important;
+  }
+  
+  .stat-label {
+    font-size: var(--font-xs) !important;
+    margin-top: var(--space-1) !important;
+  }
+  
+  /* Mobile floating orbs - reduce interference */
+  .floating-orb {
+    opacity: 0.1 !important; /* Much more subtle on mobile */
+    filter: blur(60px) !important; /* More blur to reduce visual noise */
+  }
+  
+  /* Mobile navigation spacing */
+  .navbar {
+    padding: var(--space-2) 0 !important;
+  }
+  
+  .navbar-container {
+    padding: 0 var(--space-3) !important;
+  }
+}
+
+/* Extra small screens - ultra mobile optimization */
+@media (max-width: 480px) {
+  .hero {
+    min-height: 100vh !important;
+    padding: var(--space-2) 0 !important;
+  }
+  
+  .hero-content {
+    padding: var(--space-6) var(--space-2) var(--space-4) !important;
+  }
+  
+  .hero-title {
+    font-size: clamp(var(--font-lg), 6vw, var(--font-2xl)) !important;
+    margin: var(--space-3) 0 var(--space-4) !important;
+  }
+  
+  .title-letter {
+    margin-right: 0.04em !important;
+  }
+  
+  .version-badge {
+    font-size: var(--font-xs) !important;
+    padding: 4px 8px !important;
+    top: -8px !important;
+    right: -10px !important;
+  }
+  
+  .hero-subtitle {
+    font-size: var(--font-sm) !important;
+    padding: 0 var(--space-1) !important;
+    margin-bottom: var(--space-4) !important;
+  }
+  
+  .feature-pills {
+    gap: var(--space-1) !important;
+    margin: var(--space-4) 0 var(--space-6) !important;
+  }
+  
+  .pill {
+    max-width: 240px !important;
+    font-size: var(--font-xs) !important;
+    padding: var(--space-1) var(--space-3) !important;
+  }
+  
+  .hero-actions {
+    margin: var(--space-6) 0 var(--space-8) !important;
+    gap: var(--space-2) !important;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    max-width: 260px !important;
+    font-size: var(--font-sm) !important;
+    padding: var(--space-2) var(--space-4) !important;
+  }
+  
+  .hero-stats {
+    max-width: 260px !important;
+    padding: var(--space-3) !important;
+    margin: var(--space-6) auto var(--space-4) !important;
+  }
+  
+  .stat-item {
+    padding: var(--space-2) !important;
+  }
+  
+  .stat-icon {
+    font-size: var(--font-base) !important;
+  }
+  
+  .stat-number {
+    font-size: var(--font-xl) !important;
+  }
+  
+  .stat-label {
+    font-size: 10px !important;
+  }
+}

@@ -4,7 +4,7 @@
 
 /* Reduce excessive top spacing in hero */
 .hero {
-  padding-top: 0 !important;
+  padding-top: 100pxik !important;
   padding-bottom: var(--space-16) !important; /* Some bottom space for stats */
 }
 

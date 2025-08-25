@@ -65,8 +65,6 @@
 
 /* HERO SIZE ADJUSTMENT - Fixed height to prevent overlap */
 .hero {
-  min-height: 100vh !important; /* Back to standard height */
-  max-height: 100vh !important; /* CRITICAL: Prevent extending beyond viewport */
   padding: var(--space-8) 0 var(--space-16) !important; /* Less padding to fit in viewport */
   overflow: hidden !important; /* Contain content within bounds */
 }
@@ -95,7 +93,6 @@
   }
   
   .hero {
-    min-height: 100vh !important;
     padding-bottom: var(--space-20) !important;
   }
 }

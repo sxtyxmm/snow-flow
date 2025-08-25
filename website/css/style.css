@@ -1145,6 +1145,7 @@ a.link-animated:hover::after {
   transform: translateX(-50%);
   text-align: center;
   animation: bounce 2s ease-in-out infinite;
+  z-index: 999;
 }
 
 .scroll-text {
