@@ -975,37 +975,25 @@ snow-flow sync status ${widget.sys_id}
       console.log(`   📋 Falling back to registered table search...`);
     }
     
-    // STEP 2: If sys_metadata fails, try sp_widget FIRST for this specific widget
-    console.log(`\n🎯 Prioritizing sp_widget table for this sys_id...`);
+    // STEP 2: If sys_metadata fails, try all registered tables with improved strategy
     
-    // Special case: Try sp_widget first with extended debugging
-    try {
-      console.log(`🔍 Direct widget check with enhanced debugging...`);
-      const widgetResponse = await withMCPTimeout(
-        this.client.searchRecords('sp_widget', `sys_id=${sys_id}`, 1),
-        10000, // 10 seconds for widget check
-        `Direct widget detection for ${sys_id}`
-      );
-      
-      console.log(`📊 Widget detection result:`, {
-        success: widgetResponse.success,
-        resultCount: widgetResponse.result?.length || 0,
-        error: widgetResponse.error || 'none'
-      });
-      
-      if (widgetResponse.result?.[0]) {
-        console.log(`   ✅ Found widget! Name: ${widgetResponse.result[0].name}`);
-        return this.pullArtifact('sp_widget', sys_id);
-      }
-    } catch (directWidgetError) {
-      console.log(`   ❌ Direct widget check failed:`, directWidgetError);
-    }
-    
-    console.log(`\n📋 Checking ${Object.keys(ARTIFACT_REGISTRY).length} registered tables...`);
+    console.log(`\n📋 Systematically checking ${Object.keys(ARTIFACT_REGISTRY).length} artifact types...`);
     const allTables = Object.keys(ARTIFACT_REGISTRY);
-    const commonTables = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'];
-    const otherTables = allTables.filter(t => !commonTables.includes(t));
-    const tables = [...commonTables, ...otherTables]; // Common tables first
+    
+    // Prioritize by most common ServiceNow artifacts
+    const priorityTables = [
+      'sp_widget',           // Service Portal widgets
+      'sys_script_include',  // Script includes
+      'sys_script',          // Business rules
+      'sys_ui_page',         // UI pages
+      'sys_script_client',   // Client scripts
+      'sys_ui_policy',       // UI policies
+      'sys_rest_message',    // REST messages
+      'sys_transform_map',   // Transform maps
+      'sys_hub_flow'         // Flow Designer flows
+    ];
+    const otherTables = allTables.filter(t => !priorityTables.includes(t));
+    const tables = [...priorityTables, ...otherTables]; // Priority order
     const errors: Array<{table: string, error: string}> = [];
     
     for (const table of tables) {
@@ -1018,21 +1006,23 @@ snow-flow sync status ${widget.sys_id}
       try {
         console.log(`   🔎 Checking table: ${table}...`);
         
-        // Increased timeout for widget detection reliability
-        const timeoutPerTable = table === 'sp_widget' ? 8000 : 4000; // Longer for widgets
+        // Enhanced timeout for all artifact types
+        const isPriorityTable = ['sp_widget', 'sys_script_include', 'sys_script', 'sys_ui_page'].includes(table);
+        const timeoutPerTable = isPriorityTable ? 6000 : 4000; // Longer for common artifacts
+        
         const response = await withMCPTimeout(
           this.client.searchRecords(table, `sys_id=${sys_id}`, 1),
           timeoutPerTable,
-          `Detect table for ${sys_id}`
+          `Detect ${getTableDisplayName(table) || table} artifact`
         );
         
-        // Additional debug logging for sp_widget
-        if (table === 'sp_widget') {
-          console.log(`   🐛 Widget detection details:`, {
-            searchQuery: `sys_id=${sys_id}`,
+        // Enhanced logging for all artifact types
+        if (isPriorityTable) {
+          console.log(`   🔍 ${getTableDisplayName(table)} detection:`, {
+            table,
             timeout: timeoutPerTable,
-            responseSuccess: response.success,
-            resultCount: response.result?.length || 0
+            success: response.success,
+            found: response.result?.length > 0
           });
         }
         
