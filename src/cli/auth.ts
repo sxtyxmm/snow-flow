@@ -11,48 +11,44 @@ export function registerAuthCommands(program: Command) {
 
   auth
     .command('login')
-    .description('Login to ServiceNow using OAuth 2.0')
-    .option('--instance <instance>', 'ServiceNow instance (e.g., dev12345.service-now.com)')
-    .option('--client-id <clientId>', 'OAuth Client ID')
-    .option('--client-secret <clientSecret>', 'OAuth Client Secret')
-    .action(async (options) => {
+    .description('Login to ServiceNow using OAuth 2.0 (opens browser automatically)')
+    .action(async () => {
       const oauth = new ServiceNowOAuth();
       
       authLogger.info('🔑 Starting ServiceNow OAuth authentication...');
       
-      // Get credentials from options or environment
-      const instance = options.instance || process.env.SNOW_INSTANCE;
-      const clientId = options.clientId || process.env.SNOW_CLIENT_ID;
-      const clientSecret = options.clientSecret || process.env.SNOW_CLIENT_SECRET;
+      // Read credentials from .env file automatically
+      const instance = process.env.SNOW_INSTANCE;
+      const clientId = process.env.SNOW_CLIENT_ID;
+      const clientSecret = process.env.SNOW_CLIENT_SECRET;
       
       if (!instance || !clientId || !clientSecret) {
-        console.error('❌ Missing required OAuth credentials');
-        authLogger.info('\n📝 Please provide:');
-        authLogger.info('   --instance: ServiceNow instance (e.g., dev12345.service-now.com)');
-        authLogger.info('   --client-id: OAuth Client ID');
-        authLogger.info('   --client-secret: OAuth Client Secret');
-        authLogger.info('\n💡 Or set environment variables:');
-        authLogger.info('   export SNOW_INSTANCE=your-instance.service-now.com');
-        authLogger.info('   export SNOW_CLIENT_ID=your-client-id');
-        authLogger.info('   export SNOW_CLIENT_SECRET=your-client-secret');
+        console.error('❌ Missing required OAuth credentials in .env file');
+        authLogger.info('\n📝 Please add these to your .env file:');
+        authLogger.info('   SNOW_INSTANCE=your-instance.service-now.com');
+        authLogger.info('   SNOW_CLIENT_ID=your-client-id');
+        authLogger.info('   SNOW_CLIENT_SECRET=your-client-secret');
+        authLogger.info('\n💡 Then run: snow-flow auth login');
         return;
       }
       
-      // Start OAuth flow
+      authLogger.info(`🌐 Instance: ${instance}`);
+      authLogger.info('🚀 Opening ServiceNow OAuth page in browser...');
+      
+      // Start OAuth flow (this opens browser automatically)
       const result = await oauth.authenticate(instance, clientId, clientSecret);
       
       if (result.success) {
         authLogger.info('\n✅ Authentication successful!');
         authLogger.info('🎉 Snow-Flow is now connected to ServiceNow!');
-        authLogger.info('\n📋 Next steps:');
-        authLogger.info('   1. Test connection: snow-flow auth status');
-        authLogger.info('   2. Start development: snow-flow swarm "create a widget for incident management"');
+        authLogger.info('\n📋 Ready for ServiceNow development!');
+        authLogger.info('   Next: snow-flow swarm "your task here"');
         
         // Test connection
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
         if (testResult.success) {
-          authLogger.info(`\n🔍 Connection test successful!`);
+          authLogger.info(`\n🔍 Connection verified!`);
           authLogger.info(`👤 Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
         }
       } else {
@@ -109,7 +105,7 @@ export function registerAuthCommands(program: Command) {
         console.log('   ├── Status: ❌ Not authenticated');
         console.log('   ├── Instance: Not configured');
         console.log('   └── Method: Not set');
-        console.log('\n💡 Run "snow-flow auth login" to authenticate');
+        console.log('\n💡 Create .env file and run "snow-flow auth login"');
       }
     });
 }
