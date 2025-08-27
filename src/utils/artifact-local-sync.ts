@@ -1064,7 +1064,35 @@ snow-flow sync status ${widget.sys_id}
       }
     }
     
-    // Generate detailed error message
+    // Check if errors suggest OAuth/authentication issues
+    const authErrors = errors.filter(({error}) => {
+      const errorStr = error.toLowerCase();
+      return errorStr.includes('401') || 
+             errorStr.includes('unauthorized') || 
+             errorStr.includes('token') || 
+             errorStr.includes('oauth') ||
+             errorStr.includes('authentication') ||
+             errorStr.includes('access denied') ||
+             errorStr.includes('forbidden') && errorStr.includes('token');
+    });
+    
+    if (authErrors.length > 0) {
+      console.log(`\n🔐 OAuth/Authentication Error Detected!`);
+      console.log(`❌ All API calls are failing with authentication errors`);
+      console.log(`\n⚠️ Authentication errors:`);
+      authErrors.forEach(({table, error}) => {
+        console.log(`   ${table}: ${error}`);
+      });
+      console.log(`\n🔧 OAuth Token Resolution Steps:`);
+      console.log(`   1. Your OAuth token has expired or is invalid`);
+      console.log(`   2. Run: snow-flow auth login`);
+      console.log(`   3. Or check if your ServiceNow instance is accessible`);
+      console.log(`   4. Verify your client credentials are correct`);
+      
+      throw new Error(`OAuth authentication failed. Your ServiceNow access token has expired or is invalid. Please run 'snow-flow auth login' to re-authenticate.`);
+    }
+    
+    // Generate detailed error message for non-auth errors
     console.log(`\n❌ Artifact detection failed!`);
     console.log(`🔍 Searched sys_metadata + ${tables.length} registered tables + ${customTables.length} custom tables`);
     

@@ -85,3 +85,6 @@ claude-flow
 claude-flow.bat
 claude-flow.ps1
 hive-mind-prompt-*.txt
+
+# LinkedIn posts (private content)  
+../docs/LinkedIn-Posts-ServiceNow-Developer-Pain-Points.md
