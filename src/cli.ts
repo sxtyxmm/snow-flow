@@ -1648,7 +1648,7 @@ program
   .option('--skip-mcp', 'Skip MCP server activation prompt')
   .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
-    console.log(chalk.blue.bold(`\n🚀 Initializing Snow-Flow Project v${VERSION}...`));
+    console.log(chalk.blue.bold(`\n🏔️ Snow-Flow v${VERSION} - Conversational ServiceNow Development Platform`));
     console.log('='.repeat(60));
     
     const targetDir = process.cwd();
@@ -1681,15 +1681,13 @@ program
       await createReadmeFiles(targetDir, options.force);
       
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
-      console.log('\n📋 Created files and directories:');
-      console.log('   ✓ .claude/ - Claude Code configuration');
-      console.log('   ✓ .swarm/ - Swarm session management');
-      console.log('   ✓ .snow-flow/ - Snow-Flow project data (Queen, memory, tests)');
-      console.log('   ✓ memory/ - Persistent memory storage');
-      console.log('   ✓ .env - ServiceNow OAuth configuration');
-      console.log('   ✓ .mcp.json - MCP server configuration');
-      console.log('   ✓ CLAUDE.md - Development documentation');
-      console.log('   ✓ README.md - Project documentation');
+      console.log('\n📋 Created Snow-Flow configuration:');
+      console.log('   ✓ .claude/ - Claude Code MCP configuration');
+      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (235+ tools)');  
+      console.log('   ✓ CLAUDE.md - Complete development guide');
+      console.log('   ✓ README.md - Current capabilities documentation');
+      console.log('   ✓ .snow-flow/ - Project workspace');
+      console.log('   ✓ memory/ - Agent memory storage');
       
       if (!options.skipMcp) {
         // Start MCP servers automatically
@@ -1707,9 +1705,9 @@ program
           const running = status.filter((s: any) => s.status === 'running').length;
           const total = status.length;
           
-          console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
-          console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
-          console.log('🎯 They will be available when you run swarm commands');
+          console.log(chalk.green(`✅ Started ${running}/${total} ServiceNow MCP servers successfully!`));
+          console.log(chalk.blue(`\n📋 Snow-Flow MCP servers (${total} total) are now available`));
+          console.log('🎯 Features: Widgets, UI Builder, Agent Workspaces, Machine Learning');
           
         } catch (error) {
           console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
@@ -1718,10 +1716,12 @@ program
       }
       
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log('1. Edit .env file with your ServiceNow credentials');
-      console.log('2. Run: ' + chalk.cyan('snow-flow auth login'));
-      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "your objective"'));
-      console.log('\n📚 Full documentation: https://github.com/groeimetai/snow-flow');
+      console.log(chalk.red.bold('⚠️  CRITICAL: Ensure Claude Code is running first!'));
+      console.log('1. Run: ' + chalk.cyan('snow-flow auth login') + ' (OAuth authentication)');
+      console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('3. Or use tools directly in Claude Code conversation');
+      console.log('\n📚 Complete guide: ' + chalk.blue('https://snow-flow.dev'));
+      console.log('🔧 Troubleshooting: Check docs if you get stdio errors');
       
       // Force exit to prevent hanging
       process.exit(0);
@@ -1843,213 +1843,263 @@ async function createReadmeFiles(targetDir: string, force: boolean = false) {
   // Only create README.md if it doesn't exist already
   const readmePath = join(targetDir, 'README.md');
   if (!existsSync(readmePath) || force) {
-    const mainReadme = `# Snow-Flow: Conversational ServiceNow Development Platform 🏔️
+    const mainReadme = `# Snow-Flow: Multi-Agent ServiceNow Development Platform 🚀
 
-**Transform ServiceNow development through natural conversation with Claude Code**
+Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
 
-Snow-Flow is an advanced conversational ServiceNow development platform that bridges Claude Code with ServiceNow through 20+ specialized MCP servers providing 235+ tools. Instead of clicking through ServiceNow's web interface, develop through natural language conversations that orchestrate multi-agent workflows for complex ServiceNow operations.
+## 🆕 What's New in v1.1.51
 
-## 🎯 Core Capabilities
+### 🎯 CRITICAL FIXES - All User Issues Resolved!
+- **ROOT CAUSE SOLVED**: Flow Designer validation failures completely eliminated
+- **JSON SCHEMA FLEXIBILITY**: Accepts both "steps" and "activities" arrays with auto-conversion
+- **DOCUMENTATION SYNC**: Init command now creates comprehensive CLAUDE.md (373 lines vs 15)
+- **COMPLETE GUIDE**: New users get full Snow-Flow development environment from day one
 
-### 🗣️ **Conversational Development**
-- **Natural Language**: "Create incident dashboard with priority charts"  
-- **Claude Code Integration**: Native IDE experience for ServiceNow development
-- **Multi-Agent Orchestration**: Specialized agents handle complex workflows
-- **Evidence-Based**: Always verify before assuming - no deployment surprises
-
-### 🛠️ **Complete ServiceNow Coverage**
-- **Service Portal Widgets**: Local sync with coherence validation
-- **🆕 UI Builder/UXF**: Complete Now Experience Framework integration  
-- **Agent Workspaces**: Custom workspace and tab configuration
-- **Flow Designer**: Programmatic execution and monitoring
-- **Machine Learning**: Real TensorFlow.js neural networks
-- **All Major Modules**: CMDB, ITAM, HR, CSM, Security, Compliance
+### 🧠 Intelligent Error Recovery (v1.1.48-1.1.49)
+- **AUTOMATIC FALLBACKS**: Flow Designer → Business Rule conversion when deployment fails
 - **SMART SESSIONS**: Update Sets auto-create when none exist - no more "no active session" errors
 - **ZERO MANUAL WORK**: All systematic errors from user feedback now automatically handled
 - **COMPREHENSIVE TESTING**: Enhanced flow testing with Business Rule fallback detection
 
-### 🚀 **20+ Specialized MCP Servers (235+ Tools)**
-Complete ServiceNow automation ecosystem:
+### 🚀 Enhanced Swarm Command (v1.1.42+)
+Most intelligent features are now **enabled by default** - één command voor alles!
+- **DEFAULT TRUE**: \`--smart-discovery\`, \`--live-testing\`, \`--auto-deploy\`, \`--auto-rollback\`, \`--shared-memory\`, \`--progress-monitoring\`
+- **INTELLIGENT ORCHESTRATION**: Uses \`snow_orchestrate_development\` MCP tool automatically
+- **NO FLAGS NEEDED**: Just run \`snow-flow swarm "create widget"\` and everything works!
 
-**🚀 Core Development:**
-- **Deployment Server**: Widget/artifact deployment with coherence validation
-- **Operations Server**: Universal queries, incident management, CMDB search  
-- **Automation Server**: Background script execution, ES5 validation
-- **Local Development Server**: Pull/push ServiceNow artifacts to local files
+### 🔍 Real-Time ServiceNow Integration (v1.1.41+)
+- **LIVE VALIDATION**: \`snow_validate_live_connection\` - real-time auth and permission checking
+- **SMART PREVENTION**: \`snow_discover_existing_flows\` - prevents duplicate flows
+- **LIVE TESTING**: \`snow_test_flow_execution\` - real flow testing in live instances
+- **BATCH VALIDATION**: \`batch_deployment_validator\` - comprehensive multi-artifact validation
+- **AUTO ROLLBACK**: \`deployment_rollback_manager\` - automatic rollback with backup creation
 
-**🎨 Modern UI Development:**
-- **🆕 Flow/Workspace/Mobile + UI Builder Server**: Complete Now Experience Framework
-  - UI Builder pages, components, data brokers (15 new tools!)
-  - Agent Workspace configuration and customization
-  - Flow Designer execution and monitoring
-  - Mobile app configuration and push notifications
+## 🌟 Key Features
 
-**🤖 Intelligence & Analytics:**
-- **Machine Learning Server**: Real TensorFlow.js neural networks (no PI license needed)
-- **Advanced Features Server**: Process mining, batch operations, performance optimization
-- **Security & Compliance Server**: SOX/GDPR/HIPAA auditing and scanning
-- **Reporting & Analytics Server**: Dashboards, KPIs, data quality analysis
+### 🤖 11 Specialized MCP Servers
+Each server provides autonomous capabilities for different aspects of ServiceNow development:
 
-**📋 Platform Integration:**
-- **Platform Development Server**: Business rules, client scripts, UI policies
-- **Integration Server**: REST/SOAP endpoints, transform maps, import sets
-- **System Properties Server**: Configuration management and bulk operations
-- **Update Set Server**: Professional change tracking and XML export
-- **Knowledge & Catalog Server**: Articles, catalog items, UI policies
-- **CMDB/Event/HR/CSM/DevOps Server**: Complete enterprise module coverage
+1. **Deployment MCP** - Autonomous widget and application deployment
+2. **Update Set MCP** - Professional change tracking and deployment management
+3. **Intelligent MCP** - AI-powered artifact discovery and editing
+4. **Graph Memory MCP** - Relationship tracking and impact analysis
+5. **Platform Development MCP** - Development workflow automation
+6. **Integration MCP** - Third-party system integration
+7. **Operations MCP** - Operations and monitoring management
+8. **Automation MCP** - Workflow and process automation
+9. **Security & Compliance MCP** - Security auditing and compliance
+10. **Reporting & Analytics MCP** - Data _analysis and reporting
+11. **Memory MCP** - Multi-agent coordination and todo management
 
-### 🎯 **Key Differentiators**
+### 🎯 Core Capabilities
 
-- **Conversational Interface**: Natural language ServiceNow development
-- **Evidence-Based Development**: Verify before assuming - prevents deployment failures  
-- **Complete UXF Integration**: Full UI Builder + Agent Workspace support
-- **Local Development Bridge**: Edit ServiceNow artifacts in your IDE with Claude Code
-- **Real Machine Learning**: TensorFlow.js neural networks, not expensive ServiceNow licenses
-- **Autonomous Workflows**: 90% automation level with intelligent error recovery
+- **Natural Language Processing**: Create complex ServiceNow artifacts using plain English/Dutch commands
+- **Intelligent Decision Making**: Automatically determines optimal architecture (flow vs subflow)
+- **Zero Configuration**: All values dynamically discovered from your ServiceNow instance
+- **Autonomous Deployment**: Direct deployment to ServiceNow with automatic error handling
+- **Update Set Management**: Professional change tracking like ServiceNow pros use
+- **Global Scope Strategy**: Intelligent scope selection with fallback mechanisms
+- **Multi-Agent Coordination**: Parallel execution for complex tasks
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-⚠️ **CRITICAL**: Claude Code must be installed and running BEFORE using Snow-Flow!
-
-\`\`\`bash
-# 1. Install Claude Code first
-npm install -g @anthropic-ai/claude-code
-claude login
-
-# 2. Navigate to your project and start Claude Code
-cd /your/project
-claude --dangerously-skip-permissions
-\`\`\`
+- Node.js 18+ and npm
+- ServiceNow instance with admin access
+- OAuth application configured in ServiceNow
 
 ### Installation
 
 \`\`\`bash
-# 3. Install Snow-Flow (while Claude Code is running)
+# Install Snow-Flow globally
 npm install -g snow-flow
 
-# 4. Initialize Snow-Flow configuration
+# Initialize Snow-Flow in your project directory
 snow-flow init
+\`\`\`
 
-# 5. Authenticate with ServiceNow
+#### Alternative: Install from source
+\`\`\`bash
+# Clone the repository
+git clone https://github.com/groeimetai/snow-flow.git
+cd snow-flow
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Link globally (optional)
+npm link
+\`\`\`
+
+### Configuration
+
+1. Create a \`.env\` file in the project root:
+\`\`\`env
+SNOW_INSTANCE=your-instance.service-now.com
+SNOW_CLIENT_ID=your-oauth-client-id
+SNOW_CLIENT_SECRET=your-oauth-client-secret
+SNOW_USERNAME=your-username
+SNOW_PASSWORD=your-password
+\`\`\`
+
+2. Set up OAuth in ServiceNow (see [SERVICENOW-OAUTH-SETUP.md](./SERVICENOW-OAUTH-SETUP.md))
+
+3. Authenticate with ServiceNow:
+\`\`\`bash
 snow-flow auth login
 \`\`\`
 
-### ServiceNow OAuth Setup
+### 🎯 MCP Server Activation (v1.1.25+)
 
-Configure OAuth in your ServiceNow instance:
+Snow-Flow now includes **automatic MCP server activation** for Claude Code! During initialization, you'll be prompted to automatically start Claude Code with all 11 MCP servers pre-loaded:
 
-1. **Navigate to System OAuth → Application Registry**
-2. **Click "New" → "Create an OAuth API endpoint"** (not client credentials)
-3. **Fill required fields:**
-   - Name: Snow-Flow Integration
-   - Client ID: snow-flow-client
-   - Redirect URL: http://localhost:3000/callback
-4. Save and copy the Client ID and Client Secret
-5. Run 'snow-flow auth login' for browser authentication
+\`\`\`bash
+snow-flow init
 
-## 💡 **Common Issues & Solutions**
+# You'll see:
+# 🚀 Would you like to start Claude Code with MCP servers automatically? (Y/n)
+# Press Y to launch Claude Code with all MCP servers ready to use!
+\`\`\`
 
-**❌ "Could not find artifact with sys_id xyz..."**
-- **Real cause**: OAuth token expired (not missing artifact!)
-- **Solution**: snow-flow auth login
+The MCP servers are automatically:
+- ✅ Configured with correct paths for global npm installations
+- ✅ Registered in Claude Code's settings
+- ✅ Activated without manual approval steps
+- ✅ Ready to use immediately after initialization
 
-**❌ Stdio connection errors**
-- **Cause**: Claude Code not running before Snow-Flow
-- **Solution**: Start Claude Code first with claude --dangerously-skip-permissions
+If you need to manually activate MCP servers later:
+\`\`\`bash
+# For Mac/Linux:
+claude --mcp-config .mcp.json
 
-**❌ Permission errors in Claude Code**  
-- **Cause**: Not logged into Claude Code
-- **Solution**: Run claude login before using Snow-Flow
+# For Windows:
+claude.exe --mcp-config .mcp.json
+\`\`\`
 
-## 💡 **Conversational Examples**
+## 💡 Usage Examples
 
-### **Service Portal Widgets**
-\\`\\`\\`bash  
-# Create widgets with local sync and coherence validation
-"Create incident dashboard widget with priority filtering"
-"Add chart widget showing incident trends over time"
-"Update widget to include assignment group dropdown"
-\\`\\`\\`
+### Create a Complex Flow with Natural Language
+\`\`\`bash
+snow-flow sparc "Create an approval workflow for iPhone 6 orders that notifies managers, creates tasks, and updates inventory"
+\`\`\`
 
-### **🆕 UI Builder Development (Now Experience Framework)**
-\\`\\`\\`bash
-# Complete UI Builder page creation and management
-"Create UI Builder dashboard page for incident management"
-"Add data table component showing high priority incidents"
-"Create custom chart component for incident trend analysis" 
-"Configure data broker for real-time incident updates"
-"Add client script for dynamic filtering and search"
-"Create responsive incident detail page with routing"
-\\`\\`\\`
+### Deploy a Widget Directly to ServiceNow
+\`\`\`bash
+snow-flow sparc "Create and deploy a widget that shows all critical incidents with real-time updates"
+\`\`\`
 
-### **Agent Workspace Configuration**
-\\`\\`\\`bash
-# Customize agent workspaces for different teams
-"Create agent workspace for IT support team"
-"Add custom tab for asset management workflow"
-"Configure contextual panel showing related incidents"  
-"Setup workspace notifications for critical alerts"
-\\`\\`\\`
+### Start a Multi-Agent Swarm for Complex Projects
+\`\`\`bash
+# Most intelligent features are enabled by default!
+snow-flow swarm "Build a complete incident management system with dashboard, workflows, and notifications"
 
-### **Multi-Agent Workflows**
-\\`\\`\\`bash
-# Complex development projects with specialized agents
-snow-flow swarm "Build complete incident management system with UI Builder dashboard"
-snow-flow swarm "Create agent workspace for change management with approval workflows"
-snow-flow swarm "Develop mobile-responsive asset tracking with offline sync"
-\\`\\`\\`
+# Default settings:
+# ✅ --smart-discovery (true) - Reuses existing artifacts
+# ✅ --live-testing (true) - Tests in real-time
+# ✅ --auto-deploy (true) - Deploys automatically (safe with update sets)
+# ✅ --auto-rollback (true) - Rollbacks on failures
+# ✅ --shared-memory (true) - Agents share context
+# ✅ --progress-monitoring (true) - Real-time status
 
-### **Machine Learning & Analytics**
-\\`\\`\\`bash
-# Real TensorFlow.js neural networks (no PI license needed)
-"Train incident classifier using historical data"
-"Analyze change risk patterns for deployment optimization"
-"Detect anomalies in incident assignment patterns"
-"Create predictive dashboard for SLA breach prevention"
-\\`\\`\\`
+# Add --auto-permissions to enable automatic permission escalation
+snow-flow swarm "Create enterprise workflow" --auto-permissions
 
-## 🛠️ **Key Features**
+# Disable specific features with --no- prefix
+snow-flow swarm "Test workflow" --no-auto-deploy --no-live-testing
+\`\`\`
 
-### **🔄 Local Development Bridge**
-Edit ServiceNow artifacts natively in Claude Code:
-\\`\\`\\`bash
-# Pull any ServiceNow artifact to local files
-snow_pull_artifact({ sys_id: 'widget_sys_id' })
+### Intelligent Artifact Discovery
+\`\`\`bash
+snow-flow sparc "Find and modify the approval workflow to add an extra approval step for orders over $1000"
+\`\`\`
 
-# Edit with full IDE capabilities: search, refactor, multi-file
-# Claude Code native tools work seamlessly
+### Create Flows in Dutch
+\`\`\`bash
+snow-flow sparc "Maak een flow voor het automatisch toewijzen van incidenten aan de juiste groep op basis van categorie"
+\`\`\`
 
-# Push back with validation
-snow_push_artifact({ coherence_check: true })
-\\`\\`\\`
+## 🛠️ Advanced Features
 
-### **🎯 Evidence-Based Development**
-Never assume, always verify:
-- Automatic table/field verification before deployment
-- Property validation and configuration checking
-- Real-time authentication and permission validation
-- "Verify first" philosophy prevents production crashes
+### Flow vs Subflow Intelligence
+Snow-Flow automatically analyzes your requirements and decides whether to create a main flow or break it into reusable subflows:
+- Complexity analysis
+- Reusability assessment
+- Performance optimization
+- Maintainability considerations
 
-### **⚡ Performance & Automation**
-- **80% API call reduction** through intelligent batching  
-- **90% automation level** with minimal manual intervention
-- **Real-time error recovery** with automatic rollbacks
-- **ES5 auto-conversion** for ServiceNow Rhino engine compatibility
+### Update Set Management
+Professional change tracking just like ServiceNow developers use:
+\`\`\`bash
+# Create a new update set for your feature
+snow-flow sparc "Create update set for new approval features"
 
-### **🧠 Machine Learning Integration**  
-Real neural networks without expensive ServiceNow licenses:
-- **Incident Classification**: LSTM networks for categorizing incidents
-- **Change Risk Assessment**: Neural networks for change management  
-- **Anomaly Detection**: Autoencoder models for unusual pattern identification
-- **Process Mining**: Discover real processes from ServiceNow event logs
+# All subsequent changes are automatically tracked
+snow-flow sparc "Add approval widget to portal"
+\`\`\`
 
-### **🎨 Complete UI Development Stack**
-- **Service Portal Widgets**: Traditional widget development with coherence validation
-- **🆕 UI Builder Pages**: Full Now Experience Framework integration (15 new tools)
-- **Agent Workspaces**: Custom workspace configuration and tab management
-- **Mobile Applications**: Mobile app configuration with offline sync
+### Global Scope Strategy
+Intelligent deployment scope selection:
+- Automatic permission validation
+- Fallback mechanisms for restricted environments
+- Environment-aware deployment (dev/test/prod)
+
+### Template Matching
+Recognizes common patterns and applies best practices:
+- Approval workflows
+- Fulfillment processes
+- Notification systems
+- Integration patterns
+
+## 🔧 New MCP Tools (v1.1.44+)
+
+### Catalog Item Search with Fuzzy Matching
+Find catalog items even when you don't know the exact name:
+\`\`\`javascript
+// In Claude Code with MCP tools
+snow_catalog_item_search({
+  query: "iPhone",          // Finds iPhone 6S, iPhone 7, etc.
+  fuzzy_match: true,       // Intelligent variations
+  category_filter: "mobile devices",
+  include_variables: true  // Get catalog variables
+});
+\`\`\`
+
+### Flow Testing with Mock Data
+Test flows without affecting production data:
+\`\`\`javascript
+snow_test_flow_with_mock({
+  flow_id: "equipment_provisioning_flow",
+  create_test_user: true,      // Auto-creates test user
+  mock_catalog_items: true,    // Creates test items
+  mock_catalog_data: [
+    {
+      name: "Test iPhone 6S",
+      price: "699.00"
+    }
+  ],
+  simulate_approvals: true,    // Auto-approves
+  cleanup_after_test: true     // Removes test data
+});
+\`\`\`
+
+### Direct Catalog-Flow Linking
+Link catalog items directly to flows for automated fulfillment:
+\`\`\`javascript
+snow_link_catalog_to_flow({
+  catalog_item_id: "iPhone 6S",
+  flow_id: "mobile_provisioning_flow",
+  link_type: "flow_catalog_process",  // Modern approach
+  variable_mapping: [
+    {
+      catalog_variable: "phone_model",
+      flow_input: "device_type"
+    },
+    {
+      catalog_variable: "user_department",
+      flow_input: "department"
     }
   ],
   trigger_condition: 'current.stage == "request_approved"',
