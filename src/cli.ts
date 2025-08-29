@@ -580,20 +580,17 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
     }
     
-    // Start Claude Code process in interactive mode with stdin piping
+    // Start Claude Code process - inherit all stdio to prevent raw mode issues
     const claudeProcess = spawn('claude', claudeArgs, {
-      stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin, inherit stdout/stderr
+      stdio: 'inherit', // inherit all streams to prevent raw mode errors in Codespaces
       cwd: process.cwd(),
       env: { ...process.env }
     });
     
-    // Send the prompt via stdin
-    cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
-    cliLogger.info('🚀 Claude Code interface opening...\n');
-    
-    // Write prompt to stdin
-    claudeProcess.stdin.write(prompt);
-    claudeProcess.stdin.end();
+    // Claude Code will open with MCP servers ready
+    cliLogger.info('🚀 Claude Code interface opening with Snow-Flow MCP servers...\n');
+    cliLogger.info('💡 Tell Claude Code: ' + chalk.green(`"${prompt.slice(0, 100)}..."`));
+    cliLogger.info('🛠️  All 20+ MCP servers with 235+ tools are now available!');
     
     // Set up process monitoring
     return new Promise((resolve) => {
