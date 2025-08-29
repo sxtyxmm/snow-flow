@@ -879,7 +879,8 @@ and historical patterns. Deploy as real-time API" \
             
             <div class="code-block" style="max-width: 800px; margin: 0 auto; padding: var(--space-10);">
                 <button class="copy-btn" style="position: absolute; top: var(--space-4); right: var(--space-4); background: var(--gradient-accent); color: var(--black); border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); cursor: pointer;">Copy</button>
-                <code style="font-size: var(--font-md); line-height: var(--leading-loose);"># 1. FIRST: Setup Claude Code (REQUIRED!)
+                <code style="font-size: var(--font-md); line-height: var(--leading-loose);"># 1. FIRST: Install & Setup Claude Code (REQUIRED!)
+npm install -g @anthropic-ai/claude-code
 claude login
 cd /your/project
 claude --dangerously-skip-permissions
@@ -929,9 +930,10 @@ snow-flow swarm "Create incident dashboard widget"</code>
                             </div>
                             <div class="step-list">
                                 <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--orange-500);">
-                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">1. Setup Claude Code First</h4>
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">1. Install & Setup Claude Code</h4>
                                     <div class="code-block" style="margin: var(--space-2) 0;">
-                                        <code># Install and start Claude Code:
+                                        <code># Install Claude Code first:
+npm install -g @anthropic-ai/claude-code
 claude login
 cd /your/project
 claude --dangerously-skip-permissions</code>
@@ -1273,7 +1275,8 @@ snow-flow auth login</code>
                                 <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);"><strong>Error:</strong> Cannot connect to stdio/MCP servers</p>
                                 <p style="margin-bottom: var(--space-3); font-size: var(--font-sm); color: var(--orange-600);"><strong>Cause:</strong> Claude Code not running or wrong startup order</p>
                                 <div class="code-block" style="font-size: var(--font-xs);">
-                                    <code># SOLUTION: Start Claude Code FIRST
+                                    <code># SOLUTION: Install and start Claude Code FIRST
+npm install -g @anthropic-ai/claude-code
 claude login
 cd /your/project
 claude --dangerously-skip-permissions

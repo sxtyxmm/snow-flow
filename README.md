@@ -36,7 +36,10 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 ⚠️ **CRITICAL:** Claude Code must be installed and running BEFORE using Snow-Flow to prevent stdio connection errors!
 
 ```bash
-# 1. FIRST: Install and start Claude Code
+# 1. FIRST: Install Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# 2. Login and start Claude Code
 claude login
 cd /your/project/directory
 claude --dangerously-skip-permissions
