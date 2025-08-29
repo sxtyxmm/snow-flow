@@ -589,7 +589,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info('📋 Manual Claude Code instructions:');
       cliLogger.info('1. Ensure Claude Code is running: ' + chalk.cyan('claude --dangerously-skip-permissions'));
       cliLogger.info('2. In Claude Code conversation, tell it:');
-      cliLogger.info('\n' + chalk.green(`"${objective}"`));
+      cliLogger.info('\n' + chalk.green(`"${prompt.slice(0, 200)}..."`));
       cliLogger.info('\n🛠️  All 20+ MCP servers with 235+ Snow-Flow tools are available!');
       return true;
     }
