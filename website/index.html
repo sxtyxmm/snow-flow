@@ -879,9 +879,17 @@ and historical patterns. Deploy as real-time API" \
             
             <div class="code-block" style="max-width: 800px; margin: 0 auto; padding: var(--space-10);">
                 <button class="copy-btn" style="position: absolute; top: var(--space-4); right: var(--space-4); background: var(--gradient-accent); color: var(--black); border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); cursor: pointer;">Copy</button>
-                <code style="font-size: var(--font-md); line-height: var(--leading-loose);">npm install -g snow-flow
+                <code style="font-size: var(--font-md); line-height: var(--leading-loose);"># 1. FIRST: Setup Claude Code (REQUIRED!)
+claude login
+cd /your/project
+claude --dangerously-skip-permissions
+
+# 2. THEN: Install and configure Snow-Flow
+npm install -g snow-flow
 snow-flow init
 snow-flow auth login
+
+# 3. Start building with natural language
 snow-flow swarm "Create incident dashboard widget"</code>
             </div>
             
@@ -915,27 +923,41 @@ snow-flow swarm "Create incident dashboard widget"</code>
                 <div id="quickstart" class="tab-content active">
                     <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
                         <div>
-                            <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🚀 Get Started in 3 Minutes</h3>
+                            <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🚀 Get Started - Prerequisites First!</h3>
+                            <div class="alert" style="background: var(--orange-100); border: 1px solid var(--orange-400); padding: var(--space-3); border-radius: var(--radius-md); margin-bottom: var(--space-6);">
+                                <strong>⚠️ IMPORTANT:</strong> Claude Code must be running BEFORE starting Snow-Flow!
+                            </div>
                             <div class="step-list">
+                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--orange-500);">
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">1. Setup Claude Code First</h4>
+                                    <div class="code-block" style="margin: var(--space-2) 0;">
+                                        <code># Install and start Claude Code:
+claude login
+cd /your/project
+claude --dangerously-skip-permissions</code>
+                                    </div>
+                                    <p style="color: var(--orange-600); font-size: var(--font-sm);"><strong>Required to prevent stdio errors!</strong></p>
+                                </div>
                                 <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
-                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">1. Install Snow-Flow</h4>
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">2. Install Snow-Flow</h4>
                                     <div class="code-block" style="margin: var(--space-2) 0;">
                                         <code>npm install -g snow-flow</code>
                                     </div>
                                 </div>
                                 <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
-                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">2. Initialize Project</h4>
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">3. Configure Snow-Flow</h4>
                                     <div class="code-block" style="margin: var(--space-2) 0;">
-                                        <code>snow-flow init</code>
+                                        <code>snow-flow init
+snow-flow auth login</code>
                                     </div>
                                     <p style="color: var(--gray-600); font-size: var(--font-sm);">Creates .env, .claude/, and CLAUDE.md files</p>
                                 </div>
-                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--black);">
-                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">3. Authenticate</h4>
+                                <div class="step" style="margin-bottom: var(--space-6); padding: var(--space-4); border-left: 4px solid var(--green-500);">
+                                    <h4 style="font-weight: 600; margin-bottom: var(--space-2);">4. Start Building</h4>
                                     <div class="code-block" style="margin: var(--space-2) 0;">
-                                        <code>snow-flow auth login</code>
+                                        <code>snow-flow swarm "Create incident dashboard widget"</code>
                                     </div>
-                                    <p style="color: var(--gray-600); font-size: var(--font-sm);">Connect to your ServiceNow instance</p>
+                                    <p style="color: var(--green-600); font-size: var(--font-sm);">✅ Natural language commands for instant ServiceNow development</p>
                                 </div>
                             </div>
                         </div>
@@ -1012,10 +1034,10 @@ snow-flow --help</code>
 
                 <!-- Claude Setup Tab -->
                 <div id="claude-setup" class="tab-content">
-                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🤖 Claude Code Setup</h3>
+                    <h3 style="font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-6);">🤖 Claude Code Prerequisites</h3>
                     
-                    <div class="alert" style="background: var(--yellow-100); border: 1px solid var(--yellow-400); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6);">
-                        <strong>⚠️ CRITICAL:</strong> Must run <code>claude login</code> first to fix "dangerously skip permissions" errors!
+                    <div class="alert" style="background: var(--red-100); border: 1px solid var(--red-400); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6);">
+                        <strong>🚨 MANDATORY PREREQUISITES:</strong> Before using Snow-Flow, Claude Code MUST be installed, logged in, and running in your project directory with --dangerously-skip-permissions to prevent stdio errors!
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2" style="gap: var(--space-8);">
