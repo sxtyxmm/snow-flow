@@ -554,7 +554,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
     const claudeArgs = hasMcpConfig 
-      ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
+      ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
       : ['--dangerously-skip-permissions'];
     
     // Add debug args if debug is enabled
@@ -1648,7 +1648,7 @@ program
   .option('--skip-mcp', 'Skip MCP server activation prompt')
   .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
-    console.log(chalk.blue.bold(`\n🏔️ Snow-Flow v${VERSION} - Conversational ServiceNow Development`));
+    console.log(chalk.blue.bold(`\n🚀 Initializing Snow-Flow Project v${VERSION}...`));
     console.log('='.repeat(60));
     
     const targetDir = process.cwd();
@@ -1681,12 +1681,15 @@ program
       await createReadmeFiles(targetDir, options.force);
       
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
-      console.log('\n📋 Created Snow-Flow configuration:');
-      console.log('   ✓ .claude/ - Claude Code MCP configuration');
-      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (235+ tools)');
-      console.log('   ✓ CLAUDE.md - Complete development guide');
-      console.log('   ✓ README.md - Current capabilities documentation');
-      console.log('   ✓ .snow-flow/ - Project workspace and memory');
+      console.log('\n📋 Created files and directories:');
+      console.log('   ✓ .claude/ - Claude Code configuration');
+      console.log('   ✓ .swarm/ - Swarm session management');
+      console.log('   ✓ .snow-flow/ - Snow-Flow project data (Queen, memory, tests)');
+      console.log('   ✓ memory/ - Persistent memory storage');
+      console.log('   ✓ .env - ServiceNow OAuth configuration');
+      console.log('   ✓ .mcp.json - MCP server configuration');
+      console.log('   ✓ CLAUDE.md - Development documentation');
+      console.log('   ✓ README.md - Project documentation');
       
       if (!options.skipMcp) {
         // Start MCP servers automatically
@@ -1715,12 +1718,10 @@ program
       }
       
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log(chalk.red.bold('⚠️  IMPORTANT: Ensure Claude Code is running first!'));
-      console.log('1. Start Claude Code: ' + chalk.cyan('claude --dangerously-skip-permissions'));
-      console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
-      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
-      console.log('💡 UI Builder, Agent Workspaces, and 235+ tools now available');
+      console.log('1. Edit .env file with your ServiceNow credentials');
+      console.log('2. Run: ' + chalk.cyan('snow-flow auth login'));
+      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "your objective"'));
+      console.log('\n📚 Full documentation: https://github.com/groeimetai/snow-flow');
       
       // Force exit to prevent hanging
       process.exit(0);
