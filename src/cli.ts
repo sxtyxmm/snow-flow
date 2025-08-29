@@ -1648,7 +1648,7 @@ program
   .option('--skip-mcp', 'Skip MCP server activation prompt')
   .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
-    console.log(chalk.blue.bold(`\n🏔️ Snow-Flow v${VERSION} - Conversational ServiceNow Development Platform`));
+    console.log(chalk.blue.bold(`\n🏔️ Snow-Flow v${VERSION} - Conversational ServiceNow Development`));
     console.log('='.repeat(60));
     
     const targetDir = process.cwd();
@@ -1683,11 +1683,10 @@ program
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
       console.log('   ✓ .claude/ - Claude Code MCP configuration');
-      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (235+ tools)');  
+      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (235+ tools)');
       console.log('   ✓ CLAUDE.md - Complete development guide');
       console.log('   ✓ README.md - Current capabilities documentation');
-      console.log('   ✓ .snow-flow/ - Project workspace');
-      console.log('   ✓ memory/ - Agent memory storage');
+      console.log('   ✓ .snow-flow/ - Project workspace and memory');
       
       if (!options.skipMcp) {
         // Start MCP servers automatically
@@ -1705,9 +1704,9 @@ program
           const running = status.filter((s: any) => s.status === 'running').length;
           const total = status.length;
           
-          console.log(chalk.green(`✅ Started ${running}/${total} ServiceNow MCP servers successfully!`));
-          console.log(chalk.blue(`\n📋 Snow-Flow MCP servers (${total} total) are now available`));
-          console.log('🎯 Features: Widgets, UI Builder, Agent Workspaces, Machine Learning');
+          console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
+          console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
+          console.log('🎯 They will be available when you run swarm commands');
           
         } catch (error) {
           console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
@@ -1716,12 +1715,12 @@ program
       }
       
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log(chalk.red.bold('⚠️  CRITICAL: Ensure Claude Code is running first!'));
-      console.log('1. Run: ' + chalk.cyan('snow-flow auth login') + ' (OAuth authentication)');
-      console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      console.log('3. Or use tools directly in Claude Code conversation');
-      console.log('\n📚 Complete guide: ' + chalk.blue('https://snow-flow.dev'));
-      console.log('🔧 Troubleshooting: Check docs if you get stdio errors');
+      console.log(chalk.red.bold('⚠️  IMPORTANT: Ensure Claude Code is running first!'));
+      console.log('1. Start Claude Code: ' + chalk.cyan('claude --dangerously-skip-permissions'));
+      console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
+      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
+      console.log('💡 UI Builder, Agent Workspaces, and 235+ tools now available');
       
       // Force exit to prevent hanging
       process.exit(0);
