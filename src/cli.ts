@@ -178,7 +178,7 @@ program
     
     // Always show essential info
     cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
-    cliLogger.info(`📋 Objective: ${objective}`);
+    console.log(chalk.blue(`📋 ${objective}`));
     
     // Only show detailed config in verbose mode
     if (options.verbose) {
@@ -239,7 +239,7 @@ program
     } else {
       // In non-verbose mode, only show critical info
       if (options.autoDeploy) {
-        cliLogger.info(`🚀 Auto-Deploy: ENABLED - Will create real artifacts in ServiceNow`);
+        console.log(chalk.green(`✅ ServiceNow integration active - will create real artifacts`));
       }
       
       // Calculate autonomous systems for non-verbose mode (same logic as verbose)
@@ -329,7 +329,7 @@ program
       }
     } else if (!isAuthenticated) {
       // In non-verbose mode, only warn if not authenticated
-      cliLogger.warn('⚠️  Not authenticated. Run "snow-flow auth login" for ServiceNow integration');
+      console.log(chalk.yellow('⚠️  Not authenticated - run ') + chalk.cyan('snow-flow auth login') + chalk.yellow(' first'));
     }
     
     // Initialize Queen Agent memory system
@@ -341,7 +341,10 @@ program
     
     // Generate swarm session ID
     const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    cliLogger.info(`\n🔖 Session: ${sessionId}`);
+    // Session ID only in verbose mode
+    if (options.verbose) {
+      cliLogger.info(`🔖 Session: ${sessionId}`);
+    }
     
     // Store swarm session in memory
     memorySystem.storeLearning(`session_${sessionId}`, {
@@ -415,11 +418,10 @@ program
           cliLogger.info('📝 Artifacts will be created directly in ServiceNow');
         } else {
           cliLogger.info('\n🔗 Live ServiceNow integration: ❌ Disabled');
-          cliLogger.info('📝 Artifacts will be saved to servicenow/ directory');
         }
       }
       
-      cliLogger.info('🚀 Launching Claude Code...');
+      console.log(chalk.blue('\n🚀 Starting Claude Code with 235+ ServiceNow tools...'));
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
@@ -531,20 +533,17 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
         const systemStatus = manager.getSystemStatus();
         
         if (systemStatus.running === 0) {
-          cliLogger.info('🚀 Starting MCP servers automatically for swarm operation...');
+          console.log(chalk.yellow('🔧 Starting ServiceNow MCP servers...'));
           await manager.startAllServers();
-          
           const newStatus = manager.getSystemStatus();
-          cliLogger.info(`✅ Started ${newStatus.running}/${newStatus.total} MCP servers`);
+          console.log(chalk.green(`✅ ${newStatus.running} MCP servers ready`));
         } else if (systemStatus.running < systemStatus.total) {
-          cliLogger.info(`⚠️  Only ${systemStatus.running}/${systemStatus.total} MCP servers running`);
-          cliLogger.info('🔄 Starting remaining servers...');
+          console.log(chalk.yellow('🔄 Starting additional MCP servers...'));
           await manager.startAllServers();
-          
           const newStatus = manager.getSystemStatus();
-          cliLogger.info(`✅ All ${newStatus.running}/${newStatus.total} MCP servers running`);
+          console.log(chalk.green(`✅ All ${newStatus.running} MCP servers ready`));
         } else {
-          cliLogger.info(`✅ All ${systemStatus.running} MCP servers already running`);
+          console.log(chalk.green(`✅ All ${systemStatus.running} MCP servers ready`));
         }
       } catch (error) {
         cliLogger.warn('⚠️  Could not auto-start MCP servers:', error instanceof Error ? error.message : error);
