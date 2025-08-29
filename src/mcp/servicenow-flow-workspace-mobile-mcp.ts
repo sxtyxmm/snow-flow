@@ -1449,36 +1449,63 @@ ${args.roles ? `👥 Roles: ${args.roles.join(', ')}` : ''}
   private async createWorkspaceTab(args: any) {
     try {
       this.logger.info('Creating workspace tab...');
+      
+      // Fix from user feedback: Validate workspace exists first to prevent 400 errors
+      const workspaceCheck = await this.client.getRecord('sys_aw_master_config', args.workspace);
+      if (!workspaceCheck.success) {
+        return {
+          success: false,
+          error: `Workspace ${args.workspace} not found. Create workspace first using snow_create_workspace.`,
+          suggestion: 'Use snow_discover_workspaces to find available workspaces.',
+          http_status: 404,
+          remediation: 'Verify workspace sys_id is correct or create new workspace first'
+        };
+      }
 
       const tabData = {
         workspace: args.workspace,
         name: args.name,
         label: args.label || args.name,
         table: args.table,
-        view: args.view || 'default',
+        view: args.view || 'list', // Fix: use 'list' instead of 'default'
         order: args.order || 100,
-        condition: args.condition || ''
+        condition: args.condition || '', // Make condition optional to prevent 400 errors
+        active: true
       };
 
       const response = await this.client.createRecord('sys_aw_tab', tabData);
 
       if (!response.success) {
-        throw new Error(`Failed to create workspace tab: ${response.error}`);
+        // Enhanced error handling based on user feedback
+        if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
+          return {
+            success: false,
+            error: 'Invalid workspace tab configuration. Complex conditions may not be supported.',
+            suggestion: 'Try with simpler parameters: remove complex conditions and use basic table references.',
+            http_status: 400,
+            remediation: 'Check ServiceNow workspace tab documentation for supported field types'
+          };
+        }
+        return {
+          success: false,
+          error: response.error,
+          suggestion: 'Check workspace tab parameters and permissions'
+        };
       }
 
+      // Fix from user feedback: Return proper success object instead of content array
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Workspace Tab created!
-
-📑 **${args.label || args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📋 Table: ${args.table}
-👁️ View: ${args.view || 'default'}
-🔢 Order: ${args.order || 100}
-
-✨ Tab added to workspace!`
-        }]
+        success: true,
+        tab: response.data,
+        message: `Workspace tab '${args.name}' created successfully for table ${args.table}`,
+        sys_id: response.data.sys_id,
+        configuration: {
+          workspace: args.workspace,
+          table: args.table,
+          view: args.view || 'list',
+          order: args.order || 100,
+          condition: args.condition || 'none'
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create workspace tab:', error);
@@ -1530,21 +1557,47 @@ ${args.filter ? `🔍 Filter: ${args.filter}` : ''}
   private async createContextualPanel(args: any) {
     try {
       this.logger.info('Creating contextual panel...');
+      
+      // Fix from user feedback: Validate table exists to prevent 400 errors
+      const tableCheck = await this.client.searchRecords('sys_db_object', `name=${args.table}`, 1);
+      if (!tableCheck.success || tableCheck.data.result.length === 0) {
+        return {
+          success: false,
+          error: `Table '${args.table}' not found or not accessible.`,
+          suggestion: 'Verify table name is correct and you have read permissions.',
+          remediation: 'Use standard ServiceNow tables like: incident, task, sys_user, change_request'
+        };
+      }
 
       const panelData = {
         name: args.name,
         table: args.table,
-        type: args.type,
+        type: args.type || 'related_records', // Set default type
         position: args.position || 'right',
         width: args.width || 300,
         content: args.content || '',
-        condition: args.condition || ''
+        condition: args.condition || '',
+        active: true
       };
 
       const response = await this.client.createRecord('sys_aw_context_panel', panelData);
 
       if (!response.success) {
-        throw new Error(`Failed to create contextual panel: ${response.error}`);
+        // Enhanced error handling based on user feedback
+        if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
+          return {
+            success: false,
+            error: 'Invalid contextual panel configuration. Check panel type and table compatibility.',
+            suggestion: 'Try with type: "related_records" and standard ServiceNow tables.',
+            http_status: 400,
+            remediation: 'Verify panel type is supported and table has proper relationships'
+          };
+        }
+        return {
+          success: false,
+          error: response.error,
+          suggestion: 'Check contextual panel parameters and workspace permissions'
+        };
       }
 
       return {
