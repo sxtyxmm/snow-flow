@@ -1013,20 +1013,45 @@ snow-flow --help</code>
                         </div>
                         
                         <div>
-                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">ServiceNow OAuth Setup</h4>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-4);">🔑 ServiceNow OAuth Setup Guide</h4>
                             <div class="step-list">
-                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--blue-50); border-radius: var(--radius-md);">
                                     <strong>1. Navigate to System OAuth → Application Registry</strong>
+                                    <p style="font-size: var(--font-xs); color: var(--gray-600); margin-top: var(--space-1);">In ServiceNow navigator, search for "Application Registry"</p>
                                 </div>
-                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
-                                    <strong>2. Create OAuth endpoint for external clients</strong>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--blue-50); border-radius: var(--radius-md);">
+                                    <strong>2. Click "New" → "Create an OAuth API endpoint"</strong>
+                                    <p style="font-size: var(--font-xs); color: var(--gray-600); margin-top: var(--space-1);">Choose the endpoint option, not client credentials</p>
                                 </div>
-                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
-                                    <strong>3. Copy Client ID & Secret to .env</strong>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--blue-50); border-radius: var(--radius-md);">
+                                    <strong>3. Fill Required Fields:</strong>
+                                    <ul style="margin-top: var(--space-2); font-size: var(--font-xs); color: var(--gray-600);">
+                                        <li>• <strong>Name:</strong> Snow-Flow Integration</li>
+                                        <li>• <strong>Client ID:</strong> snow-flow-client</li>  
+                                        <li>• <strong>Redirect URL:</strong> http://localhost:3000/callback</li>
+                                    </ul>
                                 </div>
-                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
-                                    <strong>4. Set redirect URL: http://localhost:3000/callback</strong>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--green-50); border-radius: var(--radius-md);">
+                                    <strong>4. Save and Copy Credentials</strong>
+                                    <p style="font-size: var(--font-xs); color: var(--gray-600); margin-top: var(--space-1);">Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> - you'll need these for authentication</p>
                                 </div>
+                                <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--green-50); border-radius: var(--radius-md);">
+                                    <strong>5. Run Snow-Flow Authentication</strong>
+                                    <div class="code-block" style="margin: var(--space-2) 0; font-size: var(--font-xs);">
+                                        <code>snow-flow auth login</code>
+                                    </div>
+                                    <p style="font-size: var(--font-xs); color: var(--gray-600);">This will open browser, enter your ServiceNow credentials, and save tokens automatically</p>
+                                </div>
+                            </div>
+                            
+                            <div class="alert" style="background: var(--blue-100); border: 1px solid var(--blue-400); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6);">
+                                <h5 style="color: var(--blue-600); font-weight: 600; margin-bottom: var(--space-2);">💡 OAuth Token Management</h5>
+                                <ul style="font-size: var(--font-sm); color: var(--gray-700);">
+                                    <li>• <strong>Automatic Refresh:</strong> Snow-Flow handles token refresh automatically</li>
+                                    <li>• <strong>Secure Storage:</strong> Tokens stored locally in encrypted format</li>
+                                    <li>• <strong>Expiration Handling:</strong> Clear error messages when tokens expire</li>
+                                    <li>• <strong>Re-authentication:</strong> Simply run <code>snow-flow auth login</code> again</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -1233,12 +1258,38 @@ patterns. Deploy as real-time API"</code>
                             <h4 style="font-weight: 600; margin-bottom: var(--space-4);">Common Issues</h4>
                             
                             <div class="issue" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--red-300); border-radius: var(--radius-md);">
+                                <h5 style="color: var(--red-600); font-weight: 600; margin-bottom: var(--space-2);">🔐 OAuth Token Expired - "Could not find artifact"</h5>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);"><strong>Error:</strong> "Could not find artifact with sys_id xyz... It may be in a custom table or you may lack permissions."</p>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm); color: var(--orange-600);"><strong>Real Cause:</strong> Your ServiceNow OAuth token has expired, not missing artifact!</p>
+                                <div class="code-block" style="font-size: var(--font-xs);">
+                                    <code># SOLUTION: Re-authenticate
+snow-flow auth login</code>
+                                </div>
+                                <p style="margin-top: var(--space-2); font-size: var(--font-xs); color: var(--gray-500);">Fixed in v4.5.3: Now shows clear OAuth error instead of misleading "artifact not found"</p>
+                            </div>
+                            
+                            <div class="issue" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--red-300); border-radius: var(--radius-md);">
+                                <h5 style="color: var(--red-600); font-weight: 600; margin-bottom: var(--space-2);">📡 Stdio Connection Errors</h5>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);"><strong>Error:</strong> Cannot connect to stdio/MCP servers</p>
+                                <p style="margin-bottom: var(--space-3); font-size: var(--font-sm); color: var(--orange-600);"><strong>Cause:</strong> Claude Code not running or wrong startup order</p>
+                                <div class="code-block" style="font-size: var(--font-xs);">
+                                    <code># SOLUTION: Start Claude Code FIRST
+claude login
+cd /your/project
+claude --dangerously-skip-permissions
+
+# THEN start Snow-Flow
+snow-flow init</code>
+                                </div>
+                            </div>
+                            
+                            <div class="issue" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--red-300); border-radius: var(--radius-md);">
                                 <h5 style="color: var(--red-600); font-weight: 600; margin-bottom: var(--space-2);">❌ Permission Errors in Claude Code</h5>
                                 <p style="margin-bottom: var(--space-3); font-size: var(--font-sm);">"dangerously skip permissions" error</p>
                                 <div class="code-block" style="font-size: var(--font-xs);">
                                     <code># SOLUTION: Login first!
 claude login
-claude --mcp-config .claude/claude_desktop_config.json</code>
+claude --dangerously-skip-permissions</code>
                                 </div>
                             </div>
 

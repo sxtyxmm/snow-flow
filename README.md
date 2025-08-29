@@ -31,9 +31,21 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 
 ## Quick Start
 
+### Prerequisites 
+
+⚠️ **CRITICAL:** Claude Code must be installed and running BEFORE using Snow-Flow to prevent stdio connection errors!
+
+```bash
+# 1. FIRST: Install and start Claude Code
+claude login
+cd /your/project/directory
+claude --dangerously-skip-permissions
+```
+
 ### Installation
 
 ```bash
+# 2. THEN: Install Snow-Flow (while Claude Code is running)
 npm install -g snow-flow
 ```
 
@@ -42,6 +54,9 @@ npm install -g snow-flow
 ```bash
 # Initialize configuration
 snow-flow init
+
+# Authenticate with ServiceNow
+snow-flow auth login
 
 # Create a ServiceNow widget with AI agents
 snow-flow swarm "create incident dashboard widget with real-time charts" --max-agents 3
@@ -59,6 +74,34 @@ snow-flow auth login
 # Verify connection
 snow-flow auth status
 ```
+
+#### ServiceNow OAuth Configuration
+
+To set up OAuth in your ServiceNow instance:
+
+1. **Navigate to System OAuth → Application Registry**
+2. **Click "New" → "Create an OAuth API endpoint"** (not client credentials)
+3. **Fill required fields:**
+   - Name: `Snow-Flow Integration`
+   - Client ID: `snow-flow-client`  
+   - Redirect URL: `http://localhost:3000/callback`
+4. **Save and copy the Client ID and Client Secret**
+5. **Run `snow-flow auth login`** - this opens browser for authentication
+
+#### Common Authentication Issues
+
+**❌ "Could not find artifact with sys_id xyz..."**
+- **Real cause:** OAuth token expired (misleading error message)
+- **Solution:** `snow-flow auth login`
+- **Note:** Fixed in v4.5.3 with clear OAuth error messages
+
+**❌ Stdio connection errors**
+- **Cause:** Claude Code not running before Snow-Flow  
+- **Solution:** Start Claude Code first: `claude --dangerously-skip-permissions`
+
+**❌ Permission errors**
+- **Cause:** Not logged into Claude Code
+- **Solution:** `claude login` before using Snow-Flow
 
 ## Core Features
 
