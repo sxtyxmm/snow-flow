@@ -1943,11 +1943,11 @@ Configure OAuth in your ServiceNow instance:
 1. **Navigate to System OAuth → Application Registry**
 2. **Click "New" → "Create an OAuth API endpoint"** (not client credentials)
 3. **Fill required fields:**
-   - Name: `Snow-Flow Integration`
-   - Client ID: `snow-flow-client`
-   - Redirect URL: `http://localhost:3000/callback`
-4. **Save and copy the Client ID and Client Secret**
-5. **Run snow-flow auth login** for browser authentication
+   - Name: Snow-Flow Integration
+   - Client ID: snow-flow-client
+   - Redirect URL: http://localhost:3000/callback
+4. Save and copy the Client ID and Client Secret
+5. Run 'snow-flow auth login' for browser authentication
 
 ## 💡 **Common Issues & Solutions**
 
