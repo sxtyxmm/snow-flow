@@ -580,40 +580,20 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
     }
     
-    // Detect if we're in an interactive environment (prevents raw mode errors)
-    const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI && !process.env.CODESPACES;
-    
-    if (!isInteractive) {
-      // Non-interactive environment (Codespaces, CI) - provide manual instructions
-      cliLogger.info('⚠️  Non-interactive environment detected (Codespaces/CI)');
-      cliLogger.info('📋 Manual Claude Code instructions:');
-      cliLogger.info('1. Ensure Claude Code is running: ' + chalk.cyan('claude --dangerously-skip-permissions'));
-      cliLogger.info('2. In Claude Code conversation, tell it:');
-      cliLogger.info('\n' + chalk.green(`"${prompt.slice(0, 200)}..."`));
-      cliLogger.info('\n🛠️  All 20+ MCP servers with 235+ Snow-Flow tools are available!');
-      return true;
-    }
-    
-    // Interactive environment - try to start Claude Code
+    // Start Claude Code process in interactive mode with stdin piping
     const claudeProcess = spawn('claude', claudeArgs, {
-      stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin to send prompt, inherit stdout/stderr
+      stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin, inherit stdout/stderr
       cwd: process.cwd(),
-      env: { 
-        ...process.env,
-        FORCE_COLOR: '0',
-        NO_COLOR: '1'
-      }
+      env: { ...process.env }
     });
     
     // Send the prompt via stdin
     cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
-    cliLogger.info('🚀 Claude Code interface opening with Snow-Flow MCP servers...\n');
+    cliLogger.info('🚀 Claude Code interface opening...\n');
     
     // Write prompt to stdin
-    if (claudeProcess.stdin) {
-      claudeProcess.stdin.write(prompt);
-      claudeProcess.stdin.end();
-    }
+    claudeProcess.stdin.write(prompt);
+    claudeProcess.stdin.end();
     
     // Set up process monitoring
     return new Promise((resolve) => {
