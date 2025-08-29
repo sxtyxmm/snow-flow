@@ -27,16 +27,72 @@ This document provides comprehensive instructions for Snow-Flow, an advanced Ser
 
 ## Core Philosophy
 
-### The Prime Directive: Verify, Don't Assume
+### The Prime Directive: Use Dedicated Tools First, Then Verify
 
-Snow-Flow operates on evidence-based development. Never make assumptions about what exists or doesn't exist in a ServiceNow environment. Every environment is unique with custom tables, fields, integrations, and configurations that you cannot predict.
+Snow-Flow operates on "**Tools-First, Evidence-Based**" development. Always use the highest-level, most specific tool available before falling back to generic approaches.
 
 **Cardinal Rules:**
-1. If code references something, it probably exists
-2. Test before declaring something broken
-3. Verify before modifying
-4. Fix only what's confirmed broken
-5. Respect existing configurations
+1. **🔍 Tool Discovery First** - Always search for dedicated MCP tools before using scripts
+2. **🎯 Use Highest-Level Tool** - Prefer domain-specific tools over generic database operations  
+3. **📊 Problem Categorization** - High-level business operations → dedicated tools, low-level data → scripts
+4. **✅ Verify, Don't Assume** - Test before declaring something broken
+5. **🔧 Fix Only Confirmed Issues** - Respect existing configurations
+
+### The Tools-First Approach
+
+**✅ CORRECT Decision Process:**
+```javascript
+// Step 1: User Request Analysis
+User: "Create agent workspace for IT support"
+
+// Step 2: Tool Discovery FIRST  
+Search Snow-Flow MCP tools for:
+- "create_workspace" → FOUND: snow_create_workspace
+- "workspace_create" → FOUND: snow_create_workspace  
+- "agent_workspace" → FOUND: snow_create_workspace
+
+// Step 3: Use Dedicated Tool
+const result = await snow_create_workspace({
+  name: "IT Support Workspace",
+  tables: ["incident", "task", "sys_user"],
+  description: "Agent workspace for IT support team"
+});
+
+// Step 4: Only if dedicated tool fails → verify with scripts
+if (!result.success && result.plugin_required) {
+  // Now use verification script to check plugin availability
+}
+```
+
+**❌ WRONG Approach (Anti-Pattern):**
+```javascript
+// DON'T DO THIS: Jumping straight to scripts for business operations
+User: "Create agent workspace"
+→ snow_execute_script_with_output({ script: "var gr = new GlideRecord('sys_aw_master_config')..." })
+
+// This bypasses all our error handling, plugin detection, and business logic!
+```
+
+### Problem Categorization Guide
+
+**🎯 High-Level Business Operations → Dedicated Tools:**
+- "Create workspace" → `snow_create_workspace`
+- "Create UI Builder page" → `snow_create_uib_page`  
+- "Deploy widget" → `snow_deploy`
+- "Create flow" → Flow Designer tools
+- "Add component to page" → `snow_add_uib_page_element`
+
+**🔧 Low-Level Data Operations → Scripts OK:**
+- "Check if field exists in table"
+- "Verify property value"  
+- "Test custom query"
+- "Debug specific record"
+
+**🚨 Decision Tree:**
+1. **User says "Create X"** → Search for `snow_create_X` or `snow_X_create` tools FIRST
+2. **User says "Configure Y"** → Search for `snow_configure_Y` tools FIRST  
+3. **User says "Custom script for Z"** → Scripts are appropriate
+4. **User says "Check/verify/test"** → Scripts for verification are good
 
 ### The Verification-First Approach
 
