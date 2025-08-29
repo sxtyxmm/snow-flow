@@ -460,37 +460,174 @@ const snowFlowTools = {
   },
 
   "servicenow-flow-workspace-mobile": {
-    name: "📱 Flow, Workspace & Mobile Server",
-    description: "Flow Designer, Workspace configuration, and Mobile management",
-    badge: "12+ Tools",
+    name: "📱 Flow, Workspace & Mobile + UI Builder Server",
+    description: "Flow Designer, Agent Workspaces, Mobile management + COMPLETE UI Builder integration",
+    badge: "27+ Tools",
+    highlight: "🆕 UI Builder Complete",
     tools: [
+      // Flow Designer Tools
       {
         name: "snow_list_flows",
-        description: "List and discover Flow Designer flows."
+        description: "List and discover Flow Designer flows with status and triggers."
       },
       {
-        name: "snow_execute_flow",
-        description: "Execute flows programmatically with input data."
+        name: "snow_execute_flow", 
+        description: "Execute flows programmatically with input data and completion monitoring."
       },
       {
         name: "snow_get_flow_execution_status",
-        description: "Monitor flow execution status and results."
+        description: "Monitor flow execution status, logs, and variable values."
+      },
+      {
+        name: "snow_get_flow_execution_history",
+        description: "View comprehensive flow execution history with statistics."
       },
       {
         name: "snow_get_flow_details",
-        description: "Get detailed flow configuration and actions."
+        description: "Get detailed flow configuration, actions, and triggers."
       },
+      {
+        name: "snow_import_flow_from_xml",
+        description: "Import flows from XML (only programmatic creation method)."
+      },
+      
+      // Agent Workspace Tools
       {
         name: "snow_create_workspace",
-        description: "Create and configure workspaces."
+        description: "Create Agent Workspace configurations for customized agent experiences."
       },
       {
+        name: "snow_create_workspace_tab",
+        description: "Create custom tabs in Agent Workspace for specific record types."
+      },
+      {
+        name: "snow_create_contextual_panel",
+        description: "Create contextual side panels showing related information."
+      },
+      {
+        name: "snow_discover_workspaces",
+        description: "Discover available Agent Workspaces and configurations."
+      },
+
+      // Mobile App Tools
+      {
         name: "snow_configure_mobile_app",
-        description: "Configure mobile app layouts and features."
+        description: "Configure mobile application settings and features."
       },
       {
         name: "snow_send_push_notification",
-        description: "Send push notifications to mobile devices."
+        description: "Send push notifications to mobile devices for users or roles."
+      },
+      {
+        name: "snow_configure_offline_sync",
+        description: "Configure offline data synchronization for mobile applications."
+      },
+
+      // 🆕 UI BUILDER TOOLS (15 NEW!) - Complete Now Experience Framework
+      {
+        name: "snow_create_uib_page",
+        description: "Create UI Builder pages in Now Experience Framework with automatic routing using sys_ux_page API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_update_uib_page", 
+        description: "Update UI Builder page configuration, theme, and layout settings.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_delete_uib_page",
+        description: "Safely delete UI Builder pages with comprehensive dependency validation.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_discover_uib_pages",
+        description: "Discover all UI Builder pages with advanced filtering and relationship analysis.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_component",
+        description: "Create custom UI Builder components using sys_ux_lib_component API with source code management.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_update_uib_component",
+        description: "Update UI Builder component definitions, source code, and properties schema.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_discover_uib_components", 
+        description: "Browse UI Builder component library including ServiceNow built-in and custom components.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_clone_uib_component",
+        description: "Clone and modify existing UI Builder components for customization.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_data_broker",
+        description: "Create UI Builder data brokers for connecting ServiceNow data sources using sys_ux_data_broker API.", 
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_configure_uib_data_broker",
+        description: "Configure UI Builder data broker queries, caching, and refresh settings.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_add_uib_page_element",
+        description: "Add component elements to UI Builder pages with full layout control using sys_ux_page_element API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_update_uib_page_element",
+        description: "Update UI Builder page element properties, positioning, and data binding.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_remove_uib_page_element", 
+        description: "Remove UI Builder page elements with dependency validation and cleanup.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_page_registry",
+        description: "Create URL routing configuration for UI Builder pages using sys_ux_page_registry API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_discover_uib_routes",
+        description: "Discover all UI Builder page routes with security and parameter information.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_client_script",
+        description: "Create client-side scripts for UI Builder pages using sys_ux_client_script API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_client_state",
+        description: "Create client state management for UI Builder pages using sys_ux_client_state API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_create_uib_event",
+        description: "Create custom events for UI Builder components using sys_ux_event API.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_analyze_uib_page_performance", 
+        description: "Analyze UI Builder page performance with optimization recommendations.",
+        highlight: "🆵 UI Builder"
+      },
+      {
+        name: "snow_validate_uib_page_structure",
+        description: "Validate UI Builder page structure, dependencies, and best practices.",
+        highlight: "🆕 UI Builder"
+      },
+      {
+        name: "snow_discover_uib_page_usage",
+        description: "Analyze UI Builder page usage patterns and complexity scoring.",
+        highlight: "🆕 UI Builder"
       }
     ]
   },

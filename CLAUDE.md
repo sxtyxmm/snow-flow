@@ -582,28 +582,72 @@ Snow-Flow includes 18 specialized MCP servers, each providing comprehensive Serv
 - Performance Analytics setup
 - CAB meeting management
 
-### 14. ServiceNow Flow, Workspace & Mobile Server
-**Purpose:** Flow Designer, Workspace configuration, and Mobile app management
+### 14. ServiceNow Flow, Workspace & Mobile Server + UI Builder
+**Purpose:** Flow Designer, Agent Workspace configuration, Mobile app management, and complete UI Builder integration
 
-**Key Tools:**
+**Flow Designer Tools:**
 - `snow_list_flows` - List and discover Flow Designer flows
 - `snow_execute_flow` - Execute existing flows programmatically
 - `snow_get_flow_execution_status` - Monitor flow execution status
 - `snow_get_flow_execution_history` - View flow execution history
 - `snow_get_flow_details` - Get detailed flow configuration
 - `snow_import_flow_from_xml` - Import flows from XML (only programmatic creation method)
-- `snow_create_workspace` - Create workspaces
-- `snow_configure_mobile_app` - Configure mobile app
+
+**Agent Workspace Tools:**
+- `snow_create_workspace` - Create agent workspace configurations
+- `snow_create_workspace_tab` - Add custom workspace tabs
+- `snow_create_contextual_panel` - Add contextual side panels
+- `snow_discover_workspaces` - Find all workspace configurations
+
+**Mobile App Tools:**
+- `snow_configure_mobile_app` - Configure mobile applications
 - `snow_send_push_notification` - Send push notifications
 - `snow_configure_offline_sync` - Configure offline sync
+
+**🆕 COMPLETE UI BUILDER INTEGRATION (15 NEW TOOLS!):**
+
+**UI Builder Page Management (sys_ux_page):**
+- `snow_create_uib_page` - Create UI Builder pages with automatic routing
+- `snow_update_uib_page` - Update page configuration and metadata
+- `snow_delete_uib_page` - Delete pages with comprehensive dependency validation
+- `snow_discover_uib_pages` - Find all UI Builder pages with filtering
+
+**UI Builder Component Library (sys_ux_lib_*):**
+- `snow_create_uib_component` - Create custom UI components with source code
+- `snow_update_uib_component` - Update component definitions and source
+- `snow_discover_uib_components` - Browse ServiceNow built-in + custom components
+- `snow_clone_uib_component` - Clone and modify existing components
+
+**UI Builder Data Integration (sys_ux_data_broker):**
+- `snow_create_uib_data_broker` - Connect ServiceNow tables/scripts/REST to pages
+- `snow_configure_uib_data_broker` - Update queries, caching, and refresh settings
+
+**UI Builder Layout Management (sys_ux_page_element):**
+- `snow_add_uib_page_element` - Add components to pages with full configuration
+- `snow_update_uib_page_element` - Update component properties and positioning  
+- `snow_remove_uib_page_element` - Remove elements with dependency checking
+
+**UI Builder Advanced Features:**
+- `snow_create_uib_page_registry` - Configure URL routing and access control
+- `snow_discover_uib_routes` - Find all page routes with security info
+- `snow_create_uib_client_script` - Add client-side JavaScript for pages
+- `snow_create_uib_client_state` - Manage page state and persistence
+- `snow_create_uib_event` - Create custom events for components
+- `snow_analyze_uib_page_performance` - Performance analysis and optimization
+- `snow_validate_uib_page_structure` - Structure validation and best practices
+- `snow_discover_uib_page_usage` - Usage analytics and complexity scoring
 
 **Important:** Flow creation is only supported through Flow Designer UI, not programmatically
 
 **Features:**
 - Flow Designer automation
-- Workspace configuration
-- Mobile app management
-- Push notification system
+- Complete Agent Workspace configuration
+- Mobile app management with push notifications
+- **Complete UI Builder/UXF integration** - Full Now Experience Framework development
+- **Conversational UI development** - Create modern ServiceNow UIs through natural language
+- **Component library management** - Custom component development and reuse
+- **Performance optimization** - Built-in UI Builder performance analysis
+- **Structure validation** - Comprehensive dependency and integrity checking
 
 ### 15. ServiceNow CMDB, Event, HR, CSM & DevOps Server
 **Purpose:** CMDB management, Event processing, HR services, Customer Service, and DevOps

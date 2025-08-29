@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "4.5.3",
+  "version": "4.5.4",
   "description": "Conversational ServiceNow development platform using Claude Code. Multi-agent orchestration with 20+ MCP servers providing 200+ ServiceNow tools for comprehensive platform development.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -354,6 +354,60 @@
         "robustness": "high",
         "flexibility": "maximum"
       }
+    },
+    "snow_create_uib_page": {
+      "name": "UI Builder Page Creation",
+      "description": "Create complete UI Builder pages in Now Experience Framework using official ServiceNow sys_ux_page API. Includes automatic routing configuration and full UXF integration for modern ServiceNow UI development.",
+      "category": "ui_builder",
+      "features": [
+        "uxf_integration",
+        "automatic_routing", 
+        "page_management",
+        "responsive_design",
+        "theme_support",
+        "access_control"
+      ],
+      "metrics": {
+        "page_creation": "conversational",
+        "routing": "automatic",
+        "framework": "now_experience"
+      }
+    },
+    "snow_create_uib_component": {
+      "name": "UI Builder Component Development", 
+      "description": "Create custom UI Builder components using official ServiceNow sys_ux_lib_component and sys_ux_lib_source_script APIs. Full component lifecycle management including source code, properties schema, and dependency management.",
+      "category": "ui_builder",
+      "features": [
+        "custom_components",
+        "source_code_management",
+        "properties_schema",
+        "dependency_tracking",
+        "version_control",
+        "component_cloning"
+      ],
+      "metrics": {
+        "component_types": "unlimited",
+        "reusability": "high",
+        "customization": "complete"
+      }
+    },
+    "snow_add_uib_page_element": {
+      "name": "UI Builder Layout Management",
+      "description": "Add and manage components on UI Builder pages using official ServiceNow sys_ux_page_element API. Full layout control with responsive design, data broker binding, and conditional display logic.",
+      "category": "ui_builder", 
+      "features": [
+        "drag_drop_equivalent",
+        "responsive_config",
+        "data_broker_binding",
+        "conditional_display",
+        "css_management",
+        "position_control"
+      ],
+      "metrics": {
+        "layout_flexibility": "complete",
+        "data_binding": "automatic",
+        "responsive": "native"
+      }
     }
   },
   "mcpCapabilities": {
@@ -374,11 +428,15 @@
       "fallbackMode": "No fallback - proper error messages when licenses unavailable"
     },
     "processMining": true,
+    "uiBuilderIntegration": true,
+    "nowExperienceFramework": true,
     "performanceMetrics": {
       "apiCallReduction": "80%",
-      "analysisSpeed": "60% faster",
+      "analysisSpeed": "60% faster", 
       "automationLevel": "90%",
-      "dataAccuracy": "100% real"
+      "dataAccuracy": "100% real",
+      "uiBuilderToolsCount": "15",
+      "totalToolsCount": "235+"
     }
   },
   "author": "Snow-Flow Team",

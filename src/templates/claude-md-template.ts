@@ -197,13 +197,58 @@ snow_discover_catalogs - Discover available catalogs
 \`\`\`
 **✅ Corrected UI Policy (v3.6.10):** Conditions stored as query string in catalog_conditions field. Actions created in catalog_ui_policy_action table. Based on actual ServiceNow structure!
 
-### 16. **servicenow-flow-workspace-mobile** 📱 Modern UX
+### 16. **servicenow-flow-workspace-mobile** 📱 Modern UX + UI Builder
 \`\`\`
-snow_create_flow - Flow Designer flows
-snow_add_flow_action - Flow actions
-snow_create_workspace - Workspace config
-snow_configure_mobile_app - Mobile apps
-snow_configure_offline_sync - Offline mode
+# Flow Designer Tools
+snow_list_flows - List Flow Designer flows
+snow_execute_flow - Execute flows programmatically  
+snow_get_flow_execution_status - Monitor flow status
+snow_get_flow_execution_history - Flow execution history
+snow_get_flow_details - Flow configuration details
+snow_import_flow_from_xml - Import flows from XML
+
+# Agent Workspace Tools  
+snow_create_workspace - Create agent workspace configurations
+snow_create_workspace_tab - Add custom workspace tabs
+snow_create_contextual_panel - Add contextual side panels
+snow_discover_workspaces - Find all workspace configurations
+
+# Mobile App Tools
+snow_configure_mobile_app - Configure mobile applications
+snow_send_push_notification - Send push notifications  
+snow_configure_offline_sync - Setup offline synchronization
+
+# 🆕 COMPLETE UI BUILDER INTEGRATION (15 NEW TOOLS!)
+# Page Management (sys_ux_page)
+snow_create_uib_page - Create UI Builder pages with routing
+snow_update_uib_page - Update page configuration
+snow_delete_uib_page - Delete pages with dependency validation
+snow_discover_uib_pages - Find all UI Builder pages
+
+# Component Library (sys_ux_lib_*)  
+snow_create_uib_component - Create custom UI components
+snow_update_uib_component - Update component source & schema
+snow_discover_uib_components - Browse component library
+snow_clone_uib_component - Clone & modify existing components
+
+# Data Integration (sys_ux_data_broker)
+snow_create_uib_data_broker - Connect ServiceNow data sources
+snow_configure_uib_data_broker - Update queries & caching
+
+# Layout Management (sys_ux_page_element)
+snow_add_uib_page_element - Add components to pages
+snow_update_uib_page_element - Update component properties
+snow_remove_uib_page_element - Remove elements with validation
+
+# Advanced UI Builder Features
+snow_create_uib_page_registry - Configure URL routing
+snow_discover_uib_routes - Find all page routes
+snow_create_uib_client_script - Add client-side scripts
+snow_create_uib_client_state - Manage page state  
+snow_create_uib_event - Create custom events
+snow_analyze_uib_page_performance - Performance analysis
+snow_validate_uib_page_structure - Structure validation
+snow_discover_uib_page_usage - Usage analytics
 \`\`\`
 
 ### 17. **servicenow-advanced-features** 🎯 Advanced
