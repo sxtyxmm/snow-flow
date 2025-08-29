@@ -580,13 +580,26 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
     }
     
-    // Start Claude Code process with stdin pipe for prompt, but handle raw mode gracefully
+    // Detect if we're in an interactive environment (prevents raw mode errors)
+    const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI && !process.env.CODESPACES;
+    
+    if (!isInteractive) {
+      // Non-interactive environment (Codespaces, CI) - provide manual instructions
+      cliLogger.info('⚠️  Non-interactive environment detected (Codespaces/CI)');
+      cliLogger.info('📋 Manual Claude Code instructions:');
+      cliLogger.info('1. Ensure Claude Code is running: ' + chalk.cyan('claude --dangerously-skip-permissions'));
+      cliLogger.info('2. In Claude Code conversation, tell it:');
+      cliLogger.info('\n' + chalk.green(`"${objective}"`));
+      cliLogger.info('\n🛠️  All 20+ MCP servers with 235+ Snow-Flow tools are available!');
+      return true;
+    }
+    
+    // Interactive environment - try to start Claude Code
     const claudeProcess = spawn('claude', claudeArgs, {
       stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin to send prompt, inherit stdout/stderr
       cwd: process.cwd(),
       env: { 
         ...process.env,
-        // Prevent raw mode issues in non-interactive environments
         FORCE_COLOR: '0',
         NO_COLOR: '1'
       }
@@ -595,7 +608,6 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     // Send the prompt via stdin
     cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
     cliLogger.info('🚀 Claude Code interface opening with Snow-Flow MCP servers...\n');
-    cliLogger.info('🛠️  All 20+ MCP servers with 235+ tools are now available!');
     
     // Write prompt to stdin
     if (claudeProcess.stdin) {
