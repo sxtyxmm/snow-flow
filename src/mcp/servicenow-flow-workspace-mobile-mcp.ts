@@ -1666,10 +1666,22 @@ ${workspaceList.join('\n\n')}
     }
   }
 
-  // Mobile Implementation
+  // Mobile Implementation  
   private async configureMobileApp(args: any) {
     try {
-      this.logger.info('Configuring mobile app...');
+      this.logger.info('Configuring ServiceNow Mobile app...');
+      
+      // Validate mobile app tables access first
+      const mobileTableCheck = await this.client.searchRecords('sys_push_notif_msg', '', 1);
+      if (!mobileTableCheck.success) {
+        return {
+          success: false,
+          error: 'ServiceNow Mobile app tables not accessible. This feature requires Mobile Publishing plugin and Mobile Application Management licensing.',
+          suggestion: 'Install Mobile Publishing plugin: System Applications → ServiceNow Store → Search "Mobile Publishing". Requires separate licensing.',
+          plugin_required: 'Mobile Publishing',
+          licensing_note: 'Mobile Publishing is a paid plugin requiring additional ServiceNow licensing'
+        };
+      }
 
       const mobileConfig = {
         app_name: args.app_name,
@@ -1684,6 +1696,21 @@ ${workspaceList.join('\n\n')}
       const response = await this.client.createRecord('sys_mobile_config', mobileConfig);
 
       if (!response.success) {
+        // Provide specific mobile error guidance
+        if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
+          return {
+            success: false,
+            error: 'Mobile app configuration failed. ServiceNow Mobile Publishing plugin may not be installed or properly configured.',
+            suggestion: 'Verify Mobile Publishing plugin is installed and activated. Check ServiceNow Store for Mobile Publishing application.'
+          };
+        }
+        if (response.error?.includes('403') || response.error?.includes('Forbidden')) {
+          return {
+            success: false,
+            error: 'Insufficient permissions for mobile app configuration. Requires mobile_admin role or admin privileges.',
+            suggestion: 'Contact ServiceNow administrator for mobile application management permissions.'
+          };
+        }
         throw new Error(`Failed to configure mobile app: ${response.error}`);
       }
 
@@ -1711,6 +1738,17 @@ ${workspaceList.join('\n\n')}
   private async createMobileLayout(args: any) {
     try {
       this.logger.info('Creating mobile layout...');
+      
+      // Validate mobile layout tables access
+      const layoutTableCheck = await this.client.searchRecords('sys_mobile_layout', '', 1);
+      if (!layoutTableCheck.success) {
+        return {
+          success: false,
+          error: 'Mobile layout tables not accessible. Requires ServiceNow Mobile Publishing plugin and Mobile Device Management licensing.',
+          suggestion: 'Install Mobile Publishing plugin from ServiceNow Store. Contact ServiceNow sales for Mobile Application Management licensing.',
+          alternative: 'Use Service Portal widgets for mobile-responsive interfaces instead.'
+        };
+      }
 
       const layoutData = {
         name: args.name,
@@ -1794,6 +1832,17 @@ ${workspaceList.join('\n\n')}
   private async configureOfflineSync(args: any) {
     try {
       this.logger.info('Configuring offline sync...');
+      
+      // Validate offline sync capabilities
+      const syncTableCheck = await this.client.searchRecords('sys_offline_sync', '', 1);
+      if (!syncTableCheck.success) {
+        return {
+          success: false,
+          error: 'Offline sync not available. Requires ServiceNow Mobile Publishing plugin with offline capabilities.',
+          suggestion: 'Install Mobile Publishing plugin for offline sync. Alternative: Use ServiceNow Agent mobile app for basic offline access.',
+          licensing_note: 'Offline sync requires Mobile Publishing licensing (paid plugin)'
+        };
+      }
 
       const syncConfig = {
         table: args.table,
