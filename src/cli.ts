@@ -554,7 +554,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
     const claudeArgs = hasMcpConfig 
-      ? ['--mcp-config', '.mcp.json', '.', '--dangerously-skip-permissions']
+      ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
       : ['--dangerously-skip-permissions'];
     
     // Add debug args if debug is enabled
