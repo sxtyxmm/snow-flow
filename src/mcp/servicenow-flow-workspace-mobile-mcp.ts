@@ -1382,21 +1382,47 @@ ${executionList}
   // Agent Workspace Implementation
   private async createWorkspace(args: any) {
     try {
-      this.logger.info('Creating workspace...');
-
+      this.logger.info('Creating Agent Workspace...');
+      
+      // First validate Agent Workspace table access
+      const tableCheck = await this.client.searchRecords('sys_aw_master_config', '', 1);
+      if (!tableCheck.success) {
+        return {
+          success: false,
+          error: 'Agent Workspace tables not accessible. This feature requires ServiceNow Agent Workspace plugin to be installed and activated.',
+          suggestion: 'Install Agent Workspace plugin: System Applications → All Available Applications → Search for "Agent Workspace"'
+        };
+      }
+      
       const workspaceData = {
         name: args.name,
         description: args.description || '',
-        tables: args.tables.join(','),
+        tables: args.tables ? args.tables.join(',') : '',
         home_page: args.home_page || '',
         theme: args.theme || 'default',
-        roles: args.roles ? args.roles.join(',') : ''
+        roles: args.roles ? args.roles.join(',') : '',
+        active: true
       };
 
-      this.logger.trackAPICall('CREATE', 'sys_aw_workspace', 1);
-      const response = await this.client.createRecord('sys_aw_workspace', workspaceData);
+      this.logger.trackAPICall('CREATE', 'sys_aw_master_config', 1);
+      const response = await this.client.createRecord('sys_aw_master_config', workspaceData);
 
       if (!response.success) {
+        // Provide specific error guidance
+        if (response.error?.includes('403') || response.error?.includes('Forbidden')) {
+          return {
+            success: false,
+            error: 'Insufficient permissions to create Agent Workspace. Requires workspace_admin role or elevated permissions.',
+            suggestion: 'Contact your ServiceNow administrator to grant Agent Workspace permissions.'
+          };
+        }
+        if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
+          return {
+            success: false,
+            error: 'Invalid workspace configuration. Agent Workspace may not be properly configured in this instance.',
+            suggestion: 'Verify Agent Workspace is enabled and configured. Check System Properties > Agent Workspace settings.'
+          };
+        }
         throw new Error(`Failed to create workspace: ${response.error}`);
       }
 
@@ -1558,7 +1584,7 @@ ${args.filter ? `🔍 Filter: ${args.filter}` : ''}
 
       if (!response.success) {
         // Fallback to updating workspace
-        await this.client.updateRecord('sys_aw_workspace', args.workspace, {
+        await this.client.updateRecord('sys_aw_master_config', args.workspace, {
           notifications_enabled: args.enable_desktop || args.enable_sound
         });
       }
@@ -1585,11 +1611,16 @@ ${args.filter ? `🔍 Filter: ${args.filter}` : ''}
 
   private async discoverWorkspaces(args: any) {
     try {
-      this.logger.info('Discovering workspaces...');
+      this.logger.info('Discovering Agent Workspaces...');
 
-      const response = await this.client.searchRecords('sys_aw_workspace', '', 50);
+      // Validate table access first
+      const response = await this.client.searchRecords('sys_aw_master_config', '', 50);
       if (!response.success) {
-        throw new Error('Failed to discover workspaces');
+        return {
+          success: false,
+          error: 'Cannot access Agent Workspace tables. Agent Workspace plugin may not be installed or activated.',
+          suggestion: 'Install Agent Workspace plugin in ServiceNow: System Applications → All Available Applications → Agent Workspace'
+        };
       }
 
       const workspaces = response.data.result;
