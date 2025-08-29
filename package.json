@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "4.5.4",
+  "version": "4.5.5",
   "description": "Conversational ServiceNow development platform using Claude Code. Multi-agent orchestration with 20+ MCP servers providing 200+ ServiceNow tools for comprehensive platform development.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -361,7 +361,7 @@
       "category": "ui_builder",
       "features": [
         "uxf_integration",
-        "automatic_routing", 
+        "automatic_routing",
         "page_management",
         "responsive_design",
         "theme_support",
@@ -374,7 +374,7 @@
       }
     },
     "snow_create_uib_component": {
-      "name": "UI Builder Component Development", 
+      "name": "UI Builder Component Development",
       "description": "Create custom UI Builder components using official ServiceNow sys_ux_lib_component and sys_ux_lib_source_script APIs. Full component lifecycle management including source code, properties schema, and dependency management.",
       "category": "ui_builder",
       "features": [
@@ -394,7 +394,7 @@
     "snow_add_uib_page_element": {
       "name": "UI Builder Layout Management",
       "description": "Add and manage components on UI Builder pages using official ServiceNow sys_ux_page_element API. Full layout control with responsive design, data broker binding, and conditional display logic.",
-      "category": "ui_builder", 
+      "category": "ui_builder",
       "features": [
         "drag_drop_equivalent",
         "responsive_config",
@@ -432,7 +432,7 @@
     "nowExperienceFramework": true,
     "performanceMetrics": {
       "apiCallReduction": "80%",
-      "analysisSpeed": "60% faster", 
+      "analysisSpeed": "60% faster",
       "automationLevel": "90%",
       "dataAccuracy": "100% real",
       "uiBuilderToolsCount": "15",
