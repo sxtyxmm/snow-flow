@@ -1464,25 +1464,19 @@ ${executionList}
         this.logger.warn('Could not create search config, workspace created without search:', searchError);
       }
       
-      // Fix from user feedback: Create tabs for each table automatically
+      // UPDATED: Modern workspace tab creation guidance
+      let tabsCreated = 0;
+      let modernWorkspaceNote = '';
+      
       if (args.tables && args.tables.length > 0) {
-        for (let i = 0; i < args.tables.length; i++) {
-          const table = args.tables[i];
+        modernWorkspaceNote = `\n\n📋 **Tab Configuration Required:**\nModern Agent Workspaces use UX Pages for tabs. Configure tabs through:\n`;
+        
+        for (const table of args.tables) {
           const tabLabel = table.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-          
-          try {
-            await this.client.createRecord('sys_aw_tab', {
-              workspace: workspaceId,
-              table: table,
-              label: tabLabel,
-              name: `${table}_tab`,
-              order: (i + 1) * 100,
-              active: true
-            });
-          } catch (tabError) {
-            this.logger.warn(`Could not create tab for table ${table}:`, tabError);
-          }
+          modernWorkspaceNote += `\n• **${tabLabel}**: Use snow_add_uib_page_element to add ${table} components`;
         }
+        
+        modernWorkspaceNote += `\n\n💡 **Modern Approach:**\n1. Use snow_create_uib_page for custom workspace pages\n2. Use snow_add_uib_page_element to add table components\n3. Use snow_create_uib_data_broker for data connections`;
       }
 
       return {
