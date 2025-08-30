@@ -524,20 +524,25 @@ Snow-Flow includes 18 specialized MCP servers, each providing comprehensive Serv
 - Property validation
 
 ### 7. ServiceNow Update Set Server
-**Purpose:** Change management and deployment
+**Purpose:** Change management and deployment with automatic user synchronization
 
 **Key Tools:**
 - `snow_create_update_set` - Create new update sets
-- `snow_switch_update_set` - Switch active update set
+- `snow_ensure_active_update_set` - Ensure active Update Set (auto-syncs current)
+- `snow_sync_current_update_set` - **NEW:** Sync user's current Update Set with Snow-Flow
 - `snow_complete_update_set` - Mark as complete
 - `snow_preview_update_set` - Preview changes
 - `snow_export_update_set` - Export as XML
 
+**🆕 AUTO-SYNC FEATURE:**
+Snow-Flow now automatically sets its Update Set as the user's current Update Set in ServiceNow. This prevents confusion where Snow-Flow works in one Update Set while the user sees a different current Update Set.
+
 **Features:**
-- Full update set lifecycle
-- Change tracking
-- XML export/import
-- Conflict detection
+- **Automatic current Update Set synchronization** - user and Snow-Flow always in same Update Set
+- Full update set lifecycle management
+- Change tracking and artifact management
+- XML export/import capabilities
+- Conflict detection and resolution
 
 ### 8. ServiceNow Development Assistant Server
 **Purpose:** Code generation and best practices

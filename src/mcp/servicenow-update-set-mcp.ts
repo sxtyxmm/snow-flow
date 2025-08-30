@@ -304,6 +304,9 @@ class ServiceNowUpdateSetMCP {
           case 'snow_ensure_active_update_set':
             result = await this.ensureActiveUpdateSet(args);
             break;
+          case 'snow_sync_current_update_set':
+            result = await this.syncCurrentUpdateSet(args);
+            break;
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -750,20 +753,20 @@ ${changes.length > 20 ? `\n... and ${changes.length - 20} more changes` : ''}
 
       // Check if we already have an active session
       if (this.currentSession?.state === 'in_progress') {
+        // Also sync current Update Set if requested
+        if (args.set_as_current !== false) {
+          await this.syncCurrentUpdateSet({ force_switch: true });
+        }
+        
         return {
-          content: [{
-            type: 'text',
-            text: `✅ **Active Update Set Session Found**
-
-📋 **Current Session:**
-- **Name**: ${this.currentSession.name}
-- **ID**: ${this.currentSession.update_set_id}
-- **Created**: ${new Date(this.currentSession.created_at).toLocaleString()}
-- **Artifacts**: ${this.currentSession.artifacts?.length || 0} tracked
-
-⚡ **Ready for Deployment**
-All subsequent changes will be tracked in this Update Set.`
-          }]
+          success: true,
+          message: 'Active Update Set session found and synchronized',
+          update_set: {
+            name: this.currentSession.name,
+            sys_id: this.currentSession.update_set_id,
+            artifacts_count: this.currentSession.artifacts?.length || 0
+          },
+          synchronized: args.set_as_current !== false
         };
       }
 
@@ -826,6 +829,92 @@ snow_update_set_create({
       .sort((a: any, b: any) => b[1] - a[1])
       .map(([type, count]) => `- ${type}: ${count}`)
       .join('\n');
+  }
+  
+  /**
+   * NEW: Synchronize user's current Update Set with Snow-Flow's active Update Set
+   */
+  private async syncCurrentUpdateSet(args: any) {
+    try {
+      this.logger.info('Synchronizing user current Update Set with Snow-Flow session...');
+      
+      if (!this.currentSession) {
+        return {
+          success: false,
+          error: 'No active Snow-Flow Update Set session found.',
+          suggestion: 'Run snow_ensure_active_update_set first to create or activate an Update Set.'
+        };
+      }
+      
+      // Set Snow-Flow Update Set as current for user via script
+      const syncScript = `
+        // Synchronize user's current Update Set with Snow-Flow session
+        var updateSetId = '${this.currentSession.update_set_id}';
+        var currentUser = gs.getUserID();
+        
+        // Get current Update Set info
+        var updateSet = new GlideRecord('sys_update_set');
+        if (updateSet.get(updateSetId)) {
+          gs.info('Snow-Flow Update Set found: ' + updateSet.name);
+          
+          // Set as current for user via session variable
+          gs.getSession().putProperty('update_set', updateSetId);
+          gs.info('Set as current Update Set for user: ' + updateSet.name);
+          
+          // Also try to set via user preference
+          var pref = new GlideRecord('sys_user_preference');
+          pref.addQuery('user', currentUser);
+          pref.addQuery('name', 'update_set.current');
+          pref.query();
+          
+          if (pref.next()) {
+            pref.value = updateSetId;
+            pref.update();
+            gs.info('Updated user preference for current Update Set');
+          } else {
+            var newPref = new GlideRecord('sys_user_preference');
+            newPref.initialize();
+            newPref.user = currentUser;
+            newPref.name = 'update_set.current';
+            newPref.value = updateSetId;
+            newPref.insert();
+            gs.info('Created user preference for current Update Set');
+          }
+          
+          gs.info('SYNC COMPLETE: User current Update Set = Snow-Flow session Update Set');
+        } else {
+          gs.error('Snow-Flow Update Set not found: ' + updateSetId);
+        }
+      `;
+      
+      const scriptResponse = await this.client.executeScript(syncScript);
+      
+      if (!scriptResponse.success) {
+        return {
+          success: false,
+          error: 'Failed to synchronize current Update Set',
+          suggestion: 'Check ServiceNow connection and Update Set permissions',
+          update_set_id: this.currentSession.update_set_id
+        };
+      }
+      
+      return {
+        success: true,
+        message: `Current Update Set synchronized with Snow-Flow session`,
+        update_set_name: this.currentSession.name,
+        update_set_id: this.currentSession.update_set_id,
+        sync_method: 'session_variable_and_user_preference',
+        sync_status: 'completed'
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to sync current Update Set:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        suggestion: 'Check ServiceNow connection and permissions'
+      };
+    }
   }
 
   async run() {
