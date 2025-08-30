@@ -460,10 +460,10 @@ const snowFlowTools = {
   },
 
   "servicenow-flow-workspace-mobile": {
-    name: "📱 Flow, Workspace & Mobile + UI Builder Server",
-    description: "Flow Designer, Agent Workspaces, Mobile management + COMPLETE UI Builder integration",
+    name: "📱 Flow, Configurable Workspaces & Mobile + UI Builder Server",
+    description: "Flow Designer, Configurable Agent Workspaces (UX Apps), Mobile management + COMPLETE UI Builder integration",
     badge: "27+ Tools",
-    highlight: "🆕 UI Builder Complete",
+    highlight: "🏗️ UX App Architecture + UI Builder",
     tools: [
       // Flow Designer Tools
       {
@@ -491,10 +491,11 @@ const snowFlowTools = {
         description: "Import flows from XML (only programmatic creation method)."
       },
       
-      // Agent Workspace Tools
+      // Configurable Agent Workspace Tools (UX App Architecture)
       {
         name: "snow_create_workspace",
-        description: "Create Agent Workspace configurations for customized agent experiences."
+        description: "Create Configurable Agent Workspaces using modern UX App architecture (sys_ux_app_route, sys_ux_screen_type, sys_ux_screen, sys_ux_macroponent).",
+        highlight: "🏗️ UX App Architecture"
       },
       {
         name: "snow_create_workspace_tab",
@@ -506,7 +507,8 @@ const snowFlowTools = {
       },
       {
         name: "snow_discover_workspaces",
-        description: "Discover available Agent Workspaces and configurations."
+        description: "Discover available Configurable Agent Workspaces (UX Apps) with screen collections and individual screens.",
+        highlight: "🔍 UX App Discovery"
       },
 
       // Mobile App Tools
