@@ -135,16 +135,15 @@ class ServiceNowFlowWorkspaceMobileMCP {
         // Agent Workspace Tools
         {
           name: 'snow_create_workspace',
-          description: 'Creates an Agent Workspace configuration for customized agent experiences.',
+          description: 'Creates a Configurable Agent Workspace using modern UX App architecture (sys_ux_app_route, sys_ux_screen_type, sys_ux_screen, sys_ux_macroponent). Creates complete workspace with routing, screen collections, and components.',
           inputSchema: {
             type: 'object',
             properties: {
-              name: { type: 'string', description: 'Workspace name' },
+              name: { type: 'string', description: 'Configurable Workspace name' },
               description: { type: 'string', description: 'Workspace description' },
-              tables: { type: 'array', items: { type: 'string' }, description: 'Tables available in workspace' },
-              home_page: { type: 'string', description: 'Default home page' },
-              theme: { type: 'string', description: 'Workspace theme' },
-              roles: { type: 'array', items: { type: 'string' }, description: 'Roles with access' }
+              tables: { type: 'array', items: { type: 'string' }, description: 'Tables to create screens for (incident, task, etc.)' },
+              application: { type: 'string', description: 'Application scope', default: 'global' },
+              roles: { type: 'array', items: { type: 'string' }, description: 'Roles with workspace access' }
             },
             required: ['name', 'tables']
           }
@@ -1391,7 +1390,7 @@ ${executionList}
         };
       }
 
-      this.logger.trackAPICall('CREATE', 'sys_aw_master_config', 1);
+      this.logger.trackAPICall('CREATE', 'sys_ux_app_route', 1);
       // Step 3: Create default screens for each table
       const createdScreens = [];
       
@@ -1490,7 +1489,7 @@ ${args.roles ? `👥 Roles: ${args.roles.join(', ')}` : ''}
 
       if (!response.success) {
         // Fallback to updating workspace
-        await this.client.updateRecord('sys_aw_master_config', args.workspace, {
+        await this.client.updateRecord('sys_ux_app_route', args.workspace, {
           notifications_enabled: args.enable_desktop || args.enable_sound
         });
       }
@@ -1520,7 +1519,7 @@ ${args.roles ? `👥 Roles: ${args.roles.join(', ')}` : ''}
       this.logger.info('Discovering Agent Workspaces...');
 
       // Validate table access first
-      const response = await this.client.searchRecords('sys_aw_master_config', '', 50);
+      const response = await this.client.searchRecords('sys_ux_app_route', '', 50);
       if (!response.success) {
         return {
           success: false,
