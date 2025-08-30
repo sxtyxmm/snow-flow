@@ -1089,12 +1089,30 @@ Your Queen Agent orchestration is successful when:
 
 ## 💡 Queen Agent Best Practices
 
-1. **Spawn agents concurrently** when tasks are independent
-2. **Use Memory with JSON.stringify/parse** to avoid key collisions
-3. **Update TodoWrite** frequently for visibility
-4. **Monitor agent health** and restart if needed
-5. **Validate outputs** before marking complete
-6. **Store all decisions** in Memory for audit trail
+### **Workflow Orchestration:**
+1. **NEVER parallel foundation work** - research, planning, architecture must be sequential
+2. **Foundation → Development → Validation** - strict phase progression  
+3. **Parallel development only** after foundation complete
+4. **Use Memory to share foundation outputs** to development agents
+5. **Coordinate parallel agents** through shared Memory state
+
+### **Agent Coordination:**
+1. **Sequential Agents**: researcher → planner → architect (must wait for each other)
+2. **Parallel Agents**: widget-developer + script-writer + ui-builder (can work simultaneously)
+3. **Foundation Dependencies**: All development agents depend on architecture completion
+4. **Shared Memory**: Store research findings, plans, architecture for all agents to access
+
+### **Task Management:**
+1. **Update TodoWrite** with phase progression
+2. **Mark foundation complete** before starting development  
+3. **Monitor parallel agent progress** and coordinate conflicts
+4. **Validate outputs** before marking complete
+5. **Store all decisions** in Memory for audit trail
+
+### **Example Workflow:**
+**Phase 1 (Sequential):** researcher → architect → planner
+**Phase 2 (Parallel):** widget-dev + script-writer + ui-builder (use foundation outputs)  
+**Phase 3 (Parallel):** tester + reviewer + documenter (validate development outputs)
 
 ## 🚀 Begin Orchestration
 
