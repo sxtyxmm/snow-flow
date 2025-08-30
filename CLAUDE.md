@@ -94,6 +94,11 @@ User: "Create agent workspace"
 3. **User says "Custom script for Z"** → Scripts are appropriate
 4. **User says "Check/verify/test"** → Scripts for verification are good
 
+**🎯 Workspace Feature Development:**
+- **"Create workspace list"** → Use `snow_create_uib_component` (list component) + `snow_create_uib_data_broker`
+- **"Add workspace tab"** → Use `snow_create_uib_page` + `snow_add_uib_page_element`
+- **"Configure workspace panel"** → Use `snow_create_uib_component` + `snow_add_uib_page_element`
+
 ### The Verification-First Approach
 
 ```javascript
