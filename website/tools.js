@@ -498,14 +498,6 @@ const snowFlowTools = {
         highlight: "🏗️ UX App Architecture"
       },
       {
-        name: "snow_create_workspace_tab",
-        description: "Create custom tabs in Agent Workspace for specific record types."
-      },
-      {
-        name: "snow_create_contextual_panel",
-        description: "Create contextual side panels showing related information."
-      },
-      {
         name: "snow_discover_workspaces",
         description: "Discover available Configurable Agent Workspaces (UX Apps) with screen collections and individual screens.",
         highlight: "🔍 UX App Discovery"
