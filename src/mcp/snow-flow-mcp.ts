@@ -550,6 +550,9 @@ class SnowFlowMCPServer {
       availableAgent.status = 'busy';
     }
 
+    // Fix: Handle dependencies parameter safely
+    const dependencies = args.dependencies || [];
+    
     return {
       content: [
         {
@@ -559,9 +562,11 @@ class SnowFlowMCPServer {
             task: task.description,
             strategy: args.strategy || 'adaptive',
             priority: args.priority || 'medium',
+            dependencies: dependencies,
+            dependency_count: dependencies.length,
             status: 'orchestrating',
             assignedAgent: task.assignedAgent,
-            message: 'Task orchestration initiated',
+            message: 'Task orchestration initiated with safe dependency handling',
           }),
         },
       ],
