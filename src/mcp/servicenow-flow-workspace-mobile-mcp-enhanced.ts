@@ -174,7 +174,7 @@ class ServiceNowFlowWorkspaceMobileMCPEnhanced extends EnhancedBaseMCPServer {
         },
         {
           name: 'snow_create_workspace_form',
-          description: 'Creates workspace forms using sys_aw_form table.',
+          description: '⚠️ DEPRECATED: sys_aw_form table does not exist in modern ServiceNow. Use UI Builder form components instead.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -203,7 +203,7 @@ class ServiceNowFlowWorkspaceMobileMCPEnhanced extends EnhancedBaseMCPServer {
         },
         {
           name: 'snow_deploy_workspace',
-          description: 'Deploys workspace to agents using sys_aw_workspace table.',
+          description: '⚠️ DEPRECATED: sys_aw_workspace table incorrect. Use sys_aw_master_config for workspace deployment.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -615,7 +615,7 @@ Check execution details for results.`
     };
 
     this.logger.progress('Creating workspace...');
-    const response = await this.createRecord('sys_aw_workspace', workspaceData);
+    const response = await this.createRecord('sys_aw_master_config', workspaceData);
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to create workspace: ${response.error}`);
@@ -650,7 +650,26 @@ Check execution details for results.`
     };
 
     this.logger.progress('Adding tab...');
-    const response = await this.createRecord('sys_aw_tab', tabData);
+    // DEPRECATED: Return proper MCP response for non-existent table
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ DEPRECATED: sys_aw_tab table does not exist in modern ServiceNow
+
+🚨 **Modern Approach Required:**
+Modern Agent Workspaces use UX Pages (sys_ux_*) for tab configuration.
+
+💡 **Use Instead:**
+- snow_add_uib_page_element: Add components to UX pages
+- snow_create_uib_page: Create custom workspace pages
+- snow_create_uib_data_broker: Connect data sources
+
+📋 **Migration Path:**
+1. Use snow_create_uib_page for workspace layout
+2. Use snow_add_uib_page_element to add table components
+3. Configure through UI Builder instead of legacy tables`
+      }]
+    };
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to add tab: ${response.error}`);
@@ -681,7 +700,21 @@ Check execution details for results.`
     };
 
     this.logger.progress('Adding list...');
-    const response = await this.createRecord('sys_aw_list', listData);
+    // DEPRECATED: Return proper MCP response for non-existent table
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ DEPRECATED: sys_aw_list table does not exist in modern ServiceNow
+
+💡 **Modern Alternative:**
+Use UI Builder list components for workspace lists.
+
+🛠️ **Recommended Tools:**
+- snow_create_uib_component: Create custom list component
+- snow_create_uib_data_broker: Connect list to data source
+- snow_add_uib_page_element: Add list to workspace page`
+      }]
+    };
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to add list: ${response.error}`);
@@ -711,7 +744,21 @@ Check execution details for results.`
     };
 
     this.logger.progress('Creating form...');
-    const response = await this.createRecord('sys_aw_form', formData);
+    // DEPRECATED: Return proper MCP response for non-existent table
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ DEPRECATED: sys_aw_form table does not exist in modern ServiceNow
+
+💡 **Modern Alternative:**
+Use UI Builder form components for workspace forms.
+
+🛠️ **Recommended Tools:**
+- snow_create_uib_component: Create custom form component  
+- snow_create_uib_page: Create form pages
+- Standard ServiceNow form designer for record forms`
+      }]
+    };
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to create form: ${response.error}`);
@@ -742,7 +789,21 @@ Check execution details for results.`
     };
 
     this.logger.progress('Adding UI action...');
-    const response = await this.createRecord('sys_aw_ui_action', actionData);
+    // DEPRECATED: Return proper MCP response for non-existent table
+    return {
+      content: [{
+        type: 'text',
+        text: `⚠️ DEPRECATED: sys_aw_ui_action table does not exist in modern ServiceNow
+
+💡 **Modern Alternative:**
+Use UI Builder action components for workspace actions.
+
+🛠️ **Recommended Tools:**
+- snow_create_uib_component: Create custom action components
+- Standard ServiceNow UI Actions for record actions  
+- UI Builder event system for custom interactions`
+      }]
+    };
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to add UI action: ${response.error}`);
@@ -767,7 +828,7 @@ Check execution details for results.`
     };
 
     this.logger.progress('Deploying workspace...');
-    const response = await this.updateRecord('sys_aw_workspace', args.workspace_id, updateData);
+    const response = await this.updateRecord('sys_aw_master_config', args.workspace_id, updateData);
 
     if (!response.success) {
       return this.createResponse(`❌ Failed to deploy workspace: ${response.error}`);
