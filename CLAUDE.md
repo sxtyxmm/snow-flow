@@ -655,14 +655,13 @@ Snow-Flow now automatically sets its Update Set as the user's current Update Set
 - `snow_import_flow_from_xml` - Import flows from XML (only programmatic creation method)
 
 **Agent Workspace Tools:**
-- `snow_create_workspace` - Create agent workspace configurations (uses sys_aw_master_config)
-- `snow_create_workspace_tab` - **DEPRECATED:** Modern workspaces use UX pages
-- `snow_create_contextual_panel` - **DEPRECATED:** Modern workspaces use UX components  
+- `snow_create_workspace` - Create agent workspace configurations (uses sys_aw_master_config with all required fields)
 - `snow_discover_workspaces` - Find all workspace configurations
 
-**⚠️ IMPORTANT:** Modern ServiceNow Agent Workspaces use **UX Pages (sys_ux_*)** for configuration, not legacy sys_aw_* tables. Use UI Builder tools instead:
-- **Workspace tabs** → Use `snow_add_uib_page_element` with UX page components
-- **Contextual panels** → Use UI Builder component library with data brokers
+**⚠️ MODERN APPROACH:** For workspace tabs and panels, use **UI Builder tools** with correct table structure:
+- **Workspace pages** → `snow_create_uib_page` (creates sys_ux_page + sys_ux_page_registry)
+- **Workspace components** → `snow_add_uib_page_element` (adds to sys_ux_page via sys_ux_page_element)
+- **Data connections** → `snow_create_uib_data_broker` (connects via sys_ux_data_broker)
 
 **Mobile App Tools:**
 - `snow_configure_mobile_app` - Configure mobile applications
