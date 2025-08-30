@@ -163,7 +163,7 @@
       "args": [
         "{{PROJECT_ROOT}}/dist/mcp/servicenow-flow-workspace-mobile-mcp.js"
       ],
-      "description": "Flow Designer, Workspace, and Mobile - create flows/actions/subflows/triggers, test flows, workspaces/tabs/lists, contextual panels, mobile app config, layouts, push notifications, offline sync",
+      "description": "Flow Designer, Agent Workspaces, Mobile + Complete UI Builder Integration - 27+ tools including UI Builder pages, components, data brokers, workspace configuration, and mobile app management",
       "env": {
         "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
         "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",

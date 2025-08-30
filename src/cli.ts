@@ -536,14 +536,14 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
           console.log(chalk.yellow('🔧 Starting ServiceNow MCP servers...'));
           await manager.startAllServers();
           const newStatus = manager.getSystemStatus();
-          console.log(chalk.green(`✅ ${newStatus.running} MCP servers ready`));
+          console.log(chalk.green(`✅ ${newStatus.running} ServiceNow MCP servers ready`));
         } else if (systemStatus.running < systemStatus.total) {
           console.log(chalk.yellow('🔄 Starting additional MCP servers...'));
           await manager.startAllServers();
           const newStatus = manager.getSystemStatus();
-          console.log(chalk.green(`✅ All ${newStatus.running} MCP servers ready`));
+          console.log(chalk.green(`✅ All ${newStatus.running} ServiceNow MCP servers ready`));
         } else {
-          console.log(chalk.green(`✅ All ${systemStatus.running} MCP servers ready`));
+          console.log(chalk.green(`✅ All ${systemStatus.running} ServiceNow MCP servers ready (235+ tools)`));
         }
       } catch (error) {
         cliLogger.warn('⚠️  Could not auto-start MCP servers:', error instanceof Error ? error.message : error);
