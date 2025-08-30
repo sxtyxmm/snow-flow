@@ -1341,85 +1341,100 @@ ${executionList}
     try {
       this.logger.info('Creating Agent Workspace...');
       
-      // First validate Agent Workspace table access
-      const tableCheck = await this.client.searchRecords('sys_aw_master_config', '', 1);
+      // Validate Configurable Workspace (UX App) table access
+      const tableCheck = await this.client.searchRecords('sys_ux_app_route', '', 1);
       if (!tableCheck.success) {
         return {
           success: false,
-          error: 'Agent Workspace tables not accessible. This feature requires ServiceNow Agent Workspace plugin to be installed and activated.',
-          suggestion: 'Install Agent Workspace plugin: System Applications → All Available Applications → Search for "Agent Workspace"'
+          error: 'Configurable Agent Workspace (UX App) tables not accessible. This feature requires Now Experience Framework and Configurable Workspace licensing.',
+          suggestion: 'Verify Now Experience Framework is licensed and Configurable Workspace is enabled in your ServiceNow instance.'
         };
       }
       
-      // Fix from user feedback: Add ALL required fields for workspace creation
-      const workspaceUrl = this.generateWorkspaceUrl(args.name);
+      // CORRECTED: Use UX App architecture for Configurable Agent Workspaces
+      const appRoute = this.generateWorkspaceUrl(args.name);
       
-      const workspaceData = {
+      // Step 1: Create UX App Route (top level)
+      const appRouteData = {
+        route: `/${appRoute}`,
         name: args.name,
+        title: args.name,
         description: args.description || '',
-        active: true,
-        // CRITICAL: Add missing required fields
-        workspace_url: workspaceUrl,
-        navigation_type: 'tab',
-        search_enabled: true,
-        notifications_enabled: true,
-        user_preference_controls_enabled: true,
-        // Add default colors for branding
-        primary_color: '#1F8476',
-        brand_color: '#2FC2B0',
-        // These will be updated after search config creation
-        global_search: '',
-        global_search_data: '',
-        // Optional fields with defaults
-        tables: args.tables ? args.tables.join(',') : '',
-        home_page: args.home_page || '',
-        theme: args.theme || 'default',
-        roles: args.roles ? args.roles.join(',') : ''
+        application: 'global',
+        active: true
       };
+      
+      const routeResponse = await this.client.createRecord('sys_ux_app_route', appRouteData);
+      if (!routeResponse.success) {
+        return {
+          success: false,
+          error: `Failed to create UX App Route: ${routeResponse.error}`,
+          suggestion: 'Check Now Experience Framework permissions and UX App licensing.'
+        };
+      }
+      
+      // Step 2: Create Screen Type (collection)
+      const screenTypeData = {
+        name: `${args.name}_screens`,
+        title: `${args.name} Screens`,
+        description: `Screen collection for ${args.name} workspace`,
+        app_route: routeResponse.data.sys_id,
+        active: true
+      };
+      
+      const screenTypeResponse = await this.client.createRecord('sys_ux_screen_type', screenTypeData);
+      if (!screenTypeResponse.success) {
+        return {
+          success: false,
+          error: `Failed to create Screen Type: ${screenTypeResponse.error}`,
+          suggestion: 'Check UX Screen Type permissions.'
+        };
+      }
 
       this.logger.trackAPICall('CREATE', 'sys_aw_master_config', 1);
-      const response = await this.client.createRecord('sys_aw_master_config', workspaceData);
-
-      if (!response.success) {
-        // Enhanced error handling with required fields info
-        if (response.error?.includes('403') || response.error?.includes('Forbidden')) {
-          return {
-            success: false,
-            error: 'Insufficient permissions to create Agent Workspace. Requires workspace_admin role or elevated permissions.',
-            suggestion: 'Contact your ServiceNow administrator to grant Agent Workspace permissions.'
+      // Step 3: Create default screens for each table
+      const createdScreens = [];
+      
+      if (args.tables && args.tables.length > 0) {
+        for (let i = 0; i < args.tables.length; i++) {
+          const table = args.tables[i];
+          const screenData = {
+            name: `${args.name}_${table}_screen`,
+            title: `${table.charAt(0).toUpperCase() + table.slice(1)} Management`,
+            description: `${table} management screen for ${args.name}`,
+            screen_type: screenTypeResponse.data.sys_id,
+            table: table,
+            order: i * 100,
+            active: true
           };
+          
+          const screenResponse = await this.client.createRecord('sys_ux_screen', screenData);
+          if (screenResponse.success) {
+            createdScreens.push(screenResponse.data);
+            
+            // Create macroponent for each screen
+            const macroponentData = {
+              name: `${args.name}_${table}_macroponent`,
+              title: `${table} Component`,
+              description: `Macroponent for ${table} in ${args.name}`,
+              screen: screenResponse.data.sys_id,
+              component_type: 'table',
+              table: table,
+              active: true
+            };
+            
+            await this.client.createRecord('sys_ux_macroponent', macroponentData);
+          }
         }
-        if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
-          return {
-            success: false,
-            error: 'Invalid workspace configuration. Missing required fields detected.',
-            suggestion: 'Verify all required fields: workspace_url, navigation_type, search settings.',
-            remediation: 'Check ServiceNow Agent Workspace documentation for required field specifications'
-          };
-        }
-        throw new Error(`Failed to create workspace: ${response.error}`);
       }
       
-      const workspaceId = response.data.sys_id;
-      
-      // Fix from user feedback: Create global search config and update workspace
-      try {
-        const searchConfig = await this.client.createRecord('sys_aw_global_search_config', {
-          name: `${args.name} Search`,
-          workspace: workspaceId,
-          active: true
-        });
-        
-        if (searchConfig.success && searchConfig.data.sys_id) {
-          // Update workspace with search config references
-          await this.client.updateRecord('sys_aw_master_config', workspaceId, {
-            global_search: searchConfig.data.sys_id,
-            global_search_data: searchConfig.data.sys_id
-          });
-        }
-      } catch (searchError) {
-        this.logger.warn('Could not create search config, workspace created without search:', searchError);
+      if (!routeResponse.success) {
+        throw new Error(`Failed to create configurable workspace: ${routeResponse.error}`);
       }
+      
+      const workspaceId = routeResponse.data.sys_id;
+      
+      // Note: Search config handled by UX framework automatically for Configurable Workspaces
       
       // UPDATED: Modern workspace tab creation guidance
       let tabsCreated = 0;
