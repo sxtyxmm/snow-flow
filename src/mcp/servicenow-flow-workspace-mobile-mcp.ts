@@ -1394,21 +1394,37 @@ ${executionList}
         };
       }
       
+      // Fix from user feedback: Add ALL required fields for workspace creation
+      const workspaceUrl = this.generateWorkspaceUrl(args.name);
+      
       const workspaceData = {
         name: args.name,
         description: args.description || '',
+        active: true,
+        // CRITICAL: Add missing required fields
+        workspace_url: workspaceUrl,
+        navigation_type: 'tab',
+        search_enabled: true,
+        notifications_enabled: true,
+        user_preference_controls_enabled: true,
+        // Add default colors for branding
+        primary_color: '#1F8476',
+        brand_color: '#2FC2B0',
+        // These will be updated after search config creation
+        global_search: '',
+        global_search_data: '',
+        // Optional fields with defaults
         tables: args.tables ? args.tables.join(',') : '',
         home_page: args.home_page || '',
         theme: args.theme || 'default',
-        roles: args.roles ? args.roles.join(',') : '',
-        active: true
+        roles: args.roles ? args.roles.join(',') : ''
       };
 
       this.logger.trackAPICall('CREATE', 'sys_aw_master_config', 1);
       const response = await this.client.createRecord('sys_aw_master_config', workspaceData);
 
       if (!response.success) {
-        // Provide specific error guidance
+        // Enhanced error handling with required fields info
         if (response.error?.includes('403') || response.error?.includes('Forbidden')) {
           return {
             success: false,
@@ -1419,11 +1435,54 @@ ${executionList}
         if (response.error?.includes('400') || response.error?.includes('Bad Request')) {
           return {
             success: false,
-            error: 'Invalid workspace configuration. Agent Workspace may not be properly configured in this instance.',
-            suggestion: 'Verify Agent Workspace is enabled and configured. Check System Properties > Agent Workspace settings.'
+            error: 'Invalid workspace configuration. Missing required fields detected.',
+            suggestion: 'Verify all required fields: workspace_url, navigation_type, search settings.',
+            remediation: 'Check ServiceNow Agent Workspace documentation for required field specifications'
           };
         }
         throw new Error(`Failed to create workspace: ${response.error}`);
+      }
+      
+      const workspaceId = response.data.sys_id;
+      
+      // Fix from user feedback: Create global search config and update workspace
+      try {
+        const searchConfig = await this.client.createRecord('sys_aw_global_search_config', {
+          name: `${args.name} Search`,
+          workspace: workspaceId,
+          active: true
+        });
+        
+        if (searchConfig.success && searchConfig.data.sys_id) {
+          // Update workspace with search config references
+          await this.client.updateRecord('sys_aw_master_config', workspaceId, {
+            global_search: searchConfig.data.sys_id,
+            global_search_data: searchConfig.data.sys_id
+          });
+        }
+      } catch (searchError) {
+        this.logger.warn('Could not create search config, workspace created without search:', searchError);
+      }
+      
+      // Fix from user feedback: Create tabs for each table automatically
+      if (args.tables && args.tables.length > 0) {
+        for (let i = 0; i < args.tables.length; i++) {
+          const table = args.tables[i];
+          const tabLabel = table.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+          
+          try {
+            await this.client.createRecord('sys_aw_tab', {
+              workspace: workspaceId,
+              table: table,
+              label: tabLabel,
+              name: `${table}_tab`,
+              order: (i + 1) * 100,
+              active: true
+            });
+          } catch (tabError) {
+            this.logger.warn(`Could not create tab for table ${table}:`, tabError);
+          }
+        }
       }
 
       return {
@@ -3124,6 +3183,39 @@ ${configList}${layoutsText}${offlineText}
       this.logger.error('Failed to analyze UI Builder page usage:', error);
       throw error;
     }
+  }
+
+  /**
+   * Generate valid workspace URL from name (fix from user feedback)
+   */
+  private generateWorkspaceUrl(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')           // Spaces -> hyphens
+      .replace(/[^a-z0-9-]/g, '')     // Remove special characters
+      .replace(/--+/g, '-')            // Multiple hyphens -> single
+      .replace(/^-|-$/g, '')           // Trim leading/trailing hyphens
+      .substring(0, 80);               // Max 80 chars (ServiceNow field limit)
+  }
+  
+  /**
+   * Validate workspace configuration (fix from user feedback)
+   */
+  private validateWorkspaceConfig(config: any): string[] {
+    const errors: string[] = [];
+
+    // Check required fields
+    if (!config.name) errors.push('name is required');
+    if (!config.workspace_url) errors.push('workspace_url is required');
+    if (!config.navigation_type) errors.push('navigation_type is required');
+
+    // Validate workspace_url format
+    if (config.workspace_url && !/^[a-z0-9-]+$/.test(config.workspace_url)) {
+      errors.push('workspace_url must contain only lowercase letters, numbers and hyphens');
+    }
+
+    return errors;
   }
 
   async run() {
