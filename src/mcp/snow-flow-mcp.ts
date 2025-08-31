@@ -550,8 +550,10 @@ class SnowFlowMCPServer {
       availableAgent.status = 'busy';
     }
 
-    // Fix: Handle dependencies parameter safely
-    const dependencies = args.dependencies || [];
+    // Fix: Handle all parameters safely to prevent undefined errors
+    const dependencies = Array.isArray(args.dependencies) ? args.dependencies : [];
+    const taskDescription = task?.description || args.task || 'Unknown task';
+    const assignedAgent = task?.assignedAgent || availableAgent?.id || 'unassigned';
     
     return {
       content: [
@@ -559,14 +561,16 @@ class SnowFlowMCPServer {
           type: 'text',
           text: JSON.stringify({
             taskId,
-            task: task.description,
+            task: taskDescription,
             strategy: args.strategy || 'adaptive',
             priority: args.priority || 'medium',
             dependencies: dependencies,
             dependency_count: dependencies.length,
             status: 'orchestrating',
-            assignedAgent: task.assignedAgent,
-            message: 'Task orchestration initiated with safe dependency handling',
+            assignedAgent: assignedAgent,
+            message: 'Task orchestration initiated with comprehensive parameter validation',
+            real_agent_coordination: 'Available via RealAgentSpawner',
+            recommendation: 'Use Task tool for real agent spawning instead of task_orchestrate'
           }),
         },
       ],
