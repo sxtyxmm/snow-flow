@@ -421,7 +421,7 @@ Follow this systematic approach for all debugging:
 
 ## MCP Server Capabilities
 
-Snow-Flow includes 18 specialized MCP servers, each providing comprehensive ServiceNow capabilities:
+Snow-Flow includes 22 specialized MCP servers, each providing comprehensive ServiceNow capabilities:
 
 ### 1. ServiceNow Deployment Server
 **Purpose:** Widget and artifact deployment with coherence validation

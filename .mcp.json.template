@@ -215,6 +215,66 @@
       "env": {
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
       }
+    },
+    "servicenow-secops": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-secops-mcp.js"
+      ],
+      "description": "Security Operations - security incidents, threat intelligence, vulnerability management, security event correlation, threat hunting, incident response",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-itam": {
+      "command": "node", 
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-itam-mcp.js"
+      ],
+      "description": "IT Asset Management - asset discovery, license management, hardware tracking, software inventory, contract management, asset lifecycle",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-notifications": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-notifications-mcp.js"
+      ],
+      "description": "Notification management - email notifications, SMS alerts, push notifications, notification templates, delivery tracking",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-progressive-indexer": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-progressive-indexer.js"
+      ],
+      "description": "Progressive indexing - performance optimization, intelligent caching, search indexing, data preprocessing, query optimization",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
+    },
+    "servicenow-generic": {
+      "command": "node",
+      "args": [
+        "{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-server.js"
+      ],
+      "description": "Generic ServiceNow operations - universal table operations, record management, field discovery, basic CRUD operations",
+      "env": {
+        "SNOW_INSTANCE": "{{SNOW_INSTANCE}}",
+        "SNOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
+        "SNOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
+      }
     }
   }
 }
