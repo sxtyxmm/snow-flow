@@ -133,30 +133,6 @@ class SnowFlowMCPServer {
           },
         },
         {
-          name: 'task_orchestrate',
-          description: 'Orchestrates complex task workflows using intelligent agent assignment and dependency management. Features real AI-based task analysis.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              task: {
-                type: 'string',
-              },
-              strategy: {
-                type: 'string',
-                enum: ['parallel', 'sequential', 'adaptive', 'balanced'],
-              },
-              priority: {
-                type: 'string',
-                enum: ['low', 'medium', 'high', 'critical'],
-              },
-              dependencies: {
-                type: 'array',
-              },
-            },
-            required: ['task'],
-          },
-        },
-        {
           name: 'swarm_status',
           description: 'Monitors swarm health metrics, agent status, and performance indicators in real-time.',
           inputSchema: {
@@ -393,8 +369,6 @@ class SnowFlowMCPServer {
             return await this.handleSwarmInit(args);
           case 'agent_spawn':
             return await this.handleAgentSpawn(args);
-          case 'task_orchestrate':
-            return await this.handleTaskOrchestrate(args);
           case 'swarm_status':
             return await this.handleSwarmStatus(args);
           case 'memory_usage':
@@ -526,56 +500,6 @@ class SnowFlowMCPServer {
     };
   }
 
-  private async handleTaskOrchestrate(args: any) {
-    const taskId = `task_${Date.now()}`;
-    const task: Task = {
-      id: taskId,
-      description: args.task,
-      status: 'pending',
-      createdAt: new Date(),
-    };
-
-    this.tasks.set(taskId, task);
-
-    // Real task orchestration with intelligent agent assignment
-    task.status = 'in_progress';
-
-    // Use AI to determine best agent for the task
-    const taskAnalysis = await this.analyzeTaskRequirements(args.task);
-    
-    // Find best matching agent based on capabilities
-    const availableAgent = this.findBestAgentForTask(taskAnalysis);
-    if (availableAgent) {
-      task.assignedAgent = availableAgent.id;
-      availableAgent.status = 'busy';
-    }
-
-    // Fix: Handle all parameters safely to prevent undefined errors
-    const dependencies = Array.isArray(args.dependencies) ? args.dependencies : [];
-    const taskDescription = task?.description || args.task || 'Unknown task';
-    const assignedAgent = task?.assignedAgent || availableAgent?.id || 'unassigned';
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            taskId,
-            task: taskDescription,
-            strategy: args.strategy || 'adaptive',
-            priority: args.priority || 'medium',
-            dependencies: dependencies,
-            dependency_count: dependencies.length,
-            status: 'orchestrating',
-            assignedAgent: assignedAgent,
-            message: 'Task orchestration initiated with comprehensive parameter validation',
-            real_agent_coordination: 'Available via RealAgentSpawner',
-            recommendation: 'Use Task tool for real agent spawning instead of task_orchestrate'
-          }),
-        },
-      ],
-    };
-  }
 
   private async handleSwarmStatus(args: any) {
     const swarmId = args.swarmId;
