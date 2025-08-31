@@ -13,6 +13,7 @@ import { QueenMemorySystem } from '../queen/queen-memory';
 import { ParallelAgentEngine, ParallelizationOpportunity } from '../queen/parallel-agent-engine';
 // Queen403Handler removed - using Gap Analysis Engine directly
 import { Logger } from '../utils/logger';
+import { RealAgentSpawner, RealAgent } from './real-agent-spawner';
 import * as crypto from 'crypto';
 
 export interface QueenAgentConfig {
@@ -42,11 +43,13 @@ export interface TodoCoordination {
 export class QueenAgent extends EventEmitter {
   private memory: QueenMemorySystem;
   private parallelEngine: ParallelAgentEngine;
+  private realAgentSpawner: RealAgentSpawner; // NEW: Real agent spawning
   // Coordinator and 403Handler removed - using dynamic agent system
   private config: Required<QueenAgentConfig>;
   private activeObjectives: Map<string, QueenObjective>;
   private todoCoordinations: Map<string, TodoCoordination>;
   private activeAgents: Map<string, Agent>;
+  private realAgents: Map<string, RealAgent>; // NEW: Track real agents
   private logger: Logger;
 
   constructor(config: QueenAgentConfig = {}) {
@@ -67,10 +70,12 @@ export class QueenAgent extends EventEmitter {
     // Initialize core systems
     this.memory = new QueenMemorySystem(this.config.memoryPath);
     this.parallelEngine = new ParallelAgentEngine(this.memory);
+    this.realAgentSpawner = new RealAgentSpawner(this.memory); // NEW: Real agent spawning
     // Dynamic agent system - no more hardcoded coordinator/handler
     this.activeObjectives = new Map();
     this.todoCoordinations = new Map();
     this.activeAgents = new Map();
+    this.realAgents = new Map(); // NEW: Track real agents
 
     this.setupEventHandlers();
     
