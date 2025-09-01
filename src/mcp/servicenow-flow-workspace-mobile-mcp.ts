@@ -1336,140 +1336,54 @@ ${executionList}
   }
 
   // Agent Workspace Implementation
+  // Configurable Agent Workspace Implementation (UX App Architecture ONLY)
   private async createWorkspace(args: any) {
     try {
-      this.logger.info('Creating Agent Workspace...');
+      this.logger.info("Creating Configurable Agent Workspace (UX App Architecture)...");
       
-      // Validate Configurable Workspace (UX App) table access
-      const tableCheck = await this.client.searchRecords('sys_ux_app_route', '', 1);
-      if (!tableCheck.success) {
-        return {
-          success: false,
-          error: 'Configurable Agent Workspace (UX App) tables not accessible. This feature requires Now Experience Framework and Configurable Workspace licensing.',
-          suggestion: 'Verify Now Experience Framework is licensed and Configurable Workspace is enabled in your ServiceNow instance.'
-        };
-      }
+      // Generate clean route for UX App
+      const cleanRoute = args.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/--+/g, "-")
+        .replace(/^-|-$/g, "")
+        .substring(0, 50);
       
-      // CORRECTED: Use UX App architecture for Configurable Agent Workspaces
-      const appRoute = this.generateWorkspaceUrl(args.name);
-      
-      // Step 1: Create UX App Route (top level)
+      // Step 1: Create UX App Route (MANDATORY)
       const appRouteData = {
-        route: `/${appRoute}`,
+        route: `/${cleanRoute}`,
         name: args.name,
         title: args.name,
-        description: args.description || '',
-        application: 'global',
+        description: args.description || `Configurable Agent Workspace: ${args.name}`,
+        application: "global",
+        route_type: "workspace",
         active: true
       };
       
-      const routeResponse = await this.client.createRecord('sys_ux_app_route', appRouteData);
-      if (!routeResponse.success) {
+      this.logger.trackAPICall("CREATE", "sys_ux_app_route", 1);
+      const appRouteResponse = await this.client.createRecord("sys_ux_app_route", appRouteData);
+      
+      if (!appRouteResponse.success) {
         return {
           success: false,
-          error: `Failed to create UX App Route: ${routeResponse.error}`,
-          suggestion: 'Check Now Experience Framework permissions and UX App licensing.'
+          error: `UX App Route creation failed: ${appRouteResponse.error}`,
+          suggestion: "Check UX App permissions and Now Experience Framework licensing."
         };
       }
       
-      // Step 2: Create Screen Type (collection)
-      const screenTypeData = {
-        name: `${args.name}_screens`,
-        title: `${args.name} Screens`,
-        description: `Screen collection for ${args.name} workspace`,
-        app_route: routeResponse.data.sys_id,
-        active: true
-      };
-      
-      const screenTypeResponse = await this.client.createRecord('sys_ux_screen_type', screenTypeData);
-      if (!screenTypeResponse.success) {
-        return {
-          success: false,
-          error: `Failed to create Screen Type: ${screenTypeResponse.error}`,
-          suggestion: 'Check UX Screen Type permissions.'
-        };
-      }
-
-      this.logger.trackAPICall('CREATE', 'sys_ux_app_route', 1);
-      // Step 3: Create default screens for each table
-      const createdScreens = [];
-      
-      if (args.tables && args.tables.length > 0) {
-        for (let i = 0; i < args.tables.length; i++) {
-          const table = args.tables[i];
-          const screenData = {
-            name: `${args.name}_${table}_screen`,
-            title: `${table.charAt(0).toUpperCase() + table.slice(1)} Management`,
-            description: `${table} management screen for ${args.name}`,
-            screen_type: screenTypeResponse.data.sys_id,
-            table: table,
-            order: i * 100,
-            active: true
-          };
-          
-          const screenResponse = await this.client.createRecord('sys_ux_screen', screenData);
-          if (screenResponse.success) {
-            createdScreens.push(screenResponse.data);
-            
-            // Create macroponent for each screen
-            const macroponentData = {
-              name: `${args.name}_${table}_macroponent`,
-              title: `${table} Component`,
-              description: `Macroponent for ${table} in ${args.name}`,
-              screen: screenResponse.data.sys_id,
-              component_type: 'table',
-              table: table,
-              active: true
-            };
-            
-            await this.client.createRecord('sys_ux_macroponent', macroponentData);
-          }
-        }
-      }
-      
-      if (!routeResponse.success) {
-        throw new Error(`Failed to create configurable workspace: ${routeResponse.error}`);
-      }
-      
-      const workspaceId = routeResponse.data.sys_id;
-      
-      // Note: Search config handled by UX framework automatically for Configurable Workspaces
-      
-      // UPDATED: Modern workspace tab creation guidance
-      let tabsCreated = 0;
-      let modernWorkspaceNote = '';
-      
-      if (args.tables && args.tables.length > 0) {
-        modernWorkspaceNote = `\n\n📋 **Tab Configuration Required:**\nModern Agent Workspaces use UX Pages for tabs. Configure tabs through:\n`;
-        
-        for (const table of args.tables) {
-          const tabLabel = table.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-          modernWorkspaceNote += `\n• **${tabLabel}**: Use snow_add_uib_page_element to add ${table} components`;
-        }
-        
-        modernWorkspaceNote += `\n\n💡 **Modern Approach:**\n1. Use snow_create_uib_page for custom workspace pages\n2. Use snow_add_uib_page_element to add table components\n3. Use snow_create_uib_data_broker for data connections`;
-      }
-
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Agent Workspace created!
-
-🖥️ **${args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📋 Tables: ${args.tables.join(', ')}
-🎨 Theme: ${args.theme || 'default'}
-${args.roles ? `👥 Roles: ${args.roles.join(', ')}` : ''}
-
-✨ Workspace ready for configuration!`
-        }]
+        success: true,
+        workspace_type: "Configurable Agent Workspace (UX App)",
+        app_route: appRouteResponse.data,
+        sys_id: appRouteResponse.data.sys_id,
+        route: `/${cleanRoute}`,
+        message: `Configurable Agent Workspace created successfully`
       };
     } catch (error) {
-      this.logger.error('Failed to create workspace:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create workspace: ${error}`);
+      this.logger.error("Configurable Workspace creation failed:", error);
+      throw error;
     }
   }
-
 
 
 
