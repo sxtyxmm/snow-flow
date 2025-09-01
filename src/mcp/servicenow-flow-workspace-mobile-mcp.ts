@@ -739,9 +739,6 @@ class ServiceNowFlowWorkspaceMobileMCP {
           case 'snow_create_workspace':
             result = await this.createWorkspace(args);
             break;
-          case 'snow_configure_workspace_notifications':
-            result = await this.configureWorkspaceNotifications(args);
-            break;
           case 'snow_discover_workspaces':
             result = await this.discoverWorkspaces(args);
             break;
