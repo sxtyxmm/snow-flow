@@ -1,5 +1,30 @@
 # Snow-Flow Configuration & Best Practices
 
+## 🚨 CRITICAL: PREVENT INFINITE TASK LOOPS
+
+**NEVER spawn multiple agents for the same task type!**
+
+**❌ INFINITE LOOP (PROHIBITED):**
+```
+Task("Create configurable workspace")  
+Task("Create configurable workspace")  
+Task("Create configurable workspace")  // ← CAUSES INFINITE LOOP!
+```
+
+**✅ CORRECT (Single Agent):**
+```  
+Task("workspace-specialist", "Create ONE Configurable Agent Workspace named 'IT Support Hub' using snow_create_workspace with UX App architecture. Verify creation and store sys_id in Memory.")
+```
+
+**🎯 Anti-Loop Rules:**
+1. **ONE agent per task type maximum**
+2. **Specific agent instructions** (not generic descriptions)
+3. **Wait for completion** before spawning additional agents  
+4. **Check Memory for existing work** before spawning
+5. **NO duplicate Task() calls** with same objective
+
+---
+
 This document provides comprehensive instructions for Snow-Flow, an advanced ServiceNow development and orchestration framework powered by Claude AI.
 
 ## Table of Contents
