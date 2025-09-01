@@ -1387,46 +1387,6 @@ ${executionList}
 
 
 
-  private async configureWorkspaceNotifications(args: any) {
-    try {
-      this.logger.info('Configuring workspace notifications...');
-
-      const notificationData = {
-        workspace: args.workspace,
-        enable_desktop: args.enable_desktop || false,
-        enable_sound: args.enable_sound || false,
-        notification_types: args.notification_types ? args.notification_types.join(',') : '',
-        priority_threshold: args.priority_threshold || 3
-      };
-
-      const response = await this.client.createRecord('sys_aw_notification_config', notificationData);
-
-      if (!response.success) {
-        // Fallback to updating workspace
-        await this.client.updateRecord('sys_ux_app_route', args.workspace, {
-          notifications_enabled: args.enable_desktop || args.enable_sound
-        });
-      }
-
-      return {
-        content: [{
-          type: 'text',
-          text: `✅ Workspace Notifications configured!
-
-🔔 **Notification Settings**
-🖥️ Desktop: ${args.enable_desktop ? 'Enabled' : 'Disabled'}
-🔊 Sound: ${args.enable_sound ? 'Enabled' : 'Disabled'}
-📊 Types: ${args.notification_types ? args.notification_types.join(', ') : 'All'}
-⚠️ Priority Threshold: ${args.priority_threshold || 3}
-
-✨ Notification preferences saved!`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to configure workspace notifications:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to configure workspace notifications: ${error}`);
-    }
-  }
 
   private async discoverWorkspaces(args: any) {
     try {
