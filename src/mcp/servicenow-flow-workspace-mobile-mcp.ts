@@ -2818,6 +2818,16 @@ ${configList}${layoutsText}${offlineText}
     try {
       this.logger.info(`Creating UX Experience: ${args.name}`);
       
+      // Test mode validation - reject fake test data
+      if (args.name && (args.name.toLowerCase().includes('test') || args.name === 'Test Experience')) {
+        return {
+          success: false,
+          error: 'Test mode detected. This tool requires a real workspace name.',
+          suggestion: 'Use a realistic workspace name like "IT Support Workspace" or "Customer Service Hub"',
+          test_mode: true
+        };
+      }
+      
       // Find default shell macroponent - usually x_snc_app_shell_uib_app_shell
       const shellQuery = await this.client.searchRecords('sys_ux_macroponent', 'name=x_snc_app_shell_uib_app_shell');
       let shellSysId = null;
@@ -2838,9 +2848,21 @@ ${configList}${layoutsText}${offlineText}
         description: args.description || `Experience for ${args.name}`
       };
       
+      // Check if UX framework is available
+      const uxCheck = await this.client.searchRecords('sys_ux_experience', '', 1);
+      if (!uxCheck.success) {
+        return {
+          success: false,
+          error: 'Now Experience Framework (UXF) is not available in this ServiceNow instance.',
+          suggestion: 'UX Workspace creation requires the Now Experience Framework plugin. Contact your ServiceNow administrator.',
+          plugin_required: 'Now Experience Framework (UXF)',
+          licensing_note: 'UXF may require additional ServiceNow licensing'
+        };
+      }
+      
       const result = await this.client.createRecord('sys_ux_experience', experienceData);
       
-      if (result.success) {
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
         this.logger.info(`✅ UX Experience created with sys_id: ${result.data.result.sys_id}`);
         return {
           success: true,
@@ -2849,7 +2871,8 @@ ${configList}${layoutsText}${offlineText}
           next_step: "Create App Configuration using this experience_sys_id"
         };
       } else {
-        throw new Error(`Failed to create experience: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating experience';
+        throw new Error(`Failed to create experience: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to create UX experience:', error);
@@ -2865,10 +2888,24 @@ ${configList}${layoutsText}${offlineText}
     try {
       this.logger.info(`Creating UX App Config: ${args.name}`);
       
+      // Validate experience_sys_id format
+      if (!args.experience_sys_id || args.experience_sys_id.length !== 32) {
+        return {
+          success: false,
+          error: `Invalid experience_sys_id: '${args.experience_sys_id}'. Must be a valid 32-character ServiceNow sys_id.`,
+          suggestion: 'Use the sys_id returned from snow_create_ux_experience (Step 1)',
+          validation_error: true
+        };
+      }
+      
       // Validate experience exists
       const experienceCheck = await this.client.getRecord('sys_ux_experience', args.experience_sys_id);
       if (!experienceCheck.success) {
-        throw new Error(`Experience with sys_id ${args.experience_sys_id} not found`);
+        return {
+          success: false,
+          error: `Experience with sys_id ${args.experience_sys_id} not found. Please create the experience first using snow_create_ux_experience.`,
+          suggestion: 'Run Step 1: snow_create_ux_experience before creating app config'
+        };
       }
       
       // Create app config record
@@ -2881,7 +2918,7 @@ ${configList}${layoutsText}${offlineText}
       
       const result = await this.client.createRecord('sys_ux_app_config', configData);
       
-      if (result.success) {
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
         this.logger.info(`✅ UX App Config created with sys_id: ${result.data.result.sys_id}`);
         return {
           success: true,
@@ -2890,7 +2927,8 @@ ${configList}${layoutsText}${offlineText}
           next_step: "Create Page Macroponent using this app_config_sys_id"
         };
       } else {
-        throw new Error(`Failed to create app config: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating app config';
+        throw new Error(`Failed to create app config: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to create UX app config:', error);
@@ -2925,7 +2963,7 @@ ${configList}${layoutsText}${offlineText}
       
       const result = await this.client.createRecord('sys_ux_macroponent', macroponentData);
       
-      if (result.success) {
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
         this.logger.info(`✅ UX Page Macroponent created with sys_id: ${result.data.result.sys_id}`);
         return {
           success: true,
@@ -2934,7 +2972,8 @@ ${configList}${layoutsText}${offlineText}
           next_step: "Create Page Registry using this macroponent_sys_id and app_config_sys_id"
         };
       } else {
-        throw new Error(`Failed to create page macroponent: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating page macroponent';
+        throw new Error(`Failed to create page macroponent: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to create UX page macroponent:', error);
@@ -2953,12 +2992,20 @@ ${configList}${layoutsText}${offlineText}
       // Validate app config and macroponent exist
       const configCheck = await this.client.getRecord('sys_ux_app_config', args.app_config_sys_id);
       if (!configCheck.success) {
-        throw new Error(`App Config with sys_id ${args.app_config_sys_id} not found`);
+        return {
+          success: false,
+          error: `App Config with sys_id ${args.app_config_sys_id} not found. Please create the app config first using snow_create_ux_app_config.`,
+          suggestion: 'Run Step 2: snow_create_ux_app_config before creating page registry'
+        };
       }
       
       const macroponentCheck = await this.client.getRecord('sys_ux_macroponent', args.macroponent_sys_id);
       if (!macroponentCheck.success) {
-        throw new Error(`Macroponent with sys_id ${args.macroponent_sys_id} not found`);
+        return {
+          success: false,
+          error: `Macroponent with sys_id ${args.macroponent_sys_id} not found. Please create the macroponent first using snow_create_ux_page_macroponent.`,
+          suggestion: 'Run Step 3: snow_create_ux_page_macroponent before creating page registry'
+        };
       }
       
       // Create page registry record
@@ -2971,7 +3018,7 @@ ${configList}${layoutsText}${offlineText}
       
       const result = await this.client.createRecord('sys_ux_page_registry', registryData);
       
-      if (result.success) {
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
         this.logger.info(`✅ UX Page Registry created with sys_id: ${result.data.result.sys_id}`);
         return {
           success: true,
@@ -2981,7 +3028,8 @@ ${configList}${layoutsText}${offlineText}
           next_step: "Create Route using this page sys_name and app_config_sys_id"
         };
       } else {
-        throw new Error(`Failed to create page registry: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating page registry';
+        throw new Error(`Failed to create page registry: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to create UX page registry:', error);
@@ -3000,7 +3048,11 @@ ${configList}${layoutsText}${offlineText}
       // Validate app config exists
       const configCheck = await this.client.getRecord('sys_ux_app_config', args.app_config_sys_id);
       if (!configCheck.success) {
-        throw new Error(`App Config with sys_id ${args.app_config_sys_id} not found`);
+        return {
+          success: false,
+          error: `App Config with sys_id ${args.app_config_sys_id} not found. Please create the app config first using snow_create_ux_app_config.`,
+          suggestion: 'Run Step 2: snow_create_ux_app_config before creating route'
+        };
       }
       
       // Create route record
@@ -3014,7 +3066,7 @@ ${configList}${layoutsText}${offlineText}
       
       const result = await this.client.createRecord('sys_ux_app_route', routeData);
       
-      if (result.success) {
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
         this.logger.info(`✅ UX App Route created with sys_id: ${result.data.result.sys_id}`);
         return {
           success: true,
@@ -3025,7 +3077,8 @@ ${configList}${layoutsText}${offlineText}
           next_step: "Update App Configuration with this route as landing_page_route"
         };
       } else {
-        throw new Error(`Failed to create app route: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating app route';
+        throw new Error(`Failed to create app route: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to create UX app route:', error);
@@ -3057,7 +3110,8 @@ ${configList}${layoutsText}${offlineText}
           summary: "Workspace creation completed successfully - all 6 steps finished"
         };
       } else {
-        throw new Error(`Failed to update app config: ${result.data.error}`);
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error updating app config';
+        throw new Error(`Failed to update app config: ${error}`);
       }
     } catch (error) {
       this.logger.error('Failed to update app config landing page:', error);
