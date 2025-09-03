@@ -755,17 +755,17 @@ The Queen Agent will automatically discover and validate table schemas based on 
 ## 🏗️ UX Workspace Creation Specific Instructions
 If the task involves UX WORKSPACE CREATION (e.g., "create workspace for IT support", "build agent workspace"):
 
-1. **ALWAYS** use `snow_create_complete_workspace` for full 6-step workflow
+1. **ALWAYS** use \`snow_create_complete_workspace\` for full 6-step workflow
 2. **INDIVIDUAL STEPS** available if fine control needed:
-   - Step 1: `snow_create_ux_experience` (sys_ux_experience)
-   - Step 2: `snow_create_ux_app_config` (sys_ux_app_config) 
-   - Step 3: `snow_create_ux_page_macroponent` (sys_ux_macroponent)
-   - Step 4: `snow_create_ux_page_registry` (sys_ux_page_registry)
-   - Step 5: `snow_create_ux_app_route` (sys_ux_app_route)
-   - Step 6: `snow_update_ux_app_config_landing_page` (landing page route)
+   - Step 1: \`snow_create_ux_experience\` (sys_ux_experience)
+   - Step 2: \`snow_create_ux_app_config\` (sys_ux_app_config) 
+   - Step 3: \`snow_create_ux_page_macroponent\` (sys_ux_macroponent)
+   - Step 4: \`snow_create_ux_page_registry\` (sys_ux_page_registry)
+   - Step 5: \`snow_create_ux_app_route\` (sys_ux_app_route)
+   - Step 6: \`snow_update_ux_app_config_landing_page\` (landing page route)
 3. **VERIFY ORDER**: Must follow exact sequence for functional workspaces
 4. **STORE SYS_IDS**: Store all sys_ids in Memory for agents coordination
-5. **TEST ACCESS**: Provide workspace URL: `/now/experience/workspace/{route_name}`
+5. **TEST ACCESS**: Provide workspace URL: \`/now/experience/workspace/{route_name}\`
 
 ## 📊 Data Generation Specific Instructions
 If the task is identified as DATA GENERATION (e.g., "create 5000 incidents"):
