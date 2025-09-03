@@ -491,16 +491,41 @@ const snowFlowTools = {
         description: "Import flows from XML (only programmatic creation method)."
       },
       
-      // Configurable Agent Workspace Tools (UX App Architecture)
+      // 🏗️ COMPLETE UX WORKSPACE CREATION (6-Step Workflow)
       {
-        name: "snow_create_workspace",
-        description: "Create Configurable Agent Workspaces using modern UX App architecture (sys_ux_app_route, sys_ux_screen_type, sys_ux_screen, sys_ux_macroponent).",
-        highlight: "🏗️ UX App Architecture"
+        name: "snow_create_complete_workspace",
+        description: "Create Complete UX Workspace - Executes all 6 steps automatically: Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route. Creates fully functional workspace.",
+        highlight: "🎆 COMPLETE WORKFLOW"
       },
       {
-        name: "snow_discover_workspaces",
-        description: "Discover available Configurable Agent Workspaces (UX Apps) with screen collections and individual screens.",
-        highlight: "🔍 UX App Discovery"
+        name: "snow_create_ux_experience",
+        description: "STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace.",
+        highlight: "🏗️ Step 1"
+      },
+      {
+        name: "snow_create_ux_app_config",
+        description: "STEP 2: Create UX App Configuration Record (sys_ux_app_config) - Contains workspace settings and links to experience.",
+        highlight: "🏗️ Step 2"
+      },
+      {
+        name: "snow_create_ux_page_macroponent",
+        description: "STEP 3: Create Page Macroponent Record (sys_ux_macroponent) - Defines actual page content to be displayed.",
+        highlight: "🏗️ Step 3"
+      },
+      {
+        name: "snow_create_ux_page_registry",
+        description: "STEP 4: Create Page Registry Record (sys_ux_page_registry) - Registers page for use within workspace configuration.",
+        highlight: "🏗️ Step 4"
+      },
+      {
+        name: "snow_create_ux_app_route",
+        description: "STEP 5: Create Route Record (sys_ux_app_route) - Defines URL slug that leads to the page.",
+        highlight: "🏗️ Step 5"
+      },
+      {
+        name: "snow_update_ux_app_config_landing_page",
+        description: "STEP 6: Update App Configuration with Landing Page Route - Sets default landing page for workspace.",
+        highlight: "🏗️ Step 6"
       },
 
       // Mobile App Tools

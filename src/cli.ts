@@ -421,7 +421,7 @@ program
         }
       }
       
-      console.log(chalk.blue('\n🚀 Starting Claude Code with 235+ ServiceNow tools...'));
+      console.log(chalk.blue('\n🚀 Starting Claude Code with 240+ ServiceNow tools including complete UX Workspace creation...'));
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
@@ -543,7 +543,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
           const newStatus = manager.getSystemStatus();
           console.log(chalk.green(`✅ All ${newStatus.running} ServiceNow MCP servers ready`));
         } else {
-          console.log(chalk.green(`✅ All ${systemStatus.running} ServiceNow MCP servers ready (235+ tools)`));
+          console.log(chalk.green(`✅ All ${systemStatus.running} ServiceNow MCP servers ready (240+ tools with UX Workspace workflow)`));
         }
       } catch (error) {
         cliLogger.warn('⚠️  Could not auto-start MCP servers:', error instanceof Error ? error.message : error);
@@ -739,6 +739,7 @@ The Queen Agent will automatically discover and validate table schemas based on 
 **Table Detection Examples:**
 - "create widget for incident records" → Discovers: incident, sys_user, sys_user_group
 - "build approval flow for u_equipment_request" → Discovers: u_equipment_request, sys_user, sysapproval_approver
+- "create UX workspace for IT support" → Discovers: sys_ux_experience, sys_ux_app_config, sys_ux_macroponent, sys_ux_page_registry, sys_ux_app_route
 - "portal showing catalog items" → Discovers: sc_cat_item, sc_category, sc_request
 - "dashboard with CMDB assets" → Discovers: cmdb_ci, cmdb_rel_ci, sys_user
 - "report on problem tickets" → Discovers: problem, incident, sys_user
@@ -750,6 +751,21 @@ The Queen Agent will automatically discover and validate table schemas based on 
 4. Agents MUST use exact field names from schemas (e.g., 'short_description' not 'desc')
 
 ## 👑 Your Queen Agent Responsibilities
+
+## 🏗️ UX Workspace Creation Specific Instructions
+If the task involves UX WORKSPACE CREATION (e.g., "create workspace for IT support", "build agent workspace"):
+
+1. **ALWAYS** use `snow_create_complete_workspace` for full 6-step workflow
+2. **INDIVIDUAL STEPS** available if fine control needed:
+   - Step 1: `snow_create_ux_experience` (sys_ux_experience)
+   - Step 2: `snow_create_ux_app_config` (sys_ux_app_config) 
+   - Step 3: `snow_create_ux_page_macroponent` (sys_ux_macroponent)
+   - Step 4: `snow_create_ux_page_registry` (sys_ux_page_registry)
+   - Step 5: `snow_create_ux_app_route` (sys_ux_app_route)
+   - Step 6: `snow_update_ux_app_config_landing_page` (landing page route)
+3. **VERIFY ORDER**: Must follow exact sequence for functional workspaces
+4. **STORE SYS_IDS**: Store all sys_ids in Memory for agents coordination
+5. **TEST ACCESS**: Provide workspace URL: `/now/experience/workspace/{route_name}`
 
 ## 📊 Data Generation Specific Instructions
 If the task is identified as DATA GENERATION (e.g., "create 5000 incidents"):
@@ -1700,7 +1716,7 @@ program
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
       console.log('   ✓ .claude/ - Claude Code MCP configuration');
-      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (235+ tools)');
+      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (240+ tools including complete UX Workspace workflow)');
       console.log('   ✓ CLAUDE.md - Complete development guide');
       console.log('   ✓ README.md - Current capabilities documentation');
       console.log('   ✓ .snow-flow/ - Project workspace and memory');
@@ -1737,7 +1753,7 @@ program
       console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
       console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
       console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
-      console.log('💡 UI Builder, Agent Workspaces, and 235+ tools now available');
+      console.log('💡 Complete 6-step UX Workspace creation, UI Builder, and 240+ tools now available');
       
       // Force exit to prevent hanging
       process.exit(0);

@@ -132,65 +132,119 @@ class ServiceNowFlowWorkspaceMobileMCP {
           }
         },
         
-        // Agent Workspace Tools
+        // 🏗️ COMPLETE UX WORKSPACE CREATION (6-Step Workflow)
+        
+        // STEP 1: Experience Record (sys_ux_experience)
         {
-          name: 'snow_create_workspace',
-          description: 'Creates a Configurable Agent Workspace using modern UX App architecture (sys_ux_app_route, sys_ux_screen_type, sys_ux_screen, sys_ux_macroponent). Creates complete workspace with routing, screen collections, and components.',
+          name: 'snow_create_ux_experience',
+          description: 'STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace. This is the first step in the 6-step workspace creation process.',
           inputSchema: {
             type: 'object',
             properties: {
-              name: { type: 'string', description: 'Configurable Workspace name' },
+              name: { type: 'string', description: 'Experience name (e.g., "My Workspace")' },
+              root_macroponent: { type: 'string', description: 'Root macroponent sys_id (usually x_snc_app_shell_uib_app_shell, auto-detected if not provided)' },
+              description: { type: 'string', description: 'Experience description' }
+            },
+            required: ['name']
+          }
+        },
+        
+        // STEP 2: App Configuration Record (sys_ux_app_config)
+        {
+          name: 'snow_create_ux_app_config',
+          description: 'STEP 2: Create UX App Configuration Record (sys_ux_app_config) - Contains workspace settings and links to the experience from Step 1.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'App config name (e.g., "My Workspace Config")' },
+              experience_sys_id: { type: 'string', description: 'Experience sys_id from Step 1' },
+              description: { type: 'string', description: 'App configuration description' }
+            },
+            required: ['name', 'experience_sys_id']
+          }
+        },
+        
+        // STEP 3: Page Macroponent Record (sys_ux_macroponent)
+        {
+          name: 'snow_create_ux_page_macroponent',
+          description: 'STEP 3: Create Page Macroponent Record (sys_ux_macroponent) - Defines the actual page content that will be displayed.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Page macroponent name (e.g., "My Home Page")' },
+              root_component: { type: 'string', default: 'sn-canvas-panel', description: 'Root component to render (default: sn-canvas-panel for simple pages)' },
+              composition: { type: 'object', description: 'JSON layout configuration (default: simple single column)' },
+              description: { type: 'string', description: 'Page macroponent description' }
+            },
+            required: ['name']
+          }
+        },
+        
+        // STEP 4: Page Registry Record (sys_ux_page_registry)
+        {
+          name: 'snow_create_ux_page_registry',
+          description: 'STEP 4: Create Page Registry Record (sys_ux_page_registry) - Registers the page for use within the workspace configuration.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              sys_name: { type: 'string', description: 'Unique technical name for the page (e.g., "my_home_page")' },
+              app_config_sys_id: { type: 'string', description: 'App config sys_id from Step 2' },
+              macroponent_sys_id: { type: 'string', description: 'Macroponent sys_id from Step 3' },
+              description: { type: 'string', description: 'Page registry description' }
+            },
+            required: ['sys_name', 'app_config_sys_id', 'macroponent_sys_id']
+          }
+        },
+        
+        // STEP 5: Route Record (sys_ux_app_route)
+        {
+          name: 'snow_create_ux_app_route',
+          description: 'STEP 5: Create Route Record (sys_ux_app_route) - Defines the URL slug that leads to the page.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Route name - becomes URL slug (e.g., "home")' },
+              app_config_sys_id: { type: 'string', description: 'App config sys_id from Step 2' },
+              page_sys_name: { type: 'string', description: 'Page sys_name from Step 4 registry' },
+              description: { type: 'string', description: 'Route description' }
+            },
+            required: ['name', 'app_config_sys_id', 'page_sys_name']
+          }
+        },
+        
+        // STEP 6: Update App Config with Landing Page
+        {
+          name: 'snow_update_ux_app_config_landing_page',
+          description: 'STEP 6: Update App Configuration with Landing Page Route - Sets the default landing page for the workspace.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              app_config_sys_id: { type: 'string', description: 'App config sys_id from Step 2' },
+              route_name: { type: 'string', description: 'Route name from Step 5' }
+            },
+            required: ['app_config_sys_id', 'route_name']
+          }
+        },
+        
+        // COMPLETE WORKFLOW: All 6 steps in one tool
+        {
+          name: 'snow_create_complete_workspace',
+          description: 'Create Complete UX Workspace - Executes all 6 steps automatically: Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route. Creates a fully functional workspace.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workspace_name: { type: 'string', description: 'Workspace name (used for all components)' },
               description: { type: 'string', description: 'Workspace description' },
-              tables: { type: 'array', items: { type: 'string' }, description: 'Tables to create screens for (incident, task, etc.)' },
-              application: { type: 'string', description: 'Application scope', default: 'global' },
-              roles: { type: 'array', items: { type: 'string' }, description: 'Roles with workspace access' }
+              home_page_name: { type: 'string', default: 'home', description: 'Home page name (default: "home")' },
+              route_name: { type: 'string', default: 'home', description: 'URL route name (default: "home")' },
+              root_component: { type: 'string', default: 'sn-canvas-panel', description: 'Root component for page' },
+              composition: { type: 'object', description: 'Custom page layout (optional)' },
+              root_macroponent: { type: 'string', description: 'Custom root macroponent (auto-detected if not provided)' }
             },
-            required: ['name', 'tables']
+            required: ['workspace_name']
           }
         },
-        {
-          name: 'snow_create_workspace_list',
-          description: 'Creates a custom list configuration for Agent Workspace.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              workspace: { type: 'string', description: 'Parent workspace' },
-              name: { type: 'string', description: 'List name' },
-              table: { type: 'string', description: 'Table for the list' },
-              filter: { type: 'string', description: 'List filter condition' },
-              fields: { type: 'array', items: { type: 'string' }, description: 'Fields to display' },
-              order_by: { type: 'string', description: 'Sort order' },
-              max_entries: { type: 'number', description: 'Maximum entries', default: 50 }
-            },
-            required: ['workspace', 'name', 'table']
-          }
-        },
-        {
-          name: 'snow_configure_workspace_notifications',
-          description: 'Configures notification preferences for Agent Workspace.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              workspace: { type: 'string', description: 'Workspace sys_id' },
-              enable_desktop: { type: 'boolean', description: 'Enable desktop notifications' },
-              enable_sound: { type: 'boolean', description: 'Enable sound alerts' },
-              notification_types: { type: 'array', items: { type: 'string' }, description: 'Types to notify about' },
-              priority_threshold: { type: 'number', description: 'Minimum priority for notifications' }
-            },
-            required: ['workspace']
-          }
-        },
-        {
-          name: 'snow_discover_workspaces',
-          description: 'Discovers available Agent Workspaces and their configurations.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              include_tabs: { type: 'boolean', description: 'Include tab configurations', default: false },
-              include_lists: { type: 'boolean', description: 'Include list configurations', default: false }
-            }
-          }
-        },
+        
         
         // Mobile Tools
         {
@@ -735,13 +789,29 @@ class ServiceNowFlowWorkspaceMobileMCP {
             result = await this.importFlowFromXml(args);
             break;
             
-          // Agent Workspace
-          case 'snow_create_workspace':
-            result = await this.createWorkspace(args);
+          // 🏗️ UX WORKSPACE CREATION (6-Step Workflow)
+          case 'snow_create_ux_experience':
+            result = await this.snow_create_ux_experience(args);
             break;
-          case 'snow_discover_workspaces':
-            result = await this.discoverWorkspaces(args);
+          case 'snow_create_ux_app_config':
+            result = await this.snow_create_ux_app_config(args);
             break;
+          case 'snow_create_ux_page_macroponent':
+            result = await this.snow_create_ux_page_macroponent(args);
+            break;
+          case 'snow_create_ux_page_registry':
+            result = await this.snow_create_ux_page_registry(args);
+            break;
+          case 'snow_create_ux_app_route':
+            result = await this.snow_create_ux_app_route(args);
+            break;
+          case 'snow_update_ux_app_config_landing_page':
+            result = await this.snow_update_ux_app_config_landing_page(args);
+            break;
+          case 'snow_create_complete_workspace':
+            result = await this.snow_create_complete_workspace(args);
+            break;
+            
             
           // Mobile
           case 'snow_configure_mobile_app':
@@ -1332,115 +1402,6 @@ ${executionList}
     }
   }
 
-  // Agent Workspace Implementation
-  // Configurable Agent Workspace Implementation (UX App Architecture ONLY)
-  private async createWorkspace(args: any) {
-    try {
-      this.logger.info("Creating Configurable Agent Workspace (UX App Architecture)...");
-      
-      // Generate clean route for UX App
-      const cleanRoute = args.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-")
-        .replace(/--+/g, "-")
-        .replace(/^-|-$/g, "")
-        .substring(0, 50);
-      
-      // Step 1: Create UX App Route (MANDATORY)
-      const appRouteData = {
-        route: `/${cleanRoute}`,
-        name: args.name,
-        title: args.name,
-        description: args.description || `Configurable Agent Workspace: ${args.name}`,
-        application: "global",
-        route_type: "workspace",
-        active: true
-      };
-      
-      this.logger.trackAPICall("CREATE", "sys_ux_app_route", 1);
-      const appRouteResponse = await this.client.createRecord("sys_ux_app_route", appRouteData);
-      
-      if (!appRouteResponse.success) {
-        return {
-          success: false,
-          error: `UX App Route creation failed: ${appRouteResponse.error}`,
-          suggestion: "Check UX App permissions and Now Experience Framework licensing."
-        };
-      }
-      
-      return {
-        success: true,
-        workspace_type: "Configurable Agent Workspace (UX App)",
-        app_route: appRouteResponse.data,
-        sys_id: appRouteResponse.data.sys_id,
-        route: `/${cleanRoute}`,
-        message: `Configurable Agent Workspace created successfully`
-      };
-    } catch (error) {
-      this.logger.error("Configurable Workspace creation failed:", error);
-      throw error;
-    }
-  }
-
-
-
-
-  private async discoverWorkspaces(args: any) {
-    try {
-      this.logger.info('Discovering Agent Workspaces...');
-
-      // Validate table access first
-      const response = await this.client.searchRecords('sys_ux_app_route', '', 50);
-      if (!response.success) {
-        return {
-          success: false,
-          error: 'Cannot access Agent Workspace tables. Agent Workspace plugin may not be installed or activated.',
-          suggestion: 'Install Agent Workspace plugin in ServiceNow: System Applications → All Available Applications → Agent Workspace'
-        };
-      }
-
-      const workspaces = response.data.result;
-
-      if (!workspaces.length) {
-        return {
-          content: [{
-            type: 'text',
-            text: '❌ No Agent Workspaces found'
-          }]
-        };
-      }
-
-      const workspaceList = await Promise.all(workspaces.map(async (workspace: any) => {
-        let details = `🖥️ **${workspace.name}**
-🆔 ${workspace.sys_id}
-📝 ${workspace.description || 'No description'}`;
-
-        if (args.include_tabs) {
-          const tabsResponse = await this.client.searchRecords('sys_aw_tab', `workspace=${workspace.sys_id}`, 10);
-          if (tabsResponse.success && tabsResponse.data.result.length) {
-            const tabs = tabsResponse.data.result.map((t: any) => `  - ${t.label}`).join('\n');
-            details += `\n📑 Tabs:\n${tabs}`;
-          }
-        }
-
-        return details;
-      }));
-
-      return {
-        content: [{
-          type: 'text',
-          text: `🔍 Discovered Agent Workspaces:
-
-${workspaceList.join('\n\n')}
-
-✨ Found ${workspaces.length} workspace(s)`
-        }]
-      };
-    } catch (error) {
-      this.logger.error('Failed to discover workspaces:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to discover workspaces: ${error}`);
-    }
-  }
 
   // Mobile Implementation  
   private async configureMobileApp(args: any) {
@@ -2849,6 +2810,367 @@ ${configList}${layoutsText}${offlineText}
     }
   }
 
+  /**
+   * STEP 1: Create Experience Record (sys_ux_experience)
+   * This is the top-level container for the workspace
+   */
+  async snow_create_ux_experience(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating UX Experience: ${args.name}`);
+      
+      // Find default shell macroponent - usually x_snc_app_shell_uib_app_shell
+      const shellQuery = await this.client.searchRecords('sys_ux_macroponent', 'name=x_snc_app_shell_uib_app_shell');
+      let shellSysId = null;
+      
+      if (shellQuery.success && shellQuery.data.result.length > 0) {
+        shellSysId = shellQuery.data.result[0].sys_id;
+        this.logger.info(`✅ Found app shell macroponent: ${shellSysId}`);
+      } else {
+        this.logger.warn(`⚠️ Default app shell not found, will use provided root_macroponent`);
+        shellSysId = args.root_macroponent || null;
+      }
+      
+      // Create experience record
+      const experienceData = {
+        name: args.name,
+        active: true,
+        root_macroponent: shellSysId,
+        description: args.description || `Experience for ${args.name}`
+      };
+      
+      const result = await this.client.createRecord('sys_ux_experience', experienceData);
+      
+      if (result.success) {
+        this.logger.info(`✅ UX Experience created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          experience_sys_id: result.data.result.sys_id,
+          message: `Experience '${args.name}' created successfully`,
+          next_step: "Create App Configuration using this experience_sys_id"
+        };
+      } else {
+        throw new Error(`Failed to create experience: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create UX experience:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * STEP 2: Create App Configuration Record (sys_ux_app_config)
+   * Links to the experience and contains workspace settings
+   */
+  async snow_create_ux_app_config(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating UX App Config: ${args.name}`);
+      
+      // Validate experience exists
+      const experienceCheck = await this.client.getRecord('sys_ux_experience', args.experience_sys_id);
+      if (!experienceCheck.success) {
+        throw new Error(`Experience with sys_id ${args.experience_sys_id} not found`);
+      }
+      
+      // Create app config record
+      const configData = {
+        name: args.name,
+        experience_assoc: args.experience_sys_id,  // CRITICAL: Link to experience
+        description: args.description || `App configuration for ${args.name}`,
+        // landing_page_route will be set in Step 6
+      };
+      
+      const result = await this.client.createRecord('sys_ux_app_config', configData);
+      
+      if (result.success) {
+        this.logger.info(`✅ UX App Config created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          app_config_sys_id: result.data.result.sys_id,
+          message: `App Configuration '${args.name}' created successfully`,
+          next_step: "Create Page Macroponent using this app_config_sys_id"
+        };
+      } else {
+        throw new Error(`Failed to create app config: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create UX app config:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * STEP 3: Create Page Macroponent Record (sys_ux_macroponent)
+   * Defines the actual page content that will be displayed
+   */
+  async snow_create_ux_page_macroponent(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating UX Page Macroponent: ${args.name}`);
+      
+      // Default composition for empty page
+      const defaultComposition = {
+        layout: {
+          default: {
+            "grid-template-columns": "1fr"
+          }
+        }
+      };
+      
+      // Create macroponent record
+      const macroponentData = {
+        name: args.name,
+        root_component: args.root_component || 'sn-canvas-panel',  // Good default for pages
+        composition: JSON.stringify(args.composition || defaultComposition),
+        description: args.description || `Page macroponent for ${args.name}`
+      };
+      
+      const result = await this.client.createRecord('sys_ux_macroponent', macroponentData);
+      
+      if (result.success) {
+        this.logger.info(`✅ UX Page Macroponent created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          macroponent_sys_id: result.data.result.sys_id,
+          message: `Page Macroponent '${args.name}' created successfully`,
+          next_step: "Create Page Registry using this macroponent_sys_id and app_config_sys_id"
+        };
+      } else {
+        throw new Error(`Failed to create page macroponent: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create UX page macroponent:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * STEP 4: Create Page Registry Record (sys_ux_page_registry)
+   * Registers the page for use within the workspace configuration
+   */
+  async snow_create_ux_page_registry(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating UX Page Registry: ${args.sys_name}`);
+      
+      // Validate app config and macroponent exist
+      const configCheck = await this.client.getRecord('sys_ux_app_config', args.app_config_sys_id);
+      if (!configCheck.success) {
+        throw new Error(`App Config with sys_id ${args.app_config_sys_id} not found`);
+      }
+      
+      const macroponentCheck = await this.client.getRecord('sys_ux_macroponent', args.macroponent_sys_id);
+      if (!macroponentCheck.success) {
+        throw new Error(`Macroponent with sys_id ${args.macroponent_sys_id} not found`);
+      }
+      
+      // Create page registry record
+      const registryData = {
+        sys_name: args.sys_name,  // Technical name for the page
+        app_config: args.app_config_sys_id,
+        root_macroponent: args.macroponent_sys_id,
+        description: args.description || `Page registry for ${args.sys_name}`
+      };
+      
+      const result = await this.client.createRecord('sys_ux_page_registry', registryData);
+      
+      if (result.success) {
+        this.logger.info(`✅ UX Page Registry created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          page_registry_sys_id: result.data.result.sys_id,
+          page_sys_name: args.sys_name,
+          message: `Page Registry '${args.sys_name}' created successfully`,
+          next_step: "Create Route using this page sys_name and app_config_sys_id"
+        };
+      } else {
+        throw new Error(`Failed to create page registry: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create UX page registry:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * STEP 5: Create Route Record (sys_ux_app_route)
+   * Defines the URL slug that leads to the page
+   */
+  async snow_create_ux_app_route(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating UX App Route: ${args.name}`);
+      
+      // Validate app config exists
+      const configCheck = await this.client.getRecord('sys_ux_app_config', args.app_config_sys_id);
+      if (!configCheck.success) {
+        throw new Error(`App Config with sys_id ${args.app_config_sys_id} not found`);
+      }
+      
+      // Create route record
+      const routeData = {
+        name: args.name,  // This becomes the URL slug
+        app_config: args.app_config_sys_id,
+        page: args.page_sys_name,  // References the sys_name from page registry
+        route_type: 'page',
+        description: args.description || `Route for page ${args.page_sys_name}`
+      };
+      
+      const result = await this.client.createRecord('sys_ux_app_route', routeData);
+      
+      if (result.success) {
+        this.logger.info(`✅ UX App Route created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          route_sys_id: result.data.result.sys_id,
+          route_name: args.name,
+          url_slug: args.name,
+          message: `Route '${args.name}' created successfully`,
+          next_step: "Update App Configuration with this route as landing_page_route"
+        };
+      } else {
+        throw new Error(`Failed to create app route: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create UX app route:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * STEP 6: Update App Configuration with Landing Page Route
+   * Sets the default landing page for the workspace
+   */
+  async snow_update_ux_app_config_landing_page(args: any): Promise<any> {
+    try {
+      this.logger.info(`Updating App Config landing page: ${args.app_config_sys_id}`);
+      
+      // Update app config with landing page route
+      const updateData = {
+        landing_page_route: args.route_name
+      };
+      
+      const result = await this.client.updateRecord('sys_ux_app_config', args.app_config_sys_id, updateData);
+      
+      if (result.success) {
+        this.logger.info(`✅ App Config updated with landing page route: ${args.route_name}`);
+        return {
+          success: true,
+          message: `App Configuration updated with landing page route '${args.route_name}'`,
+          workspace_complete: true,
+          summary: "Workspace creation completed successfully - all 6 steps finished"
+        };
+      } else {
+        throw new Error(`Failed to update app config: ${result.data.error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to update app config landing page:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * COMPLETE WORKSPACE WORKFLOW: All 6 steps in sequence
+   * Creates a fully functional workspace in the correct order
+   */
+  async snow_create_complete_workspace(args: any): Promise<any> {
+    try {
+      this.logger.info(`🚀 Starting complete workspace creation: ${args.workspace_name}`);
+      
+      const results = {
+        workspace_name: args.workspace_name,
+        steps_completed: [],
+        sys_ids: {}
+      };
+      
+      // STEP 1: Create Experience
+      const experience = await this.snow_create_ux_experience({
+        name: args.workspace_name,
+        description: args.description || `Complete workspace: ${args.workspace_name}`,
+        root_macroponent: args.root_macroponent
+      });
+      results.steps_completed.push('Experience Created');
+      results.sys_ids.experience_sys_id = (experience as any).experience_sys_id;
+      
+      // STEP 2: Create App Config
+      const appConfig = await this.snow_create_ux_app_config({
+        name: `${args.workspace_name} Config`,
+        experience_sys_id: (experience as any).experience_sys_id,
+        description: `Configuration for ${args.workspace_name}`
+      });
+      results.steps_completed.push('App Configuration Created');
+      results.sys_ids.app_config_sys_id = (appConfig as any).app_config_sys_id;
+      
+      // STEP 3: Create Page Macroponent
+      const homePage = args.home_page_name || 'home';
+      const macroponent = await this.snow_create_ux_page_macroponent({
+        name: `${args.workspace_name} ${homePage} Page`,
+        root_component: args.root_component || 'sn-canvas-panel',
+        composition: args.composition,
+        description: `Home page for ${args.workspace_name}`
+      });
+      results.steps_completed.push('Page Macroponent Created');
+      results.sys_ids.macroponent_sys_id = (macroponent as any).macroponent_sys_id;
+      
+      // STEP 4: Create Page Registry
+      const pageSysName = this.generateTechnicalName(args.workspace_name, homePage);
+      const registry = await this.snow_create_ux_page_registry({
+        sys_name: pageSysName,
+        app_config_sys_id: (appConfig as any).app_config_sys_id,
+        macroponent_sys_id: (macroponent as any).macroponent_sys_id,
+        description: `Registry for ${args.workspace_name} home page`
+      });
+      results.steps_completed.push('Page Registry Created');
+      results.sys_ids.page_registry_sys_id = (registry as any).page_registry_sys_id;
+      
+      // STEP 5: Create Route
+      const routeName = args.route_name || homePage;
+      const route = await this.snow_create_ux_app_route({
+        name: routeName,
+        app_config_sys_id: (appConfig as any).app_config_sys_id,
+        page_sys_name: pageSysName,
+        description: `Route for ${args.workspace_name} ${homePage} page`
+      });
+      results.steps_completed.push('Route Created');
+      results.sys_ids.route_sys_id = (route as any).route_sys_id;
+      
+      // STEP 6: Update App Config with Landing Page
+      await this.snow_update_ux_app_config_landing_page({
+        app_config_sys_id: (appConfig as any).app_config_sys_id,
+        route_name: routeName
+      });
+      results.steps_completed.push('Landing Page Route Set');
+      
+      this.logger.info(`🎉 Complete workspace creation finished successfully!`);
+      
+      return {
+        success: true,
+        workspace_name: args.workspace_name,
+        all_steps_completed: true,
+        steps_completed: results.steps_completed,
+        sys_ids: results.sys_ids,
+        workspace_url: `/now/experience/workspace/${routeName}`,
+        message: `Workspace '${args.workspace_name}' created successfully with all 6 steps completed`,
+        summary: `Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route - All connected properly`
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to create complete workspace:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate technical name for pages (consistent formatting)
+   */
+  private generateTechnicalName(workspaceName: string, pageName: string): string {
+    const combined = `${workspaceName}_${pageName}`;
+    return combined
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+      .replace(/__+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, 80);
+  }
+  
   /**
    * Generate valid workspace URL from name (fix from user feedback)
    */

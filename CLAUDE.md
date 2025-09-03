@@ -684,23 +684,47 @@ Snow-Flow now automatically sets its Update Set as the user's current Update Set
 - `snow_get_flow_details` - Get detailed flow configuration
 - `snow_import_flow_from_xml` - Import flows from XML (only programmatic creation method)
 
-**Configurable Agent Workspace Tools (UX App Architecture):**
-- `snow_create_workspace` - Create Configurable Agent Workspaces using UX App architecture (sys_ux_app_route, sys_ux_screen_type, sys_ux_screen, sys_ux_macroponent)
-- `snow_discover_workspaces` - Find all Configurable Workspaces
+**🏗️ COMPLETE UX WORKSPACE CREATION (6-Step Workflow):**
 
-**🏗️ CONFIGURABLE WORKSPACE ARCHITECTURE:**
-Based on ServiceNow's official Configurable Agent Workspace structure:
-- **App Route** → `sys_ux_app_route` (top-level workspace routing)
-- **Screen Collection** → `sys_ux_screen_type` (groups of related screens)  
-- **Individual Screens** → `sys_ux_screen` (specific workspace screens)
-- **Screen Components** → `sys_ux_macroponent` (components within screens)
+**CRITICAL:** Use the correct 6-step workflow for creating functional workspaces. This is the ONLY way to create workspaces that actually work!
+
+**Step 1: Experience Record (sys_ux_experience)**
+- `snow_create_ux_experience` - Create the top-level workspace container
+- Required fields: `name`, auto-detects `root_macroponent` (x_snc_app_shell_uib_app_shell)
+
+**Step 2: App Configuration (sys_ux_app_config)**
+- `snow_create_ux_app_config` - Create workspace settings linked to experience
+- Required fields: `name`, `experience_sys_id` (from Step 1)
+
+**Step 3: Page Macroponent (sys_ux_macroponent)**
+- `snow_create_ux_page_macroponent` - Define actual page content
+- Required fields: `name`, defaults to `sn-canvas-panel` root component
+- Optional: `composition` JSON for custom layouts
+
+**Step 4: Page Registry (sys_ux_page_registry)**
+- `snow_create_ux_page_registry` - Register page within workspace
+- Required fields: `sys_name` (technical name), `app_config_sys_id`, `macroponent_sys_id`
+
+**Step 5: Route Record (sys_ux_app_route)**
+- `snow_create_ux_app_route` - Create URL routing to page
+- Required fields: `name` (URL slug), `app_config_sys_id`, `page_sys_name`
+
+**Step 6: Landing Page Update**
+- `snow_update_ux_app_config_landing_page` - Set default landing page
+- Required fields: `app_config_sys_id`, `route_name`
+
+**COMPLETE WORKFLOW TOOL:**
+- `snow_create_complete_workspace` - **RECOMMENDED:** Executes all 6 steps automatically
+- Creates: Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page
+- Only requires: `workspace_name`, optional: `description`, `home_page_name`, `route_name`
+
 
 **Mobile App Tools:**
 - `snow_configure_mobile_app` - Configure mobile applications
 - `snow_send_push_notification` - Send push notifications
 - `snow_configure_offline_sync` - Configure offline sync
 
-**🆕 COMPLETE UI BUILDER INTEGRATION (15 NEW TOOLS!):**
+**🆕 COMPLETE UI BUILDER INTEGRATION (22 TOOLS!):**
 
 **UI Builder Page Management (sys_ux_page):**
 - `snow_create_uib_page` - Create UI Builder pages with automatic routing

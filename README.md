@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
-**Talk to your ServiceNow instance through Claude Code • 20+ MCP Servers • 200+ ServiceNow Tools • Multi-Agent Orchestration**
+**Talk to your ServiceNow instance through Claude Code • 20+ MCP Servers • 240+ ServiceNow Tools • Complete UX Workspace Creation • Multi-Agent Orchestration**
 
 ---
 
