@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.2",
-  "description": "PERSISTENT MCP SERVERS - v4.6.2 disables automatic MCP server shutdown for persistent operation. Servers now run indefinitely instead of auto-terminating after timeout periods. Fixes MCP server stability issues with permanent server lifecycle.",
+  "version": "4.6.4",
+  "description": "WEBSITE STYLING REVERTED - v4.6.4 reverts website back to original design after simplified styling was not satisfactory. Maintains persistent MCP servers and Claude Code version pinning while restoring the original website appearance.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
