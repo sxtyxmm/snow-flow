@@ -1,0 +1,110 @@
+{
+  "name": "Snow-Flow ServiceNow Development Workspace",
+  "description": "Conversational ServiceNow development with AI assistance",
+  "version": "1.0.0",
+  "workspaceLayout": {
+    "folders": [
+      {
+        "name": "ServiceNow Artifacts",
+        "path": "./src",
+        "description": "TypeScript source code for Snow-Flow MCP servers"
+      },
+      {
+        "name": "MCP Servers", 
+        "path": "./src/mcp",
+        "description": "20+ specialized ServiceNow MCP servers"
+      },
+      {
+        "name": "Agents",
+        "path": "./src/agents", 
+        "description": "Multi-agent coordination and spawning system"
+      },
+      {
+        "name": "Utils",
+        "path": "./src/utils",
+        "description": "ServiceNow client, authentication, and utility functions"
+      },
+      {
+        "name": "Templates",
+        "path": "./src/templates",
+        "description": "ServiceNow artifact templates and patterns"
+      },
+      {
+        "name": "Website",
+        "path": "./website",
+        "description": "Snow-Flow documentation and demo website"
+      }
+    ]
+  },
+  "aiContext": {
+    "projectSummary": "Snow-Flow is a conversational ServiceNow development platform that uses MCP (Model Context Protocol) servers to enable natural language ServiceNow development. Instead of navigating ServiceNow's web interface, developers talk to AI assistants that orchestrate multi-agent workflows.",
+    "keyFiles": [
+      "README.md - Main project documentation",
+      "CLAUDE.md - Snow-Flow best practices and configuration guide", 
+      "WINDSURF.md - Windsurf IDE integration guide",
+      ".mcp.json.template - MCP server configuration template",
+      "package.json - Project dependencies and scripts",
+      "src/index.ts - Main entry point",
+      "src/mcp/ - All MCP servers for ServiceNow integration"
+    ],
+    "commonTasks": [
+      "Query ServiceNow tables: Use snow_query_table MCP tool",
+      "Create ServiceNow widgets: Use snow_create_widget or snow_deploy",
+      "Pull artifacts for editing: Use snow_pull_artifact",
+      "Train ML models: Use ml_train_incident_classifier", 
+      "Create workspaces: Use snow_create_complete_workspace",
+      "Execute scripts: Use snow_execute_script_with_output"
+    ],
+    "importantRules": [
+      "Always use ES5 JavaScript syntax in ServiceNow (no const/let/arrow functions)",
+      "For widget debugging, use snow_pull_artifact instead of snow_query_table",
+      "Use conversational development - describe what you want instead of coding",
+      "Leverage multi-agent coordination for complex ServiceNow tasks"
+    ]
+  },
+  "windsurf": {
+    "aiAssistant": {
+      "role": "ServiceNow Development Expert",
+      "capabilities": [
+        "Conversational ServiceNow development",
+        "Multi-agent task coordination",
+        "Widget creation and debugging", 
+        "Machine learning model training",
+        "Process automation and optimization",
+        "Complete workspace setup"
+      ],
+      "contextAware": true,
+      "mcpIntegration": true,
+      "suggestions": {
+        "widgetDevelopment": "For widget issues, always use 'snow_pull_artifact' to edit locally rather than querying fields separately. This avoids token limits and enables native editing tools.",
+        "serviceNowSyntax": "Remember: ServiceNow uses Rhino JavaScript engine (ES5 only). No modern syntax like const/let, arrow functions, template literals.",
+        "conversationalApproach": "Instead of writing code manually, describe what you want: 'Create an incident dashboard with real-time charts' rather than coding each component."
+      }
+    },
+    "integration": {
+      "mcpServers": [
+        "snow-flow",
+        "servicenow-operations", 
+        "servicenow-deployment",
+        "servicenow-automation",
+        "servicenow-local-development",
+        "servicenow-machine-learning",
+        "servicenow-flow-workspace-mobile",
+        "servicenow-advanced-features"
+      ],
+      "keyCommands": [
+        "npm run build - Build all MCP servers",
+        "npx snow-flow auth login - Authenticate with ServiceNow",
+        "npx snow-flow swarm - Multi-agent coordination",
+        "npx snow-flow deploy - Deploy artifacts"
+      ],
+      "environmentSetup": {
+        "required": [
+          "SNOW_INSTANCE - ServiceNow instance URL",
+          "SNOW_CLIENT_ID - OAuth client ID", 
+          "SNOW_CLIENT_SECRET - OAuth client secret"
+        ]
+      }
+    }
+  }
+}

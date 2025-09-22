@@ -29,7 +29,44 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 - **Real Machine Learning**: Neural networks for incident classification and anomaly detection
 - **Comprehensive API Coverage**: 200+ tools across all major ServiceNow modules
 
-## Quick Start
+## AI IDE Compatibility
+
+Snow-Flow works with multiple AI-powered IDEs for conversational ServiceNow development:
+
+### 🏄‍♂️ Windsurf IDE (Codeium)
+
+**[Windsurf](https://codeium.com/windsurf)** is Codeium's AI-powered IDE that offers excellent integration with Snow-Flow:
+
+```bash
+# 1. Install Snow-Flow
+npm install -g snow-flow
+
+# 2. Clone and open in Windsurf
+git clone https://github.com/sxtyxmm/snow-flow.git
+# Open in Windsurf IDE
+
+# 3. Configure ServiceNow credentials
+# Create .env file with SNOW_INSTANCE, SNOW_CLIENT_ID, SNOW_CLIENT_SECRET
+
+# 4. Authenticate and build
+npx snow-flow auth login
+npm run build
+
+# 5. Start conversational ServiceNow development!
+```
+
+**Windsurf Benefits:**
+- **Natural Language ServiceNow Development**: Describe requirements, AI generates code
+- **20+ MCP Servers**: Direct ServiceNow integration through specialized tools  
+- **Local Artifact Editing**: Pull ServiceNow widgets locally, edit with Windsurf's AI, push back
+- **Context-Aware Assistance**: Windsurf understands entire Snow-Flow architecture
+- **Multi-file Operations**: AI can edit across multiple ServiceNow artifacts simultaneously
+
+📖 **Complete Setup Guide**: [WINDSURF.md](WINDSURF.md)
+
+### 🤖 Claude Code (Anthropic)
+
+**Claude Code** is the original AI IDE that Snow-Flow was designed for:
 
 ### Prerequisites 
 
