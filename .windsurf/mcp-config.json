@@ -1,0 +1,144 @@
+{
+  "$schema": "https://schema.modelcontextprotocol.org/v1/mcp.json",
+  "name": "Snow-Flow MCP Configuration for Windsurf",
+  "description": "MCP server configuration optimized for Windsurf IDE integration",
+  "version": "1.0.0",
+  "servers": {
+    "snow-flow": {
+      "command": "node",
+      "args": [
+        "dist/mcp/snow-flow-mcp.js"
+      ],
+      "description": "🏔️ Snow-Flow orchestration - swarm init/status, agent spawn/discover, task orchestrate, neural train (TensorFlow.js), memory store/search, performance reports",
+      "env": {
+        "SNOW_FLOW_ENV": "development"
+      }
+    },
+    "servicenow-operations": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-operations-mcp.js"
+      ],
+      "description": "🔧 Core ServiceNow operations - universal table query (snow_query_table), CRUD operations, incident/request/problem management, CMDB search, user/group management",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-deployment": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-deployment-mcp.js"
+      ],
+      "description": "🚀 Widget and artifact deployment with COHERENCE VALIDATION - ensures HTML template, client script, server script work together perfectly",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-automation": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-automation-mcp.js"
+      ],
+      "description": "⚡ Script execution with output capture (snow_execute_script_with_output), scheduled jobs, event rules, notifications, workflow activities",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-local-development": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-local-development-mcp.js"
+      ],
+      "description": "🔄 UNIVERSAL ARTIFACT DETECTION - Pull any ServiceNow artifact (even custom tables) to local files with Windsurf native tools. Perfect for widget debugging!",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-machine-learning": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-machine-learning-mcp.js"
+      ],
+      "description": "🧠 Machine learning - train/classify incidents, change risk prediction, anomaly detection, forecast incidents, hybrid recommendations with TensorFlow.js",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-flow-workspace-mobile": {
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-flow-workspace-mobile-mcp.js"
+      ],
+      "description": "🎨 Flow Designer, Agent Workspaces, Mobile + Complete UI Builder Integration - 27+ tools including UI Builder pages, components, data brokers",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-advanced-features": {
+      "command": "node",
+      "args": [
+        "dist/mcp/advanced/servicenow-advanced-features-mcp.js"
+      ],
+      "description": "🚀 Advanced features - batch API operations (80% reduction), table relationships, query optimization, process discovery, documentation generation",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    }
+  },
+  "windsurfIntegration": {
+    "aiInstructions": {
+      "systemPrompt": "You are a ServiceNow development expert using Snow-Flow in Windsurf IDE. Follow these guidelines:\n\n🔑 KEY PRINCIPLES:\n• Use conversational development - describe what you want instead of coding manually\n• Always use ES5 JavaScript syntax in ServiceNow (no const/let/arrow functions/template literals)\n• For widget debugging, use snow_pull_artifact to edit locally instead of snow_query_table\n• Leverage multi-agent coordination for complex ServiceNow tasks\n\n🛠️ ESSENTIAL TOOLS:\n• snow_query_table - Query any ServiceNow table\n• snow_pull_artifact - Pull artifacts locally for Windsurf editing\n• snow_deploy - Deploy with coherence validation\n• ml_train_incident_classifier - Train neural networks\n• snow_create_complete_workspace - Create UX workspaces\n• snow_execute_script_with_output - Run ServiceNow scripts\n\n💡 WINDSURF-SPECIFIC:\n• Use natural language to describe ServiceNow requirements\n• Leverage Windsurf's multi-file editing with local artifact sync\n• Take advantage of Windsurf's context awareness for better ServiceNow development",
+      "capabilities": [
+        "Conversational ServiceNow development",
+        "Multi-agent task coordination", 
+        "Local artifact editing with Windsurf tools",
+        "Machine learning integration",
+        "Complete workspace creation",
+        "Process automation and optimization"
+      ],
+      "examples": [
+        {
+          "task": "Create incident dashboard widget",
+          "approach": "Describe requirements conversationally, let AI generate using snow_create_widget, pull locally with snow_pull_artifact for refinements"
+        },
+        {
+          "task": "Debug existing widget", 
+          "approach": "Use snow_pull_artifact first to bring locally, edit with Windsurf's native tools, validate with snow_validate_artifact_coherence"
+        },
+        {
+          "task": "Train ML model on ServiceNow data",
+          "approach": "Use ml_train_incident_classifier with intelligent data selection, describe requirements rather than coding"
+        }
+      ]
+    },
+    "quickStart": [
+      "1. Ensure Node.js 18+ installed",
+      "2. Run 'npm install' to install dependencies", 
+      "3. Set environment variables (SNOW_INSTANCE, SNOW_CLIENT_ID, SNOW_CLIENT_SECRET)",
+      "4. Run 'npx snow-flow auth login' to authenticate",
+      "5. Run 'npm run build' to build MCP servers",
+      "6. Start conversational ServiceNow development!"
+    ],
+    "commonCommands": {
+      "authentication": "npx snow-flow auth login",
+      "buildServers": "npm run build", 
+      "deployArtifacts": "npx snow-flow deploy",
+      "multiAgentTask": "npx snow-flow swarm 'task description'",
+      "checkStatus": "npx snow-flow auth status"
+    }
+  }
+}
